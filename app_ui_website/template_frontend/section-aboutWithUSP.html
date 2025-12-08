@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Section Cat Article with Button</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="src/dev/3rd/bootstrap/bootstrap.css" rel="stylesheet">
+  <link rel="stylesheet" href="src/dev/styles/main.css">
+</head>
+
+<body>
+
+<section class="lnSection lnSection__aboutWithUSP" style="background: url(src/assets/bg/map-indonesia-dots.svg);">
+    <div class="container">
+        <!-- Intro -->
+         <div class="lnIntro">
+            <div class="lnIntro__content">
+                <div class="lnIntro__label text-caption-c1 font-bold">OUR PURPOSE</div>
+
+                <div class="lnIntro__title text-headline-h2 font-bold">
+                    We LINK the nation for better lives
+                </div>
+
+                <div class="lnIntro__desc text-body-b4 font-regular">
+                    Through Hybrid Fiber Coaxial (HFC) and Fiber To The Home (FTTH) networks,
+                    Linknet provides reliable internet, multimedia, and business solutions to over 4
+                    million homepasses in 47+ cities
+                </div>
+            </div>
+
+            <div class="lnIntro__actions">
+                <a class="btn btn-md btn-secondary-outline" href="#">
+                    <span>Get to Know Us</span>
+                    <span class="icon icon--18 icon--neutral-900"
+                            style="--icon-src: url('../../../src/assets/icons/arrow-top-right.svg')" aria-hidden="true"></span>
+                </a>
+            </div>
+        </div>
+
+        <!-- USP with DIV + Bootstrap grid -->
+        <div class="lnUSP row g-4 g-lg-5 mt-4 mt-lg-5">
+            <div class="lnUSP__item col-12 col-md-3">
+                <div class="lnUSP__icon">
+                    <img src="src/assets/icons/usp/home.svg" alt="" width="36" height="36" />
+                </div>
+                <div class="lnUSP__body">
+                    <h3 class="lnUSP__title text-headline-h5 font-bold">4M+ Homepasses</h3>
+                    <p class="lnUSP__desc text-body-b5">Spread across more than 47 major cities in Indonesia</p>
+                </div>
+            </div>
+
+            <div class="lnUSP__item col-12 col-md-3">
+                <div class="lnUSP__icon">
+                    <img src="src/assets/icons/usp/aniversary.svg" alt="" width="36" height="36" />
+                </div>
+                <div class="lnUSP__body">
+                    <h3 class="lnUSP__title text-headline-h5 font-bold">25 Years of Service</h3>
+                    <p class="lnUSP__desc text-body-b5">Since 1996, we have been present to build Indonesian connectivity.</p>
+                </div>
+            </div>
+
+            <div class="lnUSP__item col-12 col-md-3">
+                <div class="lnUSP__icon">
+                    <img src="src/assets/icons/usp/business.svg" alt="" width="36" height="36" />
+                </div>
+                <div class="lnUSP__body">
+                    <h3 class="lnUSP__title text-headline-h5 font-bold">3 Pillars of Business</h3>
+                    <p class="lnUSP__desc text-body-b5">FiberCo, EnterpriseCo, and MediaCo for complete solutions</p>
+                </div>
+            </div>
+
+            <div class="lnUSP__item col-12 col-md-3">
+                <div class="lnUSP__icon">
+                    <img src="src/assets/icons/usp/location.svg" alt="" width="36" height="36" />
+                </div>
+                <div class="lnUSP__body">
+                    <h3 class="lnUSP__title text-headline-h5 font-bold">3 Strategic Headend</h3>
+                    <p class="lnUSP__desc text-body-b5">Located in the business center of Jakarta, Surabaya, and Bali</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="src/dev/script/main.js"></script>
+    <script src="src/dev/script/componets/sliders.js"></script>
+    <script src="src/dev/script/componets/sections.js"></script>
+    <script src="src/dev/script/componets/map.js"></script>
+    <script src="src/dev/script/componets/footer.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script>
+        // Enable tooltips (IDX info)
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+    </script>
+
+</body>
+
+</html>

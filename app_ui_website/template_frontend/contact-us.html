@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Navbar Bootstrap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="src/dev/3rd/bootstrap/bootstrap.css" rel="stylesheet">
+  <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+/>
+
+  <link rel="stylesheet" href="src/dev/styles/main.css">
+
+  <style>
+    
+
+    /* Simple helpers */
+    .nav-icon-btn{ border:0; background:transparent; padding:.25rem .5rem; }
+  </style>
+</head>
+<body>
+
+<header class="ln-header sticky-top bg-white">
+    <!-- main bar -->
+    <nav class="navbar navbar-expand-lg bg-white">
+        <div class="container-lg">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="/" aria-label="Homepage">
+                <img src="src/assets/logos/linknet-logo.svg" alt="Linknet" width="92" height="32">
+            </a>
+            <!-- Right: small actions on mobile -->
+            <div class="d-flex d-lg-none align-items-center gap-2">
+                <!-- Language (mobile quick) -->
+                <div class="d-flex flex-column">
+                    <span class="text-caption-c2 text-secondary">IDX:LINK</span>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="text-body-b4 font-medium">IDR 2.560,00</span>
+                        <button class="text-caption-c2 btn p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Last updated at 9 September 2025 00:36">
+                            <img src="src/assets//icons/info.svg" alt="Info" width="16" height="16">
+                        </button>
+                    </div>
+                </div>
+                <!-- Offcanvas toggler -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav">
+                    <img src="src/assets/icons/menu-hamburger.svg" width="24" height="24" alt="">
+                </button>
+            </div>
+            <!-- Desktop nav -->
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto ms-2 gap-1">
+                    <!-- Home -->
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/">Home</a>
+                    </li>
+                    <!-- About (MEGA) -->
+                    <!-- Business (dropdown biasa) -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"> About </a>
+                        <div class="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                            <div class="p-3 d-flex gap-4 flex-wrap">
+                                <!-- Column: HOSTING -->
+                                <div class="mega-col">
+                                    <!-- <h6 class="mega-heading text-caption-c1">About Us</h6> -->
+                                    <ul class="mega-list list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Corporate Information</span>
+                                                </span>
+                                                <!-- <span class="badge-soft">UPDATE</span> -->
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Corporate Overview</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Milestone</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Group Structures</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Management</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Awards</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Business (dropdown biasa) -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"> Corporate Governance </a>
+                        <div class="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                            <div class="p-3 d-flex gap-4 flex-wrap">
+                                <!-- Column: HOSTING -->
+                                <div class="mega-col">
+                                    <!-- <h6 class="mega-heading text-caption-c1">CORPORATE GOVERNANCE</h6> -->
+                                    <ul class="mega-list list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Structure</span>
+                                                </span>
+                                                <!-- <span class="badge-soft">UPDATE</span> -->
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Principle</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Guidance</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Article of Association</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Code of Conduct</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Certified for Standarization of Management System</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Organization Structures</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Linknet Policy</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Board & Committee Charters</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Whistleblowing System</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Whistleblowing Policy</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Data Privacy Policy</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Business (dropdown biasa) -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"> Investor </a>
+                        <div class="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                            <div class="p-3 d-flex gap-4 flex-wrap">
+                                <!-- Column: HOSTING -->
+                                <div class="mega-col">
+                                    <!-- <h6 class="mega-heading text-caption-c1">Report & Announcement</h6> -->
+                                    <ul class="mega-list list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">GMS Announcement</span>
+                                                </span>
+                                                <!-- <span class="badge-soft">UPDATE</span> -->
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Emiten Announcement</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Public Expose Announcement</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Financial Statement</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Annual Report</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Sustainable Report</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        
+                                    </ul>
+                                </div>
+                                <!-- Column: WEBSITES -->
+                                <div class="mega-col">
+                                    <h6 class="mega-heading text-caption-c1">Investor</h6>
+                                    <ul class="list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/builder.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Stock Price</span>
+                                                    <!-- <span class="desc">Create a website in 3 easy steps</span> -->
+                                                </span>
+                                                <!-- <span class="badge-soft">AI</span> -->
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Simple links -->
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/media">Media</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/sustainability">Sustainability</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/careers">Career</a>
+                    </li>
+                </ul>
+                <!-- Right side (desktop) -->
+                <div class="d-none d-lg-flex align-items-center gap-2">
+                    <!-- IDX stack + tooltip -->
+                    <div class="d-flex flex-column">
+                        <span class="text-caption-c2 text-secondary">IDX:LINK</span>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-body-b4 font-medium">IDR 2.560,00</span>
+                            <button class="text-caption-c2 btn p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Last updated at 9 September 2025 00:36">
+                                <img src="src/assets//icons/info.svg" alt="Info" width="16" height="16">
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Search -->
+                    <button class="nav-icon-btn" aria-label="Search">
+                        <img src="src/assets//icons/search.svg" alt="Search" width="20" height="20">
+                    </button>
+                    <!-- Language -->
+                    <div class="dropdown">
+                        <button class="btn btn-light rounded-pill p-0 pe-1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="src/assets//icons/world.svg" alt="" width="18" height="18"> EN </button>
+                        <ul class="dropdown-menu shadow-sm rounded-3">
+                            <li>
+                                <a class="mega-item w-100 text-body-b5" href="#!">English</a>
+                            </li>
+                            <li>
+                                <a class="mega-item w-100 text-body-b5" href="#!">Bahasa</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- CTA -->
+                    <a href="/contact-us" class="btn btn-md btn-secondary-outline font-medium">Get in Touch</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="mega-overlay" id="megaOverlay" aria-hidden="true"></div>
+    <!-- utility bar -->
+    <div class="nav-utility-bar" style="display: none;">
+        <div class="container-lg d-flex align-items-center justify-content-between" style="height:40px;">
+            <!-- LEFT: label -->
+            <div class="text-body-b5 font-medium subnav-label">About Us</div>
+            <!-- RIGHT: sub-nav (desktop >= md) -->
+            <nav class="subnav d-none d-md-flex align-items-center">
+                <a class="subnav-link active" href="/about/overview">Overview</a>
+                <a class="subnav-link" href="/about/corporate-info">Corporate Info</a>
+                <a class="subnav-link" href="/about/milestone">Milestone</a>
+                <a class="subnav-link" href="/about/group-structure">Group Structure</a>
+                <!-- more (plain text, bukan pill) -->
+                <div class="dropdown">
+                    <button class="subnav-more-btn" data-bs-toggle="dropdown" aria-label="More">
+                        <img src="src/assets/icons/view-more.svg" alt="">
+                    </button>
+                    <ul class="dropdown-menu dropdown-mega dropdown-menu-end shadow-sm p-2 rounded-3">
+                        <li>
+                            <a class="mega-item" href="/about/management">Management</a>
+                        </li>
+                        <li>
+                            <a class="mega-item" href="/about/awards">Awards</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <!-- Mobile button (tetap) -->
+            <button class="btn btn-sm d-md-none text-secondary text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#utilityMenu-bottomSheets">
+                <img src="src/assets/icons/chevron-down.svg" width="24" height="24" alt="">
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Offcanvas Mobile -->
+<div class="offcanvas offcanvas-end offcanvas-fullscreen fade" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+    <!-- Header -->
+    <div class="oc-header d-flex align-items-center justify-content-between">
+        <a class="oc-logo d-inline-flex align-items-center" href="/">
+            <img src="src/assets/logos/linknet-logo.svg" alt="Linknet" width="92" height="32">
+        </a>
+        <div class="rightSide d-flex align-items-center gap-1">
+            <!-- Language -->
+            <button id="openLanguage" class="btn btn-light rounded-pill pe-2">
+                <img src="src/assets/icons/world.svg" width="18" height="18" class="me-1" alt="">
+                <span class="lang-label">EN</span>
+                <img src="src/assets/icons/chevron-down.svg" width="24" height="24" alt="">
+            </button>
+            <!-- Close -->
+            <button type="button" class="btn btn-icon p-0" data-bs-dismiss="offcanvas" aria-label="Close">
+                <img src="src/assets/icons/close.svg" width="24" height="24" alt="Close">
+            </button>
+        </div>
+    </div>
+    <!-- Body -->
+    <div class="offcanvas-body p-0 d-flex flex-column">
+        <!-- Pages -->
+        <div class="oc-pages flex-grow-1">
+            <!-- PAGE: MAIN -->
+            <section class="oc-page is-active" id="oc-main">
+                <div class="oc-search-row">
+                    <button class="btn btn-md btn-secondary-outline font-medium w-100 text-center" type="button" data-open="search">
+                        <img src="src/assets/icons/search.svg" width="18" height="18" alt="">
+                        <span>Search</span>
+                    </button>
+                </div>
+                <nav class="oc-menu">
+                    <a class="oc-item" href="/">Home</a>
+                    <button class="oc-item" type="button" data-open="About Us"> About Us <img src="src/assets/icons/chevron-right.svg" width="24" height="24" alt="">
+                    </button>
+                    <button class="oc-item" type="button" data-open="Business"> Business <img src="src/assets/icons/chevron-right.svg" width="24" height="24" alt="">
+                    </button>
+                    <button class="oc-item" type="button" data-open="Investor"> Investor <img src="src/assets/icons/chevron-right.svg" width="24" height="24" alt="">
+                    </button>
+                    <a class="oc-item" href="/media">Media</a>
+                    <a class="oc-item" href="/sustainability">Sustainability</a>
+                    <a class="oc-item" href="/careers">Careers</a>
+                </nav>
+            </section>
+            <!-- PAGE: SUB (dynamic content) -->
+            <section class="oc-page" id="oc-sub">
+                <div class="oc-subbar d-flex align-items-center">
+                    <button class="btn px-0 oc-back d-flex align-items-center gap-1" type="button" data-back>
+                        <img src="src/assets/icons/chevron-left.svg" width="24" height="24" alt="Back">
+                        <h6 class="m-0 oc-subtitle text-body-b4 font-bold">Submenu</h6>
+                    </button>
+                </div>
+                <div class="oc-subcontents">
+                    <!-- About Us submenu -->
+                    <div class="oc-subcontent" data-for="About Us">
+                        <div class="oc-section">
+                            <div class="oc-section-title">About Us</div>
+                            <a href="/about/company-information" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                                </span>
+                            </a>
+                            <a href="/about/milestone" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                                </span>
+                            </a>
+                            <a href="/about/awards" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Business submenu -->
+                    <div class="oc-subcontent" data-for="Business">
+                        <div class="oc-section">
+                            <div class="oc-section-title">Business Units</div>
+                            <a href="/business/fiberco" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">FiberCo</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Jaringan serat optik nasional.</span>
+                                </span>
+                            </a>
+                            <a href="/business/enterpriseco" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">EnterpriseCo</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Solusi konektivitas & bisnis.</span>
+                                </span>
+                            </a>
+                            <a href="/business/mediaco" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">MediaCo</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Layanan hiburan & media digital.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Investor submenu -->
+                    <div class="oc-subcontent" data-for="Investor">
+                        <div class="oc-section">
+                            <div class="oc-section-title">Investor Relations</div>
+                            <a href="/governance/laporan-keuangan" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Financial Reports</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Laporan keuangan terbaru.</span>
+                                </span>
+                            </a>
+                            <a href="/governance/laporan-tahunan" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Annual Report</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Laporan tahunan perusahaan.</span>
+                                </span>
+                            </a>
+                            <a href="/governance/laporan-berkelanjutan" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Sustainability Report</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Laporan keberlanjutan & ESG.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- PAGE: SEARCH -->
+            <section class="oc-page" id="oc-search">
+                <div class="oc-subbar d-flex align-items-center justify-content-between">
+                    <button class="btn px-0 oc-back d-flex align-items-center gap-1" type="button" data-back>
+                        <img src="src/assets/icons/chevron-left.svg" width="24" height="24" alt="Back">
+                        <h6 class="m-0 oc-subtitle text-body-b4 font-bold">Search</h6>
+                    </button>
+                </div>
+                <div class="p-3">
+                    <div class="input-group oc-input">
+                        <span class="input-group-text bg-white border-0">
+                            <img src="src/assets/icons/search.svg" width="18" height="18" alt="">
+                        </span>
+                        <input type="search" class="form-control border-0" placeholder="Sedang cari apa?">
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- Footer -->
+        <div class="oc-footer text-center">
+            <a href="/contact-us" class="btn btn-md btn-warning">Get in Touch <img src="src/assets/icons/chevron-right.svg" alt="">
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Offcanvas Lang -->
+<div id="langSheetBackdrop" class="langsheet-backdrop" aria-hidden="true"></div>
+<div class="bottomSheets" id="langSheet" role="dialog" aria-modal="true" aria-labelledby="langSheetTitle" aria-hidden="true">
+    <div class="bottomSheets-header">
+        <div class="m-0 text-body-b4 font-medium d-flex align-items-center gap-1" id="langSheetTitle"> Select Language </div>
+        <button type="button" class="btn" aria-label="Close" data-langsheet-close>
+            <img src="src/assets/icons/close.svg" alt="">
+        </button>
+    </div>
+    <ul class="oc-menu" id="langList">
+        <li class="oc-item d-flex align-items-center justify-content-between" data-lang="en" role="button" tabindex="0">
+            <span class="d-flex align-items-center gap-2">
+                <img src="src/assets/icons/flag-usa.svg" width="24" height="24" alt="ID"> English </span>
+            <img src="src/assets/icons/check.svg" width="24" height="24" alt="Selected" class="lang-check d-none">
+        </li>
+        <li class="oc-item d-flex align-items-center justify-content-between" data-lang="id" role="button" tabindex="0">
+            <span class="d-flex align-items-center gap-2">
+                <img src="src/assets/icons/flag-indonesia.svg" width="24" height="24" alt="ID"> Indonesia </span>
+            <img src="src/assets/icons/check.svg" width="24" height="24" alt="Selected" class="lang-check d-none">
+        </li>
+    </ul>
+</div>
+
+<div class="bottomSheets offcanvas offcanvas-bottom" id="utilityMenu-bottomSheets" role="dialog" aria-modal="true" aria-labelledby="bottomSheetTitle" aria-hidden="true">
+    <div class="bottomSheets-header">
+        <div class="m-0 text-body-b4 font-medium d-flex align-items-center gap-1" id="langSheetTitle"> About Us </div>
+        <button type="button" class="btn p-0" aria-label="Close" data-bs-dismiss="offcanvas">
+            <img src="src/assets/icons/close.svg" alt="">
+        </button>
+    </div>
+    <div class="bottomSheets-body">
+        <div class="bottomSheets-listMenu">
+            <a href="/about/company-information" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+            <a href="/about/company-information" class="bottomSheets-itemMenu active">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+            <a href="/about/company-information" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+            <a href="/about/company-information" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- DEMO: 3 varian -->
+<!-- ==============================
+     lnSection__contactUs (HTML)
+     ============================== -->
+<section class="lnSection lnSection__contactUs">
+    <div class="container">
+        <div class="row g-4 g-lg-5 align-items-start">
+            <!-- Left: intro + contact info -->
+            <div class="col-lg-5">
+                <header class="lnIntro">
+                    <h2 class="lnIntro__title text-headline-h2 font-bold mb-3">We’re Here to Help</h2>
+                    <p class="lnIntro__desc text-body-b4 text-secondary m-0">
+                        We’re here to assist you with any questions, concerns, or feedback you may have.
+                        Connect with us today!
+                    </p>
+                </header>
+
+                <div class="lnContactInfos mt-4">
+                    <div class="lnContactInfo">
+                        <span class="lnContactInfo__icon">
+                            <img src="src/assets/icons/mail.svg" alt="" width="20" height="20">
+                        </span>
+                        <div class="lnContactInfo__text">
+                            <div class="text-body-b5 text-secondary">Email Us</div>
+                            <a href="mailto:corporate.secretary@linknet.co.id" class="text-body-b4 font-medium text-black text-decoration-none">corporate.secretary@linknet.co.id</a>
+                        </div>
+                    </div>
+
+                    <div class="lnContactInfo">
+                        <span class="lnContactInfo__icon">
+                            <img src="src/assets/icons/phone.svg" alt="" width="20" height="20">
+                        </span>
+                        <div class="lnContactInfo__text">
+                            <div class="text-body-b5 text-secondary">Phone Number</div>
+                            <a href="tel:02129536800" class="text-body-b4 font-medium text-black text-decoration-none">021-29536800</a>
+                        </div>
+                    </div>
+
+                    <div class="lnContactInfo">
+                        <span class="lnContactInfo__icon">
+                            <img src="src/assets/icons/pin-map.svg" alt="" width="20" height="20">
+                        </span>
+                        <div class="lnContactInfo__text">
+                            <div class="text-body-b5 text-secondary">Registered Office</div>
+                            <div class="text-body-b4 font-medium">
+                                Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25 Jakarta 12930, Indonesia
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: form -->
+            <div class="col-lg-7">
+                <div class="contactCard rounded-4" id="contactCardForm">
+                    <h3 class="text-headline-h5 font-bold mb-3">Fill in the following data</h3>
+
+                    <form id="applyForm" novalidate>
+                        <div class="row g-3">
+                            <!-- First / Last name (required) -->
+                            <div class="col-md-6">
+                                <div class="lnFormInput" data-help="Nama sesuai KTP.">
+                                    <input id="cu-first" class="lnFormInput__control" type="text" placeholder=" "
+                                           required data-error="First name is required." />
+                                    <label for="cu-first" class="lnFormInput__label">First Name<span class="req">*</span></label>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="lnFormInput">
+                                    <input id="cu-last" class="lnFormInput__control" type="text" placeholder=" "
+                                           required data-error="Last name is required." />
+                                    <label for="cu-last" class="lnFormInput__label">Last Name<span class="req">*</span></label>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+
+                            <!-- Email (required) / Phone (required) -->
+                            <div class="col-md-6">
+                                <div class="lnFormInput">
+                                    <input id="cu-email" class="lnFormInput__control" type="email" placeholder=" "
+                                           required data-validate="email"
+                                           data-help="Gunakan email aktif."
+                                           data-error="Email is required." data-error-email="Invalid email format." />
+                                    <label for="cu-email" class="lnFormInput__label">Email<span class="req">*</span></label>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="lnFormInput">
+                                    <input id="cu-phone" class="lnFormInput__control" type="tel" placeholder=" "
+                                           required data-validate="phone" data-autofmt="phone"
+                                           data-error="Phone is required."
+                                           data-error-phone="Must start with 0 and contain at least 10 digits." />
+                                    <label for="cu-phone" class="lnFormInput__label">Phone<span class="req">*</span></label>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+
+                            <!-- Role/Company (optional) -->
+                            <div class="col-md-6">
+                                <div class="lnFormInput">
+                                    <input id="cu-role" class="lnFormInput__control" type="text" placeholder=" " />
+                                    <label for="cu-role" class="lnFormInput__label">Role / Job Title</label>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="lnFormInput">
+                                    <input id="cu-company" class="lnFormInput__control" type="text" placeholder=" " />
+                                    <label for="cu-company" class="lnFormInput__label">Company / Organization</label>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+
+                            <!-- Inquiry type (required select) -->
+                            <div class="col-12">
+                                <div class="lnFormInput lnFormInput--select">
+                                    <select id="cu-inquiry" class="lnFormInput__control" required data-error="Please select one.">
+                                        <option value="" disabled selected hidden>Select one</option>
+                                        <option value="business">Business Inquiry</option>
+                                        <option value="support">Technical Support</option>
+                                        <option value="career">Career</option>
+                                        <option value="others">Others</option>
+                                    </select>
+                                    <label for="cu-inquiry" class="lnFormInput__label">Inquiry type<span class="req">*</span></label>
+                                    <span class="lnFormInput__arrow" aria-hidden="true"></span>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+
+                            <!-- Message (required textarea + counter) -->
+                            <div class="col-12">
+                                <div class="lnFormInput lnFormInput--textarea" data-counter="true">
+                                    <textarea id="cu-message" class="lnFormInput__control" rows="4" placeholder=" "
+                                              maxlength="500" required data-error="Message is required."></textarea>
+                                    <label for="cu-message" class="lnFormInput__label">Message<span class="req">*</span></label>
+                                    <span class="lnFormInput__counter" aria-live="polite">0/500</span>
+                                </div>
+                                <small class="lnFormInput__help text-body-b5 text-secondary"></small>
+                            </div>
+                        </div>
+
+                        <p class="text-body-b5 text-secondary mt-3 mb-4">
+                            By sending a message, you acknowledge that you have read, understood, and agreed to the applicable Terms & Conditions and Privacy Policy.
+                        </p>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="reset" class="btn btn-secondary-outline btn-md">Reset</button>
+                            <button type="submit" class="btn btn-warning btn-md">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SUCCESS CARD (hidden at first) -->
+                <div class="contactCard contactCard--success rounded-4 d-none" id="contactCardSuccess" aria-live="polite">
+                    <div class="successHero">
+                        <img src="src/assets/photos/thumb/img-success.png" alt="Success Illustration" />
+                    </div>
+
+                    <h3 class="text-headline-h3 font-bold mt-3 mb-2 text-center">
+                        Thank you for sending us a message
+                    </h3>
+
+                    <p class="text-body-b4 text-secondary text-center mb-4">
+                        Our team will respond to your message soon, please wait.
+                    </p>
+
+                    <div class="d-flex justify-content-center">
+                        <button type="button" class="btn btn-secondary-outline btn-lg" id="btnSendAnother">
+                            Send another message
+                        </button>
+                    </div>
+                </div>
+                <!-- End// SUCCESS CARD -->
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- lnSection__keyHighlightWithImage (updated: keyHighlightCard) -->
+<section class="lnSection lnSection__keyHighlightWithImage">
+  <div class="container">
+    <header class="lnIntro">
+      <div class="lnIntro__content">
+        <div class="lnIntro__label text-caption-c1 font-bold">KEY HIGHLIGHT</div>
+        <h2 class="lnIntro__title text-headline-h2 font-bold m-0">Our Impact in Numbers</h2>
+        <p class="lnIntro__desc text-body-b4 text-secondary mt-2">
+          Measurable achievements that reflect our progress. From digital access and workforce diversity to environmental action.
+        </p>
+      </div>
+    </header>
+
+    <div class="lnKHSliderWrap">
+      <div class="swiper lnKHSlider" aria-label="Key Highlight Slider">
+        <div class="swiper-wrapper">
+
+          <div class="swiper-slide">
+            <article class="keyHighlightCard">
+              <div class="keyHighlightCard__media" aria-hidden="true">
+                <img src="src/assets/bg/2806.jpg" alt="">
+              </div>
+              <div class="keyHighlightCard__overlay" aria-hidden="true"></div>
+              <div class="keyHighlightCard__content">
+                <div class="keyHighlightCard__value text-headline-h3 font-bold">4.07M
+                  <span class="keyHighlightCard__delta text-caption-c1">(+14.6% YoY)</span>
+                </div>
+                <div class="keyHighlightCard__caption text-body-b4">Homes connected through open access</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="swiper-slide">
+            <article class="keyHighlightCard">
+              <div class="keyHighlightCard__media" aria-hidden="true">
+                <img src="src/assets/photos/young-woman-using-phone-while-sitting-table.jpg" alt="">
+              </div>
+              <div class="keyHighlightCard__overlay" aria-hidden="true"></div>
+              <div class="keyHighlightCard__content">
+                <div class="keyHighlightCard__value text-headline-h3 font-bold">29,1%
+                  <span class="keyHighlightCard__delta text-caption-c1">(+4,9% YoY)</span>
+                </div>
+                <div class="keyHighlightCard__caption text-body-b4">Women in Workforce / Leadership</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="swiper-slide">
+            <article class="keyHighlightCard">
+              <div class="keyHighlightCard__media" aria-hidden="true">
+                <img src="src/assets/photos/view-green-forest-trees-with-co2.jpg" alt="">
+              </div>
+              <div class="keyHighlightCard__overlay" aria-hidden="true"></div>
+              <div class="keyHighlightCard__content">
+                <div class="keyHighlightCard__value text-headline-h3 font-bold">±23.162 ton
+                  <span class="keyHighlightCard__delta text-caption-c1">(in 3 Years)</span>
+                </div>
+                <div class="keyHighlightCard__caption text-body-b4">CO₂ Reduced (3 Years)</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="swiper-slide">
+            <article class="keyHighlightCard">
+              <div class="keyHighlightCard__media" aria-hidden="true">
+                <img src="src/assets/photos/planting-trees-as-part-reforestation-process.jpg" alt="">
+              </div>
+              <div class="keyHighlightCard__overlay" aria-hidden="true"></div>
+              <div class="keyHighlightCard__content">
+                <div class="keyHighlightCard__value text-headline-h3 font-bold">New Trees
+                  <span class="keyHighlightCard__delta text-caption-c1">+12k</span>
+                </div>
+                <div class="keyHighlightCard__caption text-body-b4">Trees planted through “New Homepass, New Tree”</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="swiper-slide">
+            <article class="keyHighlightCard">
+              <div class="keyHighlightCard__media" aria-hidden="true">
+                <img src="src/assets/photos/20250227_095744.jpg" alt="">
+              </div>
+              <div class="keyHighlightCard__overlay" aria-hidden="true"></div>
+              <div class="keyHighlightCard__content">
+                <div class="keyHighlightCard__value text-headline-h3 font-bold">232+
+                  <span class="keyHighlightCard__delta text-caption-c1">+12k</span>
+                </div>
+                <div class="keyHighlightCard__caption text-body-b4">No. of customers / communities reached through ISPs and Enterprise</div>
+              </div>
+            </article>
+          </div>
+
+           <div class="swiper-slide">
+            <article class="keyHighlightCard">
+              <div class="keyHighlightCard__media" aria-hidden="true">
+                <img src="src/assets/photos/colleagues-working-together-high-angle.jpg" alt="">
+              </div>
+              <div class="keyHighlightCard__overlay" aria-hidden="true"></div>
+              <div class="keyHighlightCard__content">
+                <div class="keyHighlightCard__value text-headline-h3 font-bold">20 Hours
+                  <span class="keyHighlightCard__delta text-caption-c1">+12k</span>
+                </div>
+                <div class="keyHighlightCard__caption text-body-b4">workforce training hours.</div>
+              </div>
+            </article>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="lnSwiperNav" aria-hidden="true">
+        <button class="lnSwiperNav__btn lnSwiperNav__prev" type="button" aria-label="Previous">
+          <img src="src/assets/icons/chevron-left.svg" alt="">
+        </button>
+        <button class="lnSwiperNav__btn lnSwiperNav__next" type="button" aria-label="Next">
+          <img src="src/assets/icons/chevron-right.svg" alt="">
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lnSection lnSection__highlightSummary">
+    <div class="container">
+        <div class="highlightSummaryCard rounded-4">
+            <!-- Header -->
+            <div class="hsHeader d-flex gap-3 align-items-start mb-3">
+                <img class="hsHeader__thumb" src="src/assets/img/LINK AR2024 Rev_page-0001.jpg" alt="Highlight Report 2024">
+                <div class="hsHeader__text">
+                    <h3 class="hsHeader__title text-headline-h4 m-0">Highlight Report Summary</h3>
+                    <div class="hsHeader__year text-body-b4 text-secondary mt-2">2024</div>
+                </div>
+            </div>
+
+            <!-- Metrics row -->
+            <div class="hsMetrics">
+                <!-- Item 1 -->
+                <div class="hsItem">
+                    <div class="hsItem__value text-headline-h4 font-bold">
+                        4.07M
+                        <span class="hsItem__delta text-caption-c1">(+14.65% YoY)</span>
+                    </div>
+                    <div class="hsItem__label text-body-b4 text-secondary">
+                        Homes Connected (Open Access)
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="hsItem">
+                    <div class="hsItem__value text-headline-h4 font-bold">
+                        32,421.94 ton CO<sub>2</sub>e
+                        <span class="hsItem__delta text-caption-c1">(–7.21%)</span>
+                    </div>
+                    <div class="hsItem__label text-body-b4 text-secondary">
+                        GHG Emissions (Lower is Better)
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="hsItem">
+                    <div class="hsItem__value text-headline-h4 font-bold">
+                        29.07%
+                        <span class="hsItem__delta text-caption-c1">(+4.91%)</span>
+                    </div>
+                    <div class="hsItem__label text-body-b4 text-secondary">
+                        % Women in Workforce
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CTA -->
+            <div class="hsCta mt-4">
+                <a href="#" class="btn btn-secondary-outline">
+                    Download Report
+                    <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18" />
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+<footer class="lnFooter">
+
+  <!-- ===== Level 1: Contact banner ===== -->
+  <section class="lnFooter__contact">
+    <div class="container">
+      <div class="lnFooterContact card border-0">
+        <div class="row g-3 align-items-stretch">
+          <!-- Ask -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__ask h-100">
+              <div class="lnFooterContact__badge">
+                <img src="src/assets/illustrations/question.svg" width="40" height="40" alt="">
+              </div>
+              <h3 class="text-headline-h4 font-bold m-0">Have questions about Linknet?</h3>
+            </div>
+          </div>
+
+          <!-- Corporate & Media -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__box h-100">
+              <div class="text-body-b5 text-secondary mb-2">Corporate &amp; Media</div>
+              <ul class="list-unstyled m-0 d-grid gap-2 p-0">
+                <li>
+                  <a class="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+                    <img src="src/assets/icons/mail.svg" alt="" width="18" height="18"/>
+                    corporate.secretary@linknet.co.id
+                  </a>
+                </li>
+                <li>
+                  <a class="lnFooterContact__link font-medium" href="tel:+622129536800">
+                    <img src="src/assets/icons/phone.svg" alt="" width="18" height="18"/>
+                    021-29536800
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- More Enquiries -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__more h-100">
+              <div class="text-body-b5 text-secondary mb-3">More enquiries?</div>
+              <a class="btn btn-md btn-secondary-outline"
+                 href="#">
+                <span>Send us a Message</span>
+                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18"/>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== lnFooter__main (brand + menus on one row) ===== -->
+<section class="lnFooter__main">
+  <div class="container">
+    <div class="row gy-4 align-items-start">
+
+      <!-- Brand / Address / Inquiry (left) -->
+      <div class="col-12 col-lg-4">
+        <div class="lnFooterBrand">
+          <div class="lnFooterBrand__logos d-flex align-items-center gap-3 mb-3">
+            <a href="/" class="d-inline-flex"><img src="src/assets/logos/linknet-logo.svg" alt="Linknet" height="28" /></a>
+          </div>
+          <div class="lnFooterBrand__subs d-flex align-items-center gap-3 mb-3">
+            <a href="https://enterprise.linknet.co.id" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-enterprise.svg" alt="Linknet Enterprise" height="32" />
+            </a>
+            <a href="https://firstmedia.com" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-fiberco.svg" alt="Linknet Media" height="32" />
+            </a>
+            <a href="https://fiber.linknet.co.id" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-mediaco.svg" alt="Linknet Fiber" height="32" />
+            </a>
+          </div>
+
+          <address class="lnFooterBrand__addr text-body-b5 text-secondary mb-4">
+            Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25 Jakarta 12930, Indonesia
+          </address>
+
+          <div class="lnFooterBrand__inquiry text-body-b5 mb-2">For further inquiry,</div>
+          <div class="d-grid gap-2 mb-3">
+            <a class="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+              <img src="src/assets/icons/mail.svg" alt="" width="18" height="18" /> corporate.secretary@linknet.co.id
+            </a>
+            <a class="lnFooterContact__link font-medium" href="tel:+622129536800">
+              <img src="src/assets/icons/phone.svg" alt="" width="18" height="18" /> 021-29536800
+            </a>
+          </div>
+
+          <div class="lnFooterBrand__social d-flex align-items-center gap-2">
+            <a href="#" aria-label="Instagram"><img src="src/assets/icons/social-instagram.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="YouTube"><img src="src/assets/icons/social-youtube.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="TikTok"><img src="src/assets/icons/social-tiktok.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="X"><img src="src/assets/icons/social-x.svg" alt="" width="24" height="24" /></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus (right) -->
+      <div class="col-12 col-lg-8">
+        <!-- Mobile: Bootstrap Accordion -->
+        <div class="lnFooterMenus lnFooterMenus--mobile accordion d-lg-none" id="lnFooterAcc">
+          <!-- Company -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-company">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-company"
+                      aria-expanded="false" aria-controls="accPane-company">
+                Company
+              </button>
+            </h2>
+            <div id="accPane-company" class="accordion-collapse collapse" aria-labelledby="accHead-company" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">About</a></li>
+                  <li><a href="#">Management</a></li>
+                  <li><a href="#">Business</a></li>
+                  <li><a href="#">Media &amp; News</a></li>
+                  <li><a href="#">Awards</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Investor Relations -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-ir">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-ir"
+                      aria-expanded="false" aria-controls="accPane-ir">
+                Investor Relations
+              </button>
+            </h2>
+            <div id="accPane-ir" class="accordion-collapse collapse" aria-labelledby="accHead-ir" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">Overview</a></li>
+                  <li><a href="#">Stock Price</a></li>
+                  <li><a href="#">Announcements</a></li>
+                  <li><a href="#">Reports</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Join -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-join">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-join"
+                      aria-expanded="false" aria-controls="accPane-join">
+                Join #FirstSquad
+              </button>
+            </h2>
+            <div id="accPane-join" class="accordion-collapse collapse" aria-labelledby="accHead-join" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">Life at Linknet</a></li>
+                  <li><a href="#">Explore Career</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Platform -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-platform">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-platform"
+                      aria-expanded="false" aria-controls="accPane-platform">
+                Platform
+              </button>
+            </h2>
+            <div id="accPane-platform" class="accordion-collapse collapse" aria-labelledby="accHead-platform" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">Corporate Policy</a></li>
+                  <li><a href="#">Children Online Protection</a></li>
+                  <li><a href="#">Contact Us</a></li>
+                  <li><a href="#">Sitemap</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop: 4 columns -->
+        <div class="lnFooterGrid d-none d-lg-grid">
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Company</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">About</a></li>
+              <li><a href="#">Management</a></li>
+              <li><a href="#">Business</a></li>
+              <li><a href="#">Media &amp; News</a></li>
+              <li><a href="#">Awards</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Investor Relations</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">Overview</a></li>
+              <li><a href="#">Stock Price</a></li>
+              <li><a href="#">Announcements</a></li>
+              <li><a href="#">Reports</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Join #FirstSquad</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">Life at Linknet</a></li>
+              <li><a href="#">Explore Career</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Platform</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">Corporate Policy</a></li>
+              <li><a href="#">Children Online Protection</a></li>
+              <li><a href="#">Contact Us</a></li>
+              <li><a href="#">Sitemap</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Language dropdown -->
+        <!-- <div class="lnFooterLang dropdown mt-3">
+          <button class="lnFooterLang__btn btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="src/assets/icons/world.svg" alt="" width="18" height="18" />
+            <span>English</span>
+            <img src="src/assets/icons/chevron-down.svg" alt="" width="18" height="18" />
+
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">English</a></li>
+            <li><a class="dropdown-item" href="#">Bahasa Indonesia</a></li>
+          </ul>
+        </div> -->
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+  <!-- ===== Level 3: Copyright ===== -->
+  <section class="lnFooter__copyright">
+    <div class="container">
+      <p class="m-0 text-center text-caption-c1 text-secondary">
+        Copyright © 1996 - 2025 PT Linknet Tbk. All Right Reserved.
+      </p>
+    </div>
+  </section>
+
+</footer>
+
+
+<!-- =========================
+     COOKIES BANNER (HTML)
+     ========================= -->
+<!-- <div id="lnCookieBanner" class="lnCookieBanner" role="region" aria-label="Cookie notice" aria-live="polite">
+    <div class="lnCookieBanner__inner">
+        <div class="lnCookieBanner__icon" aria-hidden="true">
+            <img src="src/assets/icons/cookie.svg" alt="" width="32" height="32" />
+        </div>
+
+        <div class="lnCookieBanner__text me-md-4">
+            <h3 class="lnCookieBanner__title text-body-b4 font-bold m-0">Our Website Uses Cookies</h3>
+            <p class="lnCookieBanner__desc text-body-b5 text-secondary m-0">
+                We use cookies to ensure that we give the best experience on our website
+            </p>
+        </div>
+
+        <div class="lnCookieBanner__actions">
+            <a href="/cookie-policy" class="lnCookieBanner__link text-body-b5 text-secondary" style="text-decoration: underline">More Info</a>
+            <button id="lnCookieAccept" class="btn btn-warning lnCookieBanner__accept" type="button">
+                Accept
+            </button>
+        </div>
+    </div>
+</div> -->
+
+
+
+<!-- Bootstrap 5.3 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+
+
+<script src="src/dev/script/main.js"></script>
+<script src="src/dev/script/forms.js"></script>
+<script src="src/dev/script/componets/sliders.js"></script>
+<script src="src/dev/script/componets/sections.js"></script>
+<script src="src/dev/script/componets/modals.js"></script>
+<script src="src/dev/script/componets/map.js"></script>
+<script src="src/dev/script/componets/footer.js"></script>
+<script>
+  // Enable tooltips (IDX info)
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
+ 
+</script>
+</body>
+</html>

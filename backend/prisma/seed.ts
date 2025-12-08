@@ -1,0 +1,728 @@
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting database seeding...');
+
+  // ============================================
+  // AUTHENTICATION - Permissions
+  // ============================================
+  console.log('📝 Creating permissions...');
+  
+  const permissionsData = [
+    // User Management
+    { name: 'View Users', slug: 'users.view', module: 'users', description: 'View user list' },
+    { name: 'Create User', slug: 'users.create', module: 'users', description: 'Create new user' },
+    { name: 'Edit User', slug: 'users.edit', module: 'users', description: 'Edit existing user' },
+    { name: 'Delete User', slug: 'users.delete', module: 'users', description: 'Delete user' },
+    
+    // Role Management
+    { name: 'View Roles', slug: 'roles.view', module: 'roles', description: 'View role list' },
+    { name: 'Create Role', slug: 'roles.create', module: 'roles', description: 'Create new role' },
+    { name: 'Edit Role', slug: 'roles.edit', module: 'roles', description: 'Edit existing role' },
+    { name: 'Delete Role', slug: 'roles.delete', module: 'roles', description: 'Delete role' },
+    
+    // Settings
+    { name: 'View Settings', slug: 'settings.view', module: 'settings', description: 'View settings' },
+    { name: 'Edit Settings', slug: 'settings.edit', module: 'settings', description: 'Edit settings' },
+    
+    // Menus
+    { name: 'View Menus', slug: 'menus.view', module: 'menus', description: 'View menu list' },
+    { name: 'Create Menu', slug: 'menus.create', module: 'menus', description: 'Create new menu' },
+    { name: 'Edit Menu', slug: 'menus.edit', module: 'menus', description: 'Edit existing menu' },
+    { name: 'Delete Menu', slug: 'menus.delete', module: 'menus', description: 'Delete menu' },
+    
+    // Pages
+    { name: 'View Pages', slug: 'pages.view', module: 'pages', description: 'View page list' },
+    { name: 'Create Page', slug: 'pages.create', module: 'pages', description: 'Create new page' },
+    { name: 'Edit Page', slug: 'pages.edit', module: 'pages', description: 'Edit existing page' },
+    { name: 'Delete Page', slug: 'pages.delete', module: 'pages', description: 'Delete page' },
+    { name: 'Publish Page', slug: 'pages.publish', module: 'pages', description: 'Publish page' },
+    
+    // News
+    { name: 'View News', slug: 'news.view', module: 'news', description: 'View news list' },
+    { name: 'Create News', slug: 'news.create', module: 'news', description: 'Create new news' },
+    { name: 'Edit News', slug: 'news.edit', module: 'news', description: 'Edit existing news' },
+    { name: 'Delete News', slug: 'news.delete', module: 'news', description: 'Delete news' },
+    { name: 'Publish News', slug: 'news.publish', module: 'news', description: 'Publish news' },
+    
+    // News Categories
+    { name: 'View News Categories', slug: 'news-categories.view', module: 'news', description: 'View news category list' },
+    { name: 'Create News Category', slug: 'news-categories.create', module: 'news', description: 'Create new news category' },
+    { name: 'Edit News Category', slug: 'news-categories.edit', module: 'news', description: 'Edit existing news category' },
+    { name: 'Delete News Category', slug: 'news-categories.delete', module: 'news', description: 'Delete news category' },
+    
+    // Announcements
+    { name: 'View Announcements', slug: 'announcements.view', module: 'announcements', description: 'View announcement list' },
+    { name: 'Create Announcement', slug: 'announcements.create', module: 'announcements', description: 'Create new announcement' },
+    { name: 'Edit Announcement', slug: 'announcements.edit', module: 'announcements', description: 'Edit existing announcement' },
+    { name: 'Delete Announcement', slug: 'announcements.delete', module: 'announcements', description: 'Delete announcement' },
+    
+    // Reports
+    { name: 'View Reports', slug: 'reports.view', module: 'reports', description: 'View report list' },
+    { name: 'Create Report', slug: 'reports.create', module: 'reports', description: 'Create new report' },
+    { name: 'Edit Report', slug: 'reports.edit', module: 'reports', description: 'Edit existing report' },
+    { name: 'Delete Report', slug: 'reports.delete', module: 'reports', description: 'Delete report' },
+    
+    // Careers
+    { name: 'View Careers', slug: 'careers.view', module: 'careers', description: 'View career list' },
+    { name: 'Create Career', slug: 'careers.create', module: 'careers', description: 'Create new career' },
+    { name: 'Edit Career', slug: 'careers.edit', module: 'careers', description: 'Edit existing career' },
+    { name: 'Delete Career', slug: 'careers.delete', module: 'careers', description: 'Delete career' },
+    
+    // Awards
+    { name: 'View Awards', slug: 'awards.view', module: 'awards', description: 'View award list' },
+    { name: 'Create Award', slug: 'awards.create', module: 'awards', description: 'Create new award' },
+    { name: 'Edit Award', slug: 'awards.edit', module: 'awards', description: 'Edit existing award' },
+    { name: 'Delete Award', slug: 'awards.delete', module: 'awards', description: 'Delete award' },
+    
+    // Management
+    { name: 'View Management', slug: 'management.view', module: 'management', description: 'View management list' },
+    { name: 'Create Management', slug: 'management.create', module: 'management', description: 'Create new management' },
+    { name: 'Edit Management', slug: 'management.edit', module: 'management', description: 'Edit existing management' },
+    { name: 'Delete Management', slug: 'management.delete', module: 'management', description: 'Delete management' },
+    
+    // Contact Submissions
+    { name: 'View Contacts', slug: 'contacts.view', module: 'contacts', description: 'View contact submissions' },
+    { name: 'Reply Contact', slug: 'contacts.reply', module: 'contacts', description: 'Reply to contact' },
+    { name: 'Delete Contact', slug: 'contacts.delete', module: 'contacts', description: 'Delete contact submission' },
+    
+    // Files
+    { name: 'View Files', slug: 'files.view', module: 'files', description: 'View file list' },
+    { name: 'Upload File', slug: 'files.upload', module: 'files', description: 'Upload new file' },
+    { name: 'Delete File', slug: 'files.delete', module: 'files', description: 'Delete file' },
+    
+    // Logs
+    { name: 'View Logs', slug: 'logs.view', module: 'logs', description: 'View activity logs' },
+  ];
+
+  const permissions = await Promise.all(
+    permissionsData.map((permission) =>
+      prisma.permission.upsert({
+        where: { slug: permission.slug },
+        update: {},
+        create: permission,
+      })
+    )
+  );
+
+  console.log(`✅ Created ${permissions.length} permissions`);
+
+  // ============================================
+  // AUTHENTICATION - Roles
+  // ============================================
+  console.log('👥 Creating roles...');
+
+  const superAdminRole = await prisma.role.upsert({
+    where: { slug: 'super-admin' },
+    update: {},
+    create: {
+      name: 'Super Admin',
+      slug: 'super-admin',
+      description: 'Full system access with all permissions',
+      isSystem: true,
+    },
+  });
+
+  const adminRole = await prisma.role.upsert({
+    where: { slug: 'admin' },
+    update: {},
+    create: {
+      name: 'Admin',
+      slug: 'admin',
+      description: 'Administrative access to manage content',
+      isSystem: true,
+    },
+  });
+
+  const editorRole = await prisma.role.upsert({
+    where: { slug: 'editor' },
+    update: {},
+    create: {
+      name: 'Editor',
+      slug: 'editor',
+      description: 'Can create and edit content',
+      isSystem: true,
+    },
+  });
+
+  await prisma.role.upsert({
+    where: { slug: 'user' },
+    update: {},
+    create: {
+      name: 'User',
+      slug: 'user',
+      description: 'Basic user access',
+      isSystem: true,
+    },
+  });
+
+  console.log('✅ Created 4 roles');
+
+  // ============================================
+  // AUTHENTICATION - Role Permissions
+  // ============================================
+  console.log('🔐 Assigning permissions to roles...');
+
+  // Super Admin gets all permissions
+  await Promise.all(
+    permissions.map((permission) =>
+      prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: superAdminRole.id,
+            permissionId: permission.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: superAdminRole.id,
+          permissionId: permission.id,
+        },
+      })
+    )
+  );
+
+  // Admin gets most permissions (excluding user/role management)
+  const adminPermissions = permissions.filter(
+    (p) => !['users', 'roles'].includes(p.module)
+  );
+  await Promise.all(
+    adminPermissions.map((permission) =>
+      prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: adminRole.id,
+            permissionId: permission.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: adminRole.id,
+          permissionId: permission.id,
+        },
+      })
+    )
+  );
+
+  // Editor gets view and edit permissions for content
+  const editorPermissions = permissions.filter(
+    (p) =>
+      ['pages', 'news', 'announcements', 'reports', 'careers', 'awards', 'management', 'files'].includes(p.module) &&
+      !p.slug.endsWith('.delete')
+  );
+  await Promise.all(
+    editorPermissions.map((permission) =>
+      prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: editorRole.id,
+            permissionId: permission.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: editorRole.id,
+          permissionId: permission.id,
+        },
+      })
+    )
+  );
+
+  console.log('✅ Assigned permissions to roles');
+
+  // ============================================
+  // AUTHENTICATION - Users
+  // ============================================
+  console.log('👤 Creating users...');
+
+  const hashedPassword = await bcrypt.hash('Admin123!', 10);
+
+  const superAdmin = await prisma.user.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: {
+      email: 'admin@example.com',
+      username: 'admin',
+      password: hashedPassword,
+      firstName: 'Super',
+      lastName: 'Admin',
+      status: 'ACTIVE',
+      emailVerifiedAt: new Date(),
+    },
+  });
+
+  const editorUser = await prisma.user.upsert({
+    where: { email: 'editor@example.com' },
+    update: {},
+    create: {
+      email: 'editor@example.com',
+      username: 'editor',
+      password: hashedPassword,
+      firstName: 'Content',
+      lastName: 'Editor',
+      status: 'ACTIVE',
+      emailVerifiedAt: new Date(),
+    },
+  });
+
+  console.log('✅ Created 2 users');
+
+  // ============================================
+  // AUTHENTICATION - User Roles
+  // ============================================
+  console.log('🔗 Assigning roles to users...');
+
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: superAdmin.id,
+        roleId: superAdminRole.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: superAdmin.id,
+      roleId: superAdminRole.id,
+    },
+  });
+
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: editorUser.id,
+        roleId: editorRole.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: editorUser.id,
+      roleId: editorRole.id,
+    },
+  });
+
+  console.log('✅ Assigned roles to users');
+
+  // ============================================
+  // CORE - Settings
+  // ============================================
+  console.log('⚙️ Creating settings...');
+
+  const settingsData: Array<{
+    key: string;
+    value: any;
+    type: 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'IMAGE' | 'FILE';
+    group: string;
+    label: string;
+    description?: string;
+    isPublic: boolean;
+  }> = [
+    // General
+    { key: 'site.name', value: 'LinkNet Corp', type: 'TEXT', group: 'general', label: 'Site Name', isPublic: true },
+    { key: 'site.tagline', value: 'Your Trusted Network Partner', type: 'TEXT', group: 'general', label: 'Site Tagline', isPublic: true },
+    { key: 'site.description', value: 'Leading telecommunications and network infrastructure provider', type: 'TEXT', group: 'general', label: 'Site Description', isPublic: true },
+    { key: 'site.logo', value: '/images/logo.png', type: 'IMAGE', group: 'general', label: 'Site Logo', isPublic: true },
+    { key: 'site.favicon', value: '/images/favicon.ico', type: 'IMAGE', group: 'general', label: 'Site Favicon', isPublic: true },
+    
+    // Contact
+    { key: 'contact.email', value: 'info@linknet.co.id', type: 'TEXT', group: 'contact', label: 'Contact Email', isPublic: true },
+    { key: 'contact.phone', value: '+62 21 1234 5678', type: 'TEXT', group: 'contact', label: 'Contact Phone', isPublic: true },
+    { key: 'contact.address', value: 'Jakarta, Indonesia', type: 'TEXT', group: 'contact', label: 'Office Address', isPublic: true },
+    
+    // Social Media
+    { key: 'social.facebook', value: 'https://facebook.com/linknet', type: 'TEXT', group: 'social', label: 'Facebook URL', isPublic: true },
+    { key: 'social.twitter', value: 'https://twitter.com/linknet', type: 'TEXT', group: 'social', label: 'Twitter URL', isPublic: true },
+    { key: 'social.instagram', value: 'https://instagram.com/linknet', type: 'TEXT', group: 'social', label: 'Instagram URL', isPublic: true },
+    { key: 'social.linkedin', value: 'https://linkedin.com/company/linknet', type: 'TEXT', group: 'social', label: 'LinkedIn URL', isPublic: true },
+    { key: 'social.youtube', value: 'https://youtube.com/@linknet', type: 'TEXT', group: 'social', label: 'YouTube URL', isPublic: true },
+    
+    // SEO
+    { key: 'seo.default_title', value: 'LinkNet Corp - Your Trusted Network Partner', type: 'TEXT', group: 'seo', label: 'Default SEO Title', isPublic: true },
+    { key: 'seo.default_description', value: 'Leading telecommunications and network infrastructure provider in Indonesia', type: 'TEXT', group: 'seo', label: 'Default SEO Description', isPublic: true },
+    { key: 'seo.default_keywords', value: 'linknet, telecommunications, network, infrastructure, internet', type: 'TEXT', group: 'seo', label: 'Default SEO Keywords', isPublic: true },
+    { key: 'seo.google_analytics', value: '', type: 'TEXT', group: 'seo', label: 'Google Analytics ID', isPublic: false },
+    { key: 'seo.google_tag_manager', value: '', type: 'TEXT', group: 'seo', label: 'Google Tag Manager ID', isPublic: false },
+    
+    // Email
+    { key: 'email.from_name', value: 'LinkNet Corp', type: 'TEXT', group: 'email', label: 'Email From Name', isPublic: false },
+    { key: 'email.from_address', value: 'noreply@linknet.co.id', type: 'TEXT', group: 'email', label: 'Email From Address', isPublic: false },
+    
+    // Features
+    { key: 'features.maintenance_mode', value: false, type: 'BOOLEAN', group: 'features', label: 'Maintenance Mode', isPublic: false },
+    { key: 'features.registration_enabled', value: false, type: 'BOOLEAN', group: 'features', label: 'User Registration Enabled', isPublic: false },
+    { key: 'features.news_per_page', value: 12, type: 'NUMBER', group: 'features', label: 'News Per Page', isPublic: true },
+  ];
+
+  await Promise.all(
+    settingsData.map((setting) =>
+      prisma.setting.upsert({
+        where: { key: setting.key },
+        update: {},
+        create: setting,
+      })
+    )
+  );
+
+  console.log(`✅ Created ${settingsData.length} settings`);
+
+  // ============================================
+  // CORE - Menus
+  // ============================================
+  console.log('📑 Creating menus...');
+
+  // Header Menu
+  await prisma.menu.create({
+    data: {
+      title: 'Home',
+      slug: 'home',
+      url: '/',
+      position: 1,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  const aboutMenu = await prisma.menu.create({
+    data: {
+      title: 'About Us',
+      slug: 'about',
+      url: '/about',
+      position: 2,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      parentId: aboutMenu.id,
+      title: 'Company Profile',
+      slug: 'company-profile',
+      url: '/about/company-profile',
+      position: 1,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      parentId: aboutMenu.id,
+      title: 'Management',
+      slug: 'management',
+      url: '/about/management',
+      position: 2,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      parentId: aboutMenu.id,
+      title: 'Awards',
+      slug: 'awards',
+      url: '/about/awards',
+      position: 3,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      title: 'News',
+      slug: 'news',
+      url: '/news',
+      position: 3,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      title: 'Careers',
+      slug: 'careers',
+      url: '/careers',
+      position: 4,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      title: 'Contact',
+      slug: 'contact',
+      url: '/contact',
+      position: 5,
+      menuType: 'HEADER',
+      isActive: true,
+    },
+  });
+
+  // Footer Menu
+  await prisma.menu.create({
+    data: {
+      title: 'Privacy Policy',
+      slug: 'privacy-policy',
+      url: '/privacy-policy',
+      position: 1,
+      menuType: 'FOOTER',
+      isActive: true,
+    },
+  });
+
+  await prisma.menu.create({
+    data: {
+      title: 'Terms of Service',
+      slug: 'terms-of-service',
+      url: '/terms-of-service',
+      position: 2,
+      menuType: 'FOOTER',
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Created menus');
+
+  // ============================================
+  // NEWS - Categories
+  // ============================================
+  console.log('📰 Creating news categories...');
+
+  const newsCategories = [
+    { name: 'Company News', slug: 'company-news', description: 'Company announcements and updates', icon: 'building', color: '#0066cc', position: 1 },
+    { name: 'Press Release', slug: 'press-release', description: 'Official press releases', icon: 'newspaper', color: '#00aa44', position: 2 },
+    { name: 'Events', slug: 'events', description: 'Company events and activities', icon: 'calendar', color: '#ff6600', position: 3 },
+    { name: 'Technology', slug: 'technology', description: 'Technology news and innovations', icon: 'laptop', color: '#9933ff', position: 4 },
+  ];
+
+  const createdCategories = await Promise.all(
+    newsCategories.map((category) =>
+      prisma.newsCategory.create({ data: category })
+    )
+  );
+
+  console.log(`✅ Created ${newsCategories.length} news categories`);
+
+  // ============================================
+  // NEWS - Sample News
+  // ============================================
+  console.log('📝 Creating sample news...');
+
+  await prisma.news.create({
+    data: {
+      title: 'LinkNet Expands Network Infrastructure in Jakarta',
+      slug: 'linknet-expands-network-infrastructure-jakarta',
+      excerpt: 'LinkNet announces major network expansion project to enhance connectivity across Jakarta metropolitan area.',
+      content: '<p>LinkNet Corp is pleased to announce a significant expansion of our network infrastructure across the Jakarta metropolitan area. This expansion will enhance connectivity and provide better service to our customers.</p><p>The project includes installation of new fiber optic cables, upgrade of existing infrastructure, and deployment of advanced networking equipment.</p>',
+      categoryId: createdCategories[0]!.id,
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      createdById: superAdmin.id,
+      views: 150,
+    },
+  });
+
+  await prisma.news.create({
+    data: {
+      title: 'LinkNet Achieves ISO 27001 Certification',
+      slug: 'linknet-achieves-iso-27001-certification',
+      excerpt: 'LinkNet receives ISO 27001 certification for information security management systems.',
+      content: '<p>We are proud to announce that LinkNet has achieved ISO 27001 certification, demonstrating our commitment to information security and data protection.</p><p>This certification validates our comprehensive approach to managing sensitive company and customer information.</p>',
+      categoryId: createdCategories[1]!.id,
+      status: 'PUBLISHED',
+      publishedAt: new Date(Date.now() - 86400000),
+      createdById: superAdmin.id,
+      views: 89,
+    },
+  });
+
+  console.log('✅ Created sample news');
+
+  // ============================================
+  // DOCUMENTS - Announcement Types & Sections
+  // ============================================
+  console.log('📄 Creating announcement structure...');
+
+  const announcementType = await prisma.announcementType.create({
+    data: {
+      name: 'Corporate Announcements',
+      slug: 'corporate',
+      description: 'Official corporate announcements and notices',
+      icon: 'megaphone',
+      color: '#0066cc',
+      position: 1,
+    },
+  });
+
+  await prisma.announcementSection.create({
+    data: {
+      typeId: announcementType.id,
+      name: 'General Announcements',
+      slug: 'general',
+      description: 'General company announcements',
+      position: 1,
+    },
+  });
+
+  console.log('✅ Created announcement structure');
+
+  // ============================================
+  // REPORTS - Report Types & Sections
+  // ============================================
+  console.log('📊 Creating report structure...');
+
+  const reportType = await prisma.reportType.create({
+    data: {
+      name: 'Financial Reports',
+      slug: 'financial',
+      description: 'Annual and quarterly financial reports',
+      icon: 'chart-line',
+      color: '#00aa44',
+      position: 1,
+    },
+  });
+
+  await prisma.reportSection.create({
+    data: {
+      typeId: reportType.id,
+      name: 'Annual Reports',
+      slug: 'annual',
+      description: 'Annual financial reports',
+      position: 1,
+    },
+  });
+
+  await prisma.reportSection.create({
+    data: {
+      typeId: reportType.id,
+      name: 'Quarterly Reports',
+      slug: 'quarterly',
+      description: 'Quarterly financial reports',
+      position: 2,
+    },
+  });
+
+  console.log('✅ Created report structure');
+
+  // ============================================
+  // HR - Management Categories
+  // ============================================
+  console.log('👔 Creating management categories...');
+
+  const managementCategories = [
+    { name: 'Board of Directors', slug: 'board-of-directors', description: 'Company board of directors', position: 1 },
+    { name: 'Executive Management', slug: 'executive-management', description: 'Executive management team', position: 2 },
+    { name: 'Department Heads', slug: 'department-heads', description: 'Department heads and managers', position: 3 },
+  ];
+
+  const createdManagementCategories = await Promise.all(
+    managementCategories.map((category) =>
+      prisma.managementCategory.create({ data: category })
+    )
+  );
+
+  console.log(`✅ Created ${managementCategories.length} management categories`);
+
+  // ============================================
+  // HR - Sample Management
+  // ============================================
+  console.log('👨‍💼 Creating sample management...');
+
+  await prisma.management.create({
+    data: {
+      categoryId: createdManagementCategories[0]!.id,
+      name: 'John Doe',
+      slug: 'john-doe',
+      position: 'Chief Executive Officer',
+      description: 'John has over 20 years of experience in telecommunications industry.',
+      email: 'john.doe@linknet.co.id',
+      order: 1,
+    },
+  });
+
+  console.log('✅ Created sample management');
+
+  // ============================================
+  // HR - Sample Career
+  // ============================================
+  console.log('💼 Creating sample career...');
+
+  await prisma.career.create({
+    data: {
+      title: 'Senior Network Engineer',
+      slug: 'senior-network-engineer',
+      department: 'Engineering',
+      location: 'Jakarta',
+      employmentType: 'FULL_TIME',
+      description: 'We are looking for an experienced Network Engineer to join our team.',
+      requirements: '<ul><li>Bachelor degree in Computer Science or related field</li><li>5+ years experience in network engineering</li><li>Strong knowledge of TCP/IP, routing protocols</li></ul>',
+      responsibilities: '<ul><li>Design and implement network solutions</li><li>Troubleshoot network issues</li><li>Maintain network documentation</li></ul>',
+      benefits: '<ul><li>Competitive salary</li><li>Health insurance</li><li>Professional development opportunities</li></ul>',
+      status: 'OPEN',
+      closingDate: new Date(Date.now() + 30 * 86400000),
+    },
+  });
+
+  console.log('✅ Created sample career');
+
+  // ============================================
+  // FILES - Sample Folder Structure
+  // ============================================
+  console.log('📁 Creating folder structure...');
+
+  const imagesFolder = await prisma.folder.create({
+    data: {
+      name: 'Images',
+      slug: 'images',
+      path: '/images',
+      isPublic: true,
+    },
+  });
+
+  await prisma.folder.create({
+    data: {
+      parentId: imagesFolder.id,
+      name: 'News',
+      slug: 'news',
+      path: '/images/news',
+      isPublic: true,
+    },
+  });
+
+  await prisma.folder.create({
+    data: {
+      name: 'Documents',
+      slug: 'documents',
+      path: '/documents',
+      isPublic: false,
+    },
+  });
+
+  console.log('✅ Created folder structure');
+
+  console.log('');
+  console.log('🎉 Database seeding completed successfully!');
+  console.log('');
+  console.log('📋 Summary:');
+  console.log('   - Super Admin: admin@example.com / Admin123!');
+  console.log('   - Editor: editor@example.com / Admin123!');
+  console.log('   - Roles: Super Admin, Admin, Editor, User');
+  console.log(`   - Permissions: ${permissions.length} permissions created`);
+  console.log(`   - Settings: ${settingsData.length} settings created`);
+  console.log('');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error seeding database:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

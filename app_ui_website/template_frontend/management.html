@@ -1,0 +1,1550 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Navbar Bootstrap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="src/dev/3rd/bootstrap/bootstrap.css" rel="stylesheet">
+  <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+/>
+
+  <link rel="stylesheet" href="src/dev/styles/main.css">
+
+  <style>
+    
+
+    /* Simple helpers */
+    .nav-icon-btn{ border:0; background:transparent; padding:.25rem .5rem; }
+  </style>
+</head>
+<body>
+
+<header class="ln-header sticky-top bg-white">
+    <!-- main bar -->
+    <nav class="navbar navbar-expand-lg bg-white">
+        <div class="container-lg">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="/" aria-label="Homepage">
+                <img src="src/assets/logos/linknet-logo.svg" alt="Linknet" width="92" height="32">
+            </a>
+            <!-- Right: small actions on mobile -->
+            <div class="d-flex d-lg-none align-items-center gap-2">
+                <!-- Language (mobile quick) -->
+                <div class="d-flex flex-column">
+                    <span class="text-caption-c2 text-secondary">IDX:LINK</span>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="text-body-b4 font-medium">IDR 2.560,00</span>
+                        <button class="text-caption-c2 btn p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Last updated at 9 September 2025 00:36">
+                            <img src="src/assets//icons/info.svg" alt="Info" width="16" height="16">
+                        </button>
+                    </div>
+                </div>
+                <!-- Offcanvas toggler -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav">
+                    <img src="src/assets/icons/menu-hamburger.svg" width="24" height="24" alt="">
+                </button>
+            </div>
+            <!-- Desktop nav -->
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto ms-2 gap-1">
+                    <!-- Home -->
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/">Home</a>
+                    </li>
+                    <!-- About (MEGA) -->
+                    <!-- Business (dropdown biasa) -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"> About </a>
+                        <div class="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                            <div class="p-3 d-flex gap-4 flex-wrap">
+                                <!-- Column: HOSTING -->
+                                <div class="mega-col">
+                                    <!-- <h6 class="mega-heading text-caption-c1">About Us</h6> -->
+                                    <ul class="mega-list list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Corporate Information</span>
+                                                </span>
+                                                <!-- <span class="badge-soft">UPDATE</span> -->
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Corporate Overview</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Milestone</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Group Structures</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Management</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Awards</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Business (dropdown biasa) -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"> Corporate Governance </a>
+                        <div class="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                            <div class="p-3 d-flex gap-4 flex-wrap">
+                                <!-- Column: HOSTING -->
+                                <div class="mega-col">
+                                    <!-- <h6 class="mega-heading text-caption-c1">CORPORATE GOVERNANCE</h6> -->
+                                    <ul class="mega-list list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Structure</span>
+                                                </span>
+                                                <!-- <span class="badge-soft">UPDATE</span> -->
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Principle</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Guidance</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Article of Association</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Code of Conduct</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Certified for Standarization of Management System</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Organization Structures</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Linknet Policy</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Board & Committee Charters</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Whistleblowing System</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Whistleblowing Policy</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Data Privacy Policy</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Business (dropdown biasa) -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"> Investor </a>
+                        <div class="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                            <div class="p-3 d-flex gap-4 flex-wrap">
+                                <!-- Column: HOSTING -->
+                                <div class="mega-col">
+                                    <!-- <h6 class="mega-heading text-caption-c1">Report & Announcement</h6> -->
+                                    <ul class="mega-list list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">GMS Announcement</span>
+                                                </span>
+                                                <!-- <span class="badge-soft">UPDATE</span> -->
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Emiten Announcement</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Public Expose Announcement</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Financial Statement</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Code of Conduct</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Annual Report</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <!-- Item Menu -->
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/wordpress.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Sustainable Report</span>
+                                                </span>
+                                            </a>
+                                        </li>
+                                        
+                                    </ul>
+                                </div>
+                                <!-- Column: WEBSITES -->
+                                <div class="mega-col">
+                                    <h6 class="mega-heading text-caption-c1">Investor</h6>
+                                    <ul class="list-unstyled m-0 p-0">
+                                        <li>
+                                            <a class="mega-item" href="#">
+                                                <!-- <img class="icon" src="src/assets/icons/builder.svg" alt=""> -->
+                                                <span class="texts">
+                                                    <span class="title">Stock Price</span>
+                                                    <!-- <span class="desc">Create a website in 3 easy steps</span> -->
+                                                </span>
+                                                <!-- <span class="badge-soft">AI</span> -->
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Simple links -->
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/media">Media</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/sustainability">Sustainability</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-body-b5 font-medium" href="/careers">Career</a>
+                    </li>
+                </ul>
+                <!-- Right side (desktop) -->
+                <div class="d-none d-lg-flex align-items-center gap-2">
+                    <!-- IDX stack + tooltip -->
+                    <div class="d-flex flex-column">
+                        <span class="text-caption-c2 text-secondary">IDX:LINK</span>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-body-b4 font-medium">IDR 2.560,00</span>
+                            <button class="text-caption-c2 btn p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Last updated at 9 September 2025 00:36">
+                                <img src="src/assets//icons/info.svg" alt="Info" width="16" height="16">
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Search -->
+                    <button class="nav-icon-btn" aria-label="Search">
+                        <img src="src/assets//icons/search.svg" alt="Search" width="20" height="20">
+                    </button>
+                    <!-- Language -->
+                    <div class="dropdown">
+                        <button class="btn btn-light rounded-pill p-0 pe-1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="src/assets//icons/world.svg" alt="" width="18" height="18"> EN </button>
+                        <ul class="dropdown-menu shadow-sm rounded-3">
+                            <li>
+                                <a class="mega-item w-100 text-body-b5" href="#!">English</a>
+                            </li>
+                            <li>
+                                <a class="mega-item w-100 text-body-b5" href="#!">Bahasa</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- CTA -->
+                    <a href="/contact-us" class="btn btn-md btn-secondary-outline font-medium">Get in Touch</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="mega-overlay" id="megaOverlay" aria-hidden="true"></div>
+    <!-- utility bar -->
+    <div class="nav-utility-bar" style="display: none;">
+        <div class="container-lg d-flex align-items-center justify-content-between" style="height:40px;">
+            <!-- LEFT: label -->
+            <div class="text-body-b5 font-medium subnav-label">About Us</div>
+            <!-- RIGHT: sub-nav (desktop >= md) -->
+            <nav class="subnav d-none d-md-flex align-items-center">
+                <a class="subnav-link active" href="/about/overview">Overview</a>
+                <a class="subnav-link" href="/about/corporate-info">Corporate Info</a>
+                <a class="subnav-link" href="/about/milestone">Milestone</a>
+                <a class="subnav-link" href="/about/group-structure">Group Structure</a>
+                <!-- more (plain text, bukan pill) -->
+                <div class="dropdown">
+                    <button class="subnav-more-btn" data-bs-toggle="dropdown" aria-label="More">
+                        <img src="src/assets/icons/view-more.svg" alt="">
+                    </button>
+                    <ul class="dropdown-menu dropdown-mega dropdown-menu-end shadow-sm p-2 rounded-3">
+                        <li>
+                            <a class="mega-item" href="/about/management">Management</a>
+                        </li>
+                        <li>
+                            <a class="mega-item" href="/about/awards">Awards</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <!-- Mobile button (tetap) -->
+            <button class="btn btn-sm d-md-none text-secondary text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#utilityMenu-bottomSheets">
+                <img src="src/assets/icons/chevron-down.svg" width="24" height="24" alt="">
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Offcanvas Mobile -->
+<div class="offcanvas offcanvas-end offcanvas-fullscreen fade" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+    <!-- Header -->
+    <div class="oc-header d-flex align-items-center justify-content-between">
+        <a class="oc-logo d-inline-flex align-items-center" href="/">
+            <img src="src/assets/logos/linknet-logo.svg" alt="Linknet" width="92" height="32">
+        </a>
+        <div class="rightSide d-flex align-items-center gap-1">
+            <!-- Language -->
+            <button id="openLanguage" class="btn btn-light rounded-pill pe-2">
+                <img src="src/assets/icons/world.svg" width="18" height="18" class="me-1" alt="">
+                <span class="lang-label">EN</span>
+                <img src="src/assets/icons/chevron-down.svg" width="24" height="24" alt="">
+            </button>
+            <!-- Close -->
+            <button type="button" class="btn btn-icon p-0" data-bs-dismiss="offcanvas" aria-label="Close">
+                <img src="src/assets/icons/close.svg" width="24" height="24" alt="Close">
+            </button>
+        </div>
+    </div>
+    <!-- Body -->
+    <div class="offcanvas-body p-0 d-flex flex-column">
+        <!-- Pages -->
+        <div class="oc-pages flex-grow-1">
+            <!-- PAGE: MAIN -->
+            <section class="oc-page is-active" id="oc-main">
+                <div class="oc-search-row">
+                    <button class="btn btn-md btn-secondary-outline font-medium w-100 text-center" type="button" data-open="search">
+                        <img src="src/assets/icons/search.svg" width="18" height="18" alt="">
+                        <span>Search</span>
+                    </button>
+                </div>
+                <nav class="oc-menu">
+                    <a class="oc-item" href="/">Home</a>
+                    <button class="oc-item" type="button" data-open="About Us"> About Us <img src="src/assets/icons/chevron-right.svg" width="24" height="24" alt="">
+                    </button>
+                    <button class="oc-item" type="button" data-open="Business"> Business <img src="src/assets/icons/chevron-right.svg" width="24" height="24" alt="">
+                    </button>
+                    <button class="oc-item" type="button" data-open="Investor"> Investor <img src="src/assets/icons/chevron-right.svg" width="24" height="24" alt="">
+                    </button>
+                    <a class="oc-item" href="/media">Media</a>
+                    <a class="oc-item" href="/sustainability">Sustainability</a>
+                    <a class="oc-item" href="/careers">Careers</a>
+                </nav>
+            </section>
+            <!-- PAGE: SUB (dynamic content) -->
+            <section class="oc-page" id="oc-sub">
+                <div class="oc-subbar d-flex align-items-center">
+                    <button class="btn px-0 oc-back d-flex align-items-center gap-1" type="button" data-back>
+                        <img src="src/assets/icons/chevron-left.svg" width="24" height="24" alt="Back">
+                        <h6 class="m-0 oc-subtitle text-body-b4 font-bold">Submenu</h6>
+                    </button>
+                </div>
+                <div class="oc-subcontents">
+                    <!-- About Us submenu -->
+                    <div class="oc-subcontent" data-for="About Us">
+                        <div class="oc-section">
+                            <div class="oc-section-title">About Us</div>
+                            <a href="/about/company-information" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                                </span>
+                            </a>
+                            <a href="/about/milestone" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                                </span>
+                            </a>
+                            <a href="/about/awards" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Business submenu -->
+                    <div class="oc-subcontent" data-for="Business">
+                        <div class="oc-section">
+                            <div class="oc-section-title">Business Units</div>
+                            <a href="/business/fiberco" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">FiberCo</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Jaringan serat optik nasional.</span>
+                                </span>
+                            </a>
+                            <a href="/business/enterpriseco" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">EnterpriseCo</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Solusi konektivitas & bisnis.</span>
+                                </span>
+                            </a>
+                            <a href="/business/mediaco" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">MediaCo</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Layanan hiburan & media digital.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Investor submenu -->
+                    <div class="oc-subcontent" data-for="Investor">
+                        <div class="oc-section">
+                            <div class="oc-section-title">Investor Relations</div>
+                            <a href="/governance/laporan-keuangan" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Financial Reports</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Laporan keuangan terbaru.</span>
+                                </span>
+                            </a>
+                            <a href="/governance/laporan-tahunan" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Annual Report</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Laporan tahunan perusahaan.</span>
+                                </span>
+                            </a>
+                            <a href="/governance/laporan-berkelanjutan" class="oc-linkcard">
+                                <span class="oc-thumb"></span>
+                                <span class="oc-texts">
+                                    <span class="oc-title text-body-b4 font-medium">Sustainability Report</span>
+                                    <span class="oc-desc text-body-b5 font-regular">Laporan keberlanjutan & ESG.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- PAGE: SEARCH -->
+            <section class="oc-page" id="oc-search">
+                <div class="oc-subbar d-flex align-items-center justify-content-between">
+                    <button class="btn px-0 oc-back d-flex align-items-center gap-1" type="button" data-back>
+                        <img src="src/assets/icons/chevron-left.svg" width="24" height="24" alt="Back">
+                        <h6 class="m-0 oc-subtitle text-body-b4 font-bold">Search</h6>
+                    </button>
+                </div>
+                <div class="p-3">
+                    <div class="input-group oc-input">
+                        <span class="input-group-text bg-white border-0">
+                            <img src="src/assets/icons/search.svg" width="18" height="18" alt="">
+                        </span>
+                        <input type="search" class="form-control border-0" placeholder="Sedang cari apa?">
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- Footer -->
+        <div class="oc-footer text-center">
+            <a href="/contact-us" class="btn btn-md btn-warning">Get in Touch <img src="src/assets/icons/chevron-right.svg" alt="">
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Offcanvas Lang -->
+<div id="langSheetBackdrop" class="langsheet-backdrop" aria-hidden="true"></div>
+<div class="bottomSheets" id="langSheet" role="dialog" aria-modal="true" aria-labelledby="langSheetTitle" aria-hidden="true">
+    <div class="bottomSheets-header">
+        <div class="m-0 text-body-b4 font-medium d-flex align-items-center gap-1" id="langSheetTitle"> Select Language </div>
+        <button type="button" class="btn" aria-label="Close" data-langsheet-close>
+            <img src="src/assets/icons/close.svg" alt="">
+        </button>
+    </div>
+    <ul class="oc-menu" id="langList">
+        <li class="oc-item d-flex align-items-center justify-content-between" data-lang="en" role="button" tabindex="0">
+            <span class="d-flex align-items-center gap-2">
+                <img src="src/assets/icons/flag-usa.svg" width="24" height="24" alt="ID"> English </span>
+            <img src="src/assets/icons/check.svg" width="24" height="24" alt="Selected" class="lang-check d-none">
+        </li>
+        <li class="oc-item d-flex align-items-center justify-content-between" data-lang="id" role="button" tabindex="0">
+            <span class="d-flex align-items-center gap-2">
+                <img src="src/assets/icons/flag-indonesia.svg" width="24" height="24" alt="ID"> Indonesia </span>
+            <img src="src/assets/icons/check.svg" width="24" height="24" alt="Selected" class="lang-check d-none">
+        </li>
+    </ul>
+</div>
+
+<div class="bottomSheets offcanvas offcanvas-bottom" id="utilityMenu-bottomSheets" role="dialog" aria-modal="true" aria-labelledby="bottomSheetTitle" aria-hidden="true">
+    <div class="bottomSheets-header">
+        <div class="m-0 text-body-b4 font-medium d-flex align-items-center gap-1" id="langSheetTitle"> About Us </div>
+        <button type="button" class="btn p-0" aria-label="Close" data-bs-dismiss="offcanvas">
+            <img src="src/assets/icons/close.svg" alt="">
+        </button>
+    </div>
+    <div class="bottomSheets-body">
+        <div class="bottomSheets-listMenu">
+            <a href="/about/company-information" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+            <a href="/about/company-information" class="bottomSheets-itemMenu active">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+            <a href="/about/company-information" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+            <a href="/about/company-information" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Company Information</span>
+                    <span class="oc-desc text-body-b5 font-regular">Informasi umum tentang perusahaan.</span>
+                </span>
+            </a>
+            <a href="/about/milestone" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Milestone</span>
+                    <span class="oc-desc text-body-b5 font-regular">Perjalanan & pencapaian penting.</span>
+                </span>
+            </a>
+            <a href="/about/awards" class="bottomSheets-itemMenu">
+                <span class="oc-thumb"></span>
+                <span class="oc-texts">
+                    <span class="oc-title text-body-b4 font-medium">Awards</span>
+                    <span class="oc-desc text-body-b5 font-regular">Penghargaan yang pernah diraih.</span>
+                </span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 
+SECTION:
+    Hero
+-->
+<section class="lnSection__hero" id="lnSection__hero">
+    <div class="p-2">
+        <div class="lnHero lnHero__small lnHero--parallax" data-parallax="0.25" aria-label="Our Vision">
+            <div class="lnHero__media" aria-hidden="true">
+                <!-- BG via <img>, bukan background-image -->
+                <img src="src/assets/bg/urban-traffic-with-cityscape.jpg" alt="" />
+            </div>
+            <div class="lnHero__gradient" aria-hidden="true"></div>
+
+            <div class="lnHero__content">
+                <div class="lnHero__text">
+                    <span class="lnHero__pill text-caption-c1 font-medium mb-2" style="display: none;">Sustainability</span>
+
+                    <h1 class="lnHero__title text-headline-h2 font-bold">
+                        Management
+                    </h1>
+
+                    <p class="lnHero__desc text-body-b4 font-regular w-75" style="display: none;">
+                        With strong leadership and a cross-industry track record, PT Link Net Tbk’s Board of Directors and Board of Commissioners remain focused on strategy execution, risk management, and exemplary corporate governance to create long-term value.
+                    </p>
+                </div>
+
+                <div class="lnHero__actions" style="display: none;">
+                    <!-- CTA pakai sistem tombol kamu -->
+                    <a class="btn btn-lg btn-secondary-outline-reverse" href="#" aria-label="Get to Know Us">
+                        <span>Explore Our ESG Journey</span>
+                        <span class="icon icon--24 icon--arrow-top-right" aria-hidden="true"></span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- 
+Section:
+    Management
+-->
+<!-- /sections/lnSection__managementList.html -->
+<section class="lnSection lnSection__managementList pt-1">
+  <div class="container lnTabsWrapper">
+
+    <!-- ===== Tabs (pakai komponenmu) ===== -->
+    <div class="swiper lnTabs" aria-label="Management Tabs">
+      <div class="swiper-wrapper">
+        <button class="swiper-slide lnTab is-active" type="button" role="tab" aria-selected="true"
+                data-target="#panel-commissioners">
+          <span class="lnTab__label text-body-b4 font-medium">Board of Commissioner</span>
+        </button>
+        <button class="swiper-slide lnTab" type="button" role="tab" aria-selected="false"
+                data-target="#panel-directors">
+          <span class="lnTab__label text-body-b4 font-medium">Board of Director</span>
+        </button>
+        <button class="swiper-slide lnTab" type="button" role="tab" aria-selected="false"
+                data-target="#panel-audit">
+          <span class="lnTab__label text-body-b4 font-medium">Audit Committee</span>
+        </button>
+        <button class="swiper-slide lnTab" type="button" role="tab" aria-selected="false"
+                data-target="#panel-nrc">
+          <span class="lnTab__label text-body-b4 font-medium">Nomination &amp; Remuneration Committee</span>
+        </button>
+        <button class="swiper-slide lnTab" type="button" role="tab" aria-selected="false"
+                data-target="#panel-corpsec">
+          <span class="lnTab__label text-body-b4 font-medium">Corporate Secretary</span>
+        </button>
+
+        
+      </div>
+    </div>
+
+    <!-- ===== Panels ===== -->
+    <div class="lnMgmtPanels mt-3">
+
+      <!-- Commissioners -->
+      <div id="panel-commissioners" class="lnTabPanel is-active" role="region" aria-labelledby="Board of Commissioner">
+        <div class="row g-3 g-md-4">
+            <div class="col-6 col-lg-3" data-group="commissioners">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="vivek-sood"
+                    data-name="Vivek Sood"
+                    data-role="President Commissioner"
+                    data-photo="src/assets/photos/management/Vivek Sood.jpg"
+                    data-bio="<p>Mr Vivek, an Indian citizen, appointed as President Commissioner of the Company based on the Extraordinary General Meeting of Shareholders (EGMS) as stated in the Deed of Meeting Resolution No. 168 dated 23 January 2025.</p> <p>Prior served as Commissioner of the Company since February 2024. Having experience as the Executive Vice President and Group Chief Marketing Officer of Telenor Group, as CFO and CEO of Telenor India, CEO of Grameenphone (Bangladesh), and Chief Operating Officer and CFO of Tata AIA Life Insurance (India). Currently, serves as Group Chief Executive Officer (GCEO) and Managing Director of Axiata Group Berhad (Axiata) since March 2023 after serving as Joint Acting GCEO since June 2022 and as Group Chief Financial Officer (CFO) in 2017. Besides that, he also served as a Commissioner of PT XL Axiata Tbk since 2017.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Vivek Sood.jpg" alt="Vivek Sood">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Vivek Sood</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">President Commissioner</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Vivek Sood">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="commissioners">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="thomas-hundt"
+                    data-name="Thomas Hundt"
+                    data-role="Commissioner"
+                    data-photo="src/assets/photos/management/Thomas Hundt.jpg"
+                    data-bio="<p>Mr. Thomas Hundt was born in Blankenburg/Hraz, Germany. Germany citizenship domicile in Malaysia, age 45 years. Appointed as Commissioner of the Company based on the Annual General Meeting of Shareholders (AGMS) as stated in the Deed of Meeting Resolution No. 41 dated June 22, 2022.</p><p>He has vast experience in the telecommunication industry including at Siemens AG Germany from 1998 to 2007 with his last position as Director Commercial Sales, Member of Supervisory Board of Azerfon LLC Azerbaijan from 2005 to 2006, Executive Project Manager and CFO CMO North-East Finance &amp; Control di Nokia Siemens Network GmBH &amp; Co. KG Germany from 2007 to 2008, Member of Advisory Board AIESEC Cambodia from 2013 to 2019, Board Member of European Chamber of Commerce (Eurocham) Cambodia from 2011, Vice President German Business Group (ADW) Kamboja from 2010, and joined with Axiata Group Company since 2014 and served various director positions, with his last position as Group Chief Strategy &amp; Technology Officer of Axiata Group Berhad.</p>">
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Thomas Hundt.jpg" alt="Thomas Hundt">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Thomas Hundt</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Commissioner</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Thomas Hundt">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="commissioners">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="nik-rizal-kamil"
+                    data-name="Nik Rizal Kamil"
+                    data-role="Commissioner"
+                    data-photo="src/assets/photos/management/Nik Rizal Kamil.png"
+                    data-bio="<p>Mr. Nik, a Malaysian citizen, was appointed as Commissioner of the Company based on the Extraordinary General Meeting of Shareholders (EGMS) as stated in the Deed of Meeting Resolution No. 168 dated January 23, 2025.</p><p>He has extensive experience in accounting, finance, and investment. He has held strategic positions in several companies in Malaysia, including serving as Group Chief Financial Officer (CFO) at RHB Bank, Executive Director at Khazanah Nasional, and Board Member at Telekom Malaysia and Astro Malaysia Holdings Berhad. Currently, he is the Group Chief Financial Officer (GCFO) of Axiata Group Berhad as well as Commissioner of PT XL Axiata Tbk.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Nik Rizal Kamil.png" alt="Nik Rizal Kamil">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Nik Rizal Kamil</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Commissioner</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Nik Rizal Kamil">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="commissioners">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="alexander-rusli"
+                    data-name="Alexander S. Rusli"
+                    data-role="Independent Commissioner"
+                    data-photo="src/assets/photos/management/Alexander-S-Rusli.jpg"
+                    data-bio="<p>Mr. Alexander S. Rusli was born in Sydney, Australia. An Indonesian citizen domiciled in Jakarta, aged 50. He holds a PhD in Information Technology from Curtin University of Technology. He was appointed as an Independent Commissioner of the Company in 2020 and re-appointed based on the Annual General Meeting of Shareholders (AGMS) as stated in the Deed of Meeting Resolution No. 41 dated June 22, 2022.</p><p>Mr. Alexander Rusli is a proven technology leader with a strong track record in driving change. Prior to joining the Company, he served as CEO of Indosat Ooredoo from 2012 to 2017, and previously spent nine years as Special Staff to the Minister at the Ministry of Communication and Informatics and the Ministry of State-Owned Enterprises. He has held Board positions at several SOEs, including Krakatau Steel, Geo Dipa Energi, and PT Kertas Kraft Aceh, and was an Independent Commissioner at PT Sarana Menara Nusantara Tbk (Protelindo) from 2018 to 2019. He currently serves as Independent Commissioner at PT Unilever Indonesia Tbk (since 2018) and at Hermina Hospital Group (since 2018), is the Founder of Digiasia Bios, and is an owner of a joint venture with Tempo Digital Media focusing on animation for Indonesian IP characters.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Alexander-S-Rusli.jpg" alt="Alexander S. Rusli">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Alexander S. Rusli</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Independent Commissioner</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Alexander S. Rusli">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="commissioners">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="chari-tvt"
+                    data-name="Thandalam Veeravalli Thirumala Chari (Chari TVT)"
+                    data-role="Independent Commissioner"
+                    data-photo="src/assets/photos/management/Thandalam Veeravalli Thirumala Chari.png"
+                    data-bio="<p>Mr. Chari, an Indian citizen, was appointed as an Independent Commissioner of the Company based on the General Meeting of Shareholders held on May 21, 2025.</p><p>Mr. Chari is a senior finance professional and retired CFO with over 44 years of experience in the technology and telecommunications sectors across Asia Pacific. He has led successful strategic transformations and earned external recognition for delivering industry-leading profitability and ROIC. He brings significant corporate governance experience as a senior executive and as a director on four large listed and unlisted company boards, influencing key stakeholders to drive results. He has also led cultural change, built cross-functional leadership teams and organizational capabilities, and spent 10 years in Sales and Marketing at Hewlett-Packard—making him well-rounded and capable of providing balanced strategic advice. He currently serves as a consultant and financial advisor, and in his spare time presents papers at external forums while mentoring and coaching the next generation.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Thandalam Veeravalli Thirumala Chari.png" alt="Thandalam Veeravalli Thirumala Chari (Chari TVT)">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Thandalam Veeravalli Thirumala Chari (Chari TVT)</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Independent Commissioner</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      </div>
+
+      <!-- Directors -->
+      <div id="panel-directors" class="lnTabPanel" role="region" aria-labelledby="Board of Director">
+        <div class="row g-3 g-md-4">
+            <div class="col-6 col-lg-3" data-group="directors">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="chari-tvt"
+                    data-name="Kanishka Gayan Wickrama"
+                    data-role="President Director"
+                    data-photo="src/assets/photos/management/Kanishka Gayan Wickrama.jpg"
+                    data-bio="<p>Mr. Kanishka Gayan Wickrama, a Sri Lankan citizen, was appointed as President Director of the Company based on the Extraordinary General Meeting of Shareholders (EGMS) as stated in the Deed of Meeting Resolution No. 168 dated January 23, 2025, having previously served as Director since November 2022.</p><p>He has nearly 20 years of experience in the telecommunications industry and is a seasoned executive within Axiata Group Berhad. He began his career with Axiata at Dialog Axiata PLC; prior to joining PT Link Net Tbk as Chief Financial Officer (CFO), he served as CFO of Ncell (Nepal) and Smart Axiata (Cambodia).</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Kanishka Gayan Wickrama.jpg" alt="Kanishka Gayan Wickrama">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Kanishka Gayan Wickrama</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">President Director</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="directors">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="chari-tvt"
+                    data-name="Yosafat Marhasak Hutagalung"
+                    data-role="Director"
+                    data-photo="src/assets/photos/management/Yosafat Marhasak Hutagalung.jpg"
+                    data-bio="<p>Indonesian citizen. He has served the Company since November 2014, including as Head of Human Resources Function and in the Strategic Management Office (2018–2019). On August 1, 2020, he was appointed Chief Human Capital Officer of the Company, and was subsequently appointed as a Director based on the Resolution of the Extraordinary General Meeting of Shareholders dated February 12, 2024.</p><p>Before joining the Company, he had more than 20 years of experience in human resource management across various industries, including heavy equipment, education, financial services, property/real estate, mining services, information technology, and human resources consulting.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Yosafat Marhasak Hutagalung.jpg" alt="Yosafat Marhasak Hutagalung">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Yosafat Marhasak Hutagalung</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Director</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+          <!-- tambahkan card lain sesuai kebutuhan -->
+        </div>
+      </div>
+
+      <!-- Audit -->
+      <div id="panel-audit" class="lnTabPanel" role="region" aria-labelledby="Audit Committee">
+        <div class="row g-3 g-md-4">
+          
+            <div class="col-6 col-lg-3" data-group="audit">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="chari-tvt"
+                    data-name="Thandalam Veeravalli Thirumala Chari"
+                    data-role="Chairman of Audit Committee"
+                    data-photo="src/assets/photos/management/Thandalam Veeravalli Thirumala Chari.png"
+                    data-bio="<p>A senior finance professional and retired CFO with over 44 years of experience in the technology and telecommunications sectors across Asia Pacific. He has overseen successful strategic transformations and received external recognition for delivering industry-leading profitability and ROIC. He brings significant corporate governance experience as a senior executive and as a director on four large listed and unlisted company boards, influencing key stakeholders to steer businesses toward results. He has led cultural change, built cross-functional leadership teams and organizational capabilities, and spent 10 years in Sales and Marketing at Hewlett-Packard, making him well-rounded and capable of providing balanced strategic advice.</p><p>He currently serves as a consultant and financial advisor, and in his downtime enjoys presenting papers at external forums as well as mentoring and coaching the next generation.</p>
+"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Thandalam Veeravalli Thirumala Chari.png" alt="Thandalam Veeravalli Thirumala Chari">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Thandalam Veeravalli Thirumala Chari</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Chairman of Audit Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="audit">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="chari-tvt"
+                    data-name="Alexander S Rusli"
+                    data-role="Member of Audit Committee"
+                    data-photo="src/assets/photos/management/Alexander-S-Rusli.jpg"
+                    data-bio="<p>He began his career as a Senior Consultant at PricewaterhouseCoopers Consulting Asia Pacific (1997–2001), then served as Special Advisor at the Ministry of Communication and Information Technology (2001–2007) and at the Ministry of State-Owned Enterprises (2007–2009). He has also served on the boards of various state-owned companies, including Commissioner at PT Krakatau Steel (Persero) Tbk (2007–2009), Commissioner at PT Kertas Kraft Aceh (Persero) (2007–2009), and President Commissioner at PT Geodipa Energi (Persero) (2007–2009). Furthermore, he has held positions such as Managing Director at PT Northstar Pacific Capital (2009–2012), Independent Commissioner and President Director at PT Indosat Tbk (2010–2017), Independent Commissioner at PT Asuransi Tugu Pratama Indonesia Tbk (2011–2013), Independent Commissioner at PT Sarana Menara Nusantara Tbk (Protelindo) (2018–2019), Chairman at Iflix Indonesia (2018–2020), and Commissioner at PT Solusi Sinergi Digital (2019–2022).</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Alexander-S-Rusli.jpg" alt="Alexander S Rusli">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Alexander S Rusli</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Member of Audit Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="audit">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="tio-i-huat-audit"
+                    data-name="Tio I Huat"
+                    data-role="Member of Audit Committee"
+                    data-photo="src/assets/photos/management/Tio I Huat.jpg"
+                    data-bio="<p>An Indonesian citizen, 47 years old, born in Pematang Siantar. He holds a Bachelor’s degree in Economics, majoring in Accounting, from Krida Wacana Christian University.</p><p>His career includes: Account Officer at PT Indofood Sukses Makmur – Bogasari Flour Mills (1995–1997); Senior Auditor at Prasetio Utomo & Co (1997–1999); Manager at PT Cakrawala Mega Indah (1999–2006); Senior Manager at Argo Manunggal Group (2006); Director at PT Menamas Mitra Energi, a subsidiary of PT Truba Alam Manunggal Tbk (2007–2014); Head of Internal Audit at PT Nirvana Development Tbk (2014–2015); Group Finance Controller at Samko Timber (2016–2017); Head of Corporate Log Procurement at Samko Timber (2017–present); and Independent Director at PT Lontar Papyrus Pulp & Paper (2018–2020).</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Tio I Huat.jpg" alt="Tio I Huat">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Tio I Huat</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Member of Audit Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="audit">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="tio-i-huat-audit"
+                    data-name="Barry Alfa Rattu"
+                    data-role="Member of Audit Committee"
+                    data-photo="src/assets/photos/management/Barry Alfa Rattu.jpg"
+                    data-bio="<p>An Indonesian citizen, 47 years old, born in Tomohon. He holds a Bachelor’s degree in Management Information from Bina Nusantara University, Jakarta.</p><p>He began his career as Senior Sales at PT Astra International Tbk – Toyota Sales Operation (Auto2000) (1994–1997); served in several positions at PT Pindo Deli Pulp and Paper Mills (Sinar Mas Group), with the last position as Deputy Head of Finance and Accounting (Management By Olympic System/MBOS) (1998–2005); Business Process Improvement Manager at PT Argo Pantes Tbk (2005–2006); General Manager of Business Process Improvement and HR at PT Alam Sutera Realty Tbk and PT Pralon (2006–2011); held several positions at PT Bekasi Fajar Industrial Estate Tbk, with the last position as Head of CEO Office (2011–2016); Director at PT Makmur Abadi Selaras (2016–2018); General Manager Sales &amp; Marketing at PT Panca Terang Abadi (Artha Industrial Hill – Artha Graha Group) (2017); and General Manager of Operational Core Business (Crewing, HRGA &amp; IT) at PT Trans Power Marine Tbk (2017–present).</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Barry Alfa Rattu.jpg" alt="Barry Alfa Rattu">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Barry Alfa Rattu</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Member of Audit Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Chari TVT">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+      </div>
+
+      <!-- NRC -->
+      <div id="panel-nrc" class="lnTabPanel" role="region" aria-labelledby="Nomination & Remuneration Committee">
+        <div class="row g-3 g-md-4">
+          
+            <div class="col-6 col-lg-3" data-group="nrc">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="alexander-rusli"
+                    data-name="Alexander S. Rusli"
+                    data-role="Chairman of Nomination and Remuneration Committee"
+                    data-photo="src/assets/photos/management/Alexander-S-Rusli.jpg"
+                    data-bio="<p>Mr. Alexander S. Rusli was born in Sydney, Australia. An Indonesian citizen domiciled in Jakarta, aged 50. He holds a PhD in Information Technology from Curtin University of Technology. He was appointed as an Independent Commissioner of the Company in 2020 and re-appointed based on the Annual General Meeting of Shareholders (AGMS) as stated in the Deed of Meeting Resolution No. 41 dated June 22, 2022.</p><p>Mr. Alexander Rusli is a proven technology leader with a strong track record in driving change. Prior to joining the Company, he served as CEO of Indosat Ooredoo from 2012 to 2017, and previously spent nine years as Special Staff to the Minister at the Ministry of Communication and Informatics and the Ministry of State-Owned Enterprises. He has held Board positions at several SOEs, including Krakatau Steel, Geo Dipa Energi, and PT Kertas Kraft Aceh, and was an Independent Commissioner at PT Sarana Menara Nusantara Tbk (Protelindo) from 2018 to 2019. He currently serves as Independent Commissioner at PT Unilever Indonesia Tbk (since 2018) and at Hermina Hospital Group (since 2018), is the Founder of Digiasia Bios, and is an owner of a joint venture with Tempo Digital Media focusing on animation for Indonesian IP characters.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Alexander-S-Rusli.jpg" alt="Alexander S. Rusli">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Alexander S. Rusli</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Chairman of Nomination and Remuneration Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Alexander S. Rusli">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="nrc">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="vivek-sood"
+                    data-name="Vivek Sood"
+                    data-role="Member of Nomination and Remuneration Committee"
+                    data-photo="src/assets/photos/management/Vivek Sood.jpg"
+                    data-bio="<p>Mr Vivek, an Indian citizen, appointed as President Commissioner of the Company based on the Extraordinary General Meeting of Shareholders (EGMS) as stated in the Deed of Meeting Resolution No. 168 dated 23 January 2025.</p> <p>Prior served as Commissioner of the Company since February 2024. Having experience as the Executive Vice President and Group Chief Marketing Officer of Telenor Group, as CFO and CEO of Telenor India, CEO of Grameenphone (Bangladesh), and Chief Operating Officer and CFO of Tata AIA Life Insurance (India). Currently, serves as Group Chief Executive Officer (GCEO) and Managing Director of Axiata Group Berhad (Axiata) since March 2023 after serving as Joint Acting GCEO since June 2022 and as Group Chief Financial Officer (CFO) in 2017. Besides that, he also served as a Commissioner of PT XL Axiata Tbk since 2017.</p>"
+                >
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Vivek Sood.jpg" alt="Vivek Sood">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Vivek Sood</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Member of Nomination and Remuneration Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Vivek Sood">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3" data-group="nrc">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="thomas-hundt"
+                    data-name="Thomas Hundt"
+                    data-role="Member of Nomination and Remuneration Committee"
+                    data-photo="src/assets/photos/management/Thomas Hundt.jpg"
+                    data-bio="<p>Mr. Thomas Hundt was born in Blankenburg/Hraz, Germany. Germany citizenship domicile in Malaysia, age 45 years. Appointed as Commissioner of the Company based on the Annual General Meeting of Shareholders (AGMS) as stated in the Deed of Meeting Resolution No. 41 dated June 22, 2022.</p><p>He has vast experience in the telecommunication industry including at Siemens AG Germany from 1998 to 2007 with his last position as Director Commercial Sales, Member of Supervisory Board of Azerfon LLC Azerbaijan from 2005 to 2006, Executive Project Manager and CFO CMO North-East Finance &amp; Control di Nokia Siemens Network GmBH &amp; Co. KG Germany from 2007 to 2008, Member of Advisory Board AIESEC Cambodia from 2013 to 2019, Board Member of European Chamber of Commerce (Eurocham) Cambodia from 2011, Vice President German Business Group (ADW) Kamboja from 2010, and joined with Axiata Group Company since 2014 and served various director positions, with his last position as Group Chief Strategy &amp; Technology Officer of Axiata Group Berhad.</p>">
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Thomas Hundt.jpg" alt="Thomas Hundt">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Thomas Hundt</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Member of Nomination and Remuneration Committee</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Thomas Hundt">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+      </div>
+
+      <!-- Corporate Secretary -->
+      <div id="panel-corpsec" class="lnTabPanel" role="region" aria-labelledby="Corporate Secretary">
+        <div class="row g-3 g-md-4">
+          
+            <div class="col-6 col-lg-3" data-group="corsec">
+                <div
+                    class="lnManagementCard h-100 js-mgmt-item"
+                    data-id="Rininta-Agustina"
+                    data-name="Rininta Agustina"
+                    data-role="Corporate Secretary"
+                    data-photo="src/assets/photos/management/Rininta Agustina.jpg"
+                    data-bio="<p>She began her career at PT Astra Graphia Tbk as a Legal Analyst in 2008 and later served as Corporate Secretary and Head of the Legal Department in 2020; she was Corporate Secretary Manager at PT Bali Towerindo Sentra Tbk in 2023. She joined the Company in November 2023.</p><p>She was appointed as Corporate Secretary based on the resolution of the Board of Directors of the Company dated February 12, 2024.</p>">
+                    <div class="lnManagementCard__media">
+                        <img src="src/assets/photos/management/Rininta Agustina.jpg" alt="Rininta Agustina">
+                    </div>
+                    <div class="lnManagementCard__body">
+                        <div class="lnManagementCard__text">
+                            <h3 class="lnManagementCard__name text-headline-h5 m-0">Rininta Agustina</h3>
+                            <div class="lnManagementCard__role text-body-b5 text-secondary">Corporate Secretary</div>
+                        </div>
+                        <div class="lnManagementCard__actions">
+                            <a class="lnManagementCard__cta js-open-mgmt" href="#" aria-label="Lihat profil Thomas Hundt">
+                                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+      </div>
+
+    </div><!-- /lnMgmtPanels -->
+  </div>
+</section>
+
+<!-- ======================= HTML: Modal Management ======================= -->
+<div class="modal fade lnManagementModal" id="lnManagementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content lnManagementModal__shell">
+            <button type="button" class="btn-close lnManagementModal__close" data-bs-dismiss="modal" aria-label="Close">
+                <img src="src/assets/icons/close.svg" alt="">
+            </button>
+
+            <div class="lnManagementModal__grid">
+                <!-- Left: Large Photo (desktop/tablet) -->
+                <aside class="lnManagementModal__media">
+                    <img id="mgmtModalPhoto" src="" alt="">
+                </aside>
+
+                <!-- Right: Content -->
+                <section class="lnManagementModal__content">
+                    <!-- Header (mobile shows avatar) -->
+                    <header class="lnManagementModal__header">
+                        <img id="mgmtModalPhotoSm" class="lnManagementModal__avatar" src="" alt="">
+                        <div class="lnManagementModal__titleWrap">
+                            <h3 id="mgmtModalName" class="text-headline-h2 font-bold m-0 mb-1">—</h3>
+                            <p id="mgmtModalRole" class="text-body-b4 text-secondary mb-0">—</p>
+                        </div>
+                    </header>
+
+                    <!-- Body (scrollable) -->
+                    <div class="lnManagementModal__body">
+                        <div id="mgmtModalBio" class="text-body-b4">—</div>
+                    </div>
+
+                    <!-- Footer (prev / next) -->
+                    <footer class="lnManagementModal__footer">
+                        <button type="button" class="lnMgmtNav lnMgmtNav--prev js-mgmt-prev">
+                            <span class="lnMgmtNav__icon">
+                                <img src="src/assets/icons/chevron-left.svg" alt="" width="18" height="18">
+                            </span>
+                            <span class="lnMgmtNav__meta">
+                                <small class="text-caption-c1 text-secondary d-block">Previous</small>
+                                <strong class="text-body-b4" id="mgmtPrevName">—</strong>
+                            </span>
+                        </button>
+
+                        <button type="button" class="lnMgmtNav lnMgmtNav--next js-mgmt-next">
+                            <span class="lnMgmtNav__meta">
+                                <small class="text-caption-c1 text-secondary d-block">Next</small>
+                                <strong class="text-body-b4" id="mgmtNextName">—</strong>
+                            </span>
+                            <span class="lnMgmtNav__icon">
+                                <img src="src/assets/icons/chevron-right.svg" alt="" width="18" height="18">
+                            </span>
+                        </button>
+                    </footer>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<footer class="lnFooter">
+
+  <!-- ===== Level 1: Contact banner ===== -->
+  <section class="lnFooter__contact">
+    <div class="container">
+      <div class="lnFooterContact card border-0">
+        <div class="row g-3 align-items-stretch">
+          <!-- Ask -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__ask h-100">
+              <div class="lnFooterContact__badge">
+                <img src="src/assets/illustrations/question.svg" width="40" height="40" alt="">
+              </div>
+              <h3 class="text-headline-h4 font-bold m-0">Have questions about Linknet?</h3>
+            </div>
+          </div>
+
+          <!-- Corporate & Media -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__box h-100">
+              <div class="text-body-b5 text-secondary mb-2">Corporate &amp; Media</div>
+              <ul class="list-unstyled m-0 d-grid gap-2 p-0">
+                <li>
+                  <a class="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+                    <img src="src/assets/icons/mail.svg" alt="" width="18" height="18"/>
+                    corporate.secretary@linknet.co.id
+                  </a>
+                </li>
+                <li>
+                  <a class="lnFooterContact__link font-medium" href="tel:+622129536800">
+                    <img src="src/assets/icons/phone.svg" alt="" width="18" height="18"/>
+                    021-29536800
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- More Enquiries -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__more h-100">
+              <div class="text-body-b5 text-secondary mb-2">More enquiries?</div>
+              <a class="btn btn-md btn-secondary-outline"
+                 href="#">
+                <span>Send us a Message</span>
+                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18"/>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== lnFooter__main (brand + menus on one row) ===== -->
+<section class="lnFooter__main">
+  <div class="container">
+    <div class="row gy-4 align-items-start">
+
+      <!-- Brand / Address / Inquiry (left) -->
+      <div class="col-12 col-lg-4">
+        <div class="lnFooterBrand">
+          <div class="lnFooterBrand__logos d-flex align-items-center gap-3 mb-3">
+            <a href="/" class="d-inline-flex"><img src="src/assets/logos/linknet-logo.svg" alt="Linknet" height="28" /></a>
+          </div>
+          <div class="lnFooterBrand__subs d-flex align-items-center gap-3 mb-4">
+            <a href="https://enterprise.linknet.co.id" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-enterprise.svg" alt="Linknet Enterprise" height="32" />
+            </a>
+            <a href="https://firstmedia.com" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-fiberco.svg" alt="Linknet Media" height="32" />
+            </a>
+            <a href="https://fiber.linknet.co.id" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-mediaco.svg" alt="Linknet Fiber" height="32" />
+            </a>
+          </div>
+
+          <address class="lnFooterBrand__addr text-body-b4 text-secondary mb-5">
+            Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25 Jakarta 12930, Indonesia
+          </address>
+
+          <div class="lnFooterBrand__inquiry text-body-b5 mb-2">For further inquiry,</div>
+          <div class="d-grid gap-2 mb-4">
+            <a class="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+              <img src="src/assets/icons/mail.svg" alt="" width="18" height="18" /> corporate.secretary@linknet.co.id
+            </a>
+            <a class="lnFooterContact__link font-medium" href="tel:+622129536800">
+              <img src="src/assets/icons/phone.svg" alt="" width="18" height="18" /> 021-29536800
+            </a>
+          </div>
+
+          <div class="lnFooterBrand__social d-flex align-items-center gap-2">
+            <a href="#" aria-label="Instagram"><img src="src/assets/icons/social-instagram.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="YouTube"><img src="src/assets/icons/social-youtube.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="TikTok"><img src="src/assets/icons/social-tiktok.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="X"><img src="src/assets/icons/social-x.svg" alt="" width="24" height="24" /></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus (right) -->
+      <div class="col-12 col-lg-8">
+        <!-- Mobile: Bootstrap Accordion -->
+        <div class="lnFooterMenus lnFooterMenus--mobile accordion d-lg-none" id="lnFooterAcc">
+          <!-- Company -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-company">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-company"
+                      aria-expanded="false" aria-controls="accPane-company">
+                Company
+              </button>
+            </h2>
+            <div id="accPane-company" class="accordion-collapse collapse" aria-labelledby="accHead-company" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                  <li><a href="#">About</a></li>
+                  <li><a href="#">Management</a></li>
+                  <li><a href="#">Business</a></li>
+                  <li><a href="#">Media &amp; News</a></li>
+                  <li><a href="#">Awards</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Investor Relations -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-ir">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-ir"
+                      aria-expanded="false" aria-controls="accPane-ir">
+                Investor Relations
+              </button>
+            </h2>
+            <div id="accPane-ir" class="accordion-collapse collapse" aria-labelledby="accHead-ir" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                  <li><a href="#">Overview</a></li>
+                  <li><a href="#">Stock Price</a></li>
+                  <li><a href="#">Announcements</a></li>
+                  <li><a href="#">Reports</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Join -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-join">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-join"
+                      aria-expanded="false" aria-controls="accPane-join">
+                Join #FirstSquad
+              </button>
+            </h2>
+            <div id="accPane-join" class="accordion-collapse collapse" aria-labelledby="accHead-join" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                  <li><a href="#">Life at Linknet</a></li>
+                  <li><a href="#">Explore Career</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Platform -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-platform">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-platform"
+                      aria-expanded="false" aria-controls="accPane-platform">
+                Platform
+              </button>
+            </h2>
+            <div id="accPane-platform" class="accordion-collapse collapse" aria-labelledby="accHead-platform" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                  <li><a href="#">Corporate Policy</a></li>
+                  <li><a href="#">Children Online Protection</a></li>
+                  <li><a href="#">Contact Us</a></li>
+                  <li><a href="#">Sitemap</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop: 4 columns -->
+        <div class="lnFooterGrid d-none d-lg-grid">
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle">Company</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+              <li><a href="#">About</a></li>
+              <li><a href="#">Management</a></li>
+              <li><a href="#">Business</a></li>
+              <li><a href="#">Media &amp; News</a></li>
+              <li><a href="#">Awards</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle">Investor Relations</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+              <li><a href="#">Overview</a></li>
+              <li><a href="#">Stock Price</a></li>
+              <li><a href="#">Announcements</a></li>
+              <li><a href="#">Reports</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle">Join #FirstSquad</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+              <li><a href="#">Life at Linknet</a></li>
+              <li><a href="#">Explore Career</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle">Platform</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+              <li><a href="#">Corporate Policy</a></li>
+              <li><a href="#">Children Online Protection</a></li>
+              <li><a href="#">Contact Us</a></li>
+              <li><a href="#">Sitemap</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Language dropdown -->
+        <!-- <div class="lnFooterLang dropdown mt-3">
+          <button class="lnFooterLang__btn btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="src/assets/icons/world.svg" alt="" width="18" height="18" />
+            <span>English</span>
+            <img src="src/assets/icons/chevron-down.svg" alt="" width="18" height="18" />
+
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">English</a></li>
+            <li><a class="dropdown-item" href="#">Bahasa Indonesia</a></li>
+          </ul>
+        </div> -->
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+  <!-- ===== Level 3: Copyright ===== -->
+  <section class="lnFooter__copyright">
+    <div class="container">
+      <p class="m-0 text-center text-caption-c1 text-secondary">
+        Copyright © 1996 - 2025 PT Linknet Tbk. All Right Reserved.
+      </p>
+    </div>
+  </section>
+
+</footer>
+
+
+
+
+
+<!-- Bootstrap 5.3 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+
+
+<script src="src/dev/script/main.js"></script>
+<script src="src/dev/script/componets/sliders.js"></script>
+<script src="src/dev/script/componets/sections.js"></script>
+<script src="src/dev/script/componets/modals.js"></script>
+<script src="src/dev/script/componets/map.js"></script>
+<script src="src/dev/script/componets/footer.js"></script>
+<script>
+  // Enable tooltips (IDX info)
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
+ 
+</script>
+</body>
+</html>

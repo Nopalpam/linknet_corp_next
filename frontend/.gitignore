@@ -1,0 +1,26 @@
+# Frontend specific ignores
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+*.pem
+.vercel
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

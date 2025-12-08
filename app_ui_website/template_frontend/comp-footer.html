@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Section Cat Article with Button</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="src/dev/3rd/bootstrap/bootstrap.css" rel="stylesheet">
+   <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+/>
+  <link rel="stylesheet" href="src/dev/styles/main.css">
+</head>
+
+<body>
+
+
+<footer class="lnFooter">
+
+  <!-- ===== Level 1: Contact banner ===== -->
+  <section class="lnFooter__contact">
+    <div class="container">
+      <div class="lnFooterContact card border-0">
+        <div class="row g-3 align-items-stretch">
+          <!-- Ask -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__ask h-100">
+              <div class="lnFooterContact__badge">
+                <img src="src/assets/illustrations/question.svg" width="40" height="40" alt="">
+              </div>
+              <h3 class="text-headline-h4 font-bold m-0">Have questions about Linknet?</h3>
+            </div>
+          </div>
+
+          <!-- Corporate & Media -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__box h-100">
+              <div class="text-body-b5 text-secondary mb-2">Corporate &amp; Media</div>
+              <ul class="list-unstyled m-0 d-grid gap-2 p-0">
+                <li>
+                  <a class="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+                    <img src="src/assets/icons/mail.svg" alt="" width="18" height="18"/>
+                    corporate.secretary@linknet.co.id
+                  </a>
+                </li>
+                <li>
+                  <a class="lnFooterContact__link font-medium" href="tel:+622129536800">
+                    <img src="src/assets/icons/phone.svg" alt="" width="18" height="18"/>
+                    021-29536800
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- More Enquiries -->
+          <div class="col-12 col-lg-4">
+            <div class="lnFooterContact__more h-100">
+              <div class="text-body-b5 text-secondary mb-3">More enquiries?</div>
+              <a class="btn btn-md btn-secondary-outline"
+                 href="#">
+                <span>Send us a Message</span>
+                <img src="src/assets/icons/arrow-top-right.svg" alt="" width="18" height="18"/>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== lnFooter__main (brand + menus on one row) ===== -->
+<section class="lnFooter__main">
+  <div class="container">
+    <div class="row gy-4 align-items-start">
+
+      <!-- Brand / Address / Inquiry (left) -->
+      <div class="col-12 col-lg-4">
+        <div class="lnFooterBrand">
+          <div class="lnFooterBrand__logos d-flex align-items-center gap-3 mb-3">
+            <a href="/" class="d-inline-flex"><img src="src/assets/logos/linknet-logo.svg" alt="Linknet" height="28" /></a>
+          </div>
+          <div class="lnFooterBrand__subs d-flex align-items-center gap-3 mb-3">
+            <a href="https://enterprise.linknet.co.id" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-enterprise.svg" alt="Linknet Enterprise" height="32" />
+            </a>
+            <a href="https://firstmedia.com" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-fiberco.svg" alt="Linknet Media" height="32" />
+            </a>
+            <a href="https://fiber.linknet.co.id" target="_blank" rel="noopener">
+              <img src="src/assets/logos/logo-mediaco.svg" alt="Linknet Fiber" height="32" />
+            </a>
+          </div>
+
+          <address class="lnFooterBrand__addr text-body-b5 text-secondary mb-4">
+            Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25 Jakarta 12930, Indonesia
+          </address>
+
+          <div class="lnFooterBrand__inquiry text-body-b5 mb-2">For further inquiry,</div>
+          <div class="d-grid gap-2 mb-3">
+            <a class="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+              <img src="src/assets/icons/mail.svg" alt="" width="18" height="18" /> corporate.secretary@linknet.co.id
+            </a>
+            <a class="lnFooterContact__link font-medium" href="tel:+622129536800">
+              <img src="src/assets/icons/phone.svg" alt="" width="18" height="18" /> 021-29536800
+            </a>
+          </div>
+
+          <div class="lnFooterBrand__social d-flex align-items-center gap-2">
+            <a href="#" aria-label="Instagram"><img src="src/assets/icons/social-instagram.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="YouTube"><img src="src/assets/icons/social-youtube.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="TikTok"><img src="src/assets/icons/social-tiktok.svg" alt="" width="24" height="24" /></a>
+            <a href="#" aria-label="X"><img src="src/assets/icons/social-x.svg" alt="" width="24" height="24" /></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus (right) -->
+      <div class="col-12 col-lg-8">
+        <!-- Mobile: Bootstrap Accordion -->
+        <div class="lnFooterMenus lnFooterMenus--mobile accordion d-lg-none" id="lnFooterAcc">
+          <!-- Company -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-company">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-company"
+                      aria-expanded="false" aria-controls="accPane-company">
+                Company
+              </button>
+            </h2>
+            <div id="accPane-company" class="accordion-collapse collapse" aria-labelledby="accHead-company" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">About</a></li>
+                  <li><a href="#">Management</a></li>
+                  <li><a href="#">Business</a></li>
+                  <li><a href="#">Media &amp; News</a></li>
+                  <li><a href="#">Awards</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Investor Relations -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-ir">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-ir"
+                      aria-expanded="false" aria-controls="accPane-ir">
+                Investor Relations
+              </button>
+            </h2>
+            <div id="accPane-ir" class="accordion-collapse collapse" aria-labelledby="accHead-ir" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">Overview</a></li>
+                  <li><a href="#">Stock Price</a></li>
+                  <li><a href="#">Announcements</a></li>
+                  <li><a href="#">Reports</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Join -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-join">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-join"
+                      aria-expanded="false" aria-controls="accPane-join">
+                Join #FirstSquad
+              </button>
+            </h2>
+            <div id="accPane-join" class="accordion-collapse collapse" aria-labelledby="accHead-join" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">Life at Linknet</a></li>
+                  <li><a href="#">Explore Career</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Platform -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="accHead-platform">
+              <button class="accordion-button collapsed" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#accPane-platform"
+                      aria-expanded="false" aria-controls="accPane-platform">
+                Platform
+              </button>
+            </h2>
+            <div id="accPane-platform" class="accordion-collapse collapse" aria-labelledby="accHead-platform" data-bs-parent="#lnFooterAcc">
+              <div class="accordion-body p-0 pb-4">
+                <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+                  <li><a href="#">Corporate Policy</a></li>
+                  <li><a href="#">Children Online Protection</a></li>
+                  <li><a href="#">Contact Us</a></li>
+                  <li><a href="#">Sitemap</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop: 4 columns -->
+        <div class="lnFooterGrid d-none d-lg-grid">
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Company</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">About</a></li>
+              <li><a href="#">Management</a></li>
+              <li><a href="#">Business</a></li>
+              <li><a href="#">Media &amp; News</a></li>
+              <li><a href="#">Awards</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Investor Relations</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">Overview</a></li>
+              <li><a href="#">Stock Price</a></li>
+              <li><a href="#">Announcements</a></li>
+              <li><a href="#">Reports</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Join #FirstSquad</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">Life at Linknet</a></li>
+              <li><a href="#">Explore Career</a></li>
+            </ul>
+          </div>
+          <div class="lnFooterMenuCol">
+            <div class="lnFooterMenuTitle text-body-b5 font-bold">Platform</div>
+            <ul class="list-unstyled lnFooterList mb-0 p-0 text-body-b5">
+              <li><a href="#">Corporate Policy</a></li>
+              <li><a href="#">Children Online Protection</a></li>
+              <li><a href="#">Contact Us</a></li>
+              <li><a href="#">Sitemap</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Language dropdown -->
+        <!-- <div class="lnFooterLang dropdown mt-3">
+          <button class="lnFooterLang__btn btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="src/assets/icons/world.svg" alt="" width="18" height="18" />
+            <span>English</span>
+            <img src="src/assets/icons/chevron-down.svg" alt="" width="18" height="18" />
+
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">English</a></li>
+            <li><a class="dropdown-item" href="#">Bahasa Indonesia</a></li>
+          </ul>
+        </div> -->
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+  <!-- ===== Level 3: Copyright ===== -->
+  <section class="lnFooter__copyright">
+    <div class="container">
+      <p class="m-0 text-center text-caption-c1 text-secondary">
+        Copyright © 1996 - 2025 PT Linknet Tbk. All Right Reserved.
+      </p>
+    </div>
+  </section>
+
+</footer>
+
+
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script src="src/dev/script/componets/sliders.js"></script>
+    <script src="src/dev/script/componets/sections.js"></script>
+    <script src="src/dev/script/componets/modals.js"></script>
+    <script src="src/dev/script/componets/map.js"></script>
+    <script src="src/dev/script/componets/footer.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script>
+        // Enable tooltips (IDX info)
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+    </script>
+
+</body>
+
+</html>

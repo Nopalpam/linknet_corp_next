@@ -1,0 +1,211 @@
+<section id="coverage-section" style="background:#f7f7f8; padding:60px 0;">
+  <style>
+    :root {
+      --ln-green:#0FD277; --ln-green-ink:#0a8e55;
+      --ln-gray-100:#F3F4F6; --ln-gray-200:#E5E7EB; --ln-gray-600:#4B5563; --ln-gray-800:#1F2937;
+      --ln-white:#FFFFFF; --radius-lg:12px; --gap:32px; --widget-w:380px;
+    }
+    #coverage-section .container {
+      display:flex; align-items:flex-start;
+      gap:var(--gap); max-width:1200px; margin:0 auto; padding:0 12px;
+    }
+    /* Map transparan */
+    #indo-map {
+      position:relative; min-height:560px; overflow:hidden;
+      flex:1 1 auto; transition:all .45s ease;
+      background:transparent; border-radius:0; box-shadow:none;
+    }
+    #indo-map .highcharts-background { fill:transparent !important; }
+    .map-hint {
+      position:absolute; top:12px; left:12px;
+      background:#111; color:#fff; font-size:12px;
+      padding:6px 10px; border-radius:8px; opacity:.9; pointer-events:none;
+    }
+    /* Widget */
+    #coverage-widget {
+      flex:0 0 0px; max-width:0;
+      opacity:0; visibility:hidden; pointer-events:none;
+      transform:translateX(8px); transition:all .45s ease; min-height:140px;
+    }
+    .with-widget #coverage-widget {
+      flex-basis:var(--widget-w); max-width:var(--widget-w);
+      opacity:1; visibility:visible; pointer-events:auto; transform:translateX(0);
+    }
+    #coverage-widget.card {
+      background:var(--ln-white); border-radius:var(--radius-lg);
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+    .widget-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .widget-close {
+      border:0; background:var(--ln-gray-100); width:34px; height:34px;
+      border-radius:10px; cursor:pointer; font-size:18px; line-height:1;
+    }
+    .widget-close:hover { background:var(--ln-gray-200); }
+    #coverage-widget h3 { margin:0; font-size:20px; color:var(--ln-gray-800); }
+    #coverage-widget .muted { color:var(--ln-gray-600); font-size:14px; margin-top:4px; }
+    .bu-label { font-size:12px; color:var(--ln-gray-600); margin:12px 0 2px; }
+    .zone-title { margin:0 0 8px; font-size:16px; color:var(--ln-gray-800); }
+    #coverage-detail ul { margin:12px 0 0; padding-left:18px; }
+    #coverage-detail li { margin:4px 0; }
+    .badge { display:inline-block; font-size:12px; line-height:1; padding:6px 8px; border-radius:999px; margin-bottom:8px; border:1px solid var(--ln-gray-200); }
+    .badge--ok { background:rgba(15,210,119,.12); color:var(--ln-green-ink); border-color:rgba(15,210,119,.24); }
+    .badge--no { background:var(--ln-gray-100); color:var(--ln-gray-600); }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 14px; border-radius:10px; font-weight:600; cursor:pointer; border:1px solid transparent; text-decoration:none; }
+    .btn-primary { background:var(--ln-green); color:#fff; } .btn-primary:hover { filter:brightness(.96); }
+    .btn-disabled { background:var(--ln-gray-100); color:var(--ln-gray-600); border-color:var(--ln-gray-200); cursor:not-allowed; }
+    @media (max-width:768px){
+      #coverage-section .container { flex-direction:column; }
+      .with-widget #coverage-widget { flex-basis:100%; max-width:100%; }
+    }
+  </style>
+
+  <div id="coverage-container" class="container">
+    <div id="indo-map">
+      <div class="map-hint">Klik salah satu provinsi pada peta</div>
+    </div>
+    <aside id="coverage-widget" class="card" aria-hidden="true" style="padding:20px;">
+      <div class="widget-head">
+        <h3>Detail Coverage</h3>
+        <button id="coverage-close" class="widget-close" aria-label="Close">×</button>
+      </div>
+      <p id="coverage-hint" class="muted">Klik provinsi pada peta untuk melihat detail.</p>
+      <div id="coverage-detail" style="margin-top:12px;"></div>
+    </aside>
+  </div>
+</section>
+
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+
+<script>
+  // Data Business Unit
+  const BUSINESS_UNITS = {
+    'BU1': { label:'Business Unit 1', title:'Zone Sumatera', cities:['Medan','Batam','Palembang'] },
+    'BU2': { label:'Business Unit 2', title:'Zone Jakarta', cities:['Jabo 1','Jabo 2','Jabo 3'] },
+    'BU3': { label:'Business Unit 3', title:'Zone West Java', cities:['Bandung','Cirebon','Cikampek','Purwakarta','Subang','Sukabumi','Sumedang','Cianjur','Ciamis','Kuningan','Indramayu'] },
+    'BU4': { label:'Business Unit 4', title:'Zone Central Java', cities:['Semarang','Yogyakarta','Solo','Tegal','Purwokerto','Pemalang','Mojokerto','Demak','Pati','Banyumas','Magelang','Purbalingga','Brebes','Cilacap'] },
+    'BU5': { label:'Business Unit 5', title:'Zone East Java & Bali', cities:['Surabaya','Gresik','Sidoarjo','Malang','Kediri','Madiun','Bali','Bojonegoro','Tulungagung','Probolinggo','Ponorogo'] }
+  };
+  // Mapping provinsi → BU
+  const BU_BY_PROVINCE = {
+    'id-su':'BU1','id-kr':'BU1','id-ss':'BU1', // Sumut, Kepri, Sumsel
+    'id-jk':'BU2',
+    'id-jr':'BU3',
+    'id-jt':'BU4','id-yo':'BU4',
+    'id-ji':'BU5','id-ba':'BU5'
+  };
+
+  const containerEl = document.getElementById('coverage-container');
+  const widget = document.getElementById('coverage-widget');
+  const detailBox = document.getElementById('coverage-detail');
+  const hint = document.getElementById('coverage-hint');
+  const closeBtn = document.getElementById('coverage-close');
+
+  function openWidgetOnce(){
+    if(!containerEl.classList.contains('with-widget')){
+      containerEl.classList.add('with-widget');
+      widget.setAttribute('aria-hidden','false');
+      widget.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+  }
+  function closeWidget(){
+    containerEl.classList.remove('with-widget');
+    widget.setAttribute('aria-hidden','true');
+    if(hint) hint.style.display='';
+    detailBox.innerHTML = '';
+    clearActiveOutline();
+  }
+  closeBtn.addEventListener('click', closeWidget);
+
+  function buildCtaHref(provinceName){ return `/paket?province=${encodeURIComponent(provinceName)}`; }
+
+  function renderWidget({ provinceName, provinceKey, covered }){
+    openWidgetOnce();
+    if(hint) hint.style.display='none';
+    const buKey = BU_BY_PROVINCE[provinceKey];
+    const bu = buKey ? BUSINESS_UNITS[buKey] : null;
+    let html = '';
+    if(bu){
+      html += `<div class="bu-label">${bu.label}</div>`;
+      html += `<h4 class="zone-title">${bu.title}</h4>`;
+    } else {
+      html += `<div class="bu-label">Business Unit</div>`;
+      html += `<h4 class="zone-title">${provinceName}</h4>`;
+    }
+    if(covered){
+      html += `<div class="badge badge--ok">Covered</div>`;
+      if(bu?.cities?.length){
+        html += `<ul>${bu.cities.map(c=>`<li>${c}</li>`).join('')}</ul>`;
+      }
+      html += `<div style="margin-top:16px;"><a class="btn btn-primary" href="${buildCtaHref(provinceName)}">Cek Paket di Kota Ini</a></div>`;
+    } else {
+      html += `<div class="badge badge--no">No Coverage</div>`;
+      html += `<p class="muted" style="margin:8px 0 0;">Area ini belum tersedia.</p>`;
+      html += `<div style="margin-top:16px;"><span class="btn btn-disabled">Cek Paket di Kota Ini</span></div>`;
+    }
+    detailBox.innerHTML = html;
+  }
+
+  // refs untuk highlight
+  let _topologyRef=null, _chartRef=null, _lastSelectedPoint=null;
+
+  fetch('https://code.highcharts.com/mapdata/countries/id/id-all.topo.json')
+    .then(r=>r.json())
+    .then(topology=>{
+      _topologyRef = topology;
+      const data = topology.objects.default.geometries.map(g=>{
+        const key = g.properties['hc-key'];
+        const covered = !!BU_BY_PROVINCE[key];
+        return { 'hc-key': key, name:g.properties.name, value: covered?1:0 };
+      });
+      _chartRef = Highcharts.mapChart('indo-map',{
+        chart:{ map:topology, backgroundColor:'rgba(0,0,0,0)' },
+        title:{ text:'' },
+        exporting:{ enabled:false },
+        mapNavigation:{ enabled:true, enableButtons:true, buttonOptions:{ verticalAlign:'bottom' } },
+        colorAxis:{ dataClasses:[
+          { from:1,to:1,color:'#0FD277',name:'Covered' },
+          { from:0,to:0,color:'#E5E7EB',name:'No Coverage' }
+        ]},
+        legend:{ enabled:true, layout:'horizontal', align:'center', verticalAlign:'bottom', backgroundColor:'transparent',
+          itemStyle:{ fontSize:'12px', color:'#4B5563' }, symbolHeight:12, symbolWidth:12, margin:12 },
+        series:[{
+          id:'base-provinces',
+          data,
+          joinBy:['hc-key','hc-key'],
+          allowPointSelect:true,
+          states:{ hover:{ borderColor:'#333', brightness:0.1 },
+                   select:{ enabled:true, borderColor:'#0FD277', borderWidth:2, brightness:0.05 }},
+          cursor:'pointer',
+          point:{ events:{
+            click:function(){
+              const key=this['hc-key']; const covered=this.value===1;
+              if(_lastSelectedPoint && _lastSelectedPoint!==this){ _lastSelectedPoint.select(false,false); }
+              this.select(true,false); _lastSelectedPoint=this;
+              drawActiveOutline(key);
+              renderWidget({ provinceName:this.name, provinceKey:key, covered });
+            }
+          }}
+        }]
+      });
+    });
+
+  function clearActiveOutline(){
+    if(_chartRef){ const old=_chartRef.get('active-outline'); if(old) old.remove(false); _chartRef.redraw(); }
+  }
+  function drawActiveOutline(hcKey){
+    clearActiveOutline();
+    const allLines=Highcharts.geojson(_topologyRef,'mapline');
+    const selectedLines=allLines.filter(f=>f.properties && f.properties['hc-key']===hcKey);
+    if(selectedLines.length){
+      _chartRef.addSeries({
+        id:'active-outline', type:'mapline', data:selectedLines,
+        color:'rgba(15,210,119,.35)', lineWidth:6, enableMouseTracking:false, zIndex:7
+      },false);
+      _chartRef.addSeries({
+        type:'mapline', linkedTo:'active-outline', data:selectedLines,
+        color:'#0FD277', lineWidth:2, dashStyle:'ShortDot', enableMouseTracking:false, zIndex:8
+      },false);
+      _chartRef.redraw();
+    }
+  }
+</script>

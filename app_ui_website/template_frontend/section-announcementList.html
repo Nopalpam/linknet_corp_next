@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Section Cat Article with Button</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="src/dev/3rd/bootstrap/bootstrap.css" rel="stylesheet">
+   <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+/>
+  <link rel="stylesheet" href="src/dev/styles/main.css">
+</head>
+
+<body>
+
+<section class="lnSection lnSection__searchFilters">
+    <div class="container">
+        <!-- Search + Filters -->
+        <form class="lnSearchFilters mb-2" role="search" aria-label="Financial Statement search">
+            <!-- Search -->
+            <label class="lnSF__search" for="lnSF-q">
+                <img class="lnSF__icon" src="src/assets/icons/search.svg" alt="" width="20" height="20" />
+                <input id="lnSF-q"
+                       class="lnSF__input"
+                       type="search"
+                       placeholder="Use the keyword title of the Financial Statement"
+                       autocomplete="off" />
+            </label>
+
+            <!-- Divider (hidden on mobile) -->
+            <span class="lnSF__divider" aria-hidden="true"></span>
+
+            <!-- Filters (chips are horizontally scrollable on mobile) -->
+            <div class="lnSF__chips" role="group" aria-label="Filters">
+                <button class="lnSFChip" type="button" data-dropdown="#dd-type" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="lnSFChip__label" data-default="Report Type">Report Type</span>
+                    <img class="lnSFChip__chev" src="src/assets/icons/chevron-down.svg" alt="" width="14" height="14" />
+                </button>
+
+                <button class="lnSFChip" type="button" data-dropdown="#dd-audit" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="lnSFChip__label" data-default="Audit Status">Audit Status</span>
+                    <img class="lnSFChip__chev" src="src/assets/icons/chevron-down.svg" alt="" width="14" height="14" />
+                </button>
+
+                <button class="lnSFChip" type="button" data-dropdown="#dd-year" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="lnSFChip__label" data-default="Year">Year</span>
+                    <img class="lnSFChip__chev" src="src/assets/icons/chevron-down.svg" alt="" width="14" height="14" />
+                </button>
+            </div>
+        </form>
+
+        <!-- Dropdowns -->
+        <div id="dd-type" class="lnSFDropdown" role="listbox" aria-label="Report Type" hidden>
+            <button type="button" role="option" class="is-active" data-value="">All</button>
+            <button type="button" role="option" data-value="consolidated">Consolidated</button>
+            <button type="button" role="option" data-value="interim">Interim</button>
+        </div>
+
+        <div id="dd-audit" class="lnSFDropdown" role="listbox" aria-label="Audit Status" hidden>
+            <button type="button" role="option" class="is-active" data-value="">All</button>
+            <button type="button" role="option" data-value="audited">Audited</button>
+            <button type="button" role="option" data-value="unaudited">Unaudited</button>
+        </div>
+
+        <div id="dd-year" class="lnSFDropdown" role="listbox" aria-label="Year" hidden>
+            <button type="button" role="option" class="is-active" data-value="">All</button>
+            <button type="button" role="option" data-value="2025">2025</button>
+            <button type="button" role="option" data-value="2024">2024</button>
+            <button type="button" role="option" data-value="2023">2023</button>
+            <button type="button" role="option" data-value="2022">2022</button>
+        </div>
+
+
+        <div class="lnSection-body">
+
+            <div class="yearList">
+
+                <div class="yearItem">
+                    <div class="yearItem-header">
+                        <h2 class="text-headline-h4 font-bold text-black">Announcement Section Name 2025</h2>
+                        <p class="text-body-b4 text-secondary">Lorem Ipsum Dolor Sit Amet</p>
+                        <div class="yearItem-header-actions mb-3">
+                            <a href="#!" class="btn btn-secondary-outline">Registration Link - Virtual live event by Microsoft Teams <span class="icon icon--18 icon--arrow-top-right" aria-hidden="true"></span></a>
+                        </div>
+                    </div>
+                    <div class="yearItem-content">
+                        <div class="row">
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf-date.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                                    31 December 2024</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Unaudited</span>
+                                </div>
+                            </a>
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                                    March
+                                    2025</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                                </div>
+                            </a>
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                                    31 December 2024</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                                </div>
+                            </a>
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                                    March
+                                    2025</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                                </div>
+                            </a>
+                            <!--Year-->
+
+                            <div class="col-md-12 d-flex justify-content-center mt-3">
+                                <!--Action Button-->
+                                <div class="col-md-12 d-flex justify-content-center">
+                                <a href="javascript:void(0)" class="btn btn-secondary-outline text-body-b4 font-medium open-modal">
+                                    View More
+                                </a>
+                                </div>
+                                <!--Action Button-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="yearItem">
+                    <h2 class="text-headline-h4 font-bold text-black">Announcement Section Name 2024
+                    </h2>
+                    <div class="yearItem-content">
+                        <div class="row">
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf-date.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                                    31 December 2024</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Unaudited</span>
+                                </div>
+                            </a>
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                                    March
+                                    2025</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                                </div>
+                            </a>
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                                    31 December 2024</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                                </div>
+                            </a>
+                            <a href="#" class="col-md-6 card card-report-list d-flex gap-3">
+                                <img src="./src/assets/img/pdf.svg" alt="">
+                                <div class="block">
+                                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                                    March
+                                    2025</h3>
+                                <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                                </div>
+                            </a>
+                            <!--Year-->
+
+                            <div class="col-md-12 d-flex justify-content-center mt-3">
+                                <!--Action Button-->
+                                <div class="col-md-12 d-flex justify-content-center">
+                                <a href="javascript:void(0)" class="btn btn-secondary-outline text-body-b4 font-medium open-modal">
+                                    View More
+                                </a>
+                                </div>
+                                <!--Action Button-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+        </div>
+
+        <div class="lnSection-footer mt-3">
+             <div class="col-md-12 d-flex flex-lg-row flex-column align-items-center justify-content-lg-between gap-4">
+                <span class="text-body-b5 font-regular text-secondary">Menampilkan 1-12 Dari 19 Hasil</span>
+                <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                    <a class="page-link">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+                </nav>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+
+
+  <!--Modal-->
+  <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-md">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="flex flex-column gap-2">
+            <h2 class="text-headline-h4 font-bold text-black" id="exampleModalLabel">2025 - Incidental Public Expose</h2>
+            <p class="text-body-b4 font-regular text-secondary">3 February 2025</p>
+            <div class="category">
+              <span class="text-body-b5 font-medium text-black">Registration Link - Virtual live event by Microsoft Teams</span>
+              <img src="./src/assets/icons/arrow-top-right.svg" alt="" class="d-none d-sm-block">
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf-date.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                  31 December 2024</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Unaudited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                  March
+                  2025</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                  31 December 2024</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                  March
+                  2025</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf-date.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                  31 December 2024</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Unaudited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                  March
+                  2025</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Consolidated Financial Statements for the year ended
+                  31 December 2024</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+            <a href="#" class="col-md-12 card card-report-list d-flex gap-3">
+              <img src="./src/assets/img/pdf.svg" alt="">
+              <div class="block">
+                <h3 class="text-body-b4 font-regular text-black">Interim Consolidated Financial Statements 31
+                  March
+                  2025</h3>
+                <div class="d-flex justify-content-start align-items-center gap-2">
+                  <span class="category text-caption-c1 font-medium text-black">Audited</span>
+                  <span class="text-caption-c1 font-regular text-secondary">19 June 2025</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--Modal-->
+
+
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script src="src/dev/script/componets/sliders.js"></script>
+    <script src="src/dev/script/forms.js"></script>
+    <script src="src/dev/script/componets/sections.js"></script>
+    <script src="src/dev/script/componets/map.js"></script>
+    <script src="src/dev/script/componets/footer.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script>
+        // Enable tooltips (IDX info)
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
+        //open modal
+        const btn = document.querySelector('.open-modal');
+        const modalEl = document.getElementById('myModal');
+        const modal = new bootstrap.Modal(modalEl);
+            btn.addEventListener('click', () => {
+            modal.show();
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,173 @@
+# Azure Key Vault CSI Driver Configuration
+# This allows Kubernetes pods to mount secrets from Azure Key Vault
+#
+# Prerequisites:
+# 1. Install Azure Key Vault Provider for Secrets Store CSI Driver
+#    helm repo add csi-secrets-store-provider-azure https://azure.github.io/secrets-store-csi-driver-provider-azure/charts
+#    helm install csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --generate-name
+#
+# 2. Enable Azure AD Workload Identity or Pod Identity on AKS cluster
+
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: linknetcorp-backend-keyvault
+  namespace: default
+spec:
+  provider: azure
+  secretObjects:
+  # This creates Kubernetes secrets from Key Vault secrets
+  - secretName: linknetcorp-backend-secrets
+    type: Opaque
+    data:
+    - objectName: database-url
+      key: database-url
+    - objectName: jwt-secret
+      key: jwt-secret
+    # Add more secrets as needed
+    # - objectName: api-key
+    #   key: api-key
+  
+  parameters:
+    # Using Workload Identity (recommended for AKS)
+    usePodIdentity: "false"
+    useVMManagedIdentity: "false"
+    clientID: "<YOUR_MANAGED_IDENTITY_CLIENT_ID>"
+    
+    # Key Vault configuration
+    keyvaultName: "<YOUR_KEY_VAULT_NAME>"
+    tenantId: "<YOUR_AZURE_TENANT_ID>"
+    
+    # Secrets to mount
+    objects: |
+      array:
+        - |
+          objectName: database-url
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: jwt-secret
+          objectType: secret
+          objectVersion: ""
+        # Add more secrets as needed
+        # - |
+        #   objectName: api-key
+        #   objectType: secret
+        #   objectVersion: ""
+
+---
+# Service Account for Workload Identity
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: linknetcorp-backend-sa
+  namespace: default
+  annotations:
+    azure.workload.identity/client-id: "<YOUR_MANAGED_IDENTITY_CLIENT_ID>"
+    azure.workload.identity/tenant-id: "<YOUR_AZURE_TENANT_ID>"
+
+---
+# Updated Deployment with CSI Driver volume mount
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linknetcorp-backend-keyvault
+  labels:
+    app: linknetcorp-backend-keyvault
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: linknetcorp-backend-keyvault
+  template:
+    metadata:
+      labels:
+        app: linknetcorp-backend-keyvault
+        tier: backend
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: linknetcorp-backend-sa
+      
+      containers:
+      - name: backend
+        image: <YOUR_ACR_NAME>.azurecr.io/linknetcorp-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+        
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: linknetcorp-backend-config
+        
+        # Secrets mounted as environment variables
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: database-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: jwt-secret
+        
+        # Azure Key Vault URL for runtime secret fetching
+        - name: AZURE_KEY_VAULT_URL
+          value: "https://<YOUR_VAULT_NAME>.vault.azure.net/"
+        
+        # Volume mounts for CSI driver
+        volumeMounts:
+        - name: secrets-store
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+        
+        # Resource limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # Health probes
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+      
+      # CSI Driver volume
+      volumes:
+      - name: secrets-store
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: linknetcorp-backend-keyvault

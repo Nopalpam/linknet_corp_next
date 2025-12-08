@@ -1,0 +1,61 @@
+.pagination
+  gap: var(--space-12)
+  flex-wrap: wrap
+  margin-bottom: var(--space-0)
+  .page-item
+    .page-link
+      display: inline-flex
+      align-items: center
+      text-align: center
+      text-decoration: none
+      vertical-align: middle
+      cursor: pointer
+      -webkit-user-select: none
+      -moz-user-select: none
+      user-select: none
+      border: none
+      background: none
+      border-radius: var(--radius-full)
+      font-weight: var(--font-weight-medium)
+      font-size: 16px !important
+      line-height: 24px !important
+      color: var(--text-primary)
+      height: 48px
+      min-width: 48px
+      transition: gap 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease
+      border: 1px solid var(--btn-secondary-outline)
+      color: var(--text-primary) 
+      background: transparent
+      display: flex
+      justify-content: center
+      align-items: center
+      &:hover
+        border-color: var(--btn-secondary-outline-hover)
+        color: var(--btn-secondary-outline-hover)
+        img 
+          opacity: var(--opacity-50)
+      &:focus
+        box-shadow: var(--shadow-0)
+  
+    &:nth-child(1)
+      .page-link
+        padding: var(--space-12) var(--space-32)
+
+    &:nth-last-child(1)
+      .page-link
+        padding: var(--space-12) var(--space-32)
+
+    &.active
+      .page-link
+        font-weight: var(--font-weight-bold)
+        border: 0
+    
+    &.disabled
+      .page-link
+        border-color: var(--btn-secondary-outline-hover)
+        color: var(--btn-secondary-outline-hover)
+        img 
+          opacity: var(--opacity-50)
+        
+
+        

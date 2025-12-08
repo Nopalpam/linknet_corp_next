@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Section Cat Article with Button</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="src/dev/3rd/bootstrap/bootstrap.css" rel="stylesheet">
+   <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+/>
+  <link rel="stylesheet" href="src/dev/styles/main.css">
+</head>
+
+<body>
+
+<section class="lnSection lnSection__careerDetail">
+  <div class="container">
+    <div class="row g-4 g-lg-5">
+
+      <!-- LEFT -->
+      <div class="col-12 col-lg-8 order-2 order-lg-1">
+        <article class="careerDetail__content">
+          <header class="careerDetail__header mb-3">
+              <h2 class="text-headline-h5 font-bold m-0">About the Role</h2>
+          </header>
+
+          <div class="careerDetail__block mb-5">
+              <ul class="careerDetail__list">
+                  <li>Identify, evaluate, and establish partnerships with leading solution providers or potential partner (technology vendors, service providers, system integrators, etc.) that align with the company's strategic goals, driving growth and innovation in product and solution offerings</li>
+                  <li>Lead the solutions &amp; technical function, and collaborate with pre-sales function and sales function to develop tailored solutions that meet customer requirements</li>
+                  <li>Monitor industry trends and competitor activities to identify new opportunities for partnership</li>
+                  <li>Build and maintain strong relationships with key stakeholders both internally and externally to ensure ongoing collaboration and value creation, and also seamless integration and delivery of partner solutions</li>
+                  <li>Negotiate partnership agreements, monitor partner performance to ensure alignment with standards and timelines</li>
+                  <li>Communicate partnership strategies and outcomes to senior leadership and other relevant parties</li>
+                  <li>Work closely with the product management team to integrate partner solutions into the company's overall product portfolio</li>
+                  <li>Ensure that partner solutions complement and enhance the company's offerings, addressing market needs and expanding the value proposition to customers</li>
+                  <li>Collaborate and joint GTM strategies and campaigns with partners</li>
+                  <li>Prepare and present partnership proposals and performance reports to executive leadership</li>
+                  <li>Support sales teams by equipping them with the knowledge and resources needed to successfully sell partnered solutions</li>
+                  <li>Manage the budget for the solution partnership by ensuring efficient allocation of resources and alignment with financial goals</li>
+                  <li>Manage budgets related to partnership activities and ensure that investments deliver a strong return</li>
+              </ul>
+          </div>
+
+          <header class="careerDetail__header mb-3">
+              <h2 class="text-headline-h5 font-bold m-0">Requirements</h2>
+          </header>
+          <div class="careerDetail__block">
+              <ul class="careerDetail__list">
+                  <li>Bachelor’s degree in Business, Marketing, or a related field</li>
+                  <li>Minimum 7 years of experience in partnership management, business development, or related roles</li>
+                  <li>Strong understanding of enterprise solutions, IT infrastructure, cloud services, software, and emerging technologies</li>
+                  <li>Negotiation, Strategic Partnership &amp; Relationship Management</li>
+                  <li>Proven experience in negotiating and managing complex partnerships</li>
+                  <li>Strong communication, negotiation, and presentation abilities</li>
+                  <li>Strong interpersonal skills to foster and maintain partnerships with external stakeholders</li>
+                  <li>Strategic thinking and problem-solving abilities</li>
+                  <li>Willing to work in Centennial Tower, South Jakarta</li>
+              </ul>
+          </div>
+        </article>
+      </div>
+
+      <!-- RIGHT: Widget -->
+      <div class="col-12 col-lg-4 order-1 order-lg-2">
+        <aside class="careerDetail__widget">
+          <a href="#" class="btn btn-warning w-100 mb-0">Apply this Position</a>
+          <a href="/careers" class="btn btn-secondary-outline w-100 mb-3">← Back to Listings</a>
+
+          <div class="careerDetail__share">
+            <span class="text-caption-c1 text-secondary d-block mb-2">Share this Role</span>
+            <div class="careerDetail__shareList">
+              <a href="#" aria-label="Instagram"><img src="src/assets/icons/social-instagram.svg" alt="" width="18" height="18"></a>
+              <a href="#" aria-label="YouTube"><img src="src/assets/icons/social-youtube.svg" alt="" width="18" height="18"></a>
+              <a href="#" aria-label="TikTok"><img src="src/assets/icons/social-tiktok.svg" alt="" width="18" height="18"></a>
+              <a href="#" aria-label="X"><img src="src/assets/icons/social-x.svg" alt="" width="18" height="18"></a>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+
+    </div>
+  </div>
+
+</section>
+    
+
+
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script src="src/dev/script/componets/sliders.js"></script>
+    <script src="src/dev/script/forms.js"></script>
+    <script src="src/dev/script/componets/sections.js"></script>
+    <script src="src/dev/script/componets/map.js"></script>
+    <script src="src/dev/script/componets/footer.js"></script>
+
+    <script src="src/dev/script/main.js"></script>
+    <script>
+        // Enable tooltips (IDX info)
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
+        //open modal
+        const btn = document.querySelector('.open-modal');
+        const modalEl = document.getElementById('myModal');
+        const modal = new bootstrap.Modal(modalEl);
+            btn.addEventListener('click', () => {
+            modal.show();
+        });
+
+    </script>
+
+</body>
+
+</html>
