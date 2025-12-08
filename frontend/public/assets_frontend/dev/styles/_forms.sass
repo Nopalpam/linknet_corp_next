@@ -1,0 +1,330 @@
+.lnFormInput
+    position: relative
+
+    &__control
+        width: 100%
+        height: 64px
+        padding: 28px 16px 10px
+        border: 1px solid var(--stroke-default)
+        border-radius: 16px
+        background: var(--bg-white)
+        color: var(--color-neutral-900)
+        font-size: 16px
+        line-height: 24px
+        outline: 0
+        transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease
+        &::placeholder
+            color: transparent
+        &:focus
+            border-color: var(--color-neutral-300)
+            box-shadow: 0 2px 10px rgba(0,0,0,.04)
+
+    &__label
+        position: absolute
+        left: 16px
+        top: 20px
+        pointer-events: none
+        color: var(--color-neutral-500)
+        font-size: 14px
+        line-height: 22px
+        transform-origin: left top
+        transition: transform .18s ease, color .18s ease, top .18s ease
+        .req
+            color: var(--color-red-500)
+
+    /* floating */
+    &__control:focus + .lnFormInput__label,
+    &__control:not(:placeholder-shown) + .lnFormInput__label
+        top: 10px
+        transform: scale(.8)
+        color: var(--color-neutral-400)
+
+    /* Help (default tersembunyi + animasi saat tampil) */
+    &__help
+        display: inline-block
+        margin-top: 8px
+        margin-bottom: 8px
+        display: block
+
+/* Help sebagai sibling setelah wrapper: tetap gunakan animasi yang sama */
+.lnFormInput + .lnFormInput__help
+    display: none
+
+/* Muncul saat invalid (otomatis aktif) */
+.lnFormInput.is-invalid + .lnFormInput__help,
+.lnFormInput.is-invalid .lnFormInput__help
+    display: block
+    max-height: 80px
+    transform: translateY(0)
+    pointer-events: auto
+
+/* Atau pakai flag manual .is-active untuk tampilkan help non-error */
+.lnFormInput__help.is-active
+    display: block
+    max-height: 80px
+    transform: translateY(0)
+    pointer-events: auto
+
+/* Error color override */
+.lnFormInput.is-invalid
+    .lnFormInput__control
+        border-color: var(--color-red-500)
+        box-shadow: none
+    .lnFormInput__label
+        color: var(--color-red-500)
+
+/* Textarea */
+.lnFormInput--textarea
+    .lnFormInput__control
+        height: auto
+        min-height: 120px
+        resize: vertical
+        padding: 28px 16px 28px
+    .lnFormInput__counter
+        position: absolute
+        right: 12px
+        bottom: 8px
+        font-size: 12px
+        line-height: 16px
+        color: var(--color-neutral-500)
+        background: var(--bg-white)
+        padding: 2px 6px
+        border-radius: 8px
+
+/* Select */
+.lnFormInput--select
+    .lnFormInput__control
+        -webkit-appearance: none
+        -moz-appearance: none
+        appearance: none
+        padding-right: 44px
+        background-color: var(--bg-white)
+    .lnFormInput__arrow
+        position: absolute
+        right: 10px
+        top: 50%
+        transform: translateY(-50%) rotate(0deg)
+        width: 36px
+        height: 36px
+        border-radius: 12px
+        background: url('../../../src/assets/icons/chevron-down.svg') no-repeat center / 20px 20px
+        pointer-events: none
+        transition: transform .2s ease
+    .lnFormInput__control:focus ~ .lnFormInput__arrow
+        transform: translateY(-50%) rotate(180deg)
+
+/* Disabled / Readonly */
+.lnFormInput.is-disabled .lnFormInput__control,
+.lnFormInput__control:disabled
+    background: var(--bg-light-1)
+    color: var(--color-neutral-400)
+    cursor: not-allowed
+
+.lnFormInput.is-readonly .lnFormInput__control,
+.lnFormInput__control[readonly]
+    background: var(--bg-white-surface)
+    color: var(--color-neutral-700)
+
+
+form
+  &.search-bar
+
+    .input-group
+      width: 100%
+      
+      .input-group-text
+        border: 0
+        background: var(--bg-white)
+        padding-left: var(--space-8)
+        padding-right: var(--space-8)
+
+      .form-control
+        border: 0
+        font-size: 16px !important
+        line-height: 24px !important
+        font-weight: var(--font-weight-regular)
+        color: var(--text-black)
+
+        &::placeholder,
+        &::-moz-placeholder,
+        &::-webkit-input-placeholder,
+        &:-ms-input-placeholder
+          font-size: 16px !important
+          line-height: 24px !important
+          font-weight: var(--font-weight-regular)
+          color: var(--color-neutral-300) !important
+
+        &:focus
+          box-shadow: var(--shadow-0)
+
+    .dropdown
+
+      .dropdown-toggle
+        font-size: 14px !important
+        line-height: 26px !important
+        font-weight: var(--font-weight-medium)
+        color: var(--text-black)
+        padding: var(--space-8) var(--space-16)
+        border: var(--stroke-default) 1px solid
+        border-radius: var(--radius-full)
+        background: var(--bg-white)
+        gap: var(--space-8)
+
+        &::after
+          background-size: var(--space-24) var(--space-24)
+      
+      .dropdown-menu
+        box-shadow: var(--shadow-lg)    
+        border: var(--stroke-default) 1px solid
+        border-radius: var(--radius-4)
+        background: var(--bg-white)
+        box-shadow: var(--shadow-lg)
+
+        .dropdown-item
+          color: var(--text-primary)
+          font-size: 14px !important
+          line-height: 22px !important
+          padding: var(--space-4) var(--space-8) !important
+    
+    .flex-button
+      width: 100%
+      @media only screen and (min-width: 992px)
+        width: fit-content
+      .btn
+        text-align: center
+        line-height: 22px !important
+        max-height: 44px !important
+        width: 100%
+        @media only screen and (min-width: 992px)
+          width: fit-content
+
+    .border-input
+      border-top: var(--stroke-default) 1px solid
+      height: 1px
+      width: 100%
+      padding-top: var(--space-4)
+      padding-bottom: var(--space-4)
+      padding-left: var(--space-0)
+      padding-right: var(--space-0)
+      @media only screen and (min-width: 992px)
+        border-left: var(--stroke-default) 1px solid
+        border-top: transparent 1px solid
+        height: 24px
+        width: 1px
+        padding-top: var(--space-0)
+        padding-bottom: var(--space-0)
+        padding-left: var(--space-4)
+        padding-right: var(--space-4)
+
+
+
+.lnSection__searchFilters
+    .lnSearchFilters
+        display: flex
+        gap: var(--space-16)
+        padding: var(--space-12) var(--space-16)
+        border-radius: 16px
+        background: var(--bg-white)
+        box-shadow: 0 8px 24px rgba(19,19,19,.08)
+        align-items: center
+        @media (max-width: 767.98px)
+            flex-direction: column
+            align-items: stretch
+            gap: var(--space-8)
+
+    /* Search */
+    .lnSF__search
+        display: flex
+        align-items: center
+        gap: var(--space-12)
+        flex: 1 1 auto
+        min-height: 48px
+        border-radius: 12px
+        padding: 0 var(--space-8)
+        .lnSF__icon
+            flex: 0 0 auto
+            opacity: .7
+        .lnSF__input
+            border: 0
+            outline: 0
+            width: 100%
+            font-size: 16px
+            line-height: 24px
+            background: transparent
+            &::placeholder
+                color: var(--color-neutral-400)
+
+    /* Divider (desktop only) */
+    .lnSF__divider
+        width: 1px
+        height: 32px
+        background: var(--stroke-default)
+        opacity: .6
+        @media (max-width: 767.98px)
+            display: none
+
+    /* Chips container – scrollable on mobile */
+    .lnSF__chips
+        display: flex
+        gap: var(--space-8)
+        flex: 0 0 auto
+        overflow-x: auto
+        -webkit-overflow-scrolling: touch
+        scrollbar-width: none
+        &::-webkit-scrollbar
+            display: none
+        padding-bottom: 2px
+
+    /* Chip */
+    .lnSFChip
+        display: inline-flex
+        align-items: center
+        gap: var(--space-8)
+        padding: 10px 14px
+        border: 1px solid var(--stroke-default)
+        background: var(--bg-white)
+        border-radius: 9999px
+        font-size: 14px
+        line-height: 20px
+        cursor: pointer
+        white-space: nowrap
+        transition: border-color .2s ease, box-shadow .2s ease
+        .lnSFChip__chev
+            opacity: .8
+        &:hover
+            border-color: var(--color-neutral-300)
+        &.is-active
+            border-color: var(--color-neutral-300)
+            box-shadow: 0 4px 14px rgba(19,19,19,.08)
+
+    /* Dropdown */
+    .lnSFDropdown
+        position: relative
+        margin-top: var(--space-8)
+        background: var(--bg-white)
+        border: 1px solid var(--stroke-default)
+        border-radius: 16px
+        box-shadow: var(--shadow-md)
+        padding: var(--space-8)
+        display: grid
+        gap: 4px
+        z-index: var(--z-dropdown)
+        @media (min-width: 768px)
+            position: absolute
+            margin-top: 8px
+            min-width: 220px
+        button[role="option"]
+            text-align: left
+            border: 0
+            background: transparent
+            padding: 10px 12px
+            border-radius: 10px
+            cursor: pointer
+            font-size: 14px
+            line-height: 20px
+            &:hover
+                background: var(--bg-light)
+            &.is-active
+                background: rgba(255,183,0,.09)
+                box-shadow: inset 0 0 0 1px var(--color-yellow-500)
+                color: var(--color-neutral-900)

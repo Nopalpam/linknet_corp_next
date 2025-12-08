@@ -1,0 +1,312 @@
+// path: styles/tokens.sass
+
+/* =======================================================
+   TOKENS MAP (Overview)
+   1) Font family
+      - --font-family-base
+
+   2) Base palette & semantic colors
+      2.1) Base palette
+           - --color-<hue>-<scale> (green|blue|neutral|yellow|red|white)
+      2.2) Semantic backgrounds
+           - --bg-<state> | --bg-<state>-surface
+      2.3) Semantic stroke
+           - --stroke-<state>
+      2.4) Semantic text
+           - --text-<state>
+      2.5) Semantic icon
+           - --icon-<state>
+
+   3) Spacing scale
+      - --space-<px>
+
+   4) Border radius (base + semantic)
+      4.1) Base
+           - --radius-<px>|full
+      4.2) Semantic
+           - --radius-small|medium|large|xlarge|round
+
+   5) Opacity scale
+      - --opacity-<0..100>
+
+   6) Shadow / elevation
+      - --shadow-sm|md|lg|xl|2xl
+
+   7) Button tokens (fill + outline)
+      - --btn-<variant>-fill|fill-hover|outline|outline-hover
+        (variant: primary|success|danger|info|disabled|secondary|warning)
+
+   8) Z-index scale
+      - --z-<layer> (negative|base|content|sticky|drawer|dropdown|overlay|modal|popover|tooltip|toast)
+   ======================================================= */
+
+/* =======================================================
+   ROOT TOKENS
+   ======================================================= */
+
+:root
+    // Font & typography
+    --font-family-base: 'Axiata', sans-serif
+    --font-weight-regular: 400
+    --font-weight-medium: 500
+    --font-weight-bold: 700
+    --tracking-tight: -0.01em
+    --tracking-normal: 0em
+    --tracking-wide: 0.02em
+
+    /* === Base Palette === */
+    /* Green */
+    --color-green-50: #e6f5f1
+    --color-green-100: #b0e0d5
+    --color-green-200: #8ad1c0
+    --color-green-300: #54bca4
+    --color-green-400: #33af92
+    --color-green-500: #009b77
+    --color-green-600: #008d6c
+    --color-green-700: #006e54
+    --color-green-800: #005541
+    --color-green-900: #004132
+
+    /* Blue */
+    --color-blue-50: #e6eef8
+    --color-blue-100: #b0cbe9
+    --color-blue-200: #8ab2de
+    --color-blue-300: #548ecf
+    --color-blue-400: #3379c6
+    --color-blue-500: #0057b8
+    --color-blue-600: #004fa7
+    --color-blue-700: #003e83
+    --color-blue-800: #003065
+    --color-blue-900: #00254d
+
+    /* Neutral */
+    --color-neutral-50: #f1f1f1
+    --color-neutral-100: #d3d3d3
+    --color-neutral-200: #bebebe
+    --color-neutral-300: #a0a0a0
+    --color-neutral-400: #8d8d8d
+    --color-neutral-500: #717171
+    --color-neutral-600: #676767
+    --color-neutral-700: #505050
+    --color-neutral-800: #3e3e3e
+    --color-neutral-900: #2f2f2f
+
+    /* Yellow */
+    --color-yellow-50: #fff8e6
+    --color-yellow-100: #ffe9b0
+    --color-yellow-200: #ffde8a
+    --color-yellow-300: #ffcf54
+    --color-yellow-400: #ffc533
+    --color-yellow-500: #ffb700
+    --color-yellow-600: #e8a700
+    --color-yellow-700: #b58200
+    --color-yellow-800: #8c6500
+    --color-yellow-900: #6b4d00
+
+    /* Red */
+    --color-red-50: #fbe6ec
+    --color-red-100: #f2b0c4
+    --color-red-200: #ec8aa7
+    --color-red-300: #e3547f
+    --color-red-400: #dd3366
+    --color-red-500: #d50040
+    --color-red-600: #c2003a
+    --color-red-700: #97002d
+    --color-red-800: #750023
+    --color-red-900: #59001b
+
+    /* White */
+    --color-white: #ffffff
+
+    /* === Semantic Backgrounds === */
+    --bg-primary: var(--color-yellow-500)
+    --bg-primary-surface: var(--color-yellow-50)
+    --bg-danger: var(--color-red-500)
+    --bg-danger-surface: var(--color-red-50)
+    --bg-warning: var(--color-yellow-500)
+    --bg-warning-surface: var(--color-yellow-50)
+    --bg-info: var(--color-blue-500)
+    --bg-info-surface: var(--color-blue-50)
+    --bg-white: var(--color-white)
+    --bg-white-surface: var(--color-neutral-50)
+    --bg-light: #FAFAFC
+    --bg-light-1: #F3F3F3
+
+    /* === Semantic Stroke === */
+    --stroke-default: #dedede
+    --stroke-success: var(--color-green-500)
+    --stroke-danger: var(--color-red-500)
+    --stroke-warning: var(--color-yellow-500)
+    --stroke-info: var(--color-blue-500)
+    --stroke-white: var(--color-white)
+
+    /* === Semantic Icon === */
+    --icon-default: var(--color-neutral-900)
+    --icon-success: var(--color-green-500)
+    --icon-danger: var(--color-red-500)
+    --icon-warning: var(--color-yellow-500)
+    --icon-info: var(--color-blue-500)
+    --icon-white: var(--color-white)
+
+    /* === Semantic Text === */
+    --text-black: var(--color-neutral-900)
+    --text-secondary: var(--color-neutral-600)
+    --text-success: var(--color-green-500)
+    --text-danger: var(--color-red-500)
+    --text-warning: var(--color-yellow-500)
+    --text-info: var(--color-blue-500)
+    --text-white: var(--color-white)
+
+    /* === Spacing Scale === */
+    --space-0: 0px
+    --space-4: 4px
+    --space-8: 8px
+    --space-10: 10px
+    --space-12: 12px
+    --space-16: 16px
+    --space-20: 20px
+    --space-24: 24px
+    --space-32: 32px
+    --space-40: 40px
+    --space-48: 48px
+    --space-56: 56px
+    --space-64: 64px
+    --space-80: 80px
+    --space-96: 96px
+    --space-112: 112px
+    --space-128: 128px
+
+    /* === Border Radius (Base) === */
+    --radius-0: 0px
+    --radius-2: 2px
+    --radius-4: 4px
+    --radius-8: 8px
+    --radius-12: 12px
+    --radius-16: 16px
+    --radius-24: 24px
+    --radius-32: 32px
+    --radius-full: 9999px
+
+    /* === Border Radius (Semantic) === */
+    --radius-small: var(--radius-4)
+    --radius-medium: var(--radius-12)
+    --radius-large: var(--radius-16)
+    --radius-xlarge: var(--radius-24)
+    --radius-round: var(--radius-full)
+
+    /* === Opacity Scale === */
+    --opacity-0: 0
+    --opacity-5: 0.05
+    --opacity-10: 0.1
+    --opacity-20: 0.2
+    --opacity-30: 0.3
+    --opacity-40: 0.4
+    --opacity-50: 0.5
+    --opacity-60: 0.6
+    --opacity-70: 0.7
+    --opacity-80: 0.8
+    --opacity-90: 0.9
+    --opacity-100: 1
+
+    /* === Shadow / Elevation === */
+    --shadow-sm: 0 2px 8px -1px rgba(47, 47, 47, var(--opacity-5))
+    --shadow-md: 0 8px 24px -2px rgba(47, 47, 47, var(--opacity-5))
+    --shadow-lg: 0 12px 32px -2px rgba(47, 47, 47, var(--opacity-5))
+    --shadow-xl: 0 16px 40px -3px rgba(47, 47, 47, var(--opacity-5))
+    --shadow-2xl: 0 20px 56px -4px rgba(47, 47, 47, var(--opacity-5))
+
+    /* === Button Primary === */
+    --btn-primary-fill: var(--color-yellow-500)
+    --btn-primary-fill-hover: var(--color-yellow-600)
+    --btn-primary-outline: var(--color-yellow-500)
+    --btn-primary-outline-hover: var(--color-yellow-600)
+
+    /* === Button Secondary === */
+    --btn-secondary-fill: var(--stroke-default)
+    --btn-secondary-fill-hover: var(--stroke-default)
+    --btn-secondary-outline: var(--stroke-default)
+    --btn-secondary-outline-hover: var(--stroke-default)
+
+    /* === Button Success === */
+    --btn-success-fill: var(--color-green-500)
+    --btn-success-fill-hover: var(--color-green-600)
+    --btn-success-outline: var(--color-green-500)
+    --btn-success-outline-hover: var(--color-green-600)
+
+    /* === Button Warning === */
+    --btn-warning-fill: var(--color-yellow-500)
+    --btn-warning-fill-hover: var(--color-yellow-600)
+    --btn-warning-outline: var(--color-yellow-500)
+    --btn-warning-outline-hover: var(--color-yellow-600)
+
+    /* === Button Danger === */
+    --btn-danger-fill: var(--color-red-500)
+    --btn-danger-fill-hover: var(--color-red-600)
+    --btn-danger-outline: var(--color-red-500)
+    --btn-danger-outline-hover: var(--color-red-600)
+
+    /* === Button Info === */
+    --btn-info-fill: var(--color-blue-500)
+    --btn-info-fill-hover: var(--color-blue-600)
+    --btn-info-outline: var(--color-blue-500)
+    --btn-info-outline-hover: var(--color-blue-600)
+
+    /* === Button Disabled === */
+    --btn-disabled-fill: var(--color-neutral-200)
+    --btn-disabled-outline: var(--color-neutral-200)
+
+    /* === Z-Index Scale === */
+    /* di bawah canvas (mis. dekorasi bg) */
+    --z-negative: -1
+    /* default layer */
+    --z-base: 0
+    /* konten biasa */
+    --z-content: 1
+    /* header sticky / subnav */
+    --z-sticky: 100
+    /* side drawer / off-canvas */
+    --z-drawer: 900
+    /* dropdown menu */
+    --z-dropdown: 1000
+    /* backdrop / overlay */
+    --z-overlay: 1040
+    /* modal container */
+    --z-modal: 1050
+    /* popover / datepicker */
+    --z-popover: 1060
+    /* tooltip */
+    --z-tooltip: 1070
+    /* toast / notification */
+    --z-toast: 1100
+
+/* ===== Utilities ===== */
+
+.font-bold
+    font-weight: var(--font-weight-bold)
+
+.font-medium
+    font-weight: var(--font-weight-medium)
+
+.font-regular
+    font-weight: var(--font-weight-regular)
+
+.text-black
+    color: var(--color-neutral-900)
+
+.text-secondary
+    color: var(--color-neutral-300)
+
+.text-success
+    color: var(--color-green-500)
+
+.text-danger
+    color: var(--color-red-500)
+
+.text-warning
+    color: var(--color-yellow-500)
+
+.text-info
+    color: var(--color-blue-500)
+
+.text-white
+    color: var(--color-white)
