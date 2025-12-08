@@ -1,0 +1,527 @@
+import type { Metadata } from 'next';
+import Script from 'next/script';
+
+export const metadata: Metadata = {
+  title: 'PT Link Net Tbk - We LINK the nation for better lives',
+  description: 'Linknet is dedicated to improving lives and supporting Indonesia\'s digital growth by delivering smart, reliable technology infrastructure',
+  viewport: 'width=device-width, initial-scale=1',
+};
+
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        {/* Bootstrap 5.3 CSS */}
+        <link href="/assets_frontend/3rd/bootstrap/bootstrap.css" rel="stylesheet" />
+        
+        {/* Swiper CSS */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+        />
+
+        {/* Main CSS */}
+        <link rel="stylesheet" href="/assets_frontend/styles/main.css" />
+      </head>
+      <body>
+        {/* Header */}
+        <header className="ln-header sticky-top bg-white">
+          {/* Main bar */}
+          <nav className="navbar navbar-expand-lg bg-white">
+            <div className="container-lg">
+              {/* Logo */}
+              <a className="navbar-brand d-flex align-items-center" href="/" aria-label="Homepage">
+                <img src="/assets_frontend/logos/linknet-logo.svg" alt="Linknet" width="92" height="32" />
+              </a>
+
+              {/* Right: small actions on mobile */}
+              <div className="d-flex d-lg-none align-items-center gap-2">
+                {/* Language (mobile quick) */}
+                <div className="d-flex flex-column">
+                  <span className="text-caption-c2 text-secondary">IDX:LINK</span>
+                  <div className="d-flex align-items-center gap-1">
+                    <span className="text-body-b4 font-medium">IDR 2.560,00</span>
+                    <button className="text-caption-c2 btn p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Last updated at 9 September 2025 00:36">
+                      <img src="/assets_frontend/icons/info.svg" alt="Info" width="16" height="16" />
+                    </button>
+                  </div>
+                </div>
+                {/* Offcanvas toggler */}
+                <button className="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav">
+                  <img src="/assets_frontend/icons/menu-hamburger.svg" width="24" height="24" alt="" />
+                </button>
+              </div>
+
+              {/* Desktop nav */}
+              <div className="collapse navbar-collapse">
+                <ul className="navbar-nav me-auto ms-2 gap-1">
+                  {/* Home */}
+                  <li className="nav-item">
+                    <a className="nav-link text-body-b5 font-medium" href="/">Home</a>
+                  </li>
+
+                  {/* About (MEGA) */}
+                  <li className="nav-item dropdown position-static">
+                    <a className="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                      About
+                    </a>
+                    <div className="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                      <div className="p-3 d-flex gap-4 flex-wrap">
+                        <div className="mega-col">
+                          <ul className="mega-list list-unstyled m-0 p-0">
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Corporate Information</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Corporate Overview</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Milestone</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Group Structures</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Management</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Awards</span>
+                                </span>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+
+                  {/* Corporate Governance */}
+                  <li className="nav-item dropdown position-static">
+                    <a className="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                      Corporate Governance
+                    </a>
+                    <div className="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                      <div className="p-3 d-flex gap-4 flex-wrap">
+                        <div className="mega-col">
+                          <ul className="mega-list list-unstyled m-0 p-0">
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Structure</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Principle</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Guidance</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Article of Association</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Code of Conduct</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Whistleblowing System</span>
+                                </span>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+
+                  {/* Investor */}
+                  <li className="nav-item dropdown position-static">
+                    <a className="nav-link text-body-b5 font-medium nav-link-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                      Investor
+                    </a>
+                    <div className="dropdown-menu dropdown-mega border-0 mt-0 p-0">
+                      <div className="p-3 d-flex gap-4 flex-wrap">
+                        <div className="mega-col">
+                          <ul className="mega-list list-unstyled m-0 p-0">
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">GMS Announcement</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Emiten Announcement</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Financial Statement</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Annual Report</span>
+                                </span>
+                              </a>
+                            </li>
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Sustainable Report</span>
+                                </span>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="mega-col">
+                          <h6 className="mega-heading text-caption-c1">Investor</h6>
+                          <ul className="list-unstyled m-0 p-0">
+                            <li>
+                              <a className="mega-item" href="#">
+                                <span className="texts">
+                                  <span className="title">Stock Price</span>
+                                </span>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+
+                  {/* Simple links */}
+                  <li className="nav-item">
+                    <a className="nav-link text-body-b5 font-medium" href="/media">Media</a>
+                  </li>
+                  <li className="nav-item">
+                    <a className="nav-link text-body-b5 font-medium" href="/sustainability">Sustainability</a>
+                  </li>
+                  <li className="nav-item">
+                    <a className="nav-link text-body-b5 font-medium" href="/careers">Career</a>
+                  </li>
+                </ul>
+
+                {/* Right side (desktop) */}
+                <div className="d-none d-lg-flex align-items-center gap-2">
+                  {/* IDX stack + tooltip */}
+                  <div className="d-flex flex-column">
+                    <span className="text-caption-c2 text-secondary">IDX:LINK</span>
+                    <div className="d-flex align-items-center gap-1">
+                      <span className="text-body-b4 font-medium">IDR 2.560,00</span>
+                      <button className="text-caption-c2 btn p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Last updated at 9 September 2025 00:36">
+                        <img src="/assets_frontend/icons/info.svg" alt="Info" width="16" height="16" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Search */}
+                  <button className="nav-icon-btn" aria-label="Search">
+                    <img src="/assets_frontend/icons/search.svg" alt="Search" width="20" height="20" />
+                  </button>
+                  {/* Language */}
+                  <div className="dropdown">
+                    <button className="btn btn-light rounded-pill p-0 pe-1" data-bs-toggle="dropdown" aria-expanded="false">
+                      <img src="/assets_frontend/icons/world.svg" alt="" width="18" height="18" /> EN
+                    </button>
+                    <ul className="dropdown-menu shadow-sm rounded-3">
+                      <li>
+                        <a className="mega-item w-100 text-body-b5" href="#!">English</a>
+                      </li>
+                      <li>
+                        <a className="mega-item w-100 text-body-b5" href="#!">Bahasa</a>
+                      </li>
+                    </ul>
+                  </div>
+                  {/* CTA */}
+                  <a href="/contact-us" className="btn btn-md btn-secondary-outline font-medium">Get in Touch</a>
+                </div>
+              </div>
+            </div>
+          </nav>
+          <div className="mega-overlay" id="megaOverlay" aria-hidden="true"></div>
+        </header>
+
+        {/* Offcanvas Mobile */}
+        <div className="offcanvas offcanvas-end offcanvas-fullscreen fade" tabIndex={-1} id="mobileNav" aria-labelledby="mobileNavLabel">
+          {/* Header */}
+          <div className="oc-header d-flex align-items-center justify-content-between">
+            <a className="oc-logo d-inline-flex align-items-center" href="/">
+              <img src="/assets_frontend/logos/linknet-logo.svg" alt="Linknet" width="92" height="32" />
+            </a>
+            <div className="rightSide d-flex align-items-center gap-1">
+              <button id="openLanguage" className="btn btn-light rounded-pill pe-2">
+                <img src="/assets_frontend/icons/world.svg" width="18" height="18" className="me-1" alt="" />
+                <span className="lang-label">EN</span>
+                <img src="/assets_frontend/icons/chevron-down.svg" width="24" height="24" alt="" />
+              </button>
+              <button type="button" className="btn btn-icon p-0" data-bs-dismiss="offcanvas" aria-label="Close">
+                <img src="/assets_frontend/icons/close.svg" width="24" height="24" alt="Close" />
+              </button>
+            </div>
+          </div>
+          {/* Body */}
+          <div className="offcanvas-body p-0 d-flex flex-column">
+            <div className="oc-pages flex-grow-1">
+              <section className="oc-page is-active" id="oc-main">
+                <div className="oc-search-row">
+                  <button className="btn btn-md btn-secondary-outline font-medium w-100 text-center" type="button" data-open="search">
+                    <img src="/assets_frontend/icons/search.svg" width="18" height="18" alt="" />
+                    <span>Search</span>
+                  </button>
+                </div>
+                <nav className="oc-menu">
+                  <a className="oc-item" href="/">Home</a>
+                  <button className="oc-item" type="button" data-open="About Us">
+                    About Us <img src="/assets_frontend/icons/chevron-right.svg" width="24" height="24" alt="" />
+                  </button>
+                  <button className="oc-item" type="button" data-open="Business">
+                    Business <img src="/assets_frontend/icons/chevron-right.svg" width="24" height="24" alt="" />
+                  </button>
+                  <button className="oc-item" type="button" data-open="Investor">
+                    Investor <img src="/assets_frontend/icons/chevron-right.svg" width="24" height="24" alt="" />
+                  </button>
+                  <a className="oc-item" href="/media">Media</a>
+                  <a className="oc-item" href="/sustainability">Sustainability</a>
+                  <a className="oc-item" href="/careers">Careers</a>
+                </nav>
+              </section>
+            </div>
+            <div className="oc-footer text-center">
+              <a href="/contact-us" className="btn btn-md btn-warning">
+                Get in Touch <img src="/assets_frontend/icons/chevron-right.svg" alt="" />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <main>
+          {children}
+        </main>
+
+        {/* Footer */}
+        <footer className="lnFooter">
+          {/* Contact banner */}
+          <section className="lnFooter__contact">
+            <div className="container">
+              <div className="lnFooterContact card border-0">
+                <div className="row g-3 align-items-stretch">
+                  <div className="col-12 col-lg-4">
+                    <div className="lnFooterContact__ask h-100">
+                      <div className="lnFooterContact__badge">
+                        <img src="/assets_frontend/illustrations/question.svg" width="40" height="40" alt="" />
+                      </div>
+                      <h3 className="text-headline-h4 font-bold m-0">Have questions about Linknet?</h3>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-lg-4">
+                    <div className="lnFooterContact__box h-100">
+                      <div className="text-body-b5 text-secondary mb-2">Corporate &amp; Media</div>
+                      <ul className="list-unstyled m-0 d-grid gap-2 p-0">
+                        <li>
+                          <a className="lnFooterContact__link font-medium" href="mailto:corporate.secretary@linknet.co.id">
+                            <img src="/assets_frontend/icons/mail.svg" alt="" width="18" height="18" />
+                            corporate.secretary@linknet.co.id
+                          </a>
+                        </li>
+                        <li>
+                          <a className="lnFooterContact__link font-medium" href="tel:+622129536800">
+                            <img src="/assets_frontend/icons/phone.svg" alt="" width="18" height="18" />
+                            021-29536800
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-lg-4">
+                    <div className="lnFooterContact__more h-100">
+                      <div className="text-body-b5 text-secondary mb-2">More enquiries?</div>
+                      <a className="btn btn-md btn-secondary-outline" href="#">
+                        <span>Send us a Message</span>
+                        <img src="/assets_frontend/icons/arrow-top-right.svg" alt="" width="18" height="18" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Footer main */}
+          <section className="lnFooter__main">
+            <div className="container">
+              <div className="row gy-4 align-items-start">
+                <div className="col-12 col-lg-4">
+                  <div className="lnFooterBrand">
+                    <div className="lnFooterBrand__logos d-flex align-items-center gap-3 mb-3">
+                      <a href="/" className="d-inline-flex">
+                        <img src="/assets_frontend/logos/linknet-logo.svg" alt="Linknet" height="28" />
+                      </a>
+                    </div>
+                    <div className="lnFooterBrand__subs d-flex align-items-center gap-3 mb-4">
+                      <a href="https://enterprise.linknet.co.id" target="_blank" rel="noopener">
+                        <img src="/assets_frontend/logos/logo-enterprise.svg" alt="Linknet Enterprise" height="32" />
+                      </a>
+                      <a href="https://firstmedia.com" target="_blank" rel="noopener">
+                        <img src="/assets_frontend/logos/logo-fiberco.svg" alt="Linknet Media" height="32" />
+                      </a>
+                      <a href="https://fiber.linknet.co.id" target="_blank" rel="noopener">
+                        <img src="/assets_frontend/logos/logo-mediaco.svg" alt="Linknet Fiber" height="32" />
+                      </a>
+                    </div>
+
+                    <address className="lnFooterBrand__addr text-body-b4 text-secondary mb-5">
+                      Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25 Jakarta 12930, Indonesia
+                    </address>
+
+                    <div className="lnFooterBrand__social d-flex align-items-center gap-2">
+                      <a href="#" aria-label="Instagram">
+                        <img src="/assets_frontend/icons/social-instagram.svg" alt="" width="24" height="24" />
+                      </a>
+                      <a href="#" aria-label="YouTube">
+                        <img src="/assets_frontend/icons/social-youtube.svg" alt="" width="24" height="24" />
+                      </a>
+                      <a href="#" aria-label="TikTok">
+                        <img src="/assets_frontend/icons/social-tiktok.svg" alt="" width="24" height="24" />
+                      </a>
+                      <a href="#" aria-label="X">
+                        <img src="/assets_frontend/icons/social-x.svg" alt="" width="24" height="24" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12 col-lg-8">
+                  <div className="lnFooterGrid d-none d-lg-grid">
+                    <div className="lnFooterMenuCol">
+                      <div className="lnFooterMenuTitle">Company</div>
+                      <ul className="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Management</a></li>
+                        <li><a href="#">Business</a></li>
+                        <li><a href="#">Media &amp; News</a></li>
+                        <li><a href="#">Awards</a></li>
+                      </ul>
+                    </div>
+                    <div className="lnFooterMenuCol">
+                      <div className="lnFooterMenuTitle">Investor Relations</div>
+                      <ul className="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                        <li><a href="#">Overview</a></li>
+                        <li><a href="#">Stock Price</a></li>
+                        <li><a href="#">Announcements</a></li>
+                        <li><a href="#">Reports</a></li>
+                      </ul>
+                    </div>
+                    <div className="lnFooterMenuCol">
+                      <div className="lnFooterMenuTitle">Join #FirstSquad</div>
+                      <ul className="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                        <li><a href="#">Life at Linknet</a></li>
+                        <li><a href="#">Explore Career</a></li>
+                      </ul>
+                    </div>
+                    <div className="lnFooterMenuCol">
+                      <div className="lnFooterMenuTitle">Platform</div>
+                      <ul className="list-unstyled lnFooterList mb-0 p-0 text-body-b4">
+                        <li><a href="#">Corporate Policy</a></li>
+                        <li><a href="#">Children Online Protection</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Sitemap</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Copyright */}
+          <section className="lnFooter__copyright">
+            <div className="container">
+              <p className="m-0 text-center text-caption-c1 text-secondary">
+                Copyright © 1996 - 2025 PT Linknet Tbk. All Right Reserved.
+              </p>
+            </div>
+          </section>
+        </footer>
+
+        {/* Scripts */}
+        <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
+        <Script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js" strategy="afterInteractive" />
+        <Script src="https://code.highcharts.com/maps/highmaps.js" strategy="afterInteractive" />
+        <Script src="/assets_frontend/script/main.js" strategy="afterInteractive" />
+        <Script src="/assets_frontend/script/componets/sliders.js" strategy="afterInteractive" />
+        <Script src="/assets_frontend/script/componets/sections.js" strategy="afterInteractive" />
+        <Script src="/assets_frontend/script/componets/map.js" strategy="afterInteractive" />
+        <Script src="/assets_frontend/script/componets/footer.js" strategy="afterInteractive" />
+        
+        {/* Bootstrap tooltips initialization */}
+        <Script id="bootstrap-tooltips" strategy="afterInteractive">
+          {`
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+          `}
+        </Script>
+
+        <style jsx global>{`
+          .nav-icon-btn { 
+            border: 0; 
+            background: transparent; 
+            padding: .25rem .5rem; 
+          }
+        `}</style>
+      </body>
+    </html>
+  );
+}
