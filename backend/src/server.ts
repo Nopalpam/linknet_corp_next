@@ -10,14 +10,13 @@ dotenv.config();
 
 // Import validators and services
 import { validateEnvironmentAtStartup } from '@middleware/environmentValidator';
+import { initializeTokenCleanupJobs } from '@services/tokenCleanup.service';
 import healthRoutes from '@routes/health.routes';
 
 // Import centralized middleware
 import { requestIdMiddleware } from '@middleware/requestId.middleware';
 import { httpLoggerMiddleware } from '@middleware/httpLogger.middleware';
-import { generalRateLimiter } from '@middleware/rateLimiter.middleware';
-// authRateLimiter can be imported when auth routes are added
-// import { authRateLimiter } from '@middleware/rateLimiter.middleware';
+import { generalRateLimiter, authRateLimiter } from '@middleware/rateLimiter.middleware';
 import {
   errorHandler,
   notFoundHandler,
@@ -96,9 +95,9 @@ app.get(API_PREFIX, (_req: Request, res: Response) => {
 import exampleRoutes from '@routes/example.routes';
 app.use(`${API_PREFIX}/examples`, exampleRoutes);
 
-// Example: Auth routes with stricter rate limiting
-// import authRoutes from '@routes/auth.routes';
-// app.use(`${API_PREFIX}/auth`, authRateLimiter, authRoutes);
+// Auth routes with stricter rate limiting
+import authRoutes from '@routes/auth.routes';
+app.use(`${API_PREFIX}/auth`, authRateLimiter, authRoutes);
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
@@ -113,6 +112,9 @@ app.listen(PORT, () => {
     port: PORT,
     url: `http://localhost:${PORT}`,
   });
+
+  // Initialize token cleanup cron jobs
+  initializeTokenCleanupJobs();
 
   console.log(`
     ╔══════════════════════════════════════╗

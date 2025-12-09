@@ -1,0 +1,314 @@
+import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { AppError } from '../types/error.types';
+import { invalidateRoleCache } from '../utils/rbac';
+import { PermissionsByModule } from '../constants/permissions';
+
+const prisma = new PrismaClient();
+
+/**
+ * Get all roles with their permissions
+ */
+export const getRoles = async (req: Request, res: Response) => {
+  const roles = await prisma.role.findMany({
+    where: {
+      deletedAt: null,
+    },
+    include: {
+      rolePermissions: {
+        include: {
+          permission: true,
+        },
+      },
+      _count: {
+        select: {
+          userRoles: true,
+        },
+      },
+    },
+    orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
+  });
+
+  const formattedRoles = roles.map((role) => ({
+    id: role.id,
+    name: role.name,
+    slug: role.slug,
+    description: role.description,
+    isSystem: role.isSystem,
+    userCount: role._count.userRoles,
+    permissions: role.rolePermissions.map((rp) => ({
+      id: rp.permission.id,
+      name: rp.permission.name,
+      slug: rp.permission.slug,
+      module: rp.permission.module,
+    })),
+    createdAt: role.createdAt,
+    updatedAt: role.updatedAt,
+  }));
+
+  res.json({
+    success: true,
+    data: formattedRoles,
+  });
+};
+
+/**
+ * Get single role by ID
+ */
+export const getRoleById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const role = await prisma.role.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+    },
+    include: {
+      rolePermissions: {
+        include: {
+          permission: true,
+        },
+      },
+    },
+  });
+
+  if (!role) {
+    throw new AppError('Role not found', 404, 'NOT_FOUND');
+  }
+
+  const formattedRole = {
+    id: role.id,
+    name: role.name,
+    slug: role.slug,
+    description: role.description,
+    isSystem: role.isSystem,
+    permissions: role.rolePermissions.map((rp) => ({
+      id: rp.permission.id,
+      name: rp.permission.name,
+      slug: rp.permission.slug,
+      module: rp.permission.module,
+    })),
+    createdAt: role.createdAt,
+    updatedAt: role.updatedAt,
+  };
+
+  res.json({
+    success: true,
+    data: formattedRole,
+  });
+};
+
+/**
+ * Create new role
+ */
+export const createRole = async (req: Request, res: Response) => {
+  const { name, slug, description, permissionIds } = req.body;
+
+  // Validate required fields
+  if (!name || !slug) {
+    throw new AppError('Name and slug are required', 400, 'VALIDATION_ERROR');
+  }
+
+  // Check if role with same slug exists
+  const existingRole = await prisma.role.findFirst({
+    where: {
+      slug,
+      deletedAt: null,
+    },
+  });
+
+  if (existingRole) {
+    throw new AppError('Role with this slug already exists', 409, 'DUPLICATE_ENTRY');
+  }
+
+  // Create role
+  const role = await prisma.role.create({
+    data: {
+      name,
+      slug,
+      description,
+      isSystem: false,
+    },
+  });
+
+  // Assign permissions if provided
+  if (permissionIds && Array.isArray(permissionIds) && permissionIds.length > 0) {
+    await prisma.rolePermission.createMany({
+      data: permissionIds.map((permissionId: string) => ({
+        roleId: role.id,
+        permissionId,
+      })),
+    });
+  }
+
+  // Fetch role with permissions
+  const createdRole = await prisma.role.findUnique({
+    where: { id: role.id },
+    include: {
+      rolePermissions: {
+        include: {
+          permission: true,
+        },
+      },
+    },
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Role created successfully',
+    data: createdRole,
+  });
+};
+
+/**
+ * Update role
+ */
+export const updateRole = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, description, permissionIds } = req.body;
+
+  // Check if role exists
+  const role = await prisma.role.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+    },
+  });
+
+  if (!role) {
+    throw new AppError('Role not found', 404, 'NOT_FOUND');
+  }
+
+  // Update role
+  const updatedRole = await prisma.role.update({
+    where: { id },
+    data: {
+      name: name || role.name,
+      description: description !== undefined ? description : role.description,
+    },
+  });
+
+  // Update permissions if provided
+  if (permissionIds && Array.isArray(permissionIds)) {
+    // Delete existing permissions
+    await prisma.rolePermission.deleteMany({
+      where: { roleId: id },
+    });
+
+    // Add new permissions
+    if (permissionIds.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: permissionIds.map((permissionId: string) => ({
+          roleId: id,
+          permissionId,
+        })),
+      });
+    }
+
+    // Invalidate cache for users with this role
+    await invalidateRoleCache(id);
+  }
+
+  // Fetch updated role with permissions
+  const roleWithPermissions = await prisma.role.findUnique({
+    where: { id },
+    include: {
+      rolePermissions: {
+        include: {
+          permission: true,
+        },
+      },
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'Role updated successfully',
+    data: roleWithPermissions,
+  });
+};
+
+/**
+ * Delete role
+ */
+export const deleteRole = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  // Check if role exists
+  const role = await prisma.role.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+    },
+  });
+
+  if (!role) {
+    throw new AppError('Role not found', 404, 'NOT_FOUND');
+  }
+
+  // Prevent deletion of system roles
+  if (role.isSystem) {
+    throw new AppError('System roles cannot be deleted', 403, 'FORBIDDEN');
+  }
+
+  // Check if role has users
+  const userCount = await prisma.userRole.count({
+    where: { roleId: id },
+  });
+
+  if (userCount > 0) {
+    throw new AppError(
+      `Cannot delete role with ${userCount} assigned users. Please reassign users first.`,
+      409,
+      'CONFLICT'
+    );
+  }
+
+  // Soft delete role
+  await prisma.role.update({
+    where: { id },
+    data: {
+      deletedAt: new Date(),
+    },
+  });
+
+  // Invalidate cache
+  await invalidateRoleCache(id);
+
+  res.json({
+    success: true,
+    message: 'Role deleted successfully',
+  });
+};
+
+/**
+ * Get all permissions grouped by module
+ */
+export const getPermissions = async (req: Request, res: Response) => {
+  const permissions = await prisma.permission.findMany({
+    orderBy: [{ module: 'asc' }, { name: 'asc' }],
+  });
+
+  // Group permissions by module
+  const groupedPermissions: Record<string, any[]> = {};
+  permissions.forEach((permission) => {
+    if (!groupedPermissions[permission.module]) {
+      groupedPermissions[permission.module] = [];
+    }
+    groupedPermissions[permission.module].push({
+      id: permission.id,
+      name: permission.name,
+      slug: permission.slug,
+      description: permission.description,
+    });
+  });
+
+  res.json({
+    success: true,
+    data: {
+      permissions,
+      grouped: groupedPermissions,
+      modules: Object.keys(PermissionsByModule),
+    },
+  });
+};
