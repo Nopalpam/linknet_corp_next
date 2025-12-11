@@ -99,6 +99,30 @@ app.use(`${API_PREFIX}/examples`, exampleRoutes);
 import authRoutes from '@routes/auth.routes';
 app.use(`${API_PREFIX}/auth`, authRateLimiter, authRoutes);
 
+// Role management routes (CMS)
+import roleRoutes from '@routes/role.routes';
+app.use(`${API_PREFIX}/cms/roles`, roleRoutes);
+
+// User management routes (CMS)
+import userRoutes from '@routes/user.routes';
+app.use(`${API_PREFIX}/cms/users`, userRoutes);
+
+// Profile routes (current user)
+import profileRoutes from '@routes/profile.routes';
+app.use(`${API_PREFIX}/profile`, profileRoutes);
+
+// Settings routes (CMS + Public)
+import settingsRoutes from '@routes/settings.routes';
+app.use(`${API_PREFIX}`, settingsRoutes);
+
+// Menu routes (CMS + Public)
+import menuRoutes from '@routes/menu.routes';
+app.use(`${API_PREFIX}`, menuRoutes);
+
+// File Manager routes (CMS)
+import filemanagerRoutes from '@routes/filemanager.routes';
+app.use(`${API_PREFIX}/filemanager`, filemanagerRoutes);
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
 

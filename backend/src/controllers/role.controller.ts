@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 /**
  * Get all roles with their permissions
  */
-export const getRoles = async (req: Request, res: Response) => {
+export const getRoles = async (_req: Request, res: Response) => {
   const roles = await prisma.role.findMany({
     where: {
       deletedAt: null,
@@ -36,6 +36,7 @@ export const getRoles = async (req: Request, res: Response) => {
     description: role.description,
     isSystem: role.isSystem,
     userCount: role._count.userRoles,
+    permissionCount: role.rolePermissions.length,
     permissions: role.rolePermissions.map((rp) => ({
       id: rp.permission.id,
       name: rp.permission.name,
@@ -76,12 +77,18 @@ export const getRoleById = async (req: Request, res: Response) => {
     throw new AppError('Role not found', 404, 'NOT_FOUND');
   }
 
+  // Get user count
+  const userCount = await prisma.userRole.count({
+    where: { roleId: id },
+  });
+
   const formattedRole = {
     id: role.id,
     name: role.name,
     slug: role.slug,
     description: role.description,
     isSystem: role.isSystem,
+    userCount,
     permissions: role.rolePermissions.map((rp) => ({
       id: rp.permission.id,
       name: rp.permission.name,
@@ -153,6 +160,24 @@ export const createRole = async (req: Request, res: Response) => {
     },
   });
 
+  // Log activity
+  const userId = (req as any).user?.id;
+  if (userId) {
+    await prisma.logActivity.create({
+      data: {
+        userId,
+        action: 'CREATE',
+        module: 'ROLE_MANAGEMENT',
+        description: `Created role: ${name}`,
+        metadata: {
+          roleId: role.id,
+          roleName: name,
+          permissionCount: permissionIds?.length || 0,
+        },
+      },
+    });
+  }
+
   res.status(201).json({
     success: true,
     message: 'Role created successfully',
@@ -167,6 +192,10 @@ export const updateRole = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, permissionIds } = req.body;
 
+  if (!id) {
+    throw new AppError('Role ID is required', 400, 'VALIDATION_ERROR');
+  }
+
   // Check if role exists
   const role = await prisma.role.findFirst({
     where: {
@@ -177,6 +206,11 @@ export const updateRole = async (req: Request, res: Response) => {
 
   if (!role) {
     throw new AppError('Role not found', 404, 'NOT_FOUND');
+  }
+
+  // Block if system role
+  if (role.isSystem) {
+    throw new AppError('System roles cannot be edited', 403, 'FORBIDDEN');
   }
 
   // Update role
@@ -221,6 +255,24 @@ export const updateRole = async (req: Request, res: Response) => {
     },
   });
 
+  // Log activity
+  const userId = (req as any).user?.id;
+  if (userId) {
+    await prisma.logActivity.create({
+      data: {
+        userId,
+        action: 'UPDATE',
+        module: 'ROLE_MANAGEMENT',
+        description: `Updated role: ${updatedRole.name}`,
+        metadata: {
+          roleId: id,
+          roleName: updatedRole.name,
+          permissionCount: permissionIds?.length,
+        },
+      },
+    });
+  }
+
   res.json({
     success: true,
     message: 'Role updated successfully',
@@ -233,6 +285,10 @@ export const updateRole = async (req: Request, res: Response) => {
  */
 export const deleteRole = async (req: Request, res: Response) => {
   const { id } = req.params;
+
+  if (!id) {
+    throw new AppError('Role ID is required', 400, 'VALIDATION_ERROR');
+  }
 
   // Check if role exists
   const role = await prisma.role.findFirst({
@@ -275,6 +331,24 @@ export const deleteRole = async (req: Request, res: Response) => {
   // Invalidate cache
   await invalidateRoleCache(id);
 
+  // Log activity
+  const userId = (req as any).user?.id;
+  if (userId) {
+    await prisma.logActivity.create({
+      data: {
+        userId,
+        action: 'DELETE',
+        module: 'ROLE_MANAGEMENT',
+        description: `Deleted role: ${role.name}`,
+        metadata: {
+          roleId: id,
+          roleName: role.name,
+          userCount,
+        },
+      },
+    });
+  }
+
   res.json({
     success: true,
     message: 'Role deleted successfully',
@@ -284,7 +358,7 @@ export const deleteRole = async (req: Request, res: Response) => {
 /**
  * Get all permissions grouped by module
  */
-export const getPermissions = async (req: Request, res: Response) => {
+export const getPermissions = async (_req: Request, res: Response) => {
   const permissions = await prisma.permission.findMany({
     orderBy: [{ module: 'asc' }, { name: 'asc' }],
   });
@@ -295,12 +369,15 @@ export const getPermissions = async (req: Request, res: Response) => {
     if (!groupedPermissions[permission.module]) {
       groupedPermissions[permission.module] = [];
     }
-    groupedPermissions[permission.module].push({
-      id: permission.id,
-      name: permission.name,
-      slug: permission.slug,
-      description: permission.description,
-    });
+    const moduleGroup = groupedPermissions[permission.module];
+    if (moduleGroup) {
+      moduleGroup.push({
+        id: permission.id,
+        name: permission.name,
+        slug: permission.slug,
+        description: permission.description,
+      });
+    }
   });
 
   res.json({

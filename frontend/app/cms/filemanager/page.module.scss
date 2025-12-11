@@ -1,0 +1,199 @@
+.fileManager {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+
+  .header {
+    background: white;
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+
+      .searchForm {
+        flex: 1;
+        min-width: 250px;
+        max-width: 400px;
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        svg {
+          position: absolute;
+          left: 12px;
+          color: #9ca3af;
+          font-size: 18px;
+        }
+
+        input {
+          width: 100%;
+          padding: 10px 12px 10px 40px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 14px;
+          outline: none;
+          transition: all 0.2s;
+
+          &:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+        }
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-left: auto;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+
+        .uploadBtn {
+          background: #3b82f6;
+          color: white;
+
+          &:hover {
+            background: #2563eb;
+          }
+        }
+
+        .deleteBtn {
+          background: #ef4444;
+          color: white;
+
+          &:hover {
+            background: #dc2626;
+          }
+        }
+
+        .viewToggle {
+          display: flex;
+          gap: 4px;
+          background: #f3f4f6;
+          padding: 4px;
+          border-radius: 6px;
+
+          button {
+            padding: 8px;
+            background: transparent;
+            color: #6b7280;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+              background: white;
+              color: #3b82f6;
+            }
+
+            &.active {
+              background: white;
+              color: #3b82f6;
+              box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 16px;
+      color: #9ca3af;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+
+      button {
+        padding: 8px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover:not(:disabled) {
+          background: #f9fafb;
+          border-color: #9ca3af;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      span {
+        font-size: 14px;
+        color: #6b7280;
+      }
+    }
+  }
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+}

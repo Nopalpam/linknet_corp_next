@@ -160,67 +160,76 @@ model UserRole {
 // ============================================
 
 model Setting {
-  id          String    @id @default(uuid())
-  key         String    @unique
-  value       Json?
-  type        SettingType
+  id          String      @id @default(uuid())
+  key         String      @unique
+  value       Json
+  type        SettingType @default(STRING)
   group       String
   label       String
   description String?
-  isPublic    Boolean   @default(false) @map("is_public")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  isPublic    Boolean     @default(false) @map("is_public")
+  isSystem    Boolean     @default(false) @map("is_system") // Prevent deletion of system settings
+  options     Json?       // For select type: { options: ["option1", "option2"] }
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
 
   @@index([group])
   @@index([key])
+  @@index([isPublic])
   @@map("settings")
 }
 
 enum SettingType {
-  TEXT
+  STRING
   NUMBER
   BOOLEAN
   JSON
   IMAGE
-  FILE
+  SELECT
 }
 
 model Menu {
-  id          String     @id @default(uuid())
-  parentId    String?    @map("parent_id")
-  title       String
-  slug        String
-  url         String?
-  target      MenuTarget @default(SELF)
-  icon        String?
-  position    Int        @default(0)
-  isActive    Boolean    @default(true) @map("is_active")
-  menuType    MenuType   @default(HEADER) @map("menu_type")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  deletedAt   DateTime?  @map("deleted_at")
+  id        String       @id @default(uuid())
+  parentId  String?      @map("parent_id")
+  title     Json         // Multi-language support: { "en": "Home", "id": "Beranda" }
+  slug      String       @unique
+  url       String?
+  type      MenuLinkType @default(INTERNAL)
+  pageId    String?      @map("page_id") // For internal links
+  target    MenuTarget   @default(SELF)
+  icon      String?
+  order     Int          @default(0)
+  status    MenuStatus   @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   // Self-referencing relation for hierarchical structure
   parent   Menu?  @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children Menu[] @relation("MenuHierarchy")
+  page     Page?  @relation(fields: [pageId], references: [id], onDelete: SetNull)
 
   @@index([parentId])
-  @@index([position])
-  @@index([menuType])
-  @@index([isActive])
-  @@index([deletedAt])
+  @@index([order])
+  @@index([status])
+  @@index([type])
+  @@index([pageId])
   @@map("menus")
 }
 
 enum MenuTarget {
-  SELF
-  BLANK
+  SELF  // _self
+  BLANK // _blank
 }
 
-enum MenuType {
-  HEADER
-  FOOTER
-  SIDEBAR
+enum MenuLinkType {
+  INTERNAL // Link to internal page
+  EXTERNAL // Custom external URL
+  DROPDOWN // Parent menu without URL
+}
+
+enum MenuStatus {
+  ACTIVE
+  INACTIVE
 }
 
 // ============================================
@@ -250,6 +259,7 @@ model Page {
   createdBy  User            @relation("PageCreator", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy  User?           @relation("PageUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   components PageComponent[]
+  menus      Menu[]
 
   @@index([slug])
   @@index([status])
@@ -817,6 +827,7 @@ model File {
   cloudPath   String?   @map("cloud_path")
   cloudKey    String?   @map("cloud_key")
   thumbnail   String?
+  thumbnails  Json?     // {small: url, medium: url, large: url}
   width       Int?
   height      Int?
   duration    Int?

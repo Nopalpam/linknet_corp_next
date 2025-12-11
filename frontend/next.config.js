@@ -7,6 +7,12 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
     formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.blob.core.windows.net',
+      },
+    ],
   },
 
   // Environment variables exposed to the browser

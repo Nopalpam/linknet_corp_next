@@ -7,10 +7,10 @@ import {
   deleteRole,
   getPermissions,
 } from '../controllers/role.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authMiddleware as authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middlewares/rbac.middleware';
 import { Permission } from '../constants/permissions';
-import { asyncHandler } from '../utils/async-handler';
+import { asyncHandler } from '../middleware/errorHandler.middleware';
 
 const router = Router();
 
@@ -50,10 +50,10 @@ router.put('/:id', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_UP
 router.delete('/:id', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_DELETE), asyncHandler(deleteRole));
 
 /**
- * @route   GET /api/permissions
+ * @route   GET /api/cms/roles/permissions
  * @desc    Get all permissions grouped by module
  * @access  Private (requires role_management.read permission)
  */
-router.get('/permissions/list', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_READ), asyncHandler(getPermissions));
+router.get('/permissions', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_READ), asyncHandler(getPermissions));
 
 export default router;
