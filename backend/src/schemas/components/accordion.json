@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Accordion",
+  "description": "Collapsible accordion panels",
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "title": "Accordion Items",
+      "description": "List of accordion panels",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Panel Title",
+            "description": "Accordion panel header text"
+          },
+          "content": {
+            "type": "string",
+            "title": "Panel Content",
+            "description": "Accordion panel body content",
+            "contentMediaType": "text/html"
+          },
+          "is_open": {
+            "type": "boolean",
+            "title": "Initially Open",
+            "description": "Show this panel expanded by default",
+            "default": false
+          }
+        }
+      }
+    },
+    "allow_multiple": {
+      "type": "boolean",
+      "title": "Allow Multiple Open",
+      "description": "Allow multiple panels to be open simultaneously",
+      "default": false
+    }
+  }
+}

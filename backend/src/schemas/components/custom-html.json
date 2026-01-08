@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Custom HTML",
+  "description": "Custom HTML code block",
+  "required": ["html_content"],
+  "properties": {
+    "html_content": {
+      "type": "string",
+      "title": "HTML Content",
+      "description": "Custom HTML code to embed",
+      "contentMediaType": "text/html"
+    },
+    "container_class": {
+      "type": "string",
+      "title": "Container CSS Class",
+      "description": "Optional CSS class for wrapper div"
+    },
+    "enable_scripts": {
+      "type": "boolean",
+      "title": "Enable JavaScript",
+      "description": "Allow script tags in HTML (use with caution)",
+      "default": false
+    }
+  }
+}

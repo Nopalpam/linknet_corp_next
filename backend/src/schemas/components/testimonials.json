@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Testimonials",
+  "description": "Customer testimonials carousel or grid",
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "title": "Testimonial Items",
+      "description": "List of customer testimonials",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "quote"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Customer Name",
+            "description": "Name of person giving testimonial"
+          },
+          "position": {
+            "type": "string",
+            "title": "Position",
+            "description": "Job title or role"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company",
+            "description": "Company name"
+          },
+          "photo": {
+            "type": "string",
+            "title": "Photo",
+            "description": "Customer profile photo URL",
+            "format": "uri"
+          },
+          "quote": {
+            "type": "string",
+            "title": "Quote",
+            "description": "Testimonial text"
+          },
+          "rating": {
+            "type": "integer",
+            "title": "Rating",
+            "description": "Star rating (1-5)",
+            "minimum": 1,
+            "maximum": 5
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "string",
+      "title": "Layout",
+      "description": "Display layout style",
+      "enum": ["carousel", "grid", "list"],
+      "default": "carousel"
+    },
+    "columns": {
+      "type": "integer",
+      "title": "Grid Columns",
+      "description": "Number of columns for grid layout",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 3
+    }
+  }
+}

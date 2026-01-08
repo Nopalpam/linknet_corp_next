@@ -1,0 +1,76 @@
+Linknet Corporation
+
+Background:
+Linknet Corporation CMS dibuat untuk mengelola dan menampilkan informasi company profile serta data stocks secara terpusat. Aplikasi ini diakses publik dengan trafik tinggi akibat aktivitas iklan, serta digunakan internal untuk pembaruan konten.
+
+Objective:
+Menyediakan platform CMS yang aman, stabil, dan andal untuk mendukung trafik publik yang tinggi serta memudahkan pengelolaan konten oleh user internal, tanpa melibatkan transaksi pembayaran.
+
+Details on Application – Linknet (Corporation, Fiber, Enterprise, Media) CMS
+
+
+Application Type:
+Content Management System (CMS) untuk company profile dan informasi data.
+
+
+
+User Type (Customer / Employee):
+Customer (Internal User),
+Pengguna terdiri dari admin CMS dan user internal yang memiliki hak akses berbeda (role-based access).
+
+
+
+Number of Users:
+± 10 – 20 registered users
+- Admin CMS
+- Content Editor
+- Career Data Manager
+Concurrent users relatif rendah (<10 concurrent users).
+
+
+
+Estimated Number of Transactions per Month:
+
+Konteks:
+Non-financial traffic (page views / requests): ± 25,000 – 75,000 visits per month, driven by public access and advertisement campaigns.
+No payment or financial transactions.
+
+Perkiraan Volume:
+Volume lalu lintas tinggi karena akses publik dan kampanye iklan.
+- Tampilan halaman / akses konten: ± 25.000 – 75.000 permintaan per bulan
+- Tindakan administratif CMS (login, konten CRUD, pembaruan saham): ± 500 – 1.000 transaksi per bulan
+- Total permintaan tingkat aplikasi (termasuk akses baca saja): Tinggi
+
+
+
+Attachment in Application:
+
+Yes
+
+Jenis attachment:
+
+- Image files (banner, logo, media konten)
+- Dokumen pendukung (PDF, Office documents)
+
+Karakteristik:
+
+- Ukuran file kecil–menengah
+- Attachment disimpan di S3 Bucket AWS / server aplikasi atau storage terpusat
+- Dibatasi oleh validasi tipe dan ukuran file
+
+
+
+Impact on Application:
+
+Medium Impact System
+
+- Aplikasi digunakan untuk publikasi informasi perusahaan dan data
+- Downtime berdampak pada keterlambatan akses informasi dan update data
+- Data integrity dan availability tetap menjadi prioritas utama
+
+
+
+Description of Requirement:
+
+Linknet (Corporation, Fiber, Enterprise, Media) CMS digunakan untuk mengelola dan menampilkan informasi company profile serta data secara terpusat.
+Aplikasi ini membutuhkan sistem yang stabil, aman, dan mudah digunakan untuk pengelolaan konten, dengan kemampuan upload attachment serta akses data yang konsisten bagi user.

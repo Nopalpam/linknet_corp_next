@@ -257,7 +257,86 @@ This project is licensed under the MIT License.
 
 LinkNet Corp Development Team
 
-## 📞 Support
+## � Modules & Features
+
+### Content Management System (CMS)
+
+#### Page Management
+- **Full CRUD** - Create, read, update, delete pages
+- **SEO Optimization** - Meta title, description, keywords, OG images
+- **Template System** - Default, Full Width, Landing page layouts
+- **Slug Management** - Auto-generation, validation, uniqueness check
+- **Status Workflow** - Draft and published states
+- **Component Builder** - Dynamic page building with drag-drop interface
+
+📚 **Documentation:**
+- [Quick Start Guide](PAGE_MANAGEMENT_QUICK_START.md)
+- [Complete Documentation](PAGE_MANAGEMENT_README.md)
+- [Implementation Summary](PAGE_MANAGEMENT_IMPLEMENTATION_SUMMARY.md)
+
+#### Component System
+- **13 Component Types** - Hero, Text, Gallery, CTA, Video, Accordion, Tabs, Testimonials, Team, Stats, Pricing, Contact, News, Custom HTML
+- **JSON Schema Validation** - Automatic validation dengan Ajv
+- **Drag-Drop Builder** - Visual component arrangement
+- **Dynamic Form Generator** - Auto-generate forms from JSON schemas
+- **Visibility Toggle** - Show/hide components without delete
+- **Component Preview** - Preview before publish
+- **Public Rendering** - Display components on public pages
+- **Lazy Loading** - Performance optimization
+- **Scroll Animations** - Framer Motion animations
+
+📚 **Documentation:**
+- [Quick Start Guide](COMPONENT_SYSTEM_QUICK_START.md)
+- [Implementation Summary](COMPONENT_SYSTEM_SUMMARY.md)
+- [Completion Summary](COMPONENT_SYSTEM_COMPLETION.md)
+- [Quick Reference](PAGE_COMPONENT_QUICK_REFERENCE.md)
+
+#### Dynamic Page Rendering (NEW! 🎉)
+- **SSG/ISR Strategy** - Static generation with revalidation
+- **Catch-All Routing** - `/page/[slug]` and `/[slug]` routes
+- **Preview Mode** - Preview draft pages with secret
+- **SEO Optimization** - Auto-generate meta tags
+- **Component Rendering** - 13 rendering components
+- **Animations** - Scroll-triggered animations
+- **Performance** - Lazy loading, code splitting
+- **Error Handling** - Custom 404 and 500 pages
+
+📚 **Documentation:**
+- [Quick Start Guide](DYNAMIC_PAGE_QUICK_START.md)
+- [Complete Guide](DYNAMIC_PAGE_RENDERING_GUIDE.md)
+
+#### Menu Management
+- Hierarchical menu structure
+- Multi-language support
+- Internal/external links
+- Drag-and-drop ordering
+- Status management
+
+#### Role & Permission Management (RBAC)
+- Role-based access control
+- Granular permissions
+- User-role assignment
+- System roles protection
+
+#### User Management
+- User CRUD operations
+- Profile management
+- Status management
+- Activity logging
+
+#### File Manager
+- File upload/download
+- Folder management
+- File search & filter
+- Access control
+
+#### Settings System
+- Global settings management
+- Environment configuration
+- Public/private settings
+- Group-based organization
+
+## �📞 Support
 
 For support, email support@linknetcorp.com or open an issue in the repository.
 

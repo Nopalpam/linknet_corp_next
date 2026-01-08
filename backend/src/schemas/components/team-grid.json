@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Team Grid",
+  "description": "Team members display grid",
+  "required": ["members"],
+  "properties": {
+    "members": {
+      "type": "array",
+      "title": "Team Members",
+      "description": "List of team members",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "position"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Team member full name"
+          },
+          "position": {
+            "type": "string",
+            "title": "Position",
+            "description": "Job title or role"
+          },
+          "photo": {
+            "type": "string",
+            "title": "Photo",
+            "description": "Profile photo URL",
+            "format": "uri"
+          },
+          "bio": {
+            "type": "string",
+            "title": "Bio",
+            "description": "Short biography"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Contact email address",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone",
+            "description": "Contact phone number"
+          },
+          "social_links": {
+            "type": "object",
+            "title": "Social Links",
+            "description": "Social media profile URLs",
+            "properties": {
+              "linkedin": {
+                "type": "string",
+                "title": "LinkedIn",
+                "format": "uri"
+              },
+              "twitter": {
+                "type": "string",
+                "title": "Twitter",
+                "format": "uri"
+              },
+              "facebook": {
+                "type": "string",
+                "title": "Facebook",
+                "format": "uri"
+              },
+              "instagram": {
+                "type": "string",
+                "title": "Instagram",
+                "format": "uri"
+              }
+            }
+          }
+        }
+      }
+    },
+    "columns": {
+      "type": "integer",
+      "title": "Grid Columns",
+      "description": "Number of columns in grid",
+      "minimum": 2,
+      "maximum": 6,
+      "default": 4
+    }
+  }
+}

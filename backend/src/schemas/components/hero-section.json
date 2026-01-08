@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Hero Section",
+  "description": "Hero banner with title, subtitle, background image, and call-to-action",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title",
+      "description": "Main hero title",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "subtitle": {
+      "type": "string",
+      "title": "Subtitle",
+      "description": "Supporting text below title",
+      "maxLength": 500
+    },
+    "backgroundImage": {
+      "type": "string",
+      "title": "Background Image",
+      "description": "Hero background image URL",
+      "format": "uri"
+    },
+    "ctaText": {
+      "type": "string",
+      "title": "CTA Button Text",
+      "description": "Call-to-action button label",
+      "maxLength": 50
+    },
+    "ctaLink": {
+      "type": "string",
+      "title": "CTA Button Link",
+      "description": "Call-to-action button URL",
+      "format": "uri"
+    }
+  },
+  "required": ["title"],
+  "additionalProperties": false
+}

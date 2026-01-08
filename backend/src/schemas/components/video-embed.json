@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Video Embed",
+  "description": "Embedded video player with poster image",
+  "required": ["video_url"],
+  "properties": {
+    "video_url": {
+      "type": "string",
+      "title": "Video URL",
+      "description": "YouTube, Vimeo, or direct video URL",
+      "format": "uri"
+    },
+    "poster_image": {
+      "type": "string",
+      "title": "Poster Image",
+      "description": "Thumbnail image shown before video plays",
+      "format": "uri"
+    },
+    "caption": {
+      "type": "string",
+      "title": "Caption",
+      "description": "Video caption or description"
+    },
+    "autoplay": {
+      "type": "boolean",
+      "title": "Autoplay",
+      "description": "Automatically play video when loaded",
+      "default": false
+    },
+    "controls": {
+      "type": "boolean",
+      "title": "Show Controls",
+      "description": "Display video player controls",
+      "default": true
+    }
+  }
+}

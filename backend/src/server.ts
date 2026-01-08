@@ -123,6 +123,22 @@ app.use(`${API_PREFIX}`, menuRoutes);
 import filemanagerRoutes from '@routes/filemanager.routes';
 app.use(`${API_PREFIX}/filemanager`, filemanagerRoutes);
 
+// Page Management routes (CMS)
+import pageRoutes from '@routes/page.routes';
+app.use(`${API_PREFIX}/cms/pages`, pageRoutes);
+
+// Component Management routes (CMS)
+import componentRoutes from '@routes/component.routes';
+app.use(`${API_PREFIX}/cms/pages`, componentRoutes);
+
+// Award Management routes (CMS + Public)
+import awardRoutes from '@routes/award.routes';
+app.use(`${API_PREFIX}`, awardRoutes);
+
+// Public routes (no auth required)
+import publicRoutes from '@routes/public.routes';
+app.use(`${API_PREFIX}`, publicRoutes);
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
 
