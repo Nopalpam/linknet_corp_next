@@ -28,7 +28,7 @@ export function RoleSelector({ value, onChange, error, disabled = false }: RoleS
 
   const fetchRoles = async () => {
     try {
-      const response = await api.get('/roles');
+      const response = await api.get('/cms/roles');
       setRoles(response.data.data || []);
     } catch (err) {
       console.error('Failed to fetch roles:', err);

@@ -5,7 +5,7 @@ import {
   getPublishedSlugs,
   triggerRevalidation,
 } from '../controllers/public.controller';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/rbac.middleware';
 
 const router = Router();
@@ -18,7 +18,7 @@ router.get('/pages/slugs', getPublishedSlugs);
 // Protected routes (auth + permission required)
 router.post(
   '/cms/pages/:id/revalidate',
-  authenticateToken,
+  authMiddleware,
   checkPermission('pages_update'),
   triggerRevalidation
 );

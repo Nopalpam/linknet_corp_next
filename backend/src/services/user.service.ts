@@ -125,7 +125,7 @@ export class UserService {
       emailVerifiedAt: user.emailVerifiedAt,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
-      roles: user.userRoles.map((ur) => ur.role),
+      roles: user.userRoles.map((ur) => ur.role).filter((role) => role !== null),
     }));
 
     return {

@@ -9,7 +9,7 @@ import {
   searchFiles,
 } from '../controllers/filemanager.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { upload, validateFileSize, validateUploadFields } from '../middlewares/upload.middleware';
+import { upload, validateFileSize, validateUploadFields } from '../middleware/upload.middleware';
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { SettingsController } from '../controllers/settings.controller';
 import { authMiddleware as authenticate } from '../middleware/auth.middleware';
-import { requirePermission } from '../middlewares/rbac.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 
 const router = Router();

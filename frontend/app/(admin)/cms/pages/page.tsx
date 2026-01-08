@@ -18,16 +18,11 @@ import { useRouter } from 'next/navigation';
 import { pageApi } from '@/lib/api/page';
 import { PageListItem, PageStatus, PageTemplate } from '@/types/page';
 import { CanAccess } from '@/components/CanAccess';
-import { FaPlus, FaFileAlt, FaSearch, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
+import { useRequireAuth } from '@/hooks/useAuth';
+import { Permission } from '@/lib/constants/permissions';
+import { FaPlus, FaFileAlt, FaEdit, FaTrash } from 'react-icons/fa';
 import { format } from 'date-fns';
-
-interface ApiError {
-  response?: {
-    data?: {
-      error?: string;
-    };
-  };
-}
+import { getErrorMessage, isErrorStatus } from '@/lib/utils/error-handler';
 
 const PAGE_TEMPLATES = [
   { value: PageTemplate.DEFAULT, label: 'Default (with sidebar)' },
@@ -41,6 +36,7 @@ const PAGE_STATUS = [
 ];
 
 export default function PagesPage() {
+  const { isLoading: authLoading } = useRequireAuth();
   const router = useRouter();
   const [pages, setPages] = useState<PageListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +55,12 @@ export default function PagesPage() {
   const limit = 10;
 
   useEffect(() => {
-    fetchPages();
-  }, [page, search, statusFilter, templateFilter]);
+    // Only fetch if not loading auth
+    if (!authLoading) {
+      fetchPages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search, statusFilter, templateFilter, authLoading]);
 
   const fetchPages = async () => {
     try {
@@ -78,10 +78,17 @@ export default function PagesPage() {
       setPages(response.data);
       setTotalPages(response.pagination.totalPages);
       setTotal(response.pagination.total);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch pages:', err);
-      const errorMessage = (err as ApiError)?.response?.data?.error || 'Failed to load pages';
-      setError(errorMessage);
+      
+      // Use error handler utility for consistent error extraction
+      if (isErrorStatus(err, 403)) {
+        setError('You do not have permission to view pages. Please contact your administrator.');
+      } else if (isErrorStatus(err, 401)) {
+        setError('Your session has expired. Please log in again.');
+      } else {
+        setError(getErrorMessage(err, 'Failed to load pages'));
+      }
     } finally {
       setLoading(false);
     }
@@ -117,10 +124,9 @@ export default function PagesPage() {
       setSuccess('Page deleted successfully');
       await fetchPages();
       setTimeout(() => setSuccess(null), 5000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to delete page:', err);
-      const errorMessage = (err as ApiError)?.response?.data?.error || 'Failed to delete page';
-      setError(errorMessage);
+      setError(getErrorMessage(err, 'Failed to delete page'));
     }
   };
 
@@ -135,7 +141,7 @@ export default function PagesPage() {
     return PAGE_TEMPLATES.find((t) => t.value === template)?.label || template;
   };
 
-  if (loading && pages.length === 0) {
+  if (authLoading || (loading && pages.length === 0)) {
     return (
       <Container className="py-5">
         <div className="text-center">
@@ -158,7 +164,7 @@ export default function PagesPage() {
           </h1>
           <p className="text-muted mb-0">Manage website pages with SEO metadata</p>
         </div>
-        <CanAccess permission="pages_create">
+        <CanAccess permission={Permission.PAGES_CREATE}>
           <Button variant="primary" onClick={() => router.push('/cms/pages/create')}>
             <FaPlus className="me-2" />
             Create Page

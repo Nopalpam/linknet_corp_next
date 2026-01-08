@@ -8,7 +8,7 @@ import {
   getPermissions,
 } from '../controllers/role.controller';
 import { authMiddleware as authenticate } from '../middleware/auth.middleware';
-import { requirePermission } from '../middlewares/rbac.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 import { asyncHandler } from '../middleware/errorHandler.middleware';
 

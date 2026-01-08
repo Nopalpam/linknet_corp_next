@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { AppError } from '../middleware/errorHandler.middleware';
+import { AppError } from '../types/error.types';
 
 const prisma = new PrismaClient();
 
@@ -247,10 +247,11 @@ export class AwardService {
 
     // Group by year
     const groupedAwards = awards.reduce((acc, award) => {
-      if (!acc[award.year]) {
-        acc[award.year] = [];
+      const year = award.year;
+      if (!acc[year]) {
+        acc[year] = [];
       }
-      acc[award.year].push(award);
+      acc[year].push(award);
       return acc;
     }, {} as Record<number, typeof awards>);
 

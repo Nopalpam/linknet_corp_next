@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import { prisma } from '@config/database';
+import prisma from '@config/database';
 
 /**
  * Generate slug from title

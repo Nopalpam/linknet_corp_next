@@ -38,11 +38,15 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Don't auto-redirect on 401 - let the calling code handle it
+        // This prevents redirect loops in auth flow
         if (error.response?.status === 401) {
-          // Handle unauthorized - redirect to login or refresh token
-          this.clearToken();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+          console.warn('API request returned 401 - Unauthorized');
+          // Only clear token if it's truly invalid (not on auth endpoints)
+          const url = error.config?.url || '';
+          if (!url.includes('/auth/login') && !url.includes('/auth/register')) {
+            // Token might be expired
+            console.log('Clearing invalid token');
           }
         }
         return Promise.reject(error);
@@ -52,17 +56,19 @@ class ApiClient {
 
   private getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('access_token');
+    return localStorage.getItem('accessToken');
   }
 
   private setToken(token: string): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('access_token', token);
+    localStorage.setItem('accessToken', token);
   }
 
   private clearToken(): void {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem('access_token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
   }
 
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {

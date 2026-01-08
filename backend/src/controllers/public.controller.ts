@@ -28,8 +28,8 @@ export const getPublicPageBySlug = async (
           },
           select: {
             id: true,
-            component_type: true,
-            component_data: true,
+            type: true,
+            data: true,
             order: true,
           },
         },
@@ -48,10 +48,10 @@ export const getPublicPageBySlug = async (
       success: true,
       data: {
         ...page,
-        components: page.components.map((c) => ({
+        components: page.components.map((c: any) => ({
           id: c.id,
-          type: c.component_type,
-          data: c.component_data,
+          type: c.type,
+          data: c.data,
           order: c.order,
         })),
       },
@@ -96,8 +96,8 @@ export const getPagePreview = async (
           },
           select: {
             id: true,
-            component_type: true,
-            component_data: true,
+            type: true,
+            data: true,
             order: true,
             isVisible: true,
           },
@@ -117,10 +117,10 @@ export const getPagePreview = async (
       success: true,
       data: {
         ...page,
-        components: page.components.map((c) => ({
+        components: page.components.map((c: any) => ({
           id: c.id,
-          type: c.component_type,
-          data: c.component_data,
+          type: c.type,
+          data: c.data,
           order: c.order,
           isVisible: c.isVisible,
         })),
@@ -139,7 +139,7 @@ export const getPagePreview = async (
  * Get all published page slugs (for SSG)
  */
 export const getPublishedSlugs = async (
-  req: Request,
+  _req: Request,
   res: Response
 ): Promise<void> => {
   try {

@@ -1,5 +1,5 @@
 import { PrismaClient, MenuLinkType, MenuStatus, MenuTarget } from '@prisma/client';
-import { AppError } from '../middleware/errorHandler';
+import { AppError } from '../types/error.types';
 import slugify from 'slugify';
 
 const prisma = new PrismaClient();
@@ -187,7 +187,7 @@ export class MenuService {
     // Auto-generate slug if not provided
     const title = typeof data.title === 'string' 
       ? data.title 
-      : data.title.en || data.title.id || Object.values(data.title)[0];
+      : data.title.en || data.title.id || Object.values(data.title)[0] || '';
     
     const slug = data.slug || slugify(title, { lower: true, strict: true });
 
@@ -275,7 +275,7 @@ export class MenuService {
     if (data.title && !data.slug) {
       const title = typeof data.title === 'string' 
         ? data.title 
-        : data.title.en || data.title.id || Object.values(data.title)[0];
+        : data.title.en || data.title.id || Object.values(data.title)[0] || '';
       
       slug = slugify(title, { lower: true, strict: true });
 

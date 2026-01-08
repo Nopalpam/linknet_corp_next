@@ -18,7 +18,7 @@ interface UploadResult {
 }
 
 class AzureStorageService {
-  private blobServiceClient: BlobServiceClient;
+  private blobServiceClient?: BlobServiceClient; // Optional karena mungkin tidak dikonfigurasi
   private containerName: string;
   private accountName: string;
 
@@ -27,7 +27,12 @@ class AzureStorageService {
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     
     if (!connectionString || !accountName) {
-      throw new Error('Azure Storage credentials not configured. Please set AZURE_STORAGE_CONNECTION_STRING and AZURE_STORAGE_ACCOUNT_NAME');
+      console.warn('[Azure Storage] Credentials not configured. Azure Storage features will be disabled.');
+      console.warn('[Azure Storage] Set AZURE_STORAGE_CONNECTION_STRING and AZURE_STORAGE_ACCOUNT_NAME to enable.');
+      // Don't throw error, just initialize with dummy values for development
+      this.accountName = 'dummy';
+      this.containerName = 'uploads';
+      return;
     }
 
     this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
@@ -36,9 +41,20 @@ class AzureStorageService {
   }
 
   /**
+   * Check if Azure Storage is configured and available
+   */
+  private isConfigured(): boolean {
+    return this.blobServiceClient !== undefined;
+  }
+
+  /**
    * Get container client, create if doesn't exist
    */
   private async getContainerClient(): Promise<ContainerClient> {
+    if (!this.isConfigured() || !this.blobServiceClient) {
+      throw new Error('Azure Storage is not configured');
+    }
+    
     const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
     
     // Create container if it doesn't exist

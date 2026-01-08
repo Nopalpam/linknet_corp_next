@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PageService } from './page.service';
-import { prisma } from '../../../config/database';
+import prisma from '../../../config/database';
 import {
   createPageSchema,
   updatePageSchema,

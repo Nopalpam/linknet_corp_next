@@ -1,5 +1,4 @@
 import multer from 'multer';
-import path from 'path';
 import { Request } from 'express';
 
 // Memory storage for multer (we'll process and upload to cloud)
@@ -7,7 +6,7 @@ const storage = multer.memoryStorage();
 
 // File filter for images only
 const imageFileFilter = (
-  req: Request,
+  _req: Request,
   file: Express.Multer.File,
   callback: multer.FileFilterCallback
 ) => {

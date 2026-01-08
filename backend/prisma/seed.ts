@@ -656,115 +656,92 @@ async function main() {
   // Header Menu
   await prisma.menu.create({
     data: {
-      title: 'Home',
+      title: { en: 'Home', id: 'Beranda' },
       slug: 'home',
       url: '/',
-      position: 1,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 1,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   const aboutMenu = await prisma.menu.create({
     data: {
-      title: 'About Us',
+      title: { en: 'About Us', id: 'Tentang Kami' },
       slug: 'about',
       url: '/about',
-      position: 2,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 2,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   await prisma.menu.create({
     data: {
       parentId: aboutMenu.id,
-      title: 'Company Profile',
+      title: { en: 'Company Profile', id: 'Profil Perusahaan' },
       slug: 'company-profile',
       url: '/about/company-profile',
-      position: 1,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 1,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   await prisma.menu.create({
     data: {
       parentId: aboutMenu.id,
-      title: 'Management',
+      title: { en: 'Management', id: 'Manajemen' },
       slug: 'management',
       url: '/about/management',
-      position: 2,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 2,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   await prisma.menu.create({
     data: {
       parentId: aboutMenu.id,
-      title: 'Awards',
+      title: { en: 'Awards', id: 'Penghargaan' },
       slug: 'awards',
       url: '/about/awards',
-      position: 3,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 3,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   await prisma.menu.create({
     data: {
-      title: 'News',
+      title: { en: 'News', id: 'Berita' },
       slug: 'news',
       url: '/news',
-      position: 3,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 3,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   await prisma.menu.create({
     data: {
-      title: 'Careers',
+      title: { en: 'Careers', id: 'Karir' },
       slug: 'careers',
       url: '/careers',
-      position: 4,
-      menuType: 'HEADER',
-      isActive: true,
+      order: 4,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 
   await prisma.menu.create({
     data: {
-      title: 'Contact',
+      title: { en: 'Contact', id: 'Kontak' },
       slug: 'contact',
       url: '/contact',
-      position: 5,
-      menuType: 'HEADER',
-      isActive: true,
-    },
-  });
-
-  // Footer Menu
-  await prisma.menu.create({
-    data: {
-      title: 'Privacy Policy',
-      slug: 'privacy-policy',
-      url: '/privacy-policy',
-      position: 1,
-      menuType: 'FOOTER',
-      isActive: true,
-    },
-  });
-
-  await prisma.menu.create({
-    data: {
-      title: 'Terms of Service',
-      slug: 'terms-of-service',
-      url: '/terms-of-service',
-      position: 2,
-      menuType: 'FOOTER',
-      isActive: true,
+      order: 5,
+      type: 'INTERNAL',
+      status: 'ACTIVE',
     },
   });
 

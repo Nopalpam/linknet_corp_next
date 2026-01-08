@@ -30,7 +30,7 @@ export interface AuthenticatedRequest extends Request {
  * router.post('/users', requirePermission(Permission.USERS_MANAGEMENT_CREATE), createUser);
  */
 export const requirePermission = (...permissions: (PermissionSlug | string)[]) => {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         throw new AppError('Unauthorized', 401);
@@ -71,7 +71,7 @@ export const requirePermission = (...permissions: (PermissionSlug | string)[]) =
  * ), deleteUser);
  */
 export const requireAllPermissions = (...permissions: (PermissionSlug | string)[]) => {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         throw new AppError('Unauthorized', 401);
@@ -109,7 +109,7 @@ export const requireAllPermissions = (...permissions: (PermissionSlug | string)[
  * router.get('/admin/dashboard', requireRole(Role.SUPER_ADMIN, Role.ADMIN), getDashboard);
  */
 export const requireRole = (...roles: (RoleSlug | string)[]) => {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         throw new AppError('Unauthorized', 401);
@@ -144,7 +144,7 @@ export const requireRole = (...roles: (RoleSlug | string)[]) => {
  * @returns Express middleware
  */
 export const optionalPermission = (...permissions: (PermissionSlug | string)[]) => {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     try {
       if (req.user) {
         const hasAccess = await hasAnyPermission(req.user.id, permissions);
@@ -159,3 +159,8 @@ export const optionalPermission = (...permissions: (PermissionSlug | string)[]) 
     }
   };
 };
+
+/**
+ * Alias for requirePermission for backward compatibility
+ */
+export const checkPermission = requirePermission;

@@ -1,14 +1,14 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { PageService } from '@services/page.service';
-import { AppError } from '@/middleware/error.middleware';
-import { PageStatus, PageTemplate } from '@prisma/client';
+import { AppError } from '../types/error.types';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 export class PageController {
   /**
    * GET /api/cms/pages
    * Get pages dengan pagination, filter, dan search
    */
-  static async getPages(req: Request, res: Response, next: NextFunction) {
+  static async getPages(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const {
         page,
@@ -25,8 +25,8 @@ export class PageController {
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         search: search as string,
-        status: status as PageStatus,
-        template: template as PageTemplate,
+        status: status as any,
+        template: template as any,
         createdBy: createdBy as string,
         sortBy: sortBy as string,
         sortOrder: sortOrder as 'asc' | 'desc',
@@ -45,9 +45,12 @@ export class PageController {
    * GET /api/cms/pages/:id
    * Get page detail by ID
    */
-  static async getPageById(req: Request, res: Response, next: NextFunction) {
+  static async getPageById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (!id) {
+        throw new AppError('Page ID is required', 400);
+      }
       const page = await PageService.getPageById(id);
 
       res.json({
@@ -63,9 +66,9 @@ export class PageController {
    * POST /api/cms/pages
    * Create new page
    */
-  static async createPage(req: Request, res: Response, next: NextFunction) {
+  static async createPage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         throw new AppError('Unauthorized', 401);
       }
@@ -112,9 +115,12 @@ export class PageController {
    * PUT /api/cms/pages/:id
    * Update page
    */
-  static async updatePage(req: Request, res: Response, next: NextFunction) {
+  static async updatePage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (!id) {
+        throw new AppError('Page ID is required', 400);
+      }
       const {
         title,
         slug,
@@ -151,9 +157,12 @@ export class PageController {
    * DELETE /api/cms/pages/:id
    * Delete page (soft delete)
    */
-  static async deletePage(req: Request, res: Response, next: NextFunction) {
+  static async deletePage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (!id) {
+        throw new AppError('Page ID is required', 400);
+      }
       const result = await PageService.deletePage(id);
 
       res.json({
@@ -169,9 +178,12 @@ export class PageController {
    * GET /api/cms/pages/check-slug/:slug
    * Check slug availability
    */
-  static async checkSlug(req: Request, res: Response, next: NextFunction) {
+  static async checkSlug(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { slug } = req.params;
+      if (!slug) {
+        throw new AppError('Slug is required', 400);
+      }
       const { excludeId } = req.query;
 
       const result = await PageService.checkSlugAvailability(

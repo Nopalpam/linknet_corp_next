@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ComponentService } from '@services/component.service';
-import { AppError } from '@/middleware/error.middleware';
+import { AppError } from '../types/error.types';
 
 export class ComponentController {
   /**
@@ -13,7 +13,7 @@ export class ComponentController {
       const { includeHidden } = req.query;
 
       const components = await ComponentService.getPageComponents({
-        pageId,
+        pageId: pageId as string,
         includeHidden: includeHidden === 'true',
       });
 
@@ -33,7 +33,7 @@ export class ComponentController {
   static async getComponentById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const component = await ComponentService.getComponentById(id);
+      const component = await ComponentService.getComponentById(id as string);
 
       res.json({
         success: true,
@@ -62,7 +62,7 @@ export class ComponentController {
       }
 
       const component = await ComponentService.createComponent({
-        pageId,
+        pageId: pageId as string,
         componentType,
         componentData,
         order,
@@ -88,7 +88,7 @@ export class ComponentController {
       const { id } = req.params;
       const { componentType, componentData, order, isVisible } = req.body;
 
-      const component = await ComponentService.updateComponent(id, {
+      const component = await ComponentService.updateComponent(id as string, {
         componentType,
         componentData,
         order,
@@ -112,7 +112,7 @@ export class ComponentController {
   static async deleteComponent(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await ComponentService.deleteComponent(id);
+      const result = await ComponentService.deleteComponent(id as string);
 
       res.json({
         success: true,
@@ -136,7 +136,7 @@ export class ComponentController {
         throw new AppError('Components must be an array', 400);
       }
 
-      const result = await ComponentService.reorderComponents(pageId, { components });
+      const result = await ComponentService.reorderComponents(pageId as string, { components });
 
       res.json({
         success: true,
@@ -154,7 +154,7 @@ export class ComponentController {
   static async toggleVisibility(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const component = await ComponentService.toggleVisibility(id);
+      const component = await ComponentService.toggleVisibility(id as string);
 
       res.json({
         success: true,
@@ -173,7 +173,7 @@ export class ComponentController {
   static async previewComponent(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const component = await ComponentService.getComponentById(id);
+      const component = await ComponentService.getComponentById(id as string);
       
       const html = ComponentService.generatePreview(component.type, component.data);
 
@@ -192,7 +192,7 @@ export class ComponentController {
    * GET /api/cms/pages/component-types
    * Get available component types with schemas
    */
-  static async getComponentTypes(req: Request, res: Response, next: NextFunction) {
+  static async getComponentTypes(_req: Request, res: Response, next: NextFunction) {
     try {
       const types = ComponentService.getComponentTypes();
 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import awardController from '../controllers/award.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { requirePermission } from '../middlewares/rbac.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
 
 const router = Router();
 
@@ -13,42 +13,42 @@ router.get('/awards/by-year', awardController.getAwardsByYear);
 router.get(
   '/cms/awards',
   authMiddleware,
-  requirePermission('award_management_read'),
+  requirePermission('awards.read'),
   awardController.getAwards
 );
 
 router.get(
   '/cms/awards/:id',
   authMiddleware,
-  requirePermission('award_management_read'),
+  requirePermission('awards.read'),
   awardController.getAwardById
 );
 
 router.post(
   '/cms/awards',
   authMiddleware,
-  requirePermission('award_management_create'),
+  requirePermission('awards.create'),
   awardController.createAward
 );
 
 router.put(
   '/cms/awards/:id',
   authMiddleware,
-  requirePermission('award_management_update'),
+  requirePermission('awards.update'),
   awardController.updateAward
 );
 
 router.delete(
   '/cms/awards/:id',
   authMiddleware,
-  requirePermission('award_management_delete'),
+  requirePermission('awards.delete'),
   awardController.deleteAward
 );
 
 router.post(
   '/cms/awards/update-order',
   authMiddleware,
-  requirePermission('award_management_update'),
+  requirePermission('awards.update'),
   awardController.updateAwardsOrder
 );
 

@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import azureStorageService from '../services/azureStorage.service';
 import imageProcessingService from '../services/imageProcessing.service';
-import { getFileCategory } from '../middlewares/upload.middleware';
+import { getFileCategory } from '../middleware/upload.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import path from 'path';
 

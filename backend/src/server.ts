@@ -73,6 +73,20 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+// Root endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'LinkNet Corp API Server',
+    version: process.env.API_VERSION || '1.0.0',
+    status: 'running',
+    environment: NODE_ENV,
+    endpoints: {
+      health: '/health',
+      api: process.env.API_PREFIX || '/api/v1',
+    },
+  });
+});
+
 // Rate limiting for API routes
 app.use('/api', generalRateLimiter);
 

@@ -33,17 +33,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const accessToken = localStorage.getItem('accessToken');
 
         if (storedUser && accessToken) {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
           
           // Verify token is still valid by fetching current user
           try {
             const response = await authApi.getCurrentUser();
             if (response.data.success && response.data.data) {
-              setUser(response.data.data.user);
-              localStorage.setItem('user', JSON.stringify(response.data.data.user));
+              const freshUser = response.data.data.user;
+              setUser(freshUser);
+              localStorage.setItem('user', JSON.stringify(freshUser));
             }
-          } catch (error) {
-            // Token is invalid - clear storage
+          } catch (error: any) {
+            console.error('Token validation failed:', error);
+            // Token is invalid - clear storage but don't auto-redirect
+            // Let useRequireAuth handle the redirect
             localStorage.removeItem('user');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
@@ -52,6 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error loading user:', error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -79,11 +84,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error(response.data.message || 'Login failed');
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw error;
+    } catch (error: any) {
+      // Handle axios error response
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('An error occurred during login');
       }
-      throw new Error('An error occurred during login');
     }
   };
 

@@ -1,6 +1,6 @@
-import { prisma } from '@config/database';
+import prisma from '@config/database';
 import { Prisma, PageStatus, PageTemplate } from '@prisma/client';
-import { AppError } from '@/middleware/error.middleware';
+import { AppError } from '../types/error.types';
 import { generateUniquePageSlug, isValidSlug } from '@utils/slug.util';
 
 export interface CreatePageDTO {
@@ -94,7 +94,7 @@ export class PageService {
     ]);
 
     return {
-      data: pages.map((page) => ({
+      data: pages.map((page: any) => ({
         ...page,
         componentCount: page._count.components,
         _count: undefined,

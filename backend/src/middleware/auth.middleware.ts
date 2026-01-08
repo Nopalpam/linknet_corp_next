@@ -9,7 +9,8 @@ const prisma = new PrismaClient();
  */
 export interface AuthRequest extends Request {
   user?: {
-    userId: string;
+    id: string;
+    userId: string; // Keep for backward compatibility
     email: string;
     roles?: string[];
     permissions?: string[];
@@ -89,7 +90,8 @@ export const authMiddleware = async (
 
     // Attach user to request with roles and permissions
     req.user = {
-      userId: user.id,
+      id: user.id,
+      userId: user.id, // Keep for backward compatibility
       email: user.email,
       roles: decoded.roles || [],
       permissions: decoded.permissions || []
@@ -195,6 +197,7 @@ export const optionalAuthMiddleware = async (
 
         if (user && !user.deletedAt && user.status === 'ACTIVE') {
           req.user = {
+            id: user.id,
             userId: user.id,
             email: user.email,
             roles: decoded.roles || [],

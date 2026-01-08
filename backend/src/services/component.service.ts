@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { prisma } from '@config/database';
-import { AppError } from '@/middleware/error.middleware';
+import prisma from '@config/database';
+import { AppError } from '../types/error.types';
 import { COMPONENT_SCHEMAS, COMPONENT_TYPES } from '@/schemas/components';
 
 // Initialize Ajv
