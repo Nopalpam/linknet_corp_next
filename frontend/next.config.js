@@ -5,12 +5,16 @@ const nextConfig = {
   
   // Image optimization
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'linknet.co.id'],
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '*.blob.core.windows.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'linknet.co.id',
       },
     ],
   },
