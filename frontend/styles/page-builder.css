@@ -1,0 +1,191 @@
+/* Page Builder Modal Styles */
+.page-builder-modal .modal-content {
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.page-builder-modal .modal-header {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.page-builder-modal .modal-body {
+  padding: 0;
+}
+
+.page-builder-modal .hover-shadow {
+  transition: all 0.25s ease;
+  border: 1px solid #dee2e6;
+}
+
+.page-builder-modal .hover-shadow:hover {
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.15);
+  transform: translateY(-3px);
+  border-color: #0d6efd;
+}
+
+.page-builder-modal .sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+}
+
+.page-builder-modal .component-card {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.page-builder-modal .component-card:active {
+  transform: scale(0.98);
+}
+
+.page-builder-modal .drag-handle {
+  cursor: grab;
+  color: #6c757d;
+}
+
+.page-builder-modal .drag-handle:active {
+  cursor: grabbing;
+}
+
+.page-builder-modal .btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Component Canvas Drag States */
+.page-builder-modal .dragging-over {
+  background-color: #f8f9fa;
+  border: 2px dashed #0d6efd;
+}
+
+.page-builder-modal .component-preview {
+  position: relative;
+}
+
+.page-builder-modal .component-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.page-builder-modal .component-preview:hover::before {
+  opacity: 1;
+}
+
+/* Scrollbar Styling */
+.page-builder-modal ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.page-builder-modal ::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.page-builder-modal ::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 4px;
+}
+
+.page-builder-modal ::-webkit-scrollbar-thumb:hover {
+  background: #868e96;
+}
+
+/* Empty State */
+.page-builder-modal .empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.page-builder-modal .empty-state-icon {
+  font-size: 4rem;
+  opacity: 0.15;
+  margin-bottom: 1rem;
+}
+
+/* Badge Enhancements */
+.page-builder-modal .badge {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Card Enhancements */
+.page-builder-modal .card {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.page-builder-modal .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+}
+
+/* Component Library Cards */
+.page-builder-modal .component-library-card {
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.page-builder-modal .component-library-card .card-body {
+  padding: 1rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .page-builder-modal .modal-dialog {
+    margin: 0;
+  }
+  
+  .page-builder-modal .modal-body {
+    height: calc(100vh - 120px);
+  }
+  
+  .page-builder-modal .btn-group-sm .btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Animation for component additions */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.page-builder-modal .component-enter {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+/* Focus states for accessibility */
+.page-builder-modal .btn:focus,
+.page-builder-modal .form-control:focus,
+.page-builder-modal .form-select:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+/* Component type icons in editor */
+.page-builder-modal .component-icon {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.5rem;
+  text-align: center;
+}

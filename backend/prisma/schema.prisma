@@ -16,30 +16,30 @@ datasource db {
 // ============================================
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  username  String    @unique
-  password  String
-  firstName String    @map("first_name")
-  lastName  String    @map("last_name")
-  avatar    String?
-  phone     String?
-  status    UserStatus @default(ACTIVE)
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  lastLoginAt     DateTime? @map("last_login_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  id              String     @id @default(uuid())
+  email           String     @unique
+  username        String     @unique
+  password        String
+  firstName       String     @map("first_name")
+  lastName        String     @map("last_name")
+  avatar          String?
+  phone           String?
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  lastLoginAt     DateTime?  @map("last_login_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
 
   // Relations
-  userRoles     UserRole[]
-  logActivities LogActivity[]
-  createdPages  Page[]        @relation("PageCreator")
-  createdNews   News[]        @relation("NewsCreator")
-  updatedNews   News[]        @relation("NewsUpdater")
+  userRoles          UserRole[]
+  logActivities      LogActivity[]
+  createdPages       Page[]              @relation("PageCreator")
+  createdNews        News[]              @relation("NewsCreator")
+  updatedNews        News[]              @relation("NewsUpdater")
   contactSubmissions ContactSubmission[]
-  createdFiles  File[]        @relation("FileCreator")
-  refreshTokens RefreshToken[]
+  createdFiles       File[]              @relation("FileCreator")
+  refreshTokens      RefreshToken[]
 
   @@index([email])
   @@index([status])
@@ -67,12 +67,12 @@ model RefreshToken {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   email     String
-  token     String   @unique @db.Text
-  expiresAt DateTime @map("expires_at")
+  token     String    @unique @db.Text
+  expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   @@index([email])
   @@index([token])
@@ -106,13 +106,13 @@ model Role {
 }
 
 model Permission {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
   module      String
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
   rolePermissions RolePermission[]
@@ -168,7 +168,7 @@ model Setting {
   description String?
   isPublic    Boolean     @default(false) @map("is_public")
   isSystem    Boolean     @default(false) @map("is_system") // Prevent deletion of system settings
-  options     Json?       // For select type: { options: ["option1", "option2"] }
+  options     Json? // For select type: { options: ["option1", "option2"] }
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
@@ -190,7 +190,7 @@ enum SettingType {
 model Menu {
   id        String       @id @default(uuid())
   parentId  String?      @map("parent_id")
-  title     Json         // Multi-language support: { "en": "Home", "id": "Beranda" }
+  title     Json // Multi-language support: { "en": "Home", "id": "Beranda" }
   slug      String       @unique
   url       String?
   type      MenuLinkType @default(INTERNAL)
@@ -216,7 +216,7 @@ model Menu {
 }
 
 enum MenuTarget {
-  SELF  // _self
+  SELF // _self
   BLANK // _blank
 }
 
@@ -236,20 +236,20 @@ enum MenuStatus {
 // ============================================
 
 model Page {
-  id              String        @id @default(uuid())
+  id              String       @id @default(uuid())
   title           String
-  slug            String        @unique
-  template        PageTemplate  @default(DEFAULT)
-  metaTitle       String?       @map("meta_title")
-  metaDescription String?       @map("meta_description") @db.Text
-  metaKeywords    String?       @map("meta_keywords") @db.Text
-  ogImage         String?       @map("og_image")
-  status          PageStatus    @default(DRAFT)
-  publishedAt     DateTime?     @map("published_at")
-  createdById     String        @map("created_by_id")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  deletedAt       DateTime?     @map("deleted_at")
+  slug            String       @unique
+  template        PageTemplate @default(DEFAULT)
+  metaTitle       String?      @map("meta_title")
+  metaDescription String?      @map("meta_description") @db.Text
+  metaKeywords    String?      @map("meta_keywords") @db.Text
+  ogImage         String?      @map("og_image")
+  status          PageStatus   @default(DRAFT)
+  publishedAt     DateTime?    @map("published_at")
+  createdById     String       @map("created_by_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
 
   // Relations
   createdBy  User            @relation("PageCreator", fields: [createdById], references: [id], onDelete: Restrict)
@@ -307,29 +307,29 @@ enum ContentStatus {
 // ============================================
 
 model News {
-  id          String        @id @default(uuid())
-  title       String
-  slug        String        @unique
-  excerpt     String?       @db.Text
-  content     String        @db.Text
-  featuredImage String?     @map("featured_image")
-  categoryId  String        @map("category_id")
-  metaTitle   String?       @map("meta_title")
-  metaDescription String?   @map("meta_description") @db.Text
-  metaKeywords String?      @map("meta_keywords")
-  views       Int           @default(0)
-  status      ContentStatus @default(DRAFT)
-  publishedAt DateTime?     @map("published_at")
-  createdById String        @map("created_by_id")
-  updatedById String?       @map("updated_by_id")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  deletedAt   DateTime?     @map("deleted_at")
+  id              String        @id @default(uuid())
+  title           String
+  slug            String        @unique
+  excerpt         String?       @db.Text
+  content         String        @db.Text
+  featuredImage   String?       @map("featured_image")
+  categoryId      String        @map("category_id")
+  metaTitle       String?       @map("meta_title")
+  metaDescription String?       @map("meta_description") @db.Text
+  metaKeywords    String?       @map("meta_keywords")
+  views           Int           @default(0)
+  status          ContentStatus @default(DRAFT)
+  publishedAt     DateTime?     @map("published_at")
+  createdById     String        @map("created_by_id")
+  updatedById     String?       @map("updated_by_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
 
   // Relations
-  category   NewsCategory    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  createdBy  User            @relation("NewsCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  updatedBy  User?           @relation("NewsUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  category   NewsCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdBy  User              @relation("NewsCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy  User?             @relation("NewsUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   highlights NewsHighlight[]
   tags       NewsTagRelation[]
 
@@ -592,24 +592,24 @@ model Report {
 // ============================================
 
 model Career {
-  id             String        @id @default(uuid())
-  title          String
-  slug           String        @unique
-  department     String
-  location       String
-  employmentType EmploymentType @default(FULL_TIME) @map("employment_type")
-  description    String        @db.Text
-  requirements   String        @db.Text
-  responsibilities String      @db.Text
-  benefits       String?       @db.Text
-  salaryRange    String?       @map("salary_range")
-  closingDate    DateTime?     @map("closing_date")
-  status         CareerStatus  @default(OPEN)
-  views          Int           @default(0)
-  applications   Int           @default(0)
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  deletedAt      DateTime?     @map("deleted_at")
+  id               String         @id @default(uuid())
+  title            String
+  slug             String         @unique
+  department       String
+  location         String
+  employmentType   EmploymentType @default(FULL_TIME) @map("employment_type")
+  description      String         @db.Text
+  requirements     String         @db.Text
+  responsibilities String         @db.Text
+  benefits         String?        @db.Text
+  salaryRange      String?        @map("salary_range")
+  closingDate      DateTime?      @map("closing_date")
+  status           CareerStatus   @default(OPEN)
+  views            Int            @default(0)
+  applications     Int            @default(0)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  deletedAt        DateTime?      @map("deleted_at")
 
   @@index([slug])
   @@index([department])
@@ -640,7 +640,7 @@ model Award {
   description String?   @db.Text
   image       String?
   issuer      String
-  year        Int       // Using year instead of issueDate for simplicity
+  year        Int // Using year instead of issueDate for simplicity
   issueDate   DateTime  @map("issue_date") // Keep for backward compatibility
   position    Int       @default(0)
   isActive    Boolean   @default(true) @map("is_active")
@@ -660,21 +660,21 @@ model Award {
 }
 
 model Management {
-  id          String             @id @default(uuid())
-  categoryId  String             @map("category_id")
+  id          String    @id @default(uuid())
+  categoryId  String    @map("category_id")
   name        String
-  slug        String             @unique
+  slug        String    @unique
   position    String
-  description String?            @db.Text
+  description String?   @db.Text
   photo       String?
   email       String?
   phone       String?
   linkedin    String?
-  order       Int                @default(0)
-  isActive    Boolean            @default(true) @map("is_active")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-  deletedAt   DateTime?          @map("deleted_at")
+  order       Int       @default(0)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
   category ManagementCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -688,15 +688,15 @@ model Management {
 }
 
 model ManagementCategory {
-  id          String       @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  slug        String       @unique
-  description String?      @db.Text
-  position    Int          @default(0)
-  isActive    Boolean      @default(true) @map("is_active")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  deletedAt   DateTime?    @map("deleted_at")
+  slug        String    @unique
+  description String?   @db.Text
+  position    Int       @default(0)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
   managements Management[]
@@ -713,22 +713,22 @@ model ManagementCategory {
 // ============================================
 
 model ContactSubmission {
-  id          String              @id @default(uuid())
-  userId      String?             @map("user_id")
-  name        String
-  email       String
-  phone       String?
-  subject     String
-  message     String              @db.Text
-  type        ContactType         @default(GENERAL)
-  status      SubmissionStatus    @default(NEW)
-  ipAddress   String?             @map("ip_address")
-  userAgent   String?             @map("user_agent")
-  readAt      DateTime?           @map("read_at")
-  repliedAt   DateTime?           @map("replied_at")
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
-  deletedAt   DateTime?           @map("deleted_at")
+  id        String           @id @default(uuid())
+  userId    String?          @map("user_id")
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String           @db.Text
+  type      ContactType      @default(GENERAL)
+  status    SubmissionStatus @default(NEW)
+  ipAddress String?          @map("ip_address")
+  userAgent String?          @map("user_agent")
+  readAt    DateTime?        @map("read_at")
+  repliedAt DateTime?        @map("replied_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  deletedAt DateTime?        @map("deleted_at")
 
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -762,15 +762,19 @@ enum SubmissionStatus {
 // ============================================
 
 model LogActivity {
-  id          String   @id @default(uuid())
-  userId      String?  @map("user_id")
-  action      String
-  module      String
-  description String?  @db.Text
-  metadata    Json?
-  ipAddress   String?  @map("ip_address")
-  userAgent   String?  @map("user_agent")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          String    @id @default(uuid())
+  userId      String?   @map("user_id")
+  action      String // create, update, delete, login, logout, etc.
+  module      String // users, news, pages, roles, permissions, etc.
+  recordId    String?   @map("record_id") // ID of the affected record
+  oldData     Json?     @map("old_data") // Previous state (for updates/deletes)
+  newData     Json?     @map("new_data") // New state (for creates/updates)
+  description String?   @db.Text
+  metadata    Json? // Additional context/metadata
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at") // Soft delete for logs
 
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -778,20 +782,22 @@ model LogActivity {
   @@index([userId])
   @@index([action])
   @@index([module])
+  @@index([recordId])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("log_activities")
 }
 
 model UrlRedirect {
-  id          String         @id @default(uuid())
-  fromUrl     String         @unique @map("from_url")
-  toUrl       String         @map("to_url")
-  statusCode  Int            @default(301) @map("status_code")
-  hits        Int            @default(0)
-  isActive    Boolean        @default(true) @map("is_active")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-  deletedAt   DateTime?      @map("deleted_at")
+  id         String    @id @default(uuid())
+  fromUrl    String    @unique @map("from_url")
+  toUrl      String    @map("to_url")
+  statusCode Int       @default(301) @map("status_code")
+  hits       Int       @default(0)
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
 
   @@index([fromUrl])
   @@index([isActive])
@@ -804,15 +810,15 @@ model UrlRedirect {
 // ============================================
 
 model Folder {
-  id          String    @id @default(uuid())
-  parentId    String?   @map("parent_id")
-  name        String
-  slug        String
-  path        String    @unique
-  isPublic    Boolean   @default(false) @map("is_public")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id        String    @id @default(uuid())
+  parentId  String?   @map("parent_id")
+  name      String
+  slug      String
+  path      String    @unique
+  isPublic  Boolean   @default(false) @map("is_public")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   // Self-referencing relation for hierarchical structure
   parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
@@ -826,29 +832,29 @@ model Folder {
 }
 
 model File {
-  id          String    @id @default(uuid())
-  folderId    String?   @map("folder_id")
-  createdById String    @map("created_by_id")
-  name        String
-  originalName String   @map("original_name")
-  mimeType    String    @map("mime_type")
-  size        Int
-  path        String
-  url         String
-  cloudProvider String? @map("cloud_provider")
-  cloudPath   String?   @map("cloud_path")
-  cloudKey    String?   @map("cloud_key")
-  thumbnail   String?
-  thumbnails  Json?     // {small: url, medium: url, large: url}
-  width       Int?
-  height      Int?
-  duration    Int?
-  metadata    Json?
-  downloads   Int       @default(0)
-  isPublic    Boolean   @default(false) @map("is_public")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id            String    @id @default(uuid())
+  folderId      String?   @map("folder_id")
+  createdById   String    @map("created_by_id")
+  name          String
+  originalName  String    @map("original_name")
+  mimeType      String    @map("mime_type")
+  size          Int
+  path          String
+  url           String
+  cloudProvider String?   @map("cloud_provider")
+  cloudPath     String?   @map("cloud_path")
+  cloudKey      String?   @map("cloud_key")
+  thumbnail     String?
+  thumbnails    Json? // {small: url, medium: url, large: url}
+  width         Int?
+  height        Int?
+  duration      Int?
+  metadata      Json?
+  downloads     Int       @default(0)
+  isPublic      Boolean   @default(false) @map("is_public")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
   // Relations
   folder    Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
@@ -861,4 +867,46 @@ model File {
   @@index([createdAt])
   @@index([deletedAt])
   @@map("files")
+}
+
+// ============================================
+// CONTACT US MODULE
+// ============================================
+
+model ContactUs {
+  id          String        @id @default(uuid())
+  firstName   String        @map("first_name")
+  lastName    String        @map("last_name")
+  email       String
+  phone       String?
+  role        String?
+  company     String?
+  inquiryType InquiryType   @map("inquiry_type")
+  message     String        @db.Text
+  status      ContactStatus @default(NEW)
+  ipAddress   String?       @map("ip_address")
+  userAgent   String?       @map("user_agent") @db.Text
+  readAt      DateTime?     @map("read_at")
+  submittedAt DateTime      @default(now()) @map("submitted_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([inquiryType])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([createdAt])
+  @@map("contact_us")
+}
+
+enum InquiryType {
+  BUSINESS
+  SUPPORT
+  CAREER
+  OTHERS
+}
+
+enum ContactStatus {
+  NEW
+  READ
 }

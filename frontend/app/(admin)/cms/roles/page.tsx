@@ -1,19 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Button, Alert, Spinner, Card } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import { roleApi } from '@/lib/api/role.api';
 import { Role } from '@/types/role.types';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { DeleteConfirmationModal } from '@/components/roles/DeleteConfirmationModal';
 import { CanAccess } from '@/components/CanAccess';
-import { FaPlus, FaShieldAlt } from 'react-icons/fa';
+import { FaPlus, FaShieldAlt, FaInbox } from 'react-icons/fa';
 
 interface ApiError {
   response?: {
     data?: {
-      error?: string;
+      error?: string | {
+        code: string;
+        message: string;
+      };
     };
   };
 }
@@ -41,7 +44,18 @@ export default function RolesPage() {
       setRoles(data);
     } catch (err) {
       console.error('Failed to fetch roles:', err);
-      const errorMessage = (err as ApiError)?.response?.data?.error || 'Failed to load roles';
+      const apiError = err as ApiError;
+      let errorMessage = 'Failed to load roles';
+      
+      if (apiError?.response?.data?.error) {
+        const errorData = apiError.response.data.error;
+        if (typeof errorData === 'object' && 'message' in errorData) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -70,7 +84,18 @@ export default function RolesPage() {
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
       console.error('Failed to delete role:', err);
-      const errorMessage = (err as ApiError)?.response?.data?.error || 'Failed to delete role';
+      const apiError = err as ApiError;
+      let errorMessage = 'Failed to delete role';
+      
+      if (apiError?.response?.data?.error) {
+        const errorData = apiError.response.data.error;
+        if (typeof errorData === 'object' && 'message' in errorData) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      }
+      
       setError(errorMessage);
     }
   };
@@ -81,30 +106,39 @@ export default function RolesPage() {
 
   if (loading) {
     return (
-      <Container className="py-5">
-        <div className="text-center">
-          <Spinner animation="border" role="status">
+      <Container className="py-4" style={{ minHeight: '60vh' }}>
+        <div className="d-flex flex-column justify-content-center align-items-center" style={{ height: '50vh' }}>
+          <Spinner animation="border" role="status" style={{ width: '3rem', height: '3rem' }}>
             <span className="visually-hidden">Loading...</span>
           </Spinner>
-          <p className="mt-3 text-muted">Loading roles...</p>
+          <p className="mt-3 text-muted fw-medium">Loading roles...</p>
         </div>
       </Container>
     );
   }
 
   return (
-    <Container className="py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <Container className="py-4" style={{ maxWidth: '1400px' }}>
+      {/* Header Section */}
+      <div className="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom">
         <div>
-          <h1 className="mb-1">
-            <FaShieldAlt className="me-2" />
-            Role Management
-          </h1>
-          <p className="text-muted mb-0">Manage user roles and permissions</p>
+          <div className="d-flex align-items-center mb-2">
+            <div className="p-2 bg-primary bg-opacity-10 rounded me-3">
+              <FaShieldAlt className="text-primary" size={24} />
+            </div>
+            <h1 className="mb-0 fw-bold">Role Management</h1>
+          </div>
+          <p className="text-muted mb-0 ms-5 ps-2">Manage user roles and permissions for access control</p>
         </div>
         <CanAccess permission="role_management.create">
-          <Button variant="primary" onClick={handleCreateNew}>
-            <FaPlus className="me-1" />
+          <Button 
+            variant="primary" 
+            onClick={handleCreateNew}
+            size="lg"
+            className="shadow-sm"
+            style={{ minWidth: '180px' }}
+          >
+            <FaPlus className="me-2" />
             Create New Role
           </Button>
         </CanAccess>
@@ -123,18 +157,45 @@ export default function RolesPage() {
       )}
 
       {roles.length === 0 ? (
-        <Alert variant="info">
-          <h5>No roles found</h5>
-          <p className="mb-0">Create your first role to get started.</p>
-        </Alert>
+        <Card className="border-0 shadow-sm" style={{ marginTop: '3rem' }}>
+          <Card.Body className="text-center py-5">
+            <div className="mb-4">
+              <div className="d-inline-flex p-4 bg-primary bg-opacity-10 rounded-circle mb-3">
+                <FaInbox className="text-primary" size={48} />
+              </div>
+              <h4 className="fw-bold mb-2">No Roles Found</h4>
+              <p className="text-muted mb-4">
+                Get started by creating your first role to manage user permissions and access control.
+              </p>
+            </div>
+            <CanAccess permission="role_management.create">
+              <Button 
+                variant="primary" 
+                size="lg" 
+                onClick={handleCreateNew}
+                className="shadow-sm"
+              >
+                <FaPlus className="me-2" />
+                Create Your First Role
+              </Button>
+            </CanAccess>
+          </Card.Body>
+        </Card>
       ) : (
-        <Row xs={1} md={2} lg={3} className="g-4">
-          {roles.map((role) => (
-            <Col key={role.id}>
-              <RoleCard role={role} onEdit={handleEdit} onDelete={handleDelete} />
-            </Col>
-          ))}
-        </Row>
+        <>
+          <div className="mb-3">
+            <p className="text-muted mb-0">
+              <strong>{roles.length}</strong> {roles.length === 1 ? 'role' : 'roles'} found
+            </p>
+          </div>
+          <Row xs={1} md={2} xl={3} className="g-4">
+            {roles.map((role) => (
+              <Col key={role.id}>
+                <RoleCard role={role} onEdit={handleEdit} onDelete={handleDelete} />
+              </Col>
+            ))}
+          </Row>
+        </>
       )}
 
       <DeleteConfirmationModal

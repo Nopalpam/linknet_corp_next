@@ -66,6 +66,19 @@ export default function AdminLayout({
                     <span>Awards</span>
                   </Link>
                 </li>
+                <li>
+                  <Link href="/cms/contactus">
+                    <i className="bx bx-envelope"></i>
+                    <span>Contact Submissions</span>
+                  </Link>
+                </li>
+                <li className="menu-title">System</li>
+                <li>
+                  <Link href="/cms/log-activity">
+                    <i className="bx bx-history"></i>
+                    <span>Activity Logs</span>
+                  </Link>
+                </li>
                 <li className="menu-title">Settings</li>
                 <li>
                   <Link href="/cms/profile">

@@ -1,19 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Card, Alert, Spinner, Breadcrumb } from 'react-bootstrap';
+import { Container, Card, Alert, Spinner, Breadcrumb, Button } from 'react-bootstrap';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { roleApi } from '@/lib/api/role.api';
 import { UpdateRoleDto, GetPermissionsResponse, RoleDetail } from '@/types/role.types';
 import { RoleForm } from '@/components/roles/RoleForm';
 import { CanAccess } from '@/components/CanAccess';
-import { FaShieldAlt, FaEdit } from 'react-icons/fa';
+import { FaShieldAlt, FaEdit, FaHome, FaLock, FaArrowLeft } from 'react-icons/fa';
 
 interface ApiError {
   response?: {
     data?: {
-      error?: string;
+      error?: string | {
+        code: string;
+        message: string;
+      };
     };
   };
 }
@@ -40,7 +43,18 @@ export default function EditRolePage() {
         setPermissionsData(permData);
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        const errorMessage = (err as ApiError)?.response?.data?.error || 'Failed to load role';
+        const apiError = err as ApiError;
+        let errorMessage = 'Failed to load role';
+        
+        if (apiError?.response?.data?.error) {
+          const errorData = apiError.response.data.error;
+          if (typeof errorData === 'object' && 'message' in errorData) {
+            errorMessage = errorData.message;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        }
+        
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -59,7 +73,18 @@ export default function EditRolePage() {
       router.push('/cms/roles');
     } catch (err) {
       console.error('Failed to update role:', err);
-      const errorMessage = (err as ApiError)?.response?.data?.error || 'Failed to update role';
+      const apiError = err as ApiError;
+      let errorMessage = 'Failed to update role';
+      
+      if (apiError?.response?.data?.error) {
+        const errorData = apiError.response.data.error;
+        if (typeof errorData === 'object' && 'message' in errorData) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      }
+      
       setError(errorMessage);
       throw err;
     }
@@ -71,12 +96,12 @@ export default function EditRolePage() {
 
   if (loading) {
     return (
-      <Container className="py-5">
-        <div className="text-center">
-          <Spinner animation="border" role="status">
+      <Container className="py-4" style={{ minHeight: '60vh' }}>
+        <div className="d-flex flex-column justify-content-center align-items-center" style={{ height: '50vh' }}>
+          <Spinner animation="border" role="status" style={{ width: '3rem', height: '3rem' }}>
             <span className="visually-hidden">Loading...</span>
           </Spinner>
-          <p className="mt-3 text-muted">Loading role...</p>
+          <p className="mt-3 text-muted fw-medium">Loading role data...</p>
         </div>
       </Container>
     );
@@ -84,34 +109,58 @@ export default function EditRolePage() {
 
   if (error && !role) {
     return (
-      <Container className="py-4">
-        <Alert variant="danger">{error}</Alert>
-        <Link href="/cms/roles" className="btn btn-secondary">
-          Back to Roles
-        </Link>
+      <Container className="py-4" style={{ maxWidth: '800px' }}>
+        <Alert variant="danger" className="shadow-sm border-0">
+          <Alert.Heading className="h5 mb-3">
+            <strong>Error Loading Role</strong>
+          </Alert.Heading>
+          <p className="mb-3">{error}</p>
+          <hr />
+          <div className="d-flex gap-2 mb-0">
+            <Link href="/cms/roles" className="btn btn-danger">
+              <FaArrowLeft className="me-2" />
+              Back to Roles
+            </Link>
+          </div>
+        </Alert>
       </Container>
     );
   }
 
   if (role?.isSystem) {
     return (
-      <Container className="py-4">
-        <Alert variant="warning">
-          <h5>System Role</h5>
-          <p className="mb-0">System roles cannot be edited. They are protected by the system.</p>
-        </Alert>
-        <Link href="/cms/roles" className="btn btn-secondary">
-          Back to Roles
-        </Link>
+      <Container className="py-4" style={{ maxWidth: '800px' }}>
+        <Card className="border-warning shadow-sm">
+          <Card.Body className="p-4">
+            <div className="text-center py-3">
+              <div className="d-inline-flex p-3 bg-warning bg-opacity-10 rounded-circle mb-3">
+                <FaLock className="text-warning" size={40} />
+              </div>
+              <h4 className="fw-bold mb-3">System Role Protected</h4>
+              <Alert variant="warning" className="mb-4 border-0">
+                <p className="mb-0">
+                  <strong>{role.name}</strong> is a system role and cannot be modified.
+                  System roles are essential for the application's core functionality and security.
+                </p>
+              </Alert>
+              <Link href="/cms/roles" className="btn btn-primary">
+                <FaArrowLeft className="me-2" />
+                Back to Roles
+              </Link>
+            </div>
+          </Card.Body>
+        </Card>
       </Container>
     );
   }
 
   return (
     <CanAccess permission="role_management.update">
-      <Container className="py-4">
+      <Container className="py-4" style={{ maxWidth: '1000px' }}>
+        {/* Breadcrumb */}
         <Breadcrumb className="mb-4">
           <Breadcrumb.Item linkAs={Link} href="/cms/dashboard">
+            <FaHome className="me-1" />
             Dashboard
           </Breadcrumb.Item>
           <Breadcrumb.Item linkAs={Link} href="/cms/roles">
@@ -121,21 +170,39 @@ export default function EditRolePage() {
           <Breadcrumb.Item active>Edit {role?.name}</Breadcrumb.Item>
         </Breadcrumb>
 
-        <div className="mb-4">
-          <h1 className="mb-1">
-            <FaEdit className="me-2" />
-            Edit Role: {role?.name}
-          </h1>
-          <p className="text-muted mb-0">Update role details and permissions</p>
+        {/* Header */}
+        <div className="mb-4 pb-3 border-bottom">
+          <div className="d-flex align-items-center justify-content-between mb-2">
+            <div className="d-flex align-items-center">
+              <div className="p-2 bg-primary bg-opacity-10 rounded me-3">
+                <FaEdit className="text-primary" size={24} />
+              </div>
+              <div>
+                <h1 className="mb-0 fw-bold">Edit Role</h1>
+                <p className="text-muted mb-0 mt-1">{role?.name}</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-muted mb-0 ms-5 ps-2">
+            Update role details and modify permissions
+          </p>
         </div>
 
         {error && (
-          <Alert variant="danger" dismissible onClose={() => setError(null)}>
-            {error}
+          <Alert 
+            variant="danger" 
+            dismissible 
+            onClose={() => setError(null)}
+            className="shadow-sm border-0"
+          >
+            <Alert.Heading className="h6 mb-2">
+              <strong>Error</strong>
+            </Alert.Heading>
+            <p className="mb-0">{error}</p>
           </Alert>
         )}
 
-        <Card>
+        <Card className="border-0 shadow-sm">
           <Card.Body className="p-4">
             {role && permissionsData ? (
               <RoleForm
@@ -152,9 +219,14 @@ export default function EditRolePage() {
               />
             ) : (
               <div className="text-center py-5">
-                <Spinner animation="border" role="status">
+                <Spinner 
+                  animation="border" 
+                  role="status"
+                  style={{ width: '3rem', height: '3rem' }}
+                >
                   <span className="visually-hidden">Loading...</span>
                 </Spinner>
+                <p className="mt-3 text-muted fw-medium">Loading form...</p>
               </div>
             )}
           </Card.Body>

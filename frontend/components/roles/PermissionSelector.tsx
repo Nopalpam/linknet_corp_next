@@ -90,16 +90,21 @@ export const PermissionSelector = ({
 
   return (
     <div className="permission-selector">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="mb-0">
-          Permissions ({selectedPermissionIds.length} of {permissions.length} selected)
-        </h6>
+      <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+        <div>
+          <h6 className="mb-1 fw-bold">Select Permissions</h6>
+          <small className="text-muted">
+            <strong className="text-primary">{selectedPermissionIds.length}</strong> of{' '}
+            <strong>{permissions.length}</strong> permissions selected
+          </small>
+        </div>
         <div className="d-flex gap-2">
           <Button
             variant="outline-primary"
             size="sm"
             onClick={() => onChange(permissions.map((p) => p.id))}
-            disabled={disabled}
+            disabled={disabled || selectedPermissionIds.length === permissions.length}
+            style={{ minWidth: '100px' }}
           >
             Select All
           </Button>
@@ -107,7 +112,8 @@ export const PermissionSelector = ({
             variant="outline-secondary"
             size="sm"
             onClick={() => onChange([])}
-            disabled={disabled}
+            disabled={disabled || selectedPermissionIds.length === 0}
+            style={{ minWidth: '100px' }}
           >
             Clear All
           </Button>
@@ -119,70 +125,116 @@ export const PermissionSelector = ({
           const modulePermissions = groupedPermissions[module] || [];
           const selectedCount = getModuleSelectedCount(module);
           const allSelected = isModuleAllSelected(module);
+          const percentSelected = modulePermissions.length > 0 
+            ? Math.round((selectedCount / modulePermissions.length) * 100)
+            : 0;
 
           return (
-            <Accordion.Item eventKey={module} key={module}>
+            <Accordion.Item 
+              eventKey={module} 
+              key={module}
+              className="mb-3 border rounded shadow-sm"
+              style={{ overflow: 'hidden' }}
+            >
               <Accordion.Header>
                 <div className="d-flex justify-content-between align-items-center w-100 pe-3">
-                  <span className="fw-bold text-capitalize">
-                    {module.replace(/_/g, ' ')}
-                  </span>
-                  <span className="badge bg-primary">
-                    {selectedCount} / {modulePermissions.length}
-                  </span>
+                  <div className="d-flex align-items-center gap-3">
+                    <FaShieldAlt className="text-primary" />
+                    <span className="fw-bold text-capitalize" style={{ fontSize: '1rem' }}>
+                      {module.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-3">
+                    <small className="text-muted fw-medium">
+                      {selectedCount} / {modulePermissions.length}
+                    </small>
+                    <Badge 
+                      bg={percentSelected === 100 ? 'success' : percentSelected > 0 ? 'primary' : 'secondary'}
+                      className="px-3"
+                    >
+                      {percentSelected}%
+                    </Badge>
+                  </div>
                 </div>
               </Accordion.Header>
-              <Accordion.Body>
-                <div className="mb-2">
+              <Accordion.Body className="p-4" style={{ backgroundColor: '#fafbfc' }}>
+                <div className="mb-3 pb-3 border-bottom bg-white p-3 rounded">
                   <Form.Check
                     type="checkbox"
                     id={`select-all-${module}`}
                     label={
-                      <strong>
+                      <div className="d-flex align-items-center gap-2">
                         {allSelected ? (
                           <>
-                            <FaCheckSquare className="text-primary me-1" />
-                            Deselect All
+                            <FaCheckSquare className="text-primary" size={18} />
+                            <strong>Deselect All in Module</strong>
                           </>
                         ) : (
                           <>
-                            <FaSquare className="text-secondary me-1" />
-                            Select All
+                            <FaSquare className="text-secondary" size={18} />
+                            <strong>Select All in Module</strong>
                           </>
                         )}
-                      </strong>
+                      </div>
                     }
                     checked={allSelected}
                     onChange={() => handleSelectAllModule(module)}
                     disabled={disabled}
-                    className="mb-2 pb-2 border-bottom"
                   />
                 </div>
 
-                {modulePermissions.map((permission) => (
-                  <Form.Check
-                    key={permission.id}
-                    type="checkbox"
-                    id={`permission-${permission.id}`}
-                    label={
-                      <div>
-                        <div className="fw-semibold">{permission.name}</div>
-                        {permission.description && (
-                          <small className="text-muted">{permission.description}</small>
-                        )}
-                        <div>
-                          <code className="text-muted" style={{ fontSize: '0.75rem' }}>
-                            {permission.slug}
-                          </code>
-                        </div>
-                      </div>
-                    }
-                    checked={selectedPermissionIds.includes(permission.id)}
-                    onChange={() => handlePermissionToggle(permission.id)}
-                    disabled={disabled}
-                    className="mb-3"
-                  />
-                ))}
+                <div className="permission-list">
+                  {modulePermissions.map((permission) => (
+                    <div
+                      key={permission.id}
+                      className="p-3 mb-2 bg-white rounded border"
+                      style={{
+                        transition: 'all 0.2s ease',
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        opacity: disabled ? 0.6 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!disabled) {
+                          e.currentTarget.style.borderColor = '#0d6efd';
+                          e.currentTarget.style.backgroundColor = '#f8f9ff';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#dee2e6';
+                        e.currentTarget.style.backgroundColor = 'white';
+                      }}
+                    >
+                      <Form.Check
+                        type="checkbox"
+                        id={`permission-${permission.id}`}
+                        label={
+                          <div className="ms-2">
+                            <div className="fw-semibold mb-1" style={{ fontSize: '0.95rem' }}>
+                              {permission.name}
+                            </div>
+                            {permission.description && (
+                              <small className="text-muted d-block mb-2">
+                                {permission.description}
+                              </small>
+                            )}
+                            <code 
+                              className="text-muted px-2 py-1 rounded" 
+                              style={{ 
+                                fontSize: '0.75rem',
+                                backgroundColor: '#f8f9fa'
+                              }}
+                            >
+                              {permission.slug}
+                            </code>
+                          </div>
+                        }
+                        checked={selectedPermissionIds.includes(permission.id)}
+                        onChange={() => handlePermissionToggle(permission.id)}
+                        disabled={disabled}
+                      />
+                    </div>
+                  ))}
+                </div>
               </Accordion.Body>
             </Accordion.Item>
           );

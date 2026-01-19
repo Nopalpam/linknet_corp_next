@@ -20,8 +20,7 @@
     "backgroundImage": {
       "type": "string",
       "title": "Background Image",
-      "description": "Hero background image URL",
-      "format": "uri"
+      "description": "Hero background image URL"
     },
     "ctaText": {
       "type": "string",
@@ -32,8 +31,7 @@
     "ctaLink": {
       "type": "string",
       "title": "CTA Button Link",
-      "description": "Call-to-action button URL",
-      "format": "uri"
+      "description": "Call-to-action button URL (can be relative path like /contact or full URL)"
     }
   },
   "required": ["title"],

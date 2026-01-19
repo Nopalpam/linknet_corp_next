@@ -2,6 +2,7 @@ import { Router } from 'express';
 import menuController from '../controllers/menu.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
 
 const router = Router();
 
@@ -12,56 +13,56 @@ router.get('/menu', menuController.getPublicMenus);
 router.get(
   '/cms/menu',
   authMiddleware,
-  requirePermission('menu_management_read'),
+  requirePermission(Permission.MENU_MANAGEMENT_READ),
   menuController.getMenus
 );
 
 router.get(
   '/cms/menu/:id',
   authMiddleware,
-  requirePermission('menu_management_read'),
+  requirePermission(Permission.MENU_MANAGEMENT_READ),
   menuController.getMenuById
 );
 
 router.post(
   '/cms/menu',
   authMiddleware,
-  requirePermission('menu_management_create'),
+  requirePermission(Permission.MENU_MANAGEMENT_CREATE),
   menuController.createMenu
 );
 
 router.put(
   '/cms/menu/:id',
   authMiddleware,
-  requirePermission('menu_management_update'),
+  requirePermission(Permission.MENU_MANAGEMENT_UPDATE),
   menuController.updateMenu
 );
 
 router.delete(
   '/cms/menu/:id',
   authMiddleware,
-  requirePermission('menu_management_delete'),
+  requirePermission(Permission.MENU_MANAGEMENT_DELETE),
   menuController.deleteMenu
 );
 
 router.post(
   '/cms/menu/toggle-status',
   authMiddleware,
-  requirePermission('menu_management_update'),
+  requirePermission(Permission.MENU_MANAGEMENT_UPDATE),
   menuController.toggleMenuStatus
 );
 
 router.post(
   '/cms/menu/update-order',
   authMiddleware,
-  requirePermission('menu_management_update'),
+  requirePermission(Permission.MENU_MANAGEMENT_REORDER),
   menuController.updateMenuOrder
 );
 
 router.post(
   '/cms/menu/destroy-multiple',
   authMiddleware,
-  requirePermission('menu_management_delete'),
+  requirePermission(Permission.MENU_MANAGEMENT_DELETE),
   menuController.deleteMultipleMenus
 );
 

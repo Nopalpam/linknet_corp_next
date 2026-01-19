@@ -1803,20 +1803,17 @@ Frontend:
 
 Backend:
 1. Database schema:
-   - contact_submissions (id, name, email, phone, subject, message, ip_address, user_agent, status (new|read|replied), created_at)
+   - contact_us (id, first_name, last_name, email, phone, role, company, inquiry_type (business, support, career, others), message, ip_address, user_agent, submitted_at, created_at, updated_at)
 
 2. API endpoint:
    - POST /api/contact-us/submit (public, with rate limiting)
-     - Validation: name, email, phone (optional), subject, message
+     - Validation: first_name, last_name, email, phone (optional), role (optional), company (optional), inquiry_type, message
      - Save ke database
-     - Send notification email ke admin
-     - Send auto-reply ke user
      - Rate limit: max 3 per IP per hour
 
 Frontend:
 1. Contact form component (use in homepage atau /contact page):
-   - Fields: name, email, phone, subject, message
-   - reCAPTCHA v3 integration (prevent spam)
+   - Fields: first_name, last_name, email, phone, role, company, inquiry_type (dropdown), message (textarea)
    - Success message after submit
 </code></pre>
 <h3 id="contact-inbox-management-1.5-hari">13.2 Contact Inbox Management (1.5 hari)</h3>

@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../types/error.types';
 import { invalidateRoleCache } from '../utils/rbac';
-import { PermissionsByModule } from '../constants/permissions';
 
 const prisma = new PrismaClient();
 
@@ -385,7 +384,7 @@ export const getPermissions = async (_req: Request, res: Response) => {
     data: {
       permissions,
       grouped: groupedPermissions,
-      modules: Object.keys(PermissionsByModule),
+      modules: Object.keys(groupedPermissions),
     },
   });
 };

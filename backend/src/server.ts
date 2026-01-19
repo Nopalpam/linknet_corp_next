@@ -11,6 +11,7 @@ dotenv.config();
 // Import validators and services
 import { validateEnvironmentAtStartup } from '@middleware/environmentValidator';
 import { initializeTokenCleanupJobs } from '@services/tokenCleanup.service';
+import { closeActivityLogQueue } from '@services/activityLogger.service';
 import healthRoutes from '@routes/health.routes';
 
 // Import centralized middleware
@@ -21,6 +22,7 @@ import {
   errorHandler,
   notFoundHandler,
 } from '@middleware/errorHandler.middleware';
+import { autoLogActivity } from '@middleware/activityLogger.middleware';
 import { logInfo } from '@utils/logger';
 
 // Validate environment at startup
@@ -90,6 +92,16 @@ app.get('/', (_req: Request, res: Response) => {
 // Rate limiting for API routes
 app.use('/api', generalRateLimiter);
 
+// Activity logging middleware (after rate limiting, before routes)
+// This will auto-log all CRUD operations
+app.use(
+  '/api',
+  autoLogActivity({
+    excludePaths: ['/api/health', '/api/v1/health'],
+    excludeMethods: ['GET', 'HEAD', 'OPTIONS'],
+  })
+);
+
 // API routes
 const API_PREFIX = process.env.API_PREFIX || '/api/v1';
 
@@ -137,21 +149,33 @@ app.use(`${API_PREFIX}`, menuRoutes);
 import filemanagerRoutes from '@routes/filemanager.routes';
 app.use(`${API_PREFIX}/filemanager`, filemanagerRoutes);
 
-// Page Management routes (CMS)
-import pageRoutes from '@routes/page.routes';
-app.use(`${API_PREFIX}/cms/pages`, pageRoutes);
-
-// Component Management routes (CMS)
+// Page Component routes (CMS) - MUST be before page routes to avoid route conflicts
 import componentRoutes from '@routes/component.routes';
 app.use(`${API_PREFIX}/cms/pages`, componentRoutes);
+
+// Page Management routes (CMS)
+import pageRoutes from '@routes/cms/page.routes';
+app.use(`${API_PREFIX}/cms/pages`, pageRoutes);
 
 // Award Management routes (CMS + Public)
 import awardRoutes from '@routes/award.routes';
 app.use(`${API_PREFIX}`, awardRoutes);
 
+// Activity Log routes (CMS)
+import logActivityRoutes from '@routes/logActivity.routes';
+app.use(`${API_PREFIX}/cms/log-activity`, logActivityRoutes);
+
 // Public routes (no auth required)
 import publicRoutes from '@routes/public.routes';
 app.use(`${API_PREFIX}`, publicRoutes);
+
+// Contact routes (Public + CMS)
+import contactRoutes from '@routes/contact.routes';
+app.use(`${API_PREFIX}/contact-us`, contactRoutes);
+
+// CMS Contact submissions management
+import cmsContactRoutes from '@routes/cms/contactus.routes';
+app.use(`${API_PREFIX}/cms/contactus`, cmsContactRoutes);
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
@@ -179,6 +203,19 @@ app.listen(PORT, () => {
     ║   URL: http://localhost:${PORT.toString().padEnd(13)}║
     ╚══════════════════════════════════════╝
   `);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logInfo('SIGTERM signal received: closing HTTP server');
+  await closeActivityLogQueue();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  logInfo('SIGINT signal received: closing HTTP server');
+  await closeActivityLogQueue();
+  process.exit(0);
 });
 
 export default app;

@@ -24,7 +24,7 @@
     "buttonLink": {
       "type": "string",
       "title": "Button Link",
-      "format": "uri"
+      "description": "Button URL (can be relative path like /contact or full URL)"
     },
     "backgroundColor": {
       "type": "string",

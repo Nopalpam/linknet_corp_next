@@ -22,6 +22,14 @@ const router = Router();
 router.get('/', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_READ), asyncHandler(getRoles));
 
 /**
+ * @route   GET /api/roles/permissions
+ * @desc    Get all permissions grouped by module
+ * @access  Private (requires role_management.read permission)
+ * @note    Must be defined before /:id route to prevent "permissions" being treated as an ID
+ */
+router.get('/permissions', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_READ), asyncHandler(getPermissions));
+
+/**
  * @route   GET /api/roles/:id
  * @desc    Get single role by ID
  * @access  Private (requires role_management.read permission)
@@ -48,12 +56,5 @@ router.put('/:id', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_UP
  * @access  Private (requires role_management.delete permission)
  */
 router.delete('/:id', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_DELETE), asyncHandler(deleteRole));
-
-/**
- * @route   GET /api/cms/roles/permissions
- * @desc    Get all permissions grouped by module
- * @access  Private (requires role_management.read permission)
- */
-router.get('/permissions', authenticate, requirePermission(Permission.ROLE_MANAGEMENT_READ), asyncHandler(getPermissions));
 
 export default router;

@@ -1,307 +1,132 @@
-import prisma from '@config/database';
-import { Prisma, PageStatus, PageTemplate } from '@prisma/client';
+import { PrismaClient, PageStatus, PageTemplate } from '@prisma/client';
 import { AppError } from '../types/error.types';
-import { generateUniquePageSlug, isValidSlug } from '@utils/slug.util';
 
-export interface CreatePageDTO {
-  title: string;
-  slug?: string;
-  template?: PageTemplate;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  ogImage?: string;
-  status?: PageStatus;
-  createdById: string;
-}
-
-export interface UpdatePageDTO {
-  title?: string;
-  slug?: string;
-  template?: PageTemplate;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  ogImage?: string;
-  status?: PageStatus;
-}
-
-export interface GetPagesQuery {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: PageStatus;
-  template?: PageTemplate;
-  createdBy?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+const prisma = new PrismaClient();
 
 export class PageService {
   /**
-   * Get pages dengan pagination, filter, dan search
+   * Get all pages
    */
-  static async getPages(query: GetPagesQuery) {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      status,
-      template,
-      createdBy,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = query;
-
-    const skip = (page - 1) * limit;
-
-    // Build where clause
-    const where: Prisma.PageWhereInput = {
-      deletedAt: null,
-      ...(status && { status }),
-      ...(template && { template }),
-      ...(createdBy && { createdById: createdBy }),
-      ...(search && {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { slug: { contains: search, mode: 'insensitive' } },
-        ],
-      }),
-    };
-
-    // Get pages with component count
-    const [pages, total] = await Promise.all([
-      prisma.page.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          _count: {
-            select: { components: true },
-          },
-        },
-      }),
-      prisma.page.count({ where }),
-    ]);
-
-    return {
-      data: pages.map((page: any) => ({
-        ...page,
-        componentCount: page._count.components,
-        _count: undefined,
-      })),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+  async getAllPages() {
+    return await prisma.page.findMany({
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        _count: { select: { components: true } }
+      }
+    });
   }
 
   /**
-   * Get single page by ID
+   * Get page by ID with components
    */
-  static async getPageById(id: string) {
-    const page = await prisma.page.findFirst({
-      where: { id, deletedAt: null },
+  async getPageById(id: string) {
+    const page = await prisma.page.findUnique({
+      where: { id },
       include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
+        components: {
+          orderBy: { order: 'asc' }
         },
-        _count: {
-          select: { components: true },
-        },
-      },
+        createdBy: { select: { id: true, firstName: true, lastName: true } }
+      }
     });
+    if (!page) throw new AppError('Page not found', 404);
+    return page;
+  }
 
-    if (!page) {
-      throw new AppError('Page not found', 404);
-    }
-
-    return {
-      ...page,
-      componentCount: page._count.components,
-      _count: undefined,
-    };
+  /**
+   * Get page by Slug for public rendering
+   */
+  async getPageBySlug(slug: string) {
+    const page = await prisma.page.findUnique({
+      where: { slug },
+      include: {
+        components: {
+          where: { isVisible: true },
+          orderBy: { order: 'asc' }
+        }
+      }
+    });
+    return page;
   }
 
   /**
    * Create new page
    */
-  static async createPage(data: CreatePageDTO) {
-    // Generate or validate slug
-    let slug = data.slug;
-    if (slug) {
-      // Validate custom slug
-      if (!isValidSlug(slug)) {
-        throw new AppError(
-          'Invalid slug format. Only lowercase letters, numbers, and dashes are allowed',
-          400
-        );
-      }
-      // Ensure unique
-      slug = await generateUniquePageSlug(slug);
-    } else {
-      // Auto-generate from title
-      slug = await generateUniquePageSlug(data.title);
-    }
+  async createPage(userId: string, data: any) {
+    // Validate slug uniqueness
+    const existing = await prisma.page.findUnique({ where: { slug: data.slug } });
+    if (existing) throw new AppError('Slug already exists', 400);
 
-    // Create page
-    const page = await prisma.page.create({
+    return await prisma.page.create({
       data: {
         title: data.title,
-        slug,
+        slug: data.slug,
+        status: data.status || PageStatus.DRAFT,
         template: data.template || PageTemplate.DEFAULT,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
-        metaKeywords: data.metaKeywords,
-        ogImage: data.ogImage,
-        status: data.status || PageStatus.DRAFT,
-        publishedAt: data.status === PageStatus.PUBLISHED ? new Date() : null,
-        createdById: data.createdById,
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    return page;
-  }
-
-  /**
-   * Update page
-   */
-  static async updatePage(id: string, data: UpdatePageDTO) {
-    // Check if page exists
-    const existingPage = await prisma.page.findFirst({
-      where: { id, deletedAt: null },
-    });
-
-    if (!existingPage) {
-      throw new AppError('Page not found', 404);
-    }
-
-    // Handle slug update
-    let slug = data.slug;
-    if (slug && slug !== existingPage.slug) {
-      // Validate custom slug
-      if (!isValidSlug(slug)) {
-        throw new AppError(
-          'Invalid slug format. Only lowercase letters, numbers, and dashes are allowed',
-          400
-        );
+        createdById: userId
       }
-      // Ensure unique
-      slug = await generateUniquePageSlug(slug, id);
-    }
-
-    // Handle status change
-    let publishedAt = existingPage.publishedAt;
-    if (data.status === PageStatus.PUBLISHED && existingPage.status !== PageStatus.PUBLISHED) {
-      publishedAt = new Date();
-    } else if (data.status === PageStatus.DRAFT) {
-      publishedAt = null;
-    }
-
-    // Update page
-    const page = await prisma.page.update({
-      where: { id },
-      data: {
-        ...(data.title && { title: data.title }),
-        ...(slug && { slug }),
-        ...(data.template && { template: data.template }),
-        ...(data.metaTitle !== undefined && { metaTitle: data.metaTitle }),
-        ...(data.metaDescription !== undefined && { metaDescription: data.metaDescription }),
-        ...(data.metaKeywords !== undefined && { metaKeywords: data.metaKeywords }),
-        ...(data.ogImage !== undefined && { ogImage: data.ogImage }),
-        ...(data.status && { status: data.status, publishedAt }),
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
     });
-
-    return page;
   }
 
   /**
-   * Delete page (soft delete)
+   * Update page metadata
    */
-  static async deletePage(id: string) {
-    // Check if page exists
-    const page = await prisma.page.findFirst({
-      where: { id, deletedAt: null },
-    });
-
-    if (!page) {
-      throw new AppError('Page not found', 404);
+  async updatePage(id: string, data: any) {
+    // Check slug uniqueness if changed
+    if (data.slug) {
+        const existing = await prisma.page.findUnique({ where: { slug: data.slug } });
+        if (existing && existing.id !== id) throw new AppError('Slug already exists', 400);
     }
 
-    // Soft delete page dan components (cascade via Prisma)
-    await prisma.page.update({
+    return await prisma.page.update({
       where: { id },
       data: {
-        deletedAt: new Date(),
-      },
+        title: data.title,
+        slug: data.slug,
+        status: data.status,
+        template: data.template,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        updatedAt: new Date()
+      }
     });
-
-    // TODO: Create URL redirect dari old slug ke homepage untuk avoid 404
-    // Ini bisa dihandle di separate redirect service
-
-    return { message: 'Page deleted successfully' };
   }
 
   /**
-   * Check if slug is available
+   * Delete page
    */
-  static async checkSlugAvailability(slug: string, excludePageId?: string) {
-    if (!isValidSlug(slug)) {
-      return {
-        available: false,
-        message: 'Invalid slug format. Only lowercase letters, numbers, and dashes are allowed',
-      };
-    }
+  async deletePage(id: string) {
+    return await prisma.page.delete({ where: { id } });
+  }
 
-    const existing = await prisma.page.findFirst({
-      where: {
-        slug,
-        ...(excludePageId && { id: { not: excludePageId } }),
-        deletedAt: null,
-      },
+  /**
+   * Save page components (Replace All Strategy)
+   */
+  async savePageComponents(pageId: string, components: any[]) {
+    return await prisma.$transaction(async (tx) => {
+        // Delete existing components
+        await tx.pageComponent.deleteMany({ where: { pageId } });
+
+        // Insert new ones
+        if (components && components.length > 0) {
+            await tx.pageComponent.createMany({
+                data: components.map((c, index) => ({
+                    pageId,
+                    type: c.type,
+                    data: c.data || {},
+                    order: index,
+                    isVisible: c.isVisible ?? true
+                }))
+            });
+        }
+        
+        return await tx.page.findUnique({
+             where: { id: pageId },
+             include: { components: { orderBy: { order: 'asc' } } }
+        });
     });
-
-    return {
-      available: !existing,
-      message: existing ? 'Slug already exists' : 'Slug is available',
-    };
   }
 }
