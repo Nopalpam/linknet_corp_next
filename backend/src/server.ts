@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -17,7 +18,7 @@ import healthRoutes from '@routes/health.routes';
 // Import centralized middleware
 import { requestIdMiddleware } from '@middleware/requestId.middleware';
 import { httpLoggerMiddleware } from '@middleware/httpLogger.middleware';
-import { generalRateLimiter, authRateLimiter } from '@middleware/rateLimiter.middleware';
+import { generalRateLimiter } from '@middleware/rateLimiter.middleware';
 import {
   errorHandler,
   notFoundHandler,
@@ -61,6 +62,10 @@ app.use(cookieParser());
 
 // Compression middleware
 app.use(compression());
+
+// Serve static files for local storage (avatars, uploads)
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+app.use('/uploads', express.static(path.resolve(UPLOAD_DIR)));
 
 // Health check routes (before rate limiting)
 app.use(healthRoutes);
@@ -121,9 +126,10 @@ app.get(API_PREFIX, (_req: Request, res: Response) => {
 import exampleRoutes from '@routes/example.routes';
 app.use(`${API_PREFIX}/examples`, exampleRoutes);
 
-// Auth routes with stricter rate limiting
+// Auth routes with moderate rate limiting
+// Note: Specific endpoints like /login have their own stricter rate limiters
 import authRoutes from '@routes/auth.routes';
-app.use(`${API_PREFIX}/auth`, authRateLimiter, authRoutes);
+app.use(`${API_PREFIX}/auth`, authRoutes);
 
 // Role management routes (CMS)
 import roleRoutes from '@routes/role.routes';
@@ -161,9 +167,17 @@ app.use(`${API_PREFIX}/cms/pages`, pageRoutes);
 import awardRoutes from '@routes/award.routes';
 app.use(`${API_PREFIX}`, awardRoutes);
 
+// Management routes (CMS + Public)
+import managementRoutes from '@routes/management.routes';
+app.use(`${API_PREFIX}/cms/managements`, managementRoutes);
+
 // Activity Log routes (CMS)
 import logActivityRoutes from '@routes/logActivity.routes';
 app.use(`${API_PREFIX}/cms/log-activity`, logActivityRoutes);
+
+// URL Redirect routes (CMS + Public)
+import urlRedirectRoutes from '@routes/urlRedirect.routes';
+app.use(`${API_PREFIX}`, urlRedirectRoutes);
 
 // Public routes (no auth required)
 import publicRoutes from '@routes/public.routes';

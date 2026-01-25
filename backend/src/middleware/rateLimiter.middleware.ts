@@ -1,23 +1,47 @@
 /**
  * Rate Limiting Middleware
  * Implements rate limiting for different endpoint types
+ * 
+ * Environment Variables:
+ * - NODE_ENV: 'development' | 'production'
+ * - RATE_LIMIT_ENABLED: 'true' | 'false' (default: true in production, false in development)
+ * - DISABLE_RATE_LIMIT: 'true' | 'false' (legacy support, same as RATE_LIMIT_ENABLED=false)
  */
 
 import rateLimit from 'express-rate-limit';
 import { RateLimitError } from '../types/error.types';
 import { Request, Response, NextFunction } from 'express';
 
-// Check if rate limiting should be disabled (for development)
-const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
+// Determine if rate limiting should be enabled
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const isDevelopment = NODE_ENV === 'development';
+
+// Check rate limit configuration
+// Priority: RATE_LIMIT_ENABLED > DISABLE_RATE_LIMIT > auto-detect from NODE_ENV
+const getRateLimitEnabled = (): boolean => {
+  if (process.env.RATE_LIMIT_ENABLED !== undefined) {
+    return process.env.RATE_LIMIT_ENABLED === 'true';
+  }
+  if (process.env.DISABLE_RATE_LIMIT !== undefined) {
+    return process.env.DISABLE_RATE_LIMIT !== 'true';
+  }
+  // Default: disabled in development, enabled in production
+  return !isDevelopment;
+};
+
+const isRateLimitEnabled = getRateLimitEnabled();
+
+// Log rate limit status on startup
+console.log(`[Rate Limit] Environment: ${NODE_ENV}`);
+console.log(`[Rate Limit] Status: ${isRateLimitEnabled ? 'ENABLED' : 'DISABLED'}`);
+if (!isRateLimitEnabled) {
+  console.warn('[Rate Limit] ⚠️  Rate limiting is DISABLED - Only use in development!');
+}
 
 /**
  * Middleware to bypass rate limiting if disabled
  */
-const bypassIfDisabled = (_req: Request, _res: Response, next: NextFunction) => {
-  if (isRateLimitDisabled) {
-    console.log('[Rate Limit] DISABLED - Bypassing rate limit check');
-    return next();
-  }
+const bypassMiddleware = (_req: Request, _res: Response, next: NextFunction) => {
   next();
 };
 
@@ -36,18 +60,43 @@ const generalRateLimitConfig = rateLimit({
   },
 });
 
-export const generalRateLimiter = isRateLimitDisabled 
-  ? bypassIfDisabled 
+export const generalRateLimiter = !isRateLimitEnabled 
+  ? bypassMiddleware 
   : generalRateLimitConfig;
 
 /**
  * Authentication rate limiter (stricter)
- * 20 requests per 15 minutes for login/register endpoints
+ * Only for /login endpoint specifically
+ * 10 requests per 15 minutes for login attempts
+ * 
+ * Note: This is separate from authRateLimiter to allow different limits
+ */
+const loginRateLimitConfig = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login attempts per windowMs
+  message: 'Terlalu banyak percobaan login. Silakan coba lagi setelah 15 menit.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+  handler: (_req, _res, _next, options) => {
+    throw new RateLimitError(options.message as string);
+  },
+});
+
+export const loginRateLimiter = !isRateLimitEnabled 
+  ? bypassMiddleware 
+  : loginRateLimitConfig;
+
+/**
+ * Authentication routes rate limiter (general auth endpoints)
+ * 50 requests per 15 minutes for auth-related operations
+ * 
+ * Applied to: /register, /refresh-token, /forgot-password, etc.
  */
 const authRateLimitConfig = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit each IP to 20 requests per windowMs
-  message: 'Too many authentication attempts, please try again after 15 minutes',
+  max: 50, // Limit each IP to 50 requests per windowMs
+  message: 'Too many authentication requests, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
@@ -56,8 +105,8 @@ const authRateLimitConfig = rateLimit({
   },
 });
 
-export const authRateLimiter = isRateLimitDisabled 
-  ? bypassIfDisabled 
+export const authRateLimiter = !isRateLimitEnabled 
+  ? bypassMiddleware 
   : authRateLimitConfig;
 
 /**
@@ -75,8 +124,8 @@ const strictRateLimitConfig = rateLimit({
   },
 });
 
-export const strictRateLimiter = isRateLimitDisabled 
-  ? bypassIfDisabled 
+export const strictRateLimiter = !isRateLimitEnabled 
+  ? bypassMiddleware 
   : strictRateLimitConfig;
 
 /**
@@ -94,14 +143,15 @@ const publicRateLimitConfig = rateLimit({
   },
 });
 
-export const publicRateLimiter = isRateLimitDisabled 
-  ? bypassIfDisabled 
+export const publicRateLimiter = !isRateLimitEnabled 
+  ? bypassMiddleware 
   : publicRateLimitConfig;
 
 // Export all rate limiters
 export default {
-  general: isRateLimitDisabled ? bypassIfDisabled : generalRateLimitConfig,
-  auth: isRateLimitDisabled ? bypassIfDisabled : authRateLimitConfig,
-  strict: isRateLimitDisabled ? bypassIfDisabled : strictRateLimitConfig,
-  public: isRateLimitDisabled ? bypassIfDisabled : publicRateLimitConfig,
+  general: !isRateLimitEnabled ? bypassMiddleware : generalRateLimitConfig,
+  auth: !isRateLimitEnabled ? bypassMiddleware : authRateLimitConfig,
+  login: !isRateLimitEnabled ? bypassMiddleware : loginRateLimitConfig,
+  strict: !isRateLimitEnabled ? bypassMiddleware : strictRateLimitConfig,
+  public: !isRateLimitEnabled ? bypassMiddleware : publicRateLimitConfig,
 };

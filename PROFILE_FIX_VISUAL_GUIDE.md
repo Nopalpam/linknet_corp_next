@@ -1,0 +1,448 @@
+# 📊 PROFILE FIX - VISUAL GUIDE
+
+## 🎯 ARSITEKTUR SOLUSI
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FRONTEND (Next.js)                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Profile Page                                       │   │
+│  │  • useToast hook                                    │   │
+│  │  • ToastContainer component                         │   │
+│  │  • handleShowToast(message, type)                   │   │
+│  └──────────────┬──────────────────────────────────────┘   │
+│                 │                                           │
+│                 ├─→ ProfileHeader                           │
+│                 │    └─→ AvatarUpload                       │
+│                 │         • onShowToast prop                │
+│                 │         • Image error handling            │
+│                 │                                           │
+│                 └─→ EditProfileModal                        │
+│                      • onShowToast prop                     │
+│                      • Form validation                      │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                    SERVICES LAYER                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  profileService                                             │
+│  • normalizeAvatarUrl() ← Relative to Absolute             │
+│  • processProfileData() ← Process all responses            │
+│  • getProfile()         ← Normalize avatar                 │
+│  • updateProfile()      ← Normalize avatar                 │
+│  • updateAvatar()       ← Normalize avatar                 │
+│                                                             │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+                  │ HTTP Request
+                  ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    BACKEND (Express.js)                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  /api/v1/profile (PUT)                                      │
+│  • Validate data                                            │
+│  • Update database                                          │
+│  • Return: { success, message, data }                      │
+│                                                             │
+│  /api/v1/profile/avatar (PUT)                               │
+│  • Validate image                                           │
+│  • Save to ./uploads/avatars/                               │
+│  • Return: { success, message, data: { avatar } }          │
+│                                                             │
+│  Static Files: /uploads/avatars/*                           │
+│  • Exposed via express.static()                             │
+│  • Accessible: http://localhost:5000/uploads/avatars/xxx    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔄 FLOW DIAGRAM
+
+### 1. Profile Update Flow
+
+```
+┌──────────────┐
+│ USER ACTION  │
+│ Click "Save" │
+└──────┬───────┘
+       │
+       ↓
+┌────────────────────────┐
+│ EditProfileModal       │
+│ • handleSubmit()       │
+│ • Validate data        │
+│ • setIsLoading(true)   │
+└──────┬─────────────────┘
+       │
+       ↓
+┌────────────────────────────┐
+│ profileService             │
+│ • updateProfile(data)      │
+│ • POST to backend          │
+└──────┬─────────────────────┘
+       │
+       ↓
+┌────────────────────────────┐
+│ BACKEND                    │
+│ • Validate                 │
+│ • Update DB                │
+│ • Return response          │
+└──────┬─────────────────────┘
+       │
+       ├─── SUCCESS ──→ ┌──────────────────────────┐
+       │                │ • processProfileData()   │
+       │                │ • onProfileUpdated()     │
+       │                │ • refreshUser()          │
+       │                │ • onShowToast(success)   │
+       │                │ • onClose()              │
+       │                └──────────────────────────┘
+       │
+       └─── ERROR ──→ ┌──────────────────────────┐
+                      │ • setError(message)      │
+                      │ • onShowToast(error)     │
+                      └──────────────────────────┘
+```
+
+---
+
+### 2. Avatar Upload Flow
+
+```
+┌──────────────┐
+│ USER ACTION  │
+│ Select File  │
+└──────┬───────┘
+       │
+       ↓
+┌────────────────────────┐
+│ AvatarUpload           │
+│ • handleFileSelect()   │
+│ • Validate file        │  ──→ ❌ Invalid? Show toast error
+│ • setIsUploading(true) │
+└──────┬─────────────────┘
+       │
+       ↓
+┌────────────────────────────┐
+│ profileService             │
+│ • updateAvatar(file)       │
+│ • FormData upload          │
+└──────┬─────────────────────┘
+       │
+       ↓
+┌────────────────────────────┐
+│ BACKEND                    │
+│ • Multer parse             │
+│ • Validate image           │
+│ • Process & optimize       │
+│ • Save to disk             │
+│ • Return relative URL      │
+└──────┬─────────────────────┘
+       │
+       ↓
+┌────────────────────────────┐
+│ profileService             │
+│ • Receive response         │
+│ • normalizeAvatarUrl()     │  ← "/uploads/..." → "http://..."
+│ • processProfileData()     │
+└──────┬─────────────────────┘
+       │
+       ↓
+┌────────────────────────────┐
+│ AvatarUpload               │
+│ • onAvatarUpdated()        │  ← Update local state
+│ • refreshUser()            │  ← Update auth context
+│ • onShowToast(success)     │  ← Show feedback
+└────────────────────────────┘
+```
+
+---
+
+### 3. Toast Notification Flow
+
+```
+┌──────────────────────┐
+│ Component Event      │
+│ (success/error)      │
+└──────┬───────────────┘
+       │
+       ↓
+┌──────────────────────────┐
+│ onShowToast(msg, type)   │
+└──────┬───────────────────┘
+       │
+       ↓
+┌──────────────────────────┐
+│ Profile Page             │
+│ handleShowToast()        │
+└──────┬───────────────────┘
+       │
+       ↓
+┌──────────────────────────┐
+│ useToast Hook            │
+│ • success(message)       │  ← Add to toasts array
+│ • error(message)         │  ← Generate unique ID
+└──────┬───────────────────┘
+       │
+       ↓
+┌──────────────────────────┐
+│ ToastContainer           │
+│ • Render all toasts      │
+│ • Map toasts array       │
+└──────┬───────────────────┘
+       │
+       ↓
+┌──────────────────────────┐
+│ Toast Component          │
+│ • Show message           │
+│ • Auto-dismiss 3s        │
+│ • Styled by type         │
+└──────────────────────────┘
+```
+
+---
+
+## 📸 UI MOCKUP
+
+### Profile Page dengan Toast
+
+```
+╔═══════════════════════════════════════════════════════════╗
+║                      LINKNET CORP                         ║
+╠═══════════════════════════════════════════════════════════╣
+║                                                           ║
+║  ┌─────────────────────────────────────────────────┐     ║
+║  │                    Profile                      │     ║
+║  ├─────────────────────────────────────────────────┤     ║
+║  │                                                 │     ║
+║  │     ┌─────────┐                                 │     ║
+║  │     │  [IMG]  │  John Doe                       │     ║
+║  │     │  Avatar │  @johndoe                       │     ║
+║  │     └─────────┘  Administrator                  │     ║
+║  │                                                 │     ║
+║  ├─────────────────────────────────────────────────┤     ║
+║  │  Personal Information                           │     ║
+║  │                                                 │     ║
+║  │  First Name:  John                              │     ║
+║  │  Last Name:   Doe                               │     ║
+║  │  Email:       john@example.com                  │     ║
+║  │  Phone:       +62812345678                      │     ║
+║  │                                                 │     ║
+║  │                      [Edit Profile]             │     ║
+║  └─────────────────────────────────────────────────┘     ║
+║                                                           ║
+║                                  ┌──────────────────────┐ ║
+║                                  │ ✓ Profile updated   │ ║
+║                                  │   successfully   [x]│ ║
+║                                  └──────────────────────┘ ║
+╚═══════════════════════════════════════════════════════════╝
+```
+
+---
+
+### Edit Profile Modal
+
+```
+╔═══════════════════════════════════════════════════════════╗
+║                    Edit Profile                      [X]  ║
+╠═══════════════════════════════════════════════════════════╣
+║                                                           ║
+║  First Name *                                             ║
+║  ┌────────────────────────────────────────────────────┐   ║
+║  │ John                                               │   ║
+║  └────────────────────────────────────────────────────┘   ║
+║                                                           ║
+║  Last Name *                                              ║
+║  ┌────────────────────────────────────────────────────┐   ║
+║  │ Doe                                                │   ║
+║  └────────────────────────────────────────────────────┘   ║
+║                                                           ║
+║  Username *                                               ║
+║  ┌────────────────────────────────────────────────────┐   ║
+║  │ johndoe                                            │   ║
+║  └────────────────────────────────────────────────────┘   ║
+║                                                           ║
+║  Phone                                                    ║
+║  ┌────────────────────────────────────────────────────┐   ║
+║  │ +62812345678                                       │   ║
+║  └────────────────────────────────────────────────────┘   ║
+║                                                           ║
+║             [Cancel]              [Save Changes] ⌛        ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+```
+
+---
+
+### Avatar Upload Interaction
+
+```
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│  NORMAL STATE                                       │
+│  ┌─────────┐                                        │
+│  │  [IMG]  │  Hover to show camera icon             │
+│  │  Avatar │                                        │
+│  └─────────┘                                        │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  HOVER STATE                                        │
+│  ┌─────────┐                                        │
+│  │  [📷]   │  Click to upload                       │
+│  │  Upload │                                        │
+│  └─────────┘                                        │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  UPLOADING STATE                                    │
+│  ┌─────────┐                                        │
+│  │  [⌛]   │  Uploading...                          │
+│  │ Loading │                                        │
+│  └─────────┘                                        │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  SUCCESS STATE                                      │
+│  ┌─────────┐                                        │
+│  │ [NEW]   │  Avatar updated                        │
+│  │  Image  │  ✓ Toast shown                         │
+│  └─────────┘                                        │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🎨 TOAST STYLES
+
+### Success Toast
+```
+┌──────────────────────────────────────┐
+│ ✓ Profile updated successfully   [x]│  ← Green background
+└──────────────────────────────────────┘
+```
+
+### Error Toast
+```
+┌──────────────────────────────────────┐
+│ ✗ Failed to update profile       [x]│  ← Red background
+└──────────────────────────────────────┘
+```
+
+### Warning Toast
+```
+┌──────────────────────────────────────┐
+│ ⚠ File size too large             [x]│  ← Yellow background
+└──────────────────────────────────────┘
+```
+
+### Info Toast
+```
+┌──────────────────────────────────────┐
+│ ℹ Processing your request...     [x]│  ← Blue background
+└──────────────────────────────────────┘
+```
+
+---
+
+## 🔍 TECHNICAL DETAILS
+
+### Avatar URL Transformation
+
+```
+BACKEND RESPONSE:
+{
+  "avatar": "/uploads/avatars/uuid-filename.webp"
+}
+         ↓
+         ↓ normalizeAvatarUrl()
+         ↓
+FRONTEND STATE:
+{
+  "avatar": "http://localhost:5000/uploads/avatars/uuid-filename.webp"
+}
+         ↓
+         ↓ <Image src={avatar} />
+         ↓
+BROWSER REQUEST:
+GET http://localhost:5000/uploads/avatars/uuid-filename.webp
+         ↓
+         ↓ express.static('/uploads')
+         ↓
+FILESYSTEM:
+./backend/uploads/avatars/uuid-filename.webp
+```
+
+---
+
+### Toast State Management
+
+```
+┌─────────────────────────────────────────────────────┐
+│ useToast Hook State                                 │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  toasts: [                                          │
+│    { id: "toast-1", message: "Success", type: "..." }│
+│    { id: "toast-2", message: "Error", type: "..." } │
+│    { id: "toast-3", message: "Info", type: "..." }  │
+│  ]                                                  │
+│                                                     │
+│  ┌────────────┐  ┌────────────┐  ┌──────────────┐ │
+│  │ Add Toast  │  │Remove Toast│  │Auto-dismiss  │ │
+│  │ +ID +Type  │  │Filter by ID│  │After 3s      │ │
+│  └────────────┘  └────────────┘  └──────────────┘ │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📊 DATA FLOW SUMMARY
+
+```
+USER INTERACTION
+       ↓
+┌──────────────────┐
+│ UI Component     │
+│ (Modal/Upload)   │
+└────────┬─────────┘
+         │
+         ↓
+┌──────────────────┐
+│ Service Layer    │
+│ (API Call)       │
+└────────┬─────────┘
+         │
+         ↓
+┌──────────────────┐
+│ Backend API      │
+│ (Process & Save) │
+└────────┬─────────┘
+         │
+         ├─── SUCCESS ──┐
+         │              ↓
+         │      ┌──────────────────┐
+         │      │ Normalize Data   │
+         │      │ Update State     │
+         │      │ Refresh Context  │
+         │      │ Show Toast ✓     │
+         │      └──────────────────┘
+         │
+         └─── ERROR ──┐
+                      ↓
+              ┌──────────────────┐
+              │ Set Error        │
+              │ Show Toast ✗     │
+              └──────────────────┘
+```
+
+---
+
+**STATUS:** ✅ IMPLEMENTATION COMPLETE  
+**DATE:** January 25, 2026

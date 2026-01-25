@@ -8,12 +8,12 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
 
-function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-  e.stopPropagation();
-  setIsOpen((prev) => !prev);
-}
+  function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.stopPropagation();
+    setIsOpen((prev) => !prev);
+  }
 
   function closeDropdown() {
     setIsOpen(false);
@@ -23,23 +23,29 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     closeDropdown();
     logout();
   };
+
+  // ✅ CRITICAL: Safe fallback values
+  const displayName = user?.name || user?.firstName || "User";
+  const displayEmail = user?.email || "user@example.com";
+
   return (
     <div className="relative">
       <button
         onClick={toggleDropdown} 
         className="flex items-center text-gray-700 dark:text-gray-400 dropdown-toggle"
+        disabled={isLoading}
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
           <Image
             width={44}
             height={44}
-            src="/images/user/owner.jpg"
-            alt="User"
+            src={user?.avatar || "/images/user/owner1.jpg"}
+            alt={displayName}
           />
         </span>
 
         <span className="block mr-1 font-medium text-theme-sm">
-          {user?.name || "User"}
+          {isLoading ? "Loading..." : displayName}
         </span>
 
         <svg
@@ -69,10 +75,10 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            {user?.name || "User"}
+            {displayName}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            {user?.email || "user@example.com"}
+            {displayEmail}
           </span>
         </div>
 

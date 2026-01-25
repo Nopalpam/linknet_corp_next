@@ -3,34 +3,62 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 
 const LoginPage = () => {
   const { login, isLoading } = useAuth();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
 
   const isAuthEnabled = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError(""); // Clear previous error
 
     if (!formData.email || !formData.password) {
-      setError("Please fill in all fields");
+      const errorMsg = "Mohon isi semua field";
+      setError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
     try {
       await login(formData.email, formData.password);
+      // Success toast will be shown after redirect
+      toast.success("Login berhasil! Selamat datang.", 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      // Handle different error types
+      const errorMessage = err instanceof Error ? err.message : "Login failed";
+      
+      let displayError = "";
+      
+      // Map common error messages to user-friendly Indonesian messages
+      if (errorMessage.includes("401") || errorMessage.toLowerCase().includes("credential") || errorMessage.toLowerCase().includes("invalid")) {
+        displayError = "Email atau password salah";
+      } else if (errorMessage.includes("429") || errorMessage.toLowerCase().includes("too many")) {
+        displayError = "Terlalu banyak percobaan login. Silakan coba lagi nanti.";
+      } else if (errorMessage.includes("500") || errorMessage.toLowerCase().includes("server")) {
+        displayError = "Terjadi kesalahan server. Silakan coba lagi.";
+      } else {
+        displayError = errorMessage;
+      }
+      
+      setError(displayError);
+      toast.error(displayError);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Clear error when user starts typing
+    if (error) {
+      setError("");
+    }
+    
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -69,9 +97,13 @@ const LoginPage = () => {
         {/* Login Form */}
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-lg rounded-lg sm:px-10 border border-gray-200 dark:border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Error Message */}
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
@@ -198,7 +230,7 @@ const LoginPage = () => {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          © 2024 Your Company. All rights reserved.
+          © 2026 PT Link Net Tbk. All Right Reserved.
         </p>
       </div>
     </div>

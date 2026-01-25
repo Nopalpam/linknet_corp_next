@@ -156,7 +156,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { firstName, lastName, email, phone } = validation.data;
+    const { firstName, lastName, username, email, phone } = validation.data;
 
     // Get current user
     const currentUser = await prisma.user.findUnique({
@@ -169,6 +169,25 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
         message: 'User not found'
       });
       return;
+    }
+
+    // Check if username is being changed
+    if (username && username !== currentUser.username) {
+      // Check if new username is already taken
+      const existingUsername = await prisma.user.findFirst({
+        where: {
+          username,
+          id: { not: userId }
+        }
+      });
+
+      if (existingUsername) {
+        res.status(409).json({
+          success: false,
+          message: 'Username is already taken'
+        });
+        return;
+      }
     }
 
     // Check if email is being changed
@@ -197,6 +216,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     const updateData: any = {};
     if (firstName) updateData.firstName = firstName;
     if (lastName) updateData.lastName = lastName;
+    if (username) updateData.username = username;
     if (phone !== undefined) updateData.phone = phone;
     
     if (emailChanged && email) {
@@ -340,11 +360,12 @@ export const updateAvatar = async (req: AuthRequest, res: Response): Promise<voi
       }
     });
 
-    // Delete old avatar from storage (if exists and not a default avatar)
-    if (currentUser.avatar && currentUser.avatar.includes('blob.core.windows.net')) {
-      const oldBlobName = extractBlobNameFromUrl(currentUser.avatar);
-      if (oldBlobName) {
-        await deleteFromAzureBlob(oldBlobName);
+    // Delete old avatar from storage (if exists)
+    // This works for both local and cloud storage
+    if (currentUser.avatar) {
+      const oldFileName = extractBlobNameFromUrl(currentUser.avatar);
+      if (oldFileName) {
+        await deleteFromAzureBlob(oldFileName);
       }
     }
 
@@ -407,11 +428,11 @@ export const deleteAvatar = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    // Delete avatar from storage
-    if (currentUser.avatar && currentUser.avatar.includes('blob.core.windows.net')) {
-      const blobName = extractBlobNameFromUrl(currentUser.avatar);
-      if (blobName) {
-        await deleteFromAzureBlob(blobName);
+    // Delete avatar from storage (works for both local and cloud)
+    if (currentUser.avatar) {
+      const fileName = extractBlobNameFromUrl(currentUser.avatar);
+      if (fileName) {
+        await deleteFromAzureBlob(fileName);
       }
     }
 

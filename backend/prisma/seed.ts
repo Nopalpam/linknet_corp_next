@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { seedPages } from './seeds/pages.seed';
 
 const prisma = new PrismaClient();
 
@@ -275,33 +276,57 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('Admin123!', 10);
 
-  const superAdmin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
-      email: 'admin@example.com',
-      username: 'admin',
-      password: hashedPassword,
-      firstName: 'Super',
-      lastName: 'Admin',
-      status: 'ACTIVE',
-      emailVerifiedAt: new Date(),
-    },
+  let superAdmin = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: 'admin@example.com' },
+        { username: 'admin' }
+      ]
+    }
   });
 
-  const editorUser = await prisma.user.upsert({
-    where: { email: 'editor@example.com' },
-    update: {},
-    create: {
-      email: 'editor@example.com',
-      username: 'editor',
-      password: hashedPassword,
-      firstName: 'Content',
-      lastName: 'Editor',
-      status: 'ACTIVE',
-      emailVerifiedAt: new Date(),
-    },
+  if (!superAdmin) {
+    superAdmin = await prisma.user.create({
+      data: {
+        email: 'admin@example.com',
+        username: 'admin',
+        password: hashedPassword,
+        firstName: 'Super',
+        lastName: 'Admin',
+        status: 'ACTIVE',
+        emailVerifiedAt: new Date(),
+      },
+    });
+    console.log('   ✅ Created Super Admin user');
+  } else {
+    console.log('   ⏭️  Super Admin already exists, skipping...');
+  }
+
+  let editorUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: 'editor@example.com' },
+        { username: 'editor' }
+      ]
+    }
   });
+
+  if (!editorUser) {
+    editorUser = await prisma.user.create({
+      data: {
+        email: 'editor@example.com',
+        username: 'editor',
+        password: hashedPassword,
+        firstName: 'Content',
+        lastName: 'Editor',
+        status: 'ACTIVE',
+        emailVerifiedAt: new Date(),
+      },
+    });
+    console.log('   ✅ Created Editor user');
+  } else {
+    console.log('   ⏭️  Editor already exists, skipping...');
+  }
 
   console.log('✅ Created 2 users');
 
@@ -963,6 +988,11 @@ async function main() {
   });
 
   console.log('✅ Created folder structure');
+
+  // ============================================
+  // PAGES - Sample Pages with Components
+  // ============================================
+  await seedPages();
 
   console.log('');
   console.log('🎉 Database seeding completed successfully!');

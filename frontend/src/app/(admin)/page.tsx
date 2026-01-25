@@ -9,7 +9,7 @@ import DemographicCard from "@/components/ecommerce/DemographicCard";
 
 export const metadata: Metadata = {
   title:
-    "Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template",
+    "PT Link Net Tbk - PT Link Net Tbk - We LINK the nation for better lives",
   description: "This is Next.js Home for TailAdmin Dashboard Template",
 };
 

@@ -14,12 +14,18 @@ export const updateProfileSchema = z.object({
     .max(50, 'Last name must not exceed 50 characters')
     .optional(),
   
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must not exceed 30 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores')
+    .optional(),
+  
   email: z.string()
     .email('Invalid email format')
     .optional(),
   
   phone: z.string()
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
+    // .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
     .optional()
     .nullable()
 });

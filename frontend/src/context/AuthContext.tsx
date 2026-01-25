@@ -1,101 +1,319 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import LoadingScreen from "@/components/common/LoadingScreen";
+import { authService } from "@/services/auth.service";
 
 type User = {
   id: string;
   email: string;
   name: string;
+  firstName: string;
+  lastName: string;
+  avatar: string | null;
+  status: string;
+  roles: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
+  permissions: string[];
 };
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
+  isAuthValidated: boolean; // ✅ NEW: Track if initial validation is complete
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  forceLogout: () => void; // ✅ NEW: Force logout handler
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_ENABLED = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true";
 const AUTH_TOKEN_KEY = "auth_token";
+const REFRESH_TOKEN_KEY = "refresh_token";
 const AUTH_USER_KEY = "auth_user";
+const AUTH_LAST_REFRESH = "auth_last_refresh";
+
+// Cookie utilities
+const setCookie = (name: string, value: string, days: number = 7) => {
+  if (typeof window === 'undefined') return;
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+};
+
+const getCookie = (name: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const deleteCookie = (name: string) => {
+  if (typeof window === 'undefined') return;
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
+
+// Sync token between cookie and localStorage
+const syncTokens = () => {
+  if (typeof window === 'undefined') return;
+  
+  const cookieToken = getCookie(AUTH_TOKEN_KEY);
+  const localToken = localStorage.getItem(AUTH_TOKEN_KEY);
+  
+  // If token exists in cookie but not localStorage, sync it
+  if (cookieToken && !localToken) {
+    localStorage.setItem(AUTH_TOKEN_KEY, cookieToken);
+  }
+  // If token exists in localStorage but not cookie, sync it
+  else if (localToken && !cookieToken) {
+    setCookie(AUTH_TOKEN_KEY, localToken, 7);
+  }
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthValidated, setIsAuthValidated] = useState(false); // ✅ NEW: Track validation state
   const router = useRouter();
   const pathname = usePathname();
+  const isRefreshingRef = useRef(false);
 
-  // Initialize auth state from localStorage
-  useEffect(() => {
-    const initAuth = () => {
-      try {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  // ✅ CRITICAL: Force logout - clear everything and redirect
+  const forceLogout = useCallback(() => {
+    console.error('🔴 FORCE LOGOUT: Clearing auth state');
+    clearAuthData();
+    setUser(null);
+    setIsAuthValidated(true); // Mark as validated (but not authenticated)
+    router.replace('/login');
+  }, [router]);
+
+  // ✅ CRITICAL: Refresh user profile from backend
+  const refreshUser = useCallback(async () => {
+    // Prevent concurrent refresh calls
+    if (isRefreshingRef.current) return;
+    
+    try {
+      isRefreshingRef.current = true;
+      const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
+      
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      // Sync tokens between cookie and localStorage
+      syncTokens();
+
+      if (AUTH_ENABLED) {
+        const profileData = await authService.getProfile();
+        if (profileData.success) {
+          const updatedUser: User = {
+            id: profileData.data.id,
+            email: profileData.data.email,
+            name: `${profileData.data.firstName} ${profileData.data.lastName}`.trim(),
+            firstName: profileData.data.firstName,
+            lastName: profileData.data.lastName,
+            avatar: profileData.data.avatar,
+            status: profileData.data.status,
+            roles: profileData.data.roles,
+            permissions: profileData.data.permissions,
+          };
+          setUser(updatedUser);
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
+          localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
+        }
+      } else {
+        // Mock mode: restore from localStorage
         const savedUser = localStorage.getItem(AUTH_USER_KEY);
-
-        if (token && savedUser) {
+        if (savedUser) {
           setUser(JSON.parse(savedUser));
+        }
+      }
+    } catch (error: any) {
+      console.error("Failed to refresh user:", error);
+      
+      // ✅ CRITICAL: If error contains TOKEN_EXPIRED or is auth-related, force logout
+      if (error?.message?.includes('expired') || error?.message?.includes('Session')) {
+        forceLogout();
+      }
+      // Don't clear auth on other errors - token might still be valid
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [forceLogout]);
+
+  // ✅ Initialize auth state on mount with BLOCKING validation
+  useEffect(() => {
+    const initAuth = async () => {
+      console.log('🔵 Initializing auth validation...');
+      
+      try {
+        // Sync tokens first
+        syncTokens();
+
+        const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
+        
+        if (!token) {
+          console.log('🔴 No token found - user not authenticated');
+          setUser(null);
+          setIsAuthValidated(true);
+          setIsLoading(false);
+          return;
+        }
+
+        if (AUTH_ENABLED) {
+          // ✅ CRITICAL: Validate token with backend BEFORE rendering CMS
+          console.log('🔵 Validating token with backend...');
+          
+          try {
+            const profileData = await authService.getProfile();
+            
+            if (profileData.success) {
+              const validatedUser: User = {
+                id: profileData.data.id,
+                email: profileData.data.email,
+                name: `${profileData.data.firstName} ${profileData.data.lastName}`.trim(),
+                firstName: profileData.data.firstName,
+                lastName: profileData.data.lastName,
+                avatar: profileData.data.avatar,
+                status: profileData.data.status,
+                roles: profileData.data.roles,
+                permissions: profileData.data.permissions,
+              };
+              
+              console.log('✅ Token validated - user authenticated');
+              setUser(validatedUser);
+              localStorage.setItem(AUTH_USER_KEY, JSON.stringify(validatedUser));
+              localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
+            } else {
+              console.error('🔴 Token validation failed');
+              forceLogout();
+            }
+          } catch (error: any) {
+            console.error('🔴 Token validation error:', error);
+            
+            // If error is auth-related, force logout
+            if (error?.message?.includes('expired') || error?.message?.includes('Session')) {
+              forceLogout();
+            } else {
+              // For other errors, still mark as validated but clear user
+              setUser(null);
+            }
+          }
+        } else {
+          // Mock mode: restore from localStorage
+          const savedUser = localStorage.getItem(AUTH_USER_KEY);
+          if (savedUser) {
+            console.log('✅ Mock mode - user restored from cache');
+            setUser(JSON.parse(savedUser));
+          }
         }
       } catch (error) {
         console.error("Failed to initialize auth:", error);
+        setUser(null);
       } finally {
+        setIsAuthValidated(true);
         setIsLoading(false);
+        console.log('✅ Auth validation complete');
       }
     };
 
     initAuth();
-  }, []);
+  }, [forceLogout]); // ✅ Include forceLogout dependency
 
-  // Handle route protection
+  // ✅ CRITICAL: Re-validate auth on route change
   useEffect(() => {
-    if (isLoading) return;
+    // Skip if not authenticated or still loading
+    if (!user || isLoading) return;
+    
+    // Skip auth pages
+    if (pathname?.includes('/login') || pathname?.includes('/register')) return;
 
-    const isLoginPage = pathname === "/login";
-    const isAuthenticated = !!user;
-
-    // If on login page and already authenticated, redirect to dashboard
-    if (isLoginPage && isAuthenticated) {
-      router.replace("/");
+    // Debounce: Only refresh if last refresh was > 30 seconds ago
+    const lastRefresh = localStorage.getItem(AUTH_LAST_REFRESH);
+    if (lastRefresh) {
+      const timeSinceRefresh = Date.now() - parseInt(lastRefresh);
+      if (timeSinceRefresh < 30000) return; // 30 seconds
     }
 
-    // If not on login page and not authenticated, redirect to login
-    if (!isLoginPage && !isAuthenticated) {
-      router.replace("/login");
+    // Sync tokens and verify user is still valid
+    syncTokens();
+    
+    // Check if token still exists
+    const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      console.warn('🔴 Token missing after navigation - logging out');
+      setUser(null);
+      router.replace('/login');
     }
-  }, [user, isLoading, pathname, router]);
+  }, [pathname, user, isLoading, router]); // ✅ Re-run on route change
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
 
     try {
       if (AUTH_ENABLED) {
-        // TODO: Replace with actual API call when backend is ready
-        // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify({ email, password }),
-        // });
-        // const data = await response.json();
-        // if (!response.ok) throw new Error(data.message || "Login failed");
-        // localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        // localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
-        // setUser(data.user);
+        // Real API call to backend
+        const response = await authService.login(email, password);
 
-        throw new Error("Backend authentication not yet implemented");
+        if (!response.success) {
+          throw new Error(response.message || "Login failed");
+        }
+
+        const userData = response.data.user;
+        const userForStorage: User = {
+          id: userData.id,
+          email: userData.email,
+          name: `${userData.firstName} ${userData.lastName}`.trim(),
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          avatar: userData.avatar,
+          status: userData.status,
+          roles: userData.roles,
+          permissions: userData.permissions,
+        };
+
+        // Store tokens in both cookie and localStorage
+        // Cookie: for middleware access
+        // localStorage: for API calls & refresh token
+        setCookie(AUTH_TOKEN_KEY, response.data.accessToken, 7);
+        localStorage.setItem(AUTH_TOKEN_KEY, response.data.accessToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refreshToken);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userForStorage));
+        
+        setUser(userForStorage);
+
+        // Redirect to dashboard
+        router.replace("/");
       } else {
         // Mock login for development (bypass auth)
         const mockUser: User = {
           id: "mock-user-id",
           email: email,
           name: email.split("@")[0] || "Admin User",
+          firstName: email.split("@")[0] || "Admin",
+          lastName: "User",
+          avatar: null,
+          status: "ACTIVE",
+          roles: [{ id: "1", name: "Admin", slug: "admin" }],
+          permissions: ["*"],
         };
 
         const mockToken = "mock-token-" + Date.now();
 
+        setCookie(AUTH_TOKEN_KEY, mockToken, 7);
         localStorage.setItem(AUTH_TOKEN_KEY, mockToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, mockToken);
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(mockUser));
         setUser(mockUser);
 
@@ -110,24 +328,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      if (AUTH_ENABLED) {
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+        if (refreshToken) {
+          // Call logout API to invalidate refresh token
+          await authService.logout(refreshToken);
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Continue with local logout even if API call fails
+    } finally {
+      clearAuthData();
+      setUser(null);
+      router.replace("/login");
+    }
+  };
+
+  const clearAuthData = () => {
+    deleteCookie(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
-    setUser(null);
-    router.replace("/login");
   };
 
   const value: AuthContextType = {
     user,
     isLoading,
+    isAuthValidated,
     isAuthenticated: !!user,
     login,
     logout,
+    refreshUser,
+    forceLogout,
   };
 
-  // Show loading screen while initializing auth
-  if (isLoading) {
-    return <LoadingScreen />;
+  // ✅ CRITICAL: Show loading screen while validating auth
+  // This prevents CMS from flashing before redirect
+  if (!isAuthValidated) {
+    return (
+      <AuthContext.Provider value={value}>
+        <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-500 border-r-transparent mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Verifying authentication...</p>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

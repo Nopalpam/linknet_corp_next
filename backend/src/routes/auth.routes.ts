@@ -17,29 +17,32 @@ import {
   refreshTokenValidation
 } from '../validators/auth.validator';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { loginRateLimiter } from '../middleware/rateLimiter.middleware';
 
 const router = Router();
 
 /**
  * Public routes
+ * Note: authRateLimiter is applied at router level in server.ts
+ * loginRateLimiter is applied only to /login for stricter control
  */
 
-// Register new user
+// Register new user (uses general auth rate limiter from server.ts)
 router.post('/register', registerValidation, register);
 
-// Login user
-router.post('/login', loginValidation, login);
+// Login user (with specific login rate limiting)
+router.post('/login', loginRateLimiter, loginValidation, login);
 
-// Logout user
+// Logout user (no rate limiting needed)
 router.post('/logout', logout);
 
-// Refresh access token
+// Refresh access token (no rate limiting - should be frequent)
 router.post('/refresh', refreshTokenValidation, refreshAccessToken);
 
-// Forgot password
+// Forgot password (uses general auth rate limiter from server.ts)
 router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
 
-// Reset password
+// Reset password (uses general auth rate limiter from server.ts)
 router.post('/reset-password', resetPasswordValidation, resetPassword);
 
 /**
