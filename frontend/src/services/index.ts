@@ -12,6 +12,7 @@ export * from './auth.service';
 export * from './awards.service';
 export * from './management.service';
 export * from './users.service';
+export * from './roles.service';
 export * from './logActivity.service';
 export * from './pages.service';
 export * from './contact.service';

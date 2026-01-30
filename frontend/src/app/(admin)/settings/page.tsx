@@ -10,8 +10,7 @@ interface Setting {
   key: string;
   value: any;
   type?: string;
-  group?: string;
-  category: string;
+  group: string;
   label?: string;
   description?: string;
   isPublic: boolean;
@@ -72,7 +71,7 @@ const SettingsPage = () => {
         return settingsService.updateSetting(id, {
           key: data.key,
           value: data.value,
-          category: setting?.category || "general",
+          group: setting?.group || "general",
         });
       });
 
@@ -309,18 +308,18 @@ const SettingsPage = () => {
         {/* Settings Groups */}
         <div className="space-y-8">
           {settings.length > 0 ? (
-            // Group settings by category
+            // Group settings by group
             Object.entries(
               settings.reduce((acc, setting) => {
-                const category = setting.category || "General";
-                if (!acc[category]) acc[category] = [];
-                acc[category].push(setting);
+                const group = setting.group || "General";
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(setting);
                 return acc;
               }, {} as Record<string, Setting[]>)
-            ).map(([category, groupSettings]) => (
-              <div key={category}>
+            ).map(([group, groupSettings]) => (
+              <div key={group}>
                 <h3 className="text-lg font-semibold text-black dark:text-white mb-4 pb-2 border-b border-stroke dark:border-strokedark">
-                  {category}
+                  {group}
                 </h3>
 
                 <div className="grid gap-6 md:grid-cols-2">

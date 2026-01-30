@@ -97,7 +97,7 @@ class UrlRedirectionService extends BaseCrudService<UrlRedirect> {
    */
   async toggleUrlRedirectStatus(id: string): Promise<ApiResponse<UrlRedirect>> {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    const url = `${API_URL}${this.baseEndpoint}/${id}/toggle`;
+    const url = `${API_URL}/api/v1${this.baseEndpoint}/${id}/toggle`;
     return this.fetchWithAuth(url, { method: 'PATCH' });
   }
 }

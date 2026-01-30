@@ -68,31 +68,58 @@ class AuthService extends BaseService {
   async login(email: string, password: string): Promise<LoginResponse> {
     const url = this.getApiUrl('/auth/login');
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await response.json();
+      // Try to parse response as JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('Failed to parse response as JSON:', jsonError);
+        throw new Error(`Server error (${response.status}): Unable to parse response`);
+      }
 
-    if (!response.ok) {
-      // Handle specific error codes
-      if (response.status === 429) {
-        throw new Error('Too many login attempts. Please try again after 15 minutes.');
+      if (!response.ok) {
+        // Log detailed error for debugging
+        console.error('Login failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
+
+        // Handle specific error codes
+        if (response.status === 429) {
+          throw new Error('Too many login attempts. Please try again after 15 minutes.');
+        }
+        if (response.status === 401) {
+          throw new Error('Invalid email or password');
+        }
+        if (response.status === 403) {
+          throw new Error(data.message || 'Account access denied');
+        }
+        if (response.status === 500) {
+          throw new Error(`Server error: ${data.message || 'Internal server error. Please try again later.'}`);
+        }
+        throw new Error(data.message || `Login failed (${response.status}). Please try again.`);
       }
-      if (response.status === 401) {
-        throw new Error('Invalid email or password');
+
+      return data;
+    } catch (error) {
+      // Log network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error('Network error during login:', error);
+        throw new Error('Cannot connect to server. Please check your connection.');
       }
-      if (response.status === 403) {
-        throw new Error(data.message || 'Account access denied');
-      }
-      throw new Error(data.message || 'Login failed. Please try again.');
+      // Re-throw other errors
+      throw error;
     }
-
-    return data;
   }
 
   /**

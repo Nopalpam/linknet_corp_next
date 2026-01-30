@@ -105,9 +105,10 @@ export class BaseCrudService<T> {
       console.error('❌ [BaseCrud] Request failed:', {
         url,
         status: response.status,
-        error
+        statusText: response.statusText,
+        error: error
       });
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      throw new Error(error.message || error.error || `HTTP error! status: ${response.status}`);
     }
 
     return response.json();
@@ -129,7 +130,7 @@ export class BaseCrudService<T> {
    */
   async getPaginated(params: PaginationParams = {}): Promise<PaginatedResponse<T>> {
     const queryString = this.buildQueryString(params);
-    const url = `${API_URL}${this.baseEndpoint}?${queryString}`;
+    const url = `${API_URL}/api/v1${this.baseEndpoint}?${queryString}`;
     
     const response = await this.fetchWithAuth(url);
     
@@ -155,14 +156,14 @@ export class BaseCrudService<T> {
    * Get single item by ID
    */
   async getById(id: string): Promise<ApiResponse<T>> {
-    return this.fetchWithAuth(`${API_URL}${this.baseEndpoint}/${id}`);
+    return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`);
   }
 
   /**
    * Create new item
    */
   async create(data: Partial<T>): Promise<ApiResponse<T>> {
-    return this.fetchWithAuth(`${API_URL}${this.baseEndpoint}`, {
+    return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -172,7 +173,7 @@ export class BaseCrudService<T> {
    * Update existing item
    */
   async update(id: string, data: Partial<T>): Promise<ApiResponse<T>> {
-    return this.fetchWithAuth(`${API_URL}${this.baseEndpoint}/${id}`, {
+    return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -182,7 +183,7 @@ export class BaseCrudService<T> {
    * Delete single item
    */
   async delete(id: string): Promise<ApiResponse<void>> {
-    return this.fetchWithAuth(`${API_URL}${this.baseEndpoint}/${id}`, {
+    return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
       method: 'DELETE',
     });
   }
@@ -191,7 +192,7 @@ export class BaseCrudService<T> {
    * Bulk delete multiple items
    */
   async bulkDelete(ids: string[]): Promise<ApiResponse<void>> {
-    return this.fetchWithAuth(`${API_URL}${this.baseEndpoint}/bulk-delete`, {
+    return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/bulk-delete`, {
       method: 'POST',
       body: JSON.stringify({ ids }),
     });
@@ -201,6 +202,6 @@ export class BaseCrudService<T> {
    * Get all items without pagination (for dropdown, etc)
    */
   async getAll(): Promise<ApiResponse<T[]>> {
-    return this.fetchWithAuth(`${API_URL}${this.baseEndpoint}`);
+    return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}`);
   }
 }

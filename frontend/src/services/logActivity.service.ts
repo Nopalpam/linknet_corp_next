@@ -69,7 +69,17 @@ class LogActivityService extends BaseService {
       ? `${this.getApiUrl('/cms/log-activity')}?${queryString}`
       : this.getApiUrl('/cms/log-activity');
 
-    return this.fetchWithAuth(url);
+    const response = await this.fetchWithAuth(url);
+    // Backend mengembalikan { data: { logs: [], pagination: {} } }
+    return {
+      data: response.data?.logs || [],
+      pagination: response.data?.pagination || {
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 0
+      }
+    };
   }
 
   /**

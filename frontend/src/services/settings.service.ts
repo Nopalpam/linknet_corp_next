@@ -9,7 +9,7 @@ export interface Setting {
   id: string;
   key: string;
   value: string;
-  category: string;
+  group: string;
   description?: string;
   isPublic: boolean;
   createdAt: string;
@@ -19,7 +19,7 @@ export interface Setting {
 export interface CreateSettingData {
   key: string;
   value: string;
-  category: string;
+  group: string;
   description?: string;
   isPublic?: boolean;
 }
@@ -39,12 +39,27 @@ class SettingsService extends BaseService {
   /**
    * Get all settings (CMS)
    */
-  async getAllSettings(category?: string): Promise<{ data: Setting[] }> {
-    const url = category 
-      ? `${this.getApiUrl('/cms/settings')}?category=${category}`
+  async getAllSettings(group?: string): Promise<{ data: Setting[] }> {
+    const url = group 
+      ? `${this.getApiUrl('/cms/settings')}?group=${group}`
       : this.getApiUrl('/cms/settings');
     
-    return this.fetchWithAuth(url);
+    const response = await this.fetchWithAuth(url);
+    
+    // Backend bisa mengembalikan grouped object atau array
+    if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+      // Jika grouped, flatten ke array
+      const allSettings: Setting[] = [];
+      Object.values(response.data).forEach((group: any) => {
+        if (Array.isArray(group)) {
+          allSettings.push(...group);
+        }
+      });
+      return { data: allSettings };
+    }
+    
+    // Jika sudah array, return langsung
+    return response;
   }
 
   /**

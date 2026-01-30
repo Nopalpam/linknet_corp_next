@@ -23,6 +23,7 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "db:setup": "ts-node prisma/migration-helper.ts",
+    "fix:permissions": "ts-node scripts/fix-role-permission-system.ts",
     "docker:build": "docker build -t linknetcorp-backend:latest .",
     "docker:run": "docker run -d --name linknetcorp-backend -p 5000:5000 --env-file .env linknetcorp-backend:latest",
     "docker:stop": "docker stop linknetcorp-backend && docker rm linknetcorp-backend",

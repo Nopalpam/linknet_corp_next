@@ -32,11 +32,11 @@ export async function getUrlRedirects(
     res.json({
       success: true,
       data: result.data,
-      meta: {
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
+      pagination: {
+        currentPage: result.page,
         totalPages: Math.ceil(result.total / result.limit),
+        totalItems: result.total,
+        itemsPerPage: result.limit,
       },
     });
   } catch (error) {
