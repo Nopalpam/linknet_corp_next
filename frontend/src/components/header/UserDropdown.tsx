@@ -1,17 +1,33 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useAuth } from "@/context/AuthContext";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, forceLogout } = useAuth();
+
+  // ✅ Monitor user state - force logout if user becomes undefined unexpectedly
+  useEffect(() => {
+    if (!isLoading && !user) {
+      console.warn('🔴 User is undefined in UserDropdown - session may have expired');
+      // Don't auto-logout here, let AuthContext handle it
+    }
+  }, [user, isLoading]);
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.stopPropagation();
+    
+    // ✅ Validate user exists before opening dropdown
+    if (!user && !isLoading) {
+      console.error('🔴 Cannot open dropdown - user is undefined');
+      forceLogout();
+      return;
+    }
+    
     setIsOpen((prev) => !prev);
   }
 
@@ -24,9 +40,34 @@ export default function UserDropdown() {
     logout();
   };
 
-  // ✅ CRITICAL: Safe fallback values
+  // ✅ CRITICAL: Safe fallback values with validation
   const displayName = user?.name || user?.firstName || "User";
   const displayEmail = user?.email || "user@example.com";
+  const displayAvatar = user?.avatar || "/images/user/owner1.jpg";
+
+  // ✅ Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center text-gray-700 dark:text-gray-400">
+        <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-200 dark:bg-gray-700 animate-pulse"></span>
+        <span className="block mr-1 font-medium text-theme-sm">Loading...</span>
+      </div>
+    );
+  }
+
+  // ✅ If no user after loading, show error state
+  if (!user) {
+    return (
+      <div className="flex items-center text-gray-700 dark:text-gray-400">
+        <button
+          onClick={() => forceLogout()}
+          className="text-sm text-red-500 hover:text-red-600"
+        >
+          Session expired - Click to login
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
@@ -39,13 +80,17 @@ export default function UserDropdown() {
           <Image
             width={44}
             height={44}
-            src={user?.avatar || "/images/user/owner1.jpg"}
+            src={displayAvatar}
             alt={displayName}
+            onError={(e) => {
+              // Fallback if image fails to load
+              e.currentTarget.src = "/images/user/owner1.jpg";
+            }}
           />
         </span>
 
         <span className="block mr-1 font-medium text-theme-sm">
-          {isLoading ? "Loading..." : displayName}
+          {displayName}
         </span>
 
         <svg

@@ -276,7 +276,35 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('Admin123!', 10);
 
+  // Super Admin
   let superAdmin = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: 'admin@linknet.co.id' },
+        { username: 'superadmin' }
+      ]
+    }
+  });
+
+  if (!superAdmin) {
+    superAdmin = await prisma.user.create({
+      data: {
+        email: 'admin@linknet.co.id',
+        username: 'superadmin',
+        password: hashedPassword,
+        firstName: 'Super',
+        lastName: 'Admin',
+        status: 'ACTIVE',
+        emailVerifiedAt: new Date(),
+      },
+    });
+    console.log('   ✅ Created Super Admin user (email: admin@linknet.co.id, password: Admin123!)');
+  } else {
+    console.log('   ⏭️  Super Admin already exists');
+  }
+
+  // Admin
+  let adminUser = await prisma.user.findFirst({
     where: {
       OR: [
         { email: 'admin@example.com' },
@@ -285,23 +313,24 @@ async function main() {
     }
   });
 
-  if (!superAdmin) {
-    superAdmin = await prisma.user.create({
+  if (!adminUser) {
+    adminUser = await prisma.user.create({
       data: {
         email: 'admin@example.com',
         username: 'admin',
         password: hashedPassword,
-        firstName: 'Super',
-        lastName: 'Admin',
+        firstName: 'Admin',
+        lastName: 'User',
         status: 'ACTIVE',
         emailVerifiedAt: new Date(),
       },
     });
-    console.log('   ✅ Created Super Admin user');
+    console.log('   ✅ Created Admin user (email: admin@example.com, password: Admin123!)');
   } else {
-    console.log('   ⏭️  Super Admin already exists, skipping...');
+    console.log('   ⏭️  Admin already exists');
   }
 
+  // Editor
   let editorUser = await prisma.user.findFirst({
     where: {
       OR: [
@@ -323,18 +352,46 @@ async function main() {
         emailVerifiedAt: new Date(),
       },
     });
-    console.log('   ✅ Created Editor user');
+    console.log('   ✅ Created Editor user (email: editor@example.com, password: Admin123!)');
   } else {
-    console.log('   ⏭️  Editor already exists, skipping...');
+    console.log('   ⏭️  Editor already exists');
   }
 
-  console.log('✅ Created 2 users');
+  // Basic User
+  let basicUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: 'user@example.com' },
+        { username: 'user' }
+      ]
+    }
+  });
+
+  if (!basicUser) {
+    basicUser = await prisma.user.create({
+      data: {
+        email: 'user@example.com',
+        username: 'user',
+        password: hashedPassword,
+        firstName: 'Basic',
+        lastName: 'User',
+        status: 'ACTIVE',
+        emailVerifiedAt: new Date(),
+      },
+    });
+    console.log('   ✅ Created Basic User (email: user@example.com, password: Admin123!)');
+  } else {
+    console.log('   ⏭️  Basic User already exists');
+  }
+
+  console.log('✅ Created/verified 4 users');
 
   // ============================================
   // AUTHENTICATION - User Roles
   // ============================================
   console.log('🔗 Assigning roles to users...');
 
+  // Super Admin gets Super Admin role
   await prisma.userRole.upsert({
     where: {
       userId_roleId: {
@@ -349,6 +406,22 @@ async function main() {
     },
   });
 
+  // Admin gets Admin role
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: adminUser.id,
+        roleId: adminRole.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: adminUser.id,
+      roleId: adminRole.id,
+    },
+  });
+
+  // Editor gets Editor role
   await prisma.userRole.upsert({
     where: {
       userId_roleId: {
@@ -362,6 +435,27 @@ async function main() {
       roleId: editorRole.id,
     },
   });
+
+  // Basic User gets User role
+  const userRole = await prisma.role.findUnique({
+    where: { slug: 'user' },
+  });
+
+  if (userRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: basicUser.id,
+          roleId: userRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: basicUser.id,
+        roleId: userRole.id,
+      },
+    });
+  }
 
   console.log('✅ Assigned roles to users');
 

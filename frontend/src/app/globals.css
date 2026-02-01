@@ -134,6 +134,52 @@
 
   --color-theme-purple-500: #7a5af8;
 
+  /* Aliases for common color names */
+  --color-primary-25: var(--color-brand-25);
+  --color-primary-50: var(--color-brand-50);
+  --color-primary-100: var(--color-brand-100);
+  --color-primary-200: var(--color-brand-200);
+  --color-primary-300: var(--color-brand-300);
+  --color-primary-400: var(--color-brand-400);
+  --color-primary-500: var(--color-brand-500);
+  --color-primary-600: var(--color-brand-600);
+  --color-primary-700: var(--color-brand-700);
+  --color-primary-800: var(--color-brand-800);
+  --color-primary-900: var(--color-brand-900);
+  --color-primary-950: var(--color-brand-950);
+
+  --color-danger-25: var(--color-error-25);
+  --color-danger-50: var(--color-error-50);
+  --color-danger-100: var(--color-error-100);
+  --color-danger-200: var(--color-error-200);
+  --color-danger-300: var(--color-error-300);
+  --color-danger-400: var(--color-error-400);
+  --color-danger-500: var(--color-error-500);
+  --color-danger-600: var(--color-error-600);
+  --color-danger-700: var(--color-error-700);
+  --color-danger-800: var(--color-error-800);
+  --color-danger-900: var(--color-error-900);
+  --color-danger-950: var(--color-error-950);
+
+  --color-stroke: var(--color-gray-200);
+  --color-strokedark: var(--color-gray-700);
+  
+  --color-boxdark: var(--color-gray-dark);
+  
+  --color-meta-3-25: #f0fdf4;
+  --color-meta-3-50: #dcfce7;
+  --color-meta-3-100: #bbf7d0;
+  --color-meta-3-200: #86efac;
+  --color-meta-3-300: #4ade80;
+  --color-meta-3-400: #22c55e;
+  --color-meta-3-500: #16a34a;
+  --color-meta-3-600: #15803d;
+  --color-meta-3-700: #166534;
+  --color-meta-3-800: #14532d;
+  --color-meta-3-900: #052e16;
+
+  --color-meta-4: var(--color-gray-800);
+
   --shadow-theme-md:
     0px 4px 8px -2px rgba(16, 24, 40, 0.1),
     0px 2px 4px -2px rgba(16, 24, 40, 0.06);

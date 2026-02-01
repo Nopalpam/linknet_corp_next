@@ -112,6 +112,11 @@ const menuSections: MenuSection[] = [
         path: "/users-management",
       },
       {
+        icon: <GridIcon />,
+        name: "Roles & Permissions",
+        path: "/roles-permissions",
+      },
+      {
         icon: <ListIcon />,
         name: "Log Activity",
         path: "/log-activity",

@@ -107,7 +107,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
       
       if (!token) {
-        setUser(null);
+        console.warn('🔴 No token found during refresh - logging out');
+        forceLogout();
         return;
       }
 
@@ -131,6 +132,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(updatedUser);
           localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
           localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
+        } else {
+          console.error('🔴 Profile fetch failed - logging out');
+          forceLogout();
         }
       } else {
         // Mock mode: restore from localStorage
@@ -140,10 +144,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } catch (error: any) {
-      console.error("Failed to refresh user:", error);
+      console.error("🔴 Failed to refresh user:", error);
       
       // ✅ CRITICAL: If error contains TOKEN_EXPIRED or is auth-related, force logout
-      if (error?.message?.includes('expired') || error?.message?.includes('Session')) {
+      if (
+        error?.message?.includes('expired') || 
+        error?.message?.includes('Session') ||
+        error?.message?.includes('TOKEN_EXPIRED') ||
+        error?.message?.includes('TOKEN_INVALID') ||
+        error?.response?.status === 401
+      ) {
+        console.error('🔴 Auth error detected - forcing logout');
         forceLogout();
       }
       // Don't clear auth on other errors - token might still be valid
@@ -239,11 +250,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Skip auth pages
     if (pathname?.includes('/login') || pathname?.includes('/register')) return;
 
-    // Debounce: Only refresh if last refresh was > 30 seconds ago
+    // Debounce: Only refresh if last refresh was > 5 minutes ago
     const lastRefresh = localStorage.getItem(AUTH_LAST_REFRESH);
     if (lastRefresh) {
       const timeSinceRefresh = Date.now() - parseInt(lastRefresh);
-      if (timeSinceRefresh < 30000) return; // 30 seconds
+      if (timeSinceRefresh < 300000) return; // 5 minutes
     }
 
     // Sync tokens and verify user is still valid
@@ -253,10 +264,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
     if (!token) {
       console.warn('🔴 Token missing after navigation - logging out');
-      setUser(null);
-      router.replace('/login');
+      forceLogout();
+      return;
     }
-  }, [pathname, user, isLoading, router]); // ✅ Re-run on route change
+
+    // Silently refresh user profile
+    refreshUser();
+  }, [pathname, user, isLoading, refreshUser, forceLogout]); // ✅ Re-run on route change
+
+  // ✅ NEW: Periodic token validation (every 10 minutes when tab is active)
+  useEffect(() => {
+    if (!user || !AUTH_ENABLED) return;
+
+    const interval = setInterval(() => {
+      const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        console.warn('🔴 Token disappeared - logging out');
+        forceLogout();
+        return;
+      }
+
+      // Check last refresh time
+      const lastRefresh = localStorage.getItem(AUTH_LAST_REFRESH);
+      if (lastRefresh) {
+        const timeSinceRefresh = Date.now() - parseInt(lastRefresh);
+        // If more than 10 minutes, refresh
+        if (timeSinceRefresh > 600000) {
+          console.log('🔵 Periodic token validation...');
+          refreshUser();
+        }
+      }
+    }, 600000); // Check every 10 minutes
+
+    return () => clearInterval(interval);
+  }, [user, refreshUser, forceLogout]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);

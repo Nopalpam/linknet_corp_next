@@ -154,7 +154,19 @@ class AuthService extends BaseService {
    */
   async getProfile(): Promise<ProfileResponse> {
     const url = this.getApiUrl('/auth/me');
-    return this.fetchWithAuth(url, { method: 'GET' });
+    
+    try {
+      const response = await this.fetchWithAuth(url, { method: 'GET' });
+      return response;
+    } catch (error: any) {
+      // Enhanced error handling for auth failures
+      if (error?.message?.includes('401') || error?.code === 'TOKEN_EXPIRED' || error?.code === 'TOKEN_INVALID') {
+        const authError = new Error('Session expired. Please login again.');
+        (authError as any).code = 'TOKEN_EXPIRED';
+        throw authError;
+      }
+      throw error;
+    }
   }
 
   /**

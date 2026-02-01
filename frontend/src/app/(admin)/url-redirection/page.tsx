@@ -226,17 +226,17 @@ const UrlRedirectionPage = () => {
     <>
       <PageBreadcrumb pageTitle="URL Redirection Management" />
 
-      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+      <div className="rounded-sm border border-gray-200 bg-white px-5 pb-2.5 pt-6 shadow-theme-sm dark:border-gray-700 dark:bg-gray-900 sm:px-7.5 xl:pb-1">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h4 className="text-xl font-semibold text-black dark:text-white">
+          <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
             URL Redirection Management
           </h4>
           <div className="flex gap-2">
             {selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                className="inline-flex items-center justify-center rounded-md bg-danger px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+                className="inline-flex items-center justify-center rounded-md bg-error-600 px-4 py-2 text-center font-medium text-white hover:bg-error-700"
               >
                 <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -246,7 +246,7 @@ const UrlRedirectionPage = () => {
             )}
             <button
               onClick={handleCreate}
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+              className="inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-center font-medium text-white hover:bg-brand-700"
             >
               <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -266,7 +266,7 @@ const UrlRedirectionPage = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full rounded border border-stroke bg-gray px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white sm:w-64"
+            className="w-full rounded border border-gray-200 bg-white px-4 py-2 text-gray-900 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:w-64"
           />
           <select
             value={statusFilter}
@@ -274,7 +274,7 @@ const UrlRedirectionPage = () => {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="rounded border border-stroke bg-gray px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white"
+            className="rounded border border-gray-200 bg-white px-4 py-2 text-gray-900 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Semua Status</option>
             <option value="active">Aktif</option>
@@ -282,7 +282,7 @@ const UrlRedirectionPage = () => {
           </select>
           <button
             onClick={handleResetFilters}
-            className="rounded border border-stroke px-4 py-2 text-black hover:bg-gray dark:border-strokedark dark:text-white dark:hover:bg-meta-4"
+            className="rounded border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Reset
           </button>
@@ -290,12 +290,12 @@ const UrlRedirectionPage = () => {
 
         {/* Alerts */}
         {error && (
-          <div className="mb-4 rounded-lg bg-danger/10 p-4 text-danger">
+          <div className="mb-4 rounded-lg bg-error-50 border border-error-200 p-4 text-error-700 dark:bg-error-950 dark:border-error-800 dark:text-error-400">
             <p className="text-sm font-medium">{error}</p>
           </div>
         )}
         {success && (
-          <div className="mb-4 rounded-lg bg-success/10 p-4 text-success">
+          <div className="mb-4 rounded-lg bg-success-50 border border-success-200 p-4 text-success-700 dark:bg-success-950 dark:border-success-800 dark:text-success-400">
             <p className="text-sm font-medium">{success}</p>
           </div>
         )}
@@ -312,8 +312,8 @@ const UrlRedirectionPage = () => {
             <div className="max-w-full overflow-x-auto">
               <table className="w-full table-auto">
                 <thead>
-                  <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">
+                  <tr className="bg-gray-100 text-left dark:bg-gray-800">
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">
                       <input
                         type="checkbox"
                         checked={selectAll}
@@ -321,18 +321,18 @@ const UrlRedirectionPage = () => {
                         className="cursor-pointer"
                       />
                     </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Source URL</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Target URL</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Status Code</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Hits</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Status</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Actions</th>
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">Source URL</th>
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">Target URL</th>
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">Status Code</th>
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">Hits</th>
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">Status</th>
+                    <th className="px-4 py-4 font-medium text-gray-900 dark:text-white">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {urlRedirects.length > 0 ? (
                     urlRedirects.map((redirect) => (
-                      <tr key={redirect.id} className="border-b border-stroke dark:border-strokedark">
+                      <tr key={redirect.id} className="border-b border-gray-200 dark:border-gray-700">
                         <td className="px-4 py-4">
                           <input
                             type="checkbox"
@@ -342,32 +342,32 @@ const UrlRedirectionPage = () => {
                           />
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-black dark:text-white font-medium">{redirect.fromUrl}</p>
+                          <p className="text-gray-900 dark:text-white font-medium">{redirect.fromUrl}</p>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-sm text-black dark:text-white">{redirect.toUrl}</p>
+                          <p className="text-sm text-gray-900 dark:text-white">{redirect.toUrl}</p>
                         </td>
                         <td className="px-4 py-4">
                           <span
                             className={`inline-flex rounded px-2 py-1 text-xs font-medium ${
                               redirect.statusCode === 301
-                                ? "bg-success/10 text-success"
-                                : "bg-warning/10 text-warning"
+                                ? "bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-400"
+                                : "bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-400"
                             }`}
                           >
                             {redirect.statusCode}
                           </span>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-sm text-black dark:text-white">{redirect.hits || 0}</p>
+                          <p className="text-sm text-gray-900 dark:text-white">{redirect.hits || 0}</p>
                         </td>
                         <td className="px-4 py-4">
                           <button
                             onClick={() => handleToggleStatus(redirect.id, redirect.isActive)}
                             className={`inline-flex rounded px-3 py-1 text-xs font-medium ${
                               redirect.isActive
-                                ? "bg-success/10 text-success hover:bg-success/20"
-                                : "bg-danger/10 text-danger hover:bg-danger/20"
+                                ? "bg-success-100 text-success-700 hover:bg-success-200 dark:bg-success-900 dark:text-success-400"
+                                : "bg-error-100 text-error-700 hover:bg-error-200 dark:bg-error-900 dark:text-error-400"
                             }`}
                           >
                             {redirect.isActive ? "Aktif" : "Nonaktif"}
@@ -377,7 +377,7 @@ const UrlRedirectionPage = () => {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEdit(redirect)}
-                              className="hover:text-primary"
+                              className="hover:text-brand-600 text-gray-500 dark:text-gray-400"
                             >
                               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -385,7 +385,7 @@ const UrlRedirectionPage = () => {
                             </button>
                             <button
                               onClick={() => handleDelete(redirect.id)}
-                              className="hover:text-danger"
+                              className="hover:text-error-600 text-gray-500 dark:text-gray-400"
                             >
                               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -413,9 +413,9 @@ const UrlRedirectionPage = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-stroke py-4 dark:border-strokedark sm:flex-row">
+              <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-gray-200 py-4 dark:border-gray-700 sm:flex-row">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-black dark:text-white">
+                  <span className="text-sm text-gray-900 dark:text-white">
                     Menampilkan {urlRedirects.length} dari {total} data
                   </span>
                   <select
@@ -424,7 +424,7 @@ const UrlRedirectionPage = () => {
                       setPageSize(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="rounded border border-stroke bg-gray px-2 py-1 text-sm dark:border-strokedark dark:bg-meta-4"
+                    className="rounded border border-gray-200 bg-white px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -436,17 +436,17 @@ const UrlRedirectionPage = () => {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="rounded border border-stroke px-3 py-1 text-sm hover:bg-gray disabled:opacity-50 dark:border-strokedark dark:hover:bg-meta-4"
+                    className="rounded border border-gray-200 px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
                   >
                     Previous
                   </button>
-                  <span className="text-sm text-black dark:text-white">
+                  <span className="text-sm text-gray-900 dark:text-white">
                     Page {currentPage} of {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="rounded border border-stroke px-3 py-1 text-sm hover:bg-gray disabled:opacity-50 dark:border-strokedark dark:hover:bg-meta-4"
+                    className="rounded border border-gray-200 px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
                   >
                     Next
                   </button>
@@ -459,15 +459,15 @@ const UrlRedirectionPage = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-999999 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-boxdark">
+        <div className="fixed inset-0 z-999999 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-theme-xl dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-black dark:text-white">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {modalMode === "create" ? "Tambah URL Redirection" : "Edit URL Redirection"}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-black dark:hover:text-white"
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -477,8 +477,8 @@ const UrlRedirectionPage = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-                  Source URL <span className="text-danger">*</span>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  Source URL <span className="text-error-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -487,13 +487,13 @@ const UrlRedirectionPage = () => {
                   onChange={handleInputChange}
                   placeholder="/old-page"
                   required
-                  className="w-full rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2 px-4 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-                  Target URL <span className="text-danger">*</span>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  Target URL <span className="text-error-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -502,19 +502,19 @@ const UrlRedirectionPage = () => {
                   onChange={handleInputChange}
                   placeholder="https://example.com/new-page"
                   required
-                  className="w-full rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2 px-4 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
                   HTTP Status Code
                 </label>
                 <select
                   name="statusCode"
                   value={formData.statusCode}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2 px-4 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 >
                   <option value={301}>301 - Permanent Redirect</option>
                   <option value={302}>302 - Temporary Redirect</option>
@@ -529,24 +529,24 @@ const UrlRedirectionPage = () => {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, isActive: e.target.checked }))
                   }
-                  className="mr-2 cursor-pointer"
+                  className="mr-2 cursor-pointer h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                 />
-                <label className="text-sm font-medium text-black dark:text-white">
+                <label className="text-sm font-medium text-gray-900 dark:text-white">
                   Aktif
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-stroke pt-4 dark:border-strokedark">
+              <div className="flex justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-md border border-stroke px-4 py-2 text-black hover:bg-gray dark:border-strokedark dark:text-white dark:hover:bg-meta-4"
+                  className="rounded-md border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90"
+                  className="rounded-md bg-brand-600 px-6 py-2 text-white hover:bg-brand-700"
                 >
                   Simpan
                 </button>

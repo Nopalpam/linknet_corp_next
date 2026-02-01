@@ -1,5 +1,9 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
-import { usersService, CreateUserDto, UpdateUserDto, User, Role } from '@/services';
+import { Modal } from "@/components/ui/modal";
+import { usersService, CreateUserDto, UpdateUserDto, User } from '@/services/users.service';
+import { Role } from '@/services/roles.service';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -58,29 +62,29 @@ export default function UserFormModal({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email wajib diisi';
+      newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Format email tidak valid';
+      newErrors.email = 'Invalid email format';
     }
 
     if (!formData.firstName) {
-      newErrors.firstName = 'Nama depan wajib diisi';
+      newErrors.firstName = 'First name is required';
     }
 
     if (!formData.lastName) {
-      newErrors.lastName = 'Nama belakang wajib diisi';
+      newErrors.lastName = 'Last name is required';
     }
 
     if (mode === 'create' && !formData.password) {
-      newErrors.password = 'Password wajib diisi (minimal 8 karakter)';
+      newErrors.password = 'Password is required (minimum 8 characters)';
     }
 
     if (formData.password && formData.password.length < 8) {
-      newErrors.password = 'Password minimal 8 karakter';
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     if (!formData.roles || formData.roles.length === 0) {
-      newErrors.roles = 'Pilih minimal satu role';
+      newErrors.roles = 'Select at least one role';
     }
 
     setErrors(newErrors);
@@ -99,7 +103,7 @@ export default function UserFormModal({
     try {
       if (mode === 'create') {
         await usersService.createUser(formData as CreateUserDto);
-        onSubmit(true, 'User berhasil ditambahkan');
+        onSubmit(true, 'User created successfully');
       } else if (user) {
         const updateData: UpdateUserDto = {
           email: formData.email,
@@ -110,10 +114,10 @@ export default function UserFormModal({
           roles: formData.roles,
         };
         await usersService.updateUser(user.id, updateData);
-        onSubmit(true, 'User berhasil diperbarui');
+        onSubmit(true, 'User updated successfully');
       }
     } catch (error: any) {
-      onSubmit(false, error.message || 'Gagal menyimpan user');
+      onSubmit(false, error.message || 'Failed to save user');
     } finally {
       setLoading(false);
     }
@@ -133,183 +137,176 @@ export default function UserFormModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="modal fade show d-block"
-      tabIndex={-1}
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
-    >
-      <div
-        className="modal-dialog modal-dialog-centered modal-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">
-              {mode === 'create' ? 'Tambah User Baru' : 'Edit User'}
-            </h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
+      <div className="p-6">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          {mode === 'create' ? 'Create New User' : 'Edit User'}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className={`w-full px-3 py-2 border ${
+                  errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Status
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="SUSPENDED">Suspended</option>
+              </select>
+            </div>
+
+            {/* First Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                First Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                className={`w-full px-3 py-2 border ${
+                  errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName}</p>
+              )}
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Last Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                className={`w-full px-3 py-2 border ${
+                  errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName}</p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Password {mode === 'create' && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="password"
+                value={formData.password || ''}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : ''}
+                className={`w-full px-3 py-2 border ${
+                  errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
+              )}
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Email <span className="text-danger">*</span>
-                  </label>
+          {/* Roles */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Roles <span className="text-red-500">*</span>
+            </label>
+            {errors.roles && (
+              <p className="mb-2 text-sm text-red-600 dark:text-red-400">{errors.roles}</p>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50 max-h-60 overflow-y-auto">
+              {roles.map((role) => (
+                <label
+                  key={role.id}
+                  className="flex items-start gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                >
                   <input
-                    type="email"
-                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    type="checkbox"
+                    checked={formData.roles?.includes(role.id)}
+                    onChange={() => handleRoleToggle(role.id)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  {errors.email && (
-                    <div className="invalid-feedback">{errors.email}</div>
-                  )}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Status <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    className="form-select"
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value as any })
-                    }
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="SUSPENDED">Suspended</option>
-                  </select>
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Nama Depan <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                  />
-                  {errors.firstName && (
-                    <div className="invalid-feedback">{errors.firstName}</div>
-                  )}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Nama Belakang <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
-                    }
-                  />
-                  {errors.lastName && (
-                    <div className="invalid-feedback">{errors.lastName}</div>
-                  )}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Nomor Telepon</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">
-                    Password {mode === 'create' && <span className="text-danger">*</span>}
-                  </label>
-                  <input
-                    type="password"
-                    className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                    value={formData.password || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    placeholder={mode === 'edit' ? 'Kosongkan jika tidak ingin mengubah' : ''}
-                  />
-                  {errors.password && (
-                    <div className="invalid-feedback">{errors.password}</div>
-                  )}
-                </div>
-
-                <div className="col-12 mb-3">
-                  <label className="form-label">
-                    Role <span className="text-danger">*</span>
-                  </label>
-                  {errors.roles && (
-                    <div className="text-danger small mb-2">{errors.roles}</div>
-                  )}
-                  <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {roles.map((role) => (
-                      <div key={role.id} className="form-check mb-2">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          id={`role-${role.id}`}
-                          checked={formData.roles?.includes(role.id)}
-                          onChange={() => handleRoleToggle(role.id)}
-                        />
-                        <label className="form-check-label" htmlFor={`role-${role.id}`}>
-                          <strong>{role.name}</strong>
-                          {role.description && (
-                            <small className="text-muted d-block">{role.description}</small>
-                          )}
-                        </label>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {role.name}
+                    </div>
+                    {role.description && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {role.description}
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              </div>
+                </label>
+              ))}
             </div>
+          </div>
 
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-                disabled={loading}
-              >
-                Batal
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2"></span>
-                    Menyimpan...
-                  </>
-                ) : mode === 'create' ? (
-                  'Tambah User'
-                ) : (
-                  'Simpan Perubahan'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {loading && (
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
+              {mode === 'create' ? 'Create User' : 'Update User'}
+            </button>
+          </div>
+        </form>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -166,14 +166,14 @@ const LoginPage = () => {
                 </label>
               </div>
 
-              <div className="text-sm">
+              {/* <div className="text-sm">
                 <Link
                   href="/forgot-password"
                   className="font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400"
                 >
                   Forgot password?
                 </Link>
-              </div>
+              </div> */}
             </div>
 
             {/* Submit Button */}
