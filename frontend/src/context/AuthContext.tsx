@@ -87,15 +87,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isRefreshingRef = useRef(false);
+  const forceLogoutRef = useRef(false); // ✅ Prevent multiple logout calls
+
+  // ✅ CRITICAL: Clear auth data helper
+  const clearAuthData = useCallback(() => {
+    deleteCookie(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(AUTH_LAST_REFRESH);
+  }, []);
 
   // ✅ CRITICAL: Force logout - clear everything and redirect
   const forceLogout = useCallback(() => {
+    if (forceLogoutRef.current) return; // Prevent duplicate calls
+    forceLogoutRef.current = true;
+    
     console.error('🔴 FORCE LOGOUT: Clearing auth state');
     clearAuthData();
     setUser(null);
     setIsAuthValidated(true); // Mark as validated (but not authenticated)
+    
+    // Reset flag after redirect
+    setTimeout(() => {
+      forceLogoutRef.current = false;
+    }, 1000);
+    
     router.replace('/login');
-  }, [router]);
+  }, [router, clearAuthData]);
 
   // ✅ CRITICAL: Refresh user profile from backend
   const refreshUser = useCallback(async () => {
@@ -108,7 +127,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (!token) {
         console.warn('🔴 No token found during refresh - logging out');
-        forceLogout();
+        if (!forceLogoutRef.current) {
+          clearAuthData();
+          setUser(null);
+          router.replace('/login');
+        }
         return;
       }
 
@@ -117,24 +140,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (AUTH_ENABLED) {
         const profileData = await authService.getProfile();
-        if (profileData.success) {
+        console.log('🔵 Profile data received:', profileData);
+        
+        if (profileData.success && profileData.data.user) {
+          const userData = profileData.data.user;
           const updatedUser: User = {
-            id: profileData.data.id,
-            email: profileData.data.email,
-            name: `${profileData.data.firstName} ${profileData.data.lastName}`.trim(),
-            firstName: profileData.data.firstName,
-            lastName: profileData.data.lastName,
-            avatar: profileData.data.avatar,
-            status: profileData.data.status,
-            roles: profileData.data.roles,
-            permissions: profileData.data.permissions,
+            id: userData.id,
+            email: userData.email,
+            name: `${userData.firstName} ${userData.lastName}`.trim(),
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            avatar: userData.avatar,
+            status: userData.status,
+            roles: userData.roles,
+            permissions: userData.permissions,
           };
+          console.log('✅ User updated:', updatedUser);
           setUser(updatedUser);
           localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
           localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
         } else {
           console.error('🔴 Profile fetch failed - logging out');
-          forceLogout();
+          if (!forceLogoutRef.current) {
+            clearAuthData();
+            setUser(null);
+            router.replace('/login');
+          }
         }
       } else {
         // Mock mode: restore from localStorage
@@ -155,13 +186,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error?.response?.status === 401
       ) {
         console.error('🔴 Auth error detected - forcing logout');
-        forceLogout();
+        if (!forceLogoutRef.current) {
+          clearAuthData();
+          setUser(null);
+          router.replace('/login');
+        }
       }
       // Don't clear auth on other errors - token might still be valid
     } finally {
       isRefreshingRef.current = false;
     }
-  }, [forceLogout]);
+  }, [router, clearAuthData]);
 
   // ✅ Initialize auth state on mount with BLOCKING validation
   useEffect(() => {
@@ -188,34 +223,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           try {
             const profileData = await authService.getProfile();
+            console.log('🔵 Initial auth validation - profile data:', profileData);
             
-            if (profileData.success) {
+            if (profileData.success && profileData.data.user) {
+              const userData = profileData.data.user;
               const validatedUser: User = {
-                id: profileData.data.id,
-                email: profileData.data.email,
-                name: `${profileData.data.firstName} ${profileData.data.lastName}`.trim(),
-                firstName: profileData.data.firstName,
-                lastName: profileData.data.lastName,
-                avatar: profileData.data.avatar,
-                status: profileData.data.status,
-                roles: profileData.data.roles,
-                permissions: profileData.data.permissions,
+                id: userData.id,
+                email: userData.email,
+                name: `${userData.firstName} ${userData.lastName}`.trim(),
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                avatar: userData.avatar,
+                status: userData.status,
+                roles: userData.roles,
+                permissions: userData.permissions,
               };
               
-              console.log('✅ Token validated - user authenticated');
+              console.log('✅ Token validated - user authenticated:', validatedUser);
               setUser(validatedUser);
               localStorage.setItem(AUTH_USER_KEY, JSON.stringify(validatedUser));
               localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
             } else {
               console.error('🔴 Token validation failed');
-              forceLogout();
+              clearAuthData();
+              setUser(null);
             }
           } catch (error: any) {
             console.error('🔴 Token validation error:', error);
             
-            // If error is auth-related, force logout
+            // If error is auth-related, clear auth
             if (error?.message?.includes('expired') || error?.message?.includes('Session')) {
-              forceLogout();
+              clearAuthData();
+              setUser(null);
             } else {
               // For other errors, still mark as validated but clear user
               setUser(null);
@@ -240,15 +279,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     initAuth();
-  }, [forceLogout]); // ✅ Include forceLogout dependency
+  }, [clearAuthData]); // ✅ Stable dependency
 
-  // ✅ CRITICAL: Re-validate auth on route change
+  // ✅ CRITICAL: Re-validate auth on route change (TANPA user di dependency untuk cegah loop)
   useEffect(() => {
-    // Skip if not authenticated or still loading
-    if (!user || isLoading) return;
-    
     // Skip auth pages
     if (pathname?.includes('/login') || pathname?.includes('/register')) return;
+    
+    // Skip if still loading or not validated yet
+    if (isLoading || !isAuthValidated) return;
+
+    // Check if we have a token
+    const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      console.warn('🔴 No token on route change');
+      return; // Let other logic handle this
+    }
 
     // Debounce: Only refresh if last refresh was > 5 minutes ago
     const lastRefresh = localStorage.getItem(AUTH_LAST_REFRESH);
@@ -257,31 +303,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (timeSinceRefresh < 300000) return; // 5 minutes
     }
 
-    // Sync tokens and verify user is still valid
+    // Sync tokens and silently refresh user profile
     syncTokens();
-    
-    // Check if token still exists
-    const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
-    if (!token) {
-      console.warn('🔴 Token missing after navigation - logging out');
-      forceLogout();
-      return;
-    }
-
-    // Silently refresh user profile
     refreshUser();
-  }, [pathname, user, isLoading, refreshUser, forceLogout]); // ✅ Re-run on route change
+  }, [pathname, isLoading, isAuthValidated, refreshUser]); // ✅ HAPUS user & forceLogout untuk cegah loop
 
   // ✅ NEW: Periodic token validation (every 10 minutes when tab is active)
   useEffect(() => {
-    if (!user || !AUTH_ENABLED) return;
+    if (!isAuthValidated || !AUTH_ENABLED) return;
 
     const interval = setInterval(() => {
       const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
       if (!token) {
-        console.warn('🔴 Token disappeared - logging out');
-        forceLogout();
-        return;
+        console.warn('🔴 Token disappeared during periodic check');
+        return; // Let other logic handle logout
       }
 
       // Check last refresh time
@@ -297,7 +332,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, 600000); // Check every 10 minutes
 
     return () => clearInterval(interval);
-  }, [user, refreshUser, forceLogout]);
+  }, [isAuthValidated, refreshUser]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -386,13 +421,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       router.replace("/login");
     }
-  };
-
-  const clearAuthData = () => {
-    deleteCookie(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
   };
 
   const value: AuthContextType = {

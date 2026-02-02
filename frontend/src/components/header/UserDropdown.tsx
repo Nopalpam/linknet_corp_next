@@ -8,22 +8,29 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout, isLoading, forceLogout } = useAuth();
+  const { user, logout, isLoading, forceLogout, isAuthValidated } = useAuth();
 
-  // ✅ Monitor user state - force logout if user becomes undefined unexpectedly
+  // ✅ Auto-close dropdown when user becomes invalid
   useEffect(() => {
-    if (!isLoading && !user) {
-      console.warn('🔴 User is undefined in UserDropdown - session may have expired');
-      // Don't auto-logout here, let AuthContext handle it
+    if (isOpen && isAuthValidated && !isLoading && !user) {
+      console.warn('🔴 User session lost - closing dropdown');
+      // Close dropdown only if it's currently open
+      const closeTimer = setTimeout(() => setIsOpen(false), 0);
+      return () => clearTimeout(closeTimer);
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, isAuthValidated, isOpen]);
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.stopPropagation();
     
-    // ✅ Validate user exists before opening dropdown
-    if (!user && !isLoading) {
-      console.error('🔴 Cannot open dropdown - user is undefined');
+    // ✅ Validate auth state before opening dropdown
+    if (!isAuthValidated || isLoading) {
+      console.warn('🔴 Auth not ready - cannot open dropdown');
+      return;
+    }
+    
+    if (!user) {
+      console.error('🔴 No user - session may have expired');
       forceLogout();
       return;
     }
@@ -40,30 +47,31 @@ export default function UserDropdown() {
     logout();
   };
 
-  // ✅ CRITICAL: Safe fallback values with validation
-  const displayName = user?.name || user?.firstName || "User";
-  const displayEmail = user?.email || "user@example.com";
+  // ✅ CRITICAL: Safe fallback dengan validasi ketat
+  const displayName = user?.name || user?.firstName || "Unknown User";
+  console.log('UserDropdown Render - User:', user, 'DisplayName:', displayName);
+  const displayEmail = user?.email || "No email";
   const displayAvatar = user?.avatar || "/images/user/owner1.jpg";
 
-  // ✅ Show loading state
-  if (isLoading) {
+  // ✅ Show loading state during auth validation
+  if (!isAuthValidated || isLoading) {
     return (
       <div className="flex items-center text-gray-700 dark:text-gray-400">
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-200 dark:bg-gray-700 animate-pulse"></span>
-        <span className="block mr-1 font-medium text-theme-sm">Loading...</span>
+        <span className="block mr-1 font-medium text-theme-sm text-gray-400">Loading...</span>
       </div>
     );
   }
 
-  // ✅ If no user after loading, show error state
+  // ✅ If no user after validation, show session expired
   if (!user) {
     return (
-      <div className="flex items-center text-gray-700 dark:text-gray-400">
+      <div className="flex items-center">
         <button
           onClick={() => forceLogout()}
-          className="text-sm text-red-500 hover:text-red-600"
+          className="text-sm text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 font-medium px-4 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
-          Session expired - Click to login
+          Session Expired - Login
         </button>
       </div>
     );
@@ -74,7 +82,7 @@ export default function UserDropdown() {
       <button
         onClick={toggleDropdown} 
         className="flex items-center text-gray-700 dark:text-gray-400 dropdown-toggle"
-        disabled={isLoading}
+        disabled={!isAuthValidated || isLoading || !user}
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
           <Image
@@ -82,6 +90,7 @@ export default function UserDropdown() {
             height={44}
             src={displayAvatar}
             alt={displayName}
+            priority
             onError={(e) => {
               // Fallback if image fails to load
               e.currentTarget.src = "/images/user/owner1.jpg";

@@ -188,47 +188,48 @@ enum SettingType {
 }
 
 model Menu {
-  id        String       @id @default(uuid())
-  parentId  String?      @map("parent_id")
-  title     Json // Multi-language support: { "en": "Home", "id": "Beranda" }
-  slug      String       @unique
-  url       String?
-  type      MenuLinkType @default(INTERNAL)
-  pageId    String?      @map("page_id") // For internal links
-  target    MenuTarget   @default(SELF)
-  icon      String?
-  order     Int          @default(0)
-  status    MenuStatus   @default(ACTIVE)
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
+  id            BigInt        @id @default(autoincrement())
+  parentId      BigInt?       @map("parent_id")
+  sectionTitle  String?       @map("section_title") @db.VarChar(191)
+  sectionOrder  Int           @default(0) @map("section_order")
+  title         String        @db.VarChar(191)
+  translations  Json?         // Multi-language support: { "id": { "title": "...", "slug": "...", "description": "..." }, "en": {...} }
+  slug          String?       @db.VarChar(191)
+  url           String?       @db.VarChar(191)
+  icon          String?       @db.VarChar(191)
+  image         String?       @db.VarChar(191)
+  description   String?       @db.VarChar(191)
+  badge         String?       @db.VarChar(191)
+  position      MenuPosition  @default(HEADER)
+  type          MenuType      @default(LINK)
+  order         Int           @default(0)
+  isActive      Boolean       @default(true) @map("is_active")
+  openNewTab    Boolean       @default(false) @map("open_new_tab")
+  cssClass      String?       @map("css_class") @db.VarChar(191)
+  createdBy     String?       @map("created_by") @db.VarChar(191)
+  updatedBy     String?       @map("updated_by") @db.VarChar(191)
+  createdAt     DateTime?     @default(now()) @map("created_at")
+  updatedAt     DateTime?     @updatedAt @map("updated_at")
 
   // Self-referencing relation for hierarchical structure
   parent   Menu?  @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children Menu[] @relation("MenuHierarchy")
-  page     Page?  @relation(fields: [pageId], references: [id], onDelete: SetNull)
 
   @@index([parentId])
-  @@index([order])
-  @@index([status])
-  @@index([type])
-  @@index([pageId])
+  @@index([position, order, isActive])
   @@map("menus")
 }
 
-enum MenuTarget {
-  SELF // _self
-  BLANK // _blank
+enum MenuPosition {
+  HEADER  @map("header")
+  FOOTER  @map("footer")
+  BOTH    @map("both")
 }
 
-enum MenuLinkType {
-  INTERNAL // Link to internal page
-  EXTERNAL // Custom external URL
-  DROPDOWN // Parent menu without URL
-}
-
-enum MenuStatus {
-  ACTIVE
-  INACTIVE
+enum MenuType {
+  LINK     @map("link")
+  DROPDOWN @map("dropdown")
+  MEGA     @map("mega")
 }
 
 // ============================================
@@ -254,7 +255,6 @@ model Page {
   // Relations
   createdBy  User            @relation("PageCreator", fields: [createdById], references: [id], onDelete: Restrict)
   components PageComponent[]
-  menus      Menu[]
 
   @@index([slug])
   @@index([status])

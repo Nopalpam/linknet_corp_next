@@ -1,17 +1,66 @@
 import { Request, Response, NextFunction } from 'express';
 import menuService from '../services/menu.service';
 import { AppError } from '../types/error.types';
-import { MenuLinkType } from '@prisma/client';
+import { MenuType, MenuPosition } from '@prisma/client';
+
+// Helper function to convert BigInt to Number recursively
+function convertBigIntToNumber(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (typeof obj === 'bigint') {
+    return Number(obj);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertBigIntToNumber(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const converted: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        converted[key] = convertBigIntToNumber(obj[key]);
+      }
+    }
+    return converted;
+  }
+  
+  return obj;
+}
 
 export class MenuController {
-  // Get all menus (tree structure)
-  async getMenus(_req: Request, res: Response, next: NextFunction) {
+  // Get all menus (tree structure) - for CMS
+  async getMenus(req: Request, res: Response, next: NextFunction) {
     try {
-      const menus = await menuService.getMenuTree();
+      const { position } = req.query;
+      
+      const menus = await menuService.getMenuTree(
+        position ? (position as MenuPosition) : undefined
+      );
       
       res.json({
         success: true,
-        data: menus,
+        data: convertBigIntToNumber(menus),
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Get flat list of all menus - for CMS table view
+  async getAllMenusFlat(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { position } = req.query;
+      
+      const menus = await menuService.getAllMenus(
+        position ? (position as MenuPosition) : undefined
+      );
+      
+      res.json({
+        success: true,
+        data: convertBigIntToNumber(menus),
       });
     } catch (error) {
       next(error);
@@ -19,13 +68,42 @@ export class MenuController {
   }
 
   // Get active menus for public (frontend)
-  async getPublicMenus(_req: Request, res: Response, next: NextFunction) {
+  async getPublicMenus(req: Request, res: Response, next: NextFunction) {
     try {
-      const menus = await menuService.getActiveMenuTree();
+      const { position } = req.query;
+      
+      const menus = await menuService.getActiveMenuTree(
+        position ? (position as MenuPosition) : undefined
+      );
       
       res.json({
         success: true,
-        data: menus,
+        data: convertBigIntToNumber(menus),
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Get menus by position (header/footer)
+  async getMenusByPosition(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { position } = req.params;
+      const { activeOnly } = req.query;
+
+      if (!position || !['header', 'footer', 'both'].includes(position.toLowerCase())) {
+        throw new AppError('Valid position is required (header/footer/both)', 400);
+      }
+
+      const menuPosition = position.toUpperCase() as MenuPosition;
+      const menus = await menuService.getMenusByPosition(
+        menuPosition, 
+        activeOnly === 'true'
+      );
+      
+      res.json({
+        success: true,
+        data: convertBigIntToNumber(menus),
       });
     } catch (error) {
       next(error);
@@ -37,11 +115,13 @@ export class MenuController {
     try {
       const { id } = req.params;
       if (!id) throw new AppError('Menu ID is required', 400);
-      const menu = await menuService.getMenuById(id);
+      
+      const menuId = BigInt(id);
+      const menu = await menuService.getMenuById(menuId);
       
       res.json({
         success: true,
-        data: menu,
+        data: convertBigIntToNumber(menu),
       });
     } catch (error) {
       next(error);
@@ -51,34 +131,65 @@ export class MenuController {
   // Create menu
   async createMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, slug, url, type, pageId, target, icon, parentId, order, status } = req.body;
+      const userEmail = (req as any).user?.email;
+      
+      const { 
+        parentId,
+        sectionTitle,
+        sectionOrder,
+        title, 
+        translations,
+        slug, 
+        url, 
+        icon,
+        image,
+        description,
+        badge,
+        position,
+        type, 
+        order, 
+        isActive,
+        openNewTab,
+        cssClass
+      } = req.body;
 
       // Validation
       if (!title) {
         throw new AppError('Title is required', 400);
       }
 
-      if (!type || !Object.values(MenuLinkType).includes(type)) {
-        throw new AppError('Valid type is required', 400);
+      if (!position || !Object.values(MenuPosition).includes(position)) {
+        throw new AppError('Valid position is required (HEADER/FOOTER/BOTH)', 400);
+      }
+
+      if (!type || !Object.values(MenuType).includes(type)) {
+        throw new AppError('Valid type is required (LINK/DROPDOWN/MEGA)', 400);
       }
 
       const menu = await menuService.createMenu({
+        parentId: parentId ? BigInt(parentId) : undefined,
+        sectionTitle,
+        sectionOrder,
         title,
+        translations,
         slug,
         url,
-        type,
-        pageId,
-        target,
         icon,
-        parentId,
+        image,
+        description,
+        badge,
+        position,
+        type,
         order,
-        status,
-      });
+        isActive,
+        openNewTab,
+        cssClass,
+      }, userEmail);
 
       res.status(201).json({
         success: true,
         message: 'Menu created successfully',
-        data: menu,
+        data: convertBigIntToNumber(menu),
       });
     } catch (error) {
       next(error);
@@ -90,25 +201,54 @@ export class MenuController {
     try {
       const { id } = req.params;
       if (!id) throw new AppError('Menu ID is required', 400);
-      const { title, slug, url, type, pageId, target, icon, parentId, order, status } = req.body;
+      
+      const userEmail = (req as any).user?.email;
+      const menuId = BigInt(id);
+      
+      const { 
+        parentId,
+        sectionTitle,
+        sectionOrder,
+        title, 
+        translations,
+        slug, 
+        url, 
+        icon,
+        image,
+        description,
+        badge,
+        position,
+        type, 
+        order, 
+        isActive,
+        openNewTab,
+        cssClass
+      } = req.body;
 
-      const menu = await menuService.updateMenu(id, {
+      const menu = await menuService.updateMenu(menuId, {
+        parentId: parentId !== undefined ? (parentId ? BigInt(parentId) : null) : undefined,
+        sectionTitle,
+        sectionOrder,
         title,
+        translations,
         slug,
         url,
-        type,
-        pageId,
-        target,
         icon,
-        parentId,
+        image,
+        description,
+        badge,
+        position,
+        type,
         order,
-        status,
-      });
+        isActive,
+        openNewTab,
+        cssClass,
+      }, userEmail);
 
       res.json({
         success: true,
         message: 'Menu updated successfully',
-        data: menu,
+        data: convertBigIntToNumber(menu),
       });
     } catch (error) {
       next(error);
@@ -120,7 +260,9 @@ export class MenuController {
     try {
       const { id } = req.params;
       if (!id) throw new AppError('Menu ID is required', 400);
-      const result = await menuService.deleteMenu(id);
+      
+      const menuId = BigInt(id);
+      const result = await menuService.deleteMenu(menuId);
       
       res.json({
         success: true,
@@ -140,7 +282,8 @@ export class MenuController {
         throw new AppError('Menu IDs are required', 400);
       }
 
-      const result = await menuService.deleteMultipleMenus(ids);
+      const menuIds = ids.map(id => BigInt(id));
+      const result = await menuService.deleteMultipleMenus(menuIds);
       
       res.json({
         success: true,
@@ -160,12 +303,13 @@ export class MenuController {
         throw new AppError('Menu ID is required', 400);
       }
 
-      const menu = await menuService.toggleMenuStatus(id);
+      const menuId = BigInt(id);
+      const menu = await menuService.toggleMenuStatus(menuId);
       
       res.json({
         success: true,
         message: 'Menu status updated successfully',
-        data: menu,
+        data: convertBigIntToNumber(menu),
       });
     } catch (error) {
       next(error);
@@ -191,7 +335,14 @@ export class MenuController {
         }
       }
 
-      const result = await menuService.updateMenuOrder(updates);
+      // Convert IDs to BigInt
+      const bigIntUpdates = updates.map(update => ({
+        id: BigInt(update.id),
+        order: update.order,
+        parentId: update.parentId ? BigInt(update.parentId) : null,
+      }));
+
+      const result = await menuService.updateMenuOrder(bigIntUpdates);
       
       res.json({
         success: true,

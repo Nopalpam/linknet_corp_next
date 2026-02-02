@@ -1,55 +1,70 @@
-import { PrismaClient, MenuLinkType, MenuStatus, MenuTarget } from '@prisma/client';
+import { PrismaClient, MenuPosition, MenuType } from '@prisma/client';
 import { AppError } from '../types/error.types';
-import slugify from 'slugify';
 
 const prisma = new PrismaClient();
 
 interface MenuData {
-  title: Record<string, string>;
-  slug?: string;
-  url?: string;
-  type: MenuLinkType;
-  pageId?: string;
-  target?: MenuTarget;
-  icon?: string;
-  parentId?: string;
+  parentId?: bigint | null;
+  sectionTitle?: string | null;
+  sectionOrder?: number;
+  title: string;
+  translations?: Record<string, any> | null;
+  slug?: string | null;
+  url?: string | null;
+  icon?: string | null;
+  image?: string | null;
+  description?: string | null;
+  badge?: string | null;
+  position: MenuPosition;
+  type: MenuType;
   order?: number;
-  status?: MenuStatus;
+  isActive?: boolean;
+  openNewTab?: boolean;
+  cssClass?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
 }
 
 interface MenuOrderUpdate {
-  id: string;
+  id: bigint;
   order: number;
-  parentId?: string | null;
+  parentId?: bigint | null;
 }
 
 interface MenuTreeItem {
-  id: string;
-  parentId: string | null;
-  title: Record<string, string>;
-  slug: string;
+  id: bigint;
+  parentId: bigint | null;
+  sectionTitle: string | null;
+  sectionOrder: number;
+  title: string;
+  translations: Record<string, any> | null;
+  slug: string | null;
   url: string | null;
-  type: MenuLinkType;
-  pageId: string | null;
-  target: MenuTarget;
   icon: string | null;
+  image: string | null;
+  description: string | null;
+  badge: string | null;
+  position: MenuPosition;
+  type: MenuType;
   order: number;
-  status: MenuStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  page?: {
-    id: string;
-    title: string;
-    slug: string;
-  } | null;
+  isActive: boolean;
+  openNewTab: boolean;
+  cssClass: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
   children: MenuTreeItem[];
 }
 
 export class MenuService {
   // Build tree structure from flat menu list
-  private buildTree(menus: any[], parentId: string | null = null): MenuTreeItem[] {
+  private buildTree(menus: any[], parentId: bigint | null = null): MenuTreeItem[] {
     return menus
-      .filter((menu) => menu.parentId === parentId)
+      .filter((menu) => {
+        if (parentId === null) return menu.parentId === null;
+        return menu.parentId !== null && menu.parentId.toString() === parentId.toString();
+      })
       .sort((a, b) => a.order - b.order)
       .map((menu) => ({
         ...menu,
@@ -59,11 +74,11 @@ export class MenuService {
 
   // Check for circular reference
   private async checkCircularReference(
-    menuId: string,
-    parentId: string | null
+    menuId: bigint,
+    parentId: bigint | null
   ): Promise<boolean> {
     if (!parentId) return false;
-    if (menuId === parentId) return true;
+    if (menuId.toString() === parentId.toString()) return true;
 
     const parent = await prisma.menu.findUnique({
       where: { id: parentId },
@@ -71,14 +86,14 @@ export class MenuService {
     });
 
     if (!parent) return false;
-    if (parent.parentId === menuId) return true;
+    if (parent.parentId && parent.parentId.toString() === menuId.toString()) return true;
 
     // Check recursively
     return this.checkCircularReference(menuId, parent.parentId);
   }
 
   // Get nesting level
-  private async getNestingLevel(parentId: string | null): Promise<number> {
+  private async getNestingLevel(parentId: bigint | null): Promise<number> {
     if (!parentId) return 0;
 
     const parent = await prisma.menu.findUnique({
@@ -91,60 +106,86 @@ export class MenuService {
     return 1 + (await this.getNestingLevel(parent.parentId));
   }
 
-  // Get all menus as tree structure
-  async getMenuTree(): Promise<MenuTreeItem[]> {
+  // Get all menus as tree structure (for CMS)
+  async getMenuTree(position?: MenuPosition): Promise<MenuTreeItem[]> {
+    const where: any = {};
+    
+    if (position) {
+      where.position = { in: [position, MenuPosition.BOTH] };
+    }
+
     const menus = await prisma.menu.findMany({
+      where,
       orderBy: { order: 'asc' },
-      include: {
-        page: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-          },
-        },
-      },
     });
 
     return this.buildTree(menus);
   }
 
   // Get active menus for public (frontend)
-  async getActiveMenuTree(): Promise<MenuTreeItem[]> {
+  async getActiveMenuTree(position?: MenuPosition): Promise<MenuTreeItem[]> {
+    const where: any = { isActive: true };
+    
+    if (position) {
+      where.position = { in: [position, MenuPosition.BOTH] };
+    }
+
     const menus = await prisma.menu.findMany({
-      where: { status: MenuStatus.ACTIVE },
+      where,
       orderBy: { order: 'asc' },
-      include: {
-        page: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-          },
-        },
-      },
     });
 
     // Filter: if parent is inactive, children should not appear
-    const activeMenuIds = new Set(menus.map((m) => m.id));
+    const activeMenuIds = new Set(menus.map((m) => m.id.toString()));
     const validMenus = menus.filter((menu) => {
       if (!menu.parentId) return true;
-      return activeMenuIds.has(menu.parentId);
+      return activeMenuIds.has(menu.parentId.toString());
     });
 
     return this.buildTree(validMenus);
   }
 
-  // Get single menu by ID
-  async getMenuById(id: string) {
-    const menu = await prisma.menu.findUnique({
-      where: { id },
+  // Get flat list of all menus (for CMS table view)
+  async getAllMenus(position?: MenuPosition): Promise<any[]> {
+    const where: any = {};
+    
+    if (position) {
+      where.position = { in: [position, MenuPosition.BOTH] };
+    }
+
+    const menus = await prisma.menu.findMany({
+      where,
+      orderBy: [
+        { position: 'asc' },
+        { order: 'asc' }
+      ],
       include: {
-        page: {
+        parent: {
           select: {
             id: true,
             title: true,
-            slug: true,
+          },
+        },
+        _count: {
+          select: {
+            children: true,
+          },
+        },
+      },
+    });
+
+    return menus;
+  }
+
+  // Get single menu by ID
+  async getMenuById(id: bigint) {
+    const menu = await prisma.menu.findUnique({
+      where: { id },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            title: true,
           },
         },
         children: {
@@ -161,48 +202,33 @@ export class MenuService {
   }
 
   // Create new menu
-  async createMenu(data: MenuData) {
+  async createMenu(data: MenuData, userEmail?: string) {
     // Validate type-specific fields
-    if (data.type === MenuLinkType.INTERNAL && !data.pageId) {
-      throw new AppError('Page ID is required for internal links', 400);
+    if (data.type === MenuType.LINK && !data.url) {
+      throw new AppError('URL is required for link type menus', 400);
     }
 
-    if (data.type === MenuLinkType.EXTERNAL && !data.url) {
-      throw new AppError('URL is required for external links', 400);
+    if (data.type === MenuType.DROPDOWN || data.type === MenuType.MEGA) {
+      // Dropdown/Mega menus typically use '#' or no URL
+      if (!data.url) {
+        data.url = '#';
+      }
     }
 
-    if (data.type === MenuLinkType.DROPDOWN) {
-      data.url = undefined;
-      data.pageId = undefined;
-    }
-
-    // Check nesting level
+    // Check nesting level (max 3 levels)
     if (data.parentId) {
       const level = await this.getNestingLevel(data.parentId);
-      if (level >= 2) {
+      if (level >= 3) {
         throw new AppError('Maximum nesting level is 3', 400);
       }
     }
 
-    // Auto-generate slug if not provided
-    const title = typeof data.title === 'string' 
-      ? data.title 
-      : data.title.en || data.title.id || Object.values(data.title)[0] || '';
-    
-    const slug = data.slug || slugify(title, { lower: true, strict: true });
-
-    // Check slug uniqueness
-    const existingMenu = await prisma.menu.findUnique({
-      where: { slug },
-    });
-
-    if (existingMenu) {
-      throw new AppError('Menu with this slug already exists', 400);
-    }
-
     // Get max order for siblings
     const maxOrder = await prisma.menu.aggregate({
-      where: { parentId: data.parentId || null },
+      where: { 
+        parentId: data.parentId || null,
+        position: data.position 
+      },
       _max: { order: true },
     });
 
@@ -210,23 +236,31 @@ export class MenuService {
 
     const menu = await prisma.menu.create({
       data: {
-        title: data.title,
-        slug,
-        url: data.url,
-        type: data.type,
-        pageId: data.pageId,
-        target: data.target || MenuTarget.SELF,
-        icon: data.icon,
         parentId: data.parentId,
+        sectionTitle: data.sectionTitle,
+        sectionOrder: data.sectionOrder || 0,
+        title: data.title,
+        translations: data.translations as any,
+        slug: data.slug,
+        url: data.url,
+        icon: data.icon,
+        image: data.image,
+        description: data.description,
+        badge: data.badge,
+        position: data.position,
+        type: data.type,
         order,
-        status: data.status || MenuStatus.ACTIVE,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        openNewTab: data.openNewTab || false,
+        cssClass: data.cssClass,
+        createdBy: userEmail || data.createdBy,
+        updatedBy: userEmail || data.updatedBy,
       },
       include: {
-        page: {
+        parent: {
           select: {
             id: true,
             title: true,
-            slug: true,
           },
         },
       },
@@ -236,20 +270,22 @@ export class MenuService {
   }
 
   // Update menu
-  async updateMenu(id: string, data: Partial<MenuData>) {
+  async updateMenu(id: bigint, data: Partial<MenuData>, userEmail?: string) {
     const existingMenu = await this.getMenuById(id);
 
     // Check circular reference if parentId is being updated
-    if (data.parentId !== undefined && data.parentId !== existingMenu.parentId) {
-      const hasCircular = await this.checkCircularReference(id, data.parentId);
-      if (hasCircular) {
-        throw new AppError('Circular reference detected', 400);
-      }
+    if (data.parentId !== undefined) {
+      const newParentId = data.parentId;
+      
+      if (newParentId && (!existingMenu.parentId || newParentId.toString() !== existingMenu.parentId.toString())) {
+        const hasCircular = await this.checkCircularReference(id, newParentId);
+        if (hasCircular) {
+          throw new AppError('Circular reference detected', 400);
+        }
 
-      // Check nesting level
-      if (data.parentId) {
-        const level = await this.getNestingLevel(data.parentId);
-        if (level >= 2) {
+        // Check nesting level
+        const level = await this.getNestingLevel(newParentId);
+        if (level >= 3) {
           throw new AppError('Maximum nesting level is 3', 400);
         }
       }
@@ -257,60 +293,44 @@ export class MenuService {
 
     // Validate type-specific fields
     const newType = data.type || existingMenu.type;
-    if (newType === MenuLinkType.INTERNAL && !data.pageId && !existingMenu.pageId) {
-      throw new AppError('Page ID is required for internal links', 400);
-    }
-
-    if (newType === MenuLinkType.EXTERNAL && !data.url && !existingMenu.url) {
-      throw new AppError('URL is required for external links', 400);
-    }
-
-    if (newType === MenuLinkType.DROPDOWN) {
-      data.url = undefined;
-      data.pageId = undefined;
-    }
-
-    // Update slug if title changed
-    let slug = data.slug;
-    if (data.title && !data.slug) {
-      const title = typeof data.title === 'string' 
-        ? data.title 
-        : data.title.en || data.title.id || Object.values(data.title)[0] || '';
-      
-      slug = slugify(title, { lower: true, strict: true });
-
-      // Check slug uniqueness
-      if (slug !== existingMenu.slug) {
-        const existingSlug = await prisma.menu.findUnique({
-          where: { slug },
-        });
-
-        if (existingSlug) {
-          throw new AppError('Menu with this slug already exists', 400);
-        }
+    if (newType === MenuType.LINK) {
+      const newUrl = data.url !== undefined ? data.url : existingMenu.url;
+      if (!newUrl) {
+        throw new AppError('URL is required for link type menus', 400);
       }
     }
 
+    const updateData: any = {
+      updatedBy: userEmail || data.updatedBy,
+    };
+
+    // Only update fields that are provided
+    if (data.parentId !== undefined) updateData.parentId = data.parentId;
+    if (data.sectionTitle !== undefined) updateData.sectionTitle = data.sectionTitle;
+    if (data.sectionOrder !== undefined) updateData.sectionOrder = data.sectionOrder;
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.translations !== undefined) updateData.translations = data.translations as any;
+    if (data.slug !== undefined) updateData.slug = data.slug;
+    if (data.url !== undefined) updateData.url = data.url;
+    if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.image !== undefined) updateData.image = data.image;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.badge !== undefined) updateData.badge = data.badge;
+    if (data.position !== undefined) updateData.position = data.position;
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.order !== undefined) updateData.order = data.order;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.openNewTab !== undefined) updateData.openNewTab = data.openNewTab;
+    if (data.cssClass !== undefined) updateData.cssClass = data.cssClass;
+
     const menu = await prisma.menu.update({
       where: { id },
-      data: {
-        title: data.title,
-        slug,
-        url: data.url,
-        type: data.type,
-        pageId: data.pageId,
-        target: data.target,
-        icon: data.icon,
-        parentId: data.parentId,
-        order: data.order,
-        status: data.status,
-      },
+      data: updateData,
       include: {
-        page: {
+        parent: {
           select: {
             id: true,
             title: true,
-            slug: true,
           },
         },
       },
@@ -320,7 +340,7 @@ export class MenuService {
   }
 
   // Delete menu and all children (cascade)
-  async deleteMenu(id: string) {
+  async deleteMenu(id: bigint) {
     const menu = await this.getMenuById(id);
 
     // Delete menu (cascade will handle children)
@@ -329,53 +349,64 @@ export class MenuService {
     });
 
     // Reorder siblings
-    await this.reorderSiblings(menu.parentId);
+    await this.reorderSiblings(menu.parentId, menu.position);
 
     return { message: 'Menu deleted successfully' };
   }
 
   // Bulk delete menus
-  async deleteMultipleMenus(ids: string[]) {
+  async deleteMultipleMenus(ids: bigint[]) {
     // Get all menus to find parent IDs for reordering
     const menus = await prisma.menu.findMany({
       where: { id: { in: ids } },
-      select: { id: true, parentId: true },
+      select: { id: true, parentId: true, position: true },
     });
 
-    const parentIds = [...new Set(menus.map((m) => m.parentId))];
+    const parentPositionPairs = Array.from(new Set(
+      menus.map((m) => `${m.parentId?.toString() || 'null'}_${m.position}`)
+    ));
 
     // Delete menus
     await prisma.menu.deleteMany({
       where: { id: { in: ids } },
     });
 
-    // Reorder siblings for each parent
-    for (const parentId of parentIds) {
-      await this.reorderSiblings(parentId);
+    // Reorder siblings for each parent-position pair
+    for (const pair of parentPositionPairs) {
+      const [parentIdStr, position] = pair.split('_');
+      const parentId = parentIdStr === 'null' ? null : (parentIdStr ? BigInt(parentIdStr) : null);
+      await this.reorderSiblings(parentId, position as MenuPosition);
     }
 
-    return { message: `${ids.length} menus deleted successfully` };
+    return { message: `${ids.length} menu(s) deleted successfully` };
   }
 
   // Toggle menu status
-  async toggleMenuStatus(id: string) {
+  async toggleMenuStatus(id: bigint) {
     const menu = await this.getMenuById(id);
-    const newStatus = menu.status === MenuStatus.ACTIVE ? MenuStatus.INACTIVE : MenuStatus.ACTIVE;
+    const newStatus = !menu.isActive;
 
-    // If setting to inactive, also set children to inactive
-    if (newStatus === MenuStatus.INACTIVE) {
-      await this.setChildrenStatus(id, MenuStatus.INACTIVE);
+    // If setting to inactive, store original children states and deactivate all
+    if (!newStatus) {
+      await this.deactivateChildren(id);
+    } else {
+      // If activating, reactivate children (they will check their own previous state)
+      await this.reactivateChildren(id);
     }
 
     const updatedMenu = await prisma.menu.update({
       where: { id },
-      data: { status: newStatus },
+      data: { isActive: newStatus },
       include: {
-        page: {
+        parent: {
           select: {
             id: true,
             title: true,
-            slug: true,
+          },
+        },
+        _count: {
+          select: {
+            children: true,
           },
         },
       },
@@ -384,8 +415,8 @@ export class MenuService {
     return updatedMenu;
   }
 
-  // Recursively set children status
-  private async setChildrenStatus(parentId: string, status: MenuStatus) {
+  // Deactivate children when parent is deactivated
+  private async deactivateChildren(parentId: bigint) {
     const children = await prisma.menu.findMany({
       where: { parentId },
       select: { id: true },
@@ -394,15 +425,34 @@ export class MenuService {
     for (const child of children) {
       await prisma.menu.update({
         where: { id: child.id },
-        data: { status },
+        data: { isActive: false },
       });
 
-      // Recursively update grandchildren
-      await this.setChildrenStatus(child.id, status);
+      // Recursively deactivate grandchildren
+      await this.deactivateChildren(child.id);
     }
   }
 
-  // Batch update order
+  // Reactivate children when parent is activated (restore to active)
+  private async reactivateChildren(parentId: bigint) {
+    const children = await prisma.menu.findMany({
+      where: { parentId },
+      select: { id: true },
+    });
+
+    for (const child of children) {
+      // Activate the child
+      await prisma.menu.update({
+        where: { id: child.id },
+        data: { isActive: true },
+      });
+
+      // Recursively reactivate grandchildren
+      await this.reactivateChildren(child.id);
+    }
+  }
+
+  // Batch update order (for drag & drop)
   async updateMenuOrder(updates: MenuOrderUpdate[]) {
     // Validate no circular references
     for (const update of updates) {
@@ -414,7 +464,7 @@ export class MenuService {
 
         // Check nesting level
         const level = await this.getNestingLevel(update.parentId);
-        if (level >= 2) {
+        if (level >= 3) {
           throw new AppError(`Maximum nesting level exceeded for menu ${update.id}`, 400);
         }
       }
@@ -437,11 +487,16 @@ export class MenuService {
   }
 
   // Reorder siblings after deletion
-  private async reorderSiblings(parentId: string | null) {
+  private async reorderSiblings(parentId: bigint | null, position: MenuPosition) {
     const siblings = await prisma.menu.findMany({
-      where: { parentId: parentId || null },
+      where: { 
+        parentId: parentId || null,
+        position: position
+      },
       orderBy: { order: 'asc' },
     });
+
+    if (siblings.length === 0) return;
 
     await prisma.$transaction(
       siblings.map((sibling, index) =>
@@ -451,6 +506,36 @@ export class MenuService {
         })
       )
     );
+  }
+
+  // Get menus by position (header/footer)
+  async getMenusByPosition(position: MenuPosition, activeOnly: boolean = false): Promise<MenuTreeItem[]> {
+    const where: any = {
+      position: { in: [position, MenuPosition.BOTH] }
+    };
+
+    if (activeOnly) {
+      where.isActive = true;
+    }
+
+    const menus = await prisma.menu.findMany({
+      where,
+      orderBy: [
+        { order: 'asc' }
+      ],
+    });
+
+    // Filter: if parent is inactive and we want active only
+    if (activeOnly) {
+      const activeMenuIds = new Set(menus.map((m) => m.id.toString()));
+      const validMenus = menus.filter((menu) => {
+        if (!menu.parentId) return true;
+        return activeMenuIds.has(menu.parentId.toString());
+      });
+      return this.buildTree(validMenus);
+    }
+
+    return this.buildTree(menus);
   }
 }
 

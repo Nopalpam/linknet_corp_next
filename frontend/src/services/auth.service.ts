@@ -33,19 +33,21 @@ export type LoginResponse = {
 export type ProfileResponse = {
   success: boolean;
   data: {
-    id: string;
-    email: string;
-    name: string;
-    firstName: string;
-    lastName: string;
-    avatar: string | null;
-    status: string;
-    roles: Array<{
+    user: {
       id: string;
+      email: string;
       name: string;
-      slug: string;
-    }>;
-    permissions: string[];
+      firstName: string;
+      lastName: string;
+      avatar: string | null;
+      status: string;
+      roles: Array<{
+        id: string;
+        name: string;
+        slug: string;
+      }>;
+      permissions: string[];
+    };
   };
 };
 

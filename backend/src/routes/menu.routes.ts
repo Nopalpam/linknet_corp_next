@@ -8,6 +8,7 @@ const router = Router();
 
 // Public routes
 router.get('/menu', menuController.getPublicMenus);
+router.get('/menu/position/:position', menuController.getMenusByPosition);
 
 // Protected CMS routes
 router.get(
@@ -15,6 +16,13 @@ router.get(
   authMiddleware,
   requirePermission(Permission.MENU_MANAGEMENT_READ),
   menuController.getMenus
+);
+
+router.get(
+  '/cms/menu/flat',
+  authMiddleware,
+  requirePermission(Permission.MENU_MANAGEMENT_READ),
+  menuController.getAllMenusFlat
 );
 
 router.get(
