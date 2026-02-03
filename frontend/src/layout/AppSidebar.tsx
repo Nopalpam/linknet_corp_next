@@ -50,47 +50,47 @@ const menuSections: MenuSection[] = [
   {
     label: "Main Components",
     items: [
-      {
-        icon: <BoxCubeIcon />,
-        name: "Awards",
-        path: "/awards",
-      },
-      {
-        icon: <TableIcon />,
-        name: "Management",
-        path: "/management",
-      },
-      {
-        icon: <ListIcon />,
-        name: "Report",
-        subItems: [
-          { name: "Report Type", path: "/report/type" },
-          { name: "Report Section", path: "/report/section" },
-          { name: "Report Item", path: "/report/item" },
-        ],
-      },
-      {
-        icon: <CalenderIcon />,
-        name: "Announcement",
-        subItems: [
-          { name: "Announcement Type", path: "/announcement/type" },
-          { name: "Announcement Section", path: "/announcement/section" },
-          { name: "Announcement Item", path: "/announcement/item" },
-        ],
-      },
+      // {
+      //   icon: <BoxCubeIcon />,
+      //   name: "Awards",
+      //   path: "/awards",
+      // },
+      // {
+      //   icon: <TableIcon />,
+      //   name: "Management",
+      //   path: "/management",
+      // },
+      // {
+      //   icon: <ListIcon />,
+      //   name: "Report",
+      //   subItems: [
+      //     { name: "Report Type", path: "/report/type" },
+      //     { name: "Report Section", path: "/report/section" },
+      //     { name: "Report Item", path: "/report/item" },
+      //   ],
+      // },
+      // {
+      //   icon: <CalenderIcon />,
+      //   name: "Announcement",
+      //   subItems: [
+      //     { name: "Announcement Type", path: "/announcement/type" },
+      //     { name: "Announcement Section", path: "/announcement/section" },
+      //     { name: "Announcement Item", path: "/announcement/item" },
+      //   ],
+      // },
       {
         icon: <PageIcon />,
-        name: "News",
+        name: "News (On-Hold)",
         subItems: [
           { name: "News Category", path: "/news/category" },
           { name: "News Data", path: "/news/data" },
         ],
       },
-      {
-        icon: <BoxCubeIcon />,
-        name: "Career",
-        path: "/career",
-      },
+      // {
+      //   icon: <BoxCubeIcon />,
+      //   name: "Career",
+      //   path: "/career",
+      // },
       {
         icon: <TableIcon />,
         name: "Contact Us Data Bank",

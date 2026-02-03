@@ -91,7 +91,7 @@ const QuickSummary = () => {
           <p className="text-sm text-bodydark">Real-time system health</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
           {summaryCards.map((card, index) => {
             const Icon = card.icon;
             const colorClasses = getColorClasses(card.color);
@@ -131,7 +131,7 @@ const QuickSummary = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="hidden rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="mb-6">
           <h4 className="text-xl font-semibold text-black dark:text-white">
             Quick Overview

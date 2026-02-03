@@ -775,92 +775,100 @@ async function main() {
   // Header Menu
   await prisma.menu.create({
     data: {
-      title: { en: 'Home', id: 'Beranda' },
+      title: 'Home',
+      translations: { en: { title: 'Home' }, id: { title: 'Beranda' } },
       slug: 'home',
       url: '/',
       order: 1,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 
   const aboutMenu = await prisma.menu.create({
     data: {
-      title: { en: 'About Us', id: 'Tentang Kami' },
+      title: 'About Us',
+      translations: { en: { title: 'About Us' }, id: { title: 'Tentang Kami' } },
       slug: 'about',
       url: '/about',
       order: 2,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'DROPDOWN',
+      isActive: true,
     },
   });
 
   await prisma.menu.create({
     data: {
       parentId: aboutMenu.id,
-      title: { en: 'Company Profile', id: 'Profil Perusahaan' },
+      title: 'Company Profile',
+      translations: { en: { title: 'Company Profile' }, id: { title: 'Profil Perusahaan' } },
       slug: 'company-profile',
       url: '/about/company-profile',
       order: 1,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 
   await prisma.menu.create({
     data: {
       parentId: aboutMenu.id,
-      title: { en: 'Management', id: 'Manajemen' },
+      title: 'Management',
+      translations: { en: { title: 'Management' }, id: { title: 'Manajemen' } },
       slug: 'management',
       url: '/about/management',
       order: 2,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 
   await prisma.menu.create({
     data: {
       parentId: aboutMenu.id,
-      title: { en: 'Awards', id: 'Penghargaan' },
+      title: 'Awards',
+      translations: { en: { title: 'Awards' }, id: { title: 'Penghargaan' } },
       slug: 'awards',
       url: '/about/awards',
       order: 3,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 
   await prisma.menu.create({
     data: {
-      title: { en: 'News', id: 'Berita' },
+      title: 'News',
+      translations: { en: { title: 'News' }, id: { title: 'Berita' } },
       slug: 'news',
       url: '/news',
       order: 3,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 
   await prisma.menu.create({
     data: {
-      title: { en: 'Careers', id: 'Karir' },
+      title: 'Careers',
+      translations: { en: { title: 'Careers' }, id: { title: 'Karir' } },
       slug: 'careers',
       url: '/careers',
       order: 4,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 
   await prisma.menu.create({
     data: {
-      title: { en: 'Contact', id: 'Kontak' },
+      title: 'Contact',
+      translations: { en: { title: 'Contact' }, id: { title: 'Kontak' } },
       slug: 'contact',
       url: '/contact',
       order: 5,
-      type: 'INTERNAL',
-      status: 'ACTIVE',
+      type: 'LINK',
+      isActive: true,
     },
   });
 

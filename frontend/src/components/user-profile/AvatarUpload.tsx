@@ -98,7 +98,8 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
             <Image
               width={96}
               height={96}
-              src={getAvatarUrl()}
+              // src={getAvatarUrl()}
+              src="/images/user/ownerzz.jpg"
               alt={profile.fullName}
               className="object-cover w-full h-full"
               onError={() => setImageError(true)}
@@ -108,7 +109,8 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
             <Image
               width={96}
               height={96}
-              src="/images/user/owner.jpg"
+              // src="/images/user/owner.jpg"
+              src="/images/user/ownerzz.jpg"
               alt={profile.fullName}
               className="object-cover w-full h-full"
             />

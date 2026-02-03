@@ -129,8 +129,8 @@ const VisitorChart = () => {
             onClick={() => setSelectedPeriod("day")}
             className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
               selectedPeriod === "day"
-                ? "bg-primary text-white"
-                : "bg-gray-2 text-black dark:bg-meta-4 dark:text-white"
+                ? "bg-gray-50 text-blue-600"
+                : "bg-primary text-black dark:bg-meta-4 dark:text-white"
             }`}
           >
             Daily
@@ -139,8 +139,8 @@ const VisitorChart = () => {
             onClick={() => setSelectedPeriod("week")}
             className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
               selectedPeriod === "week"
-                ? "bg-primary text-white"
-                : "bg-gray-2 text-black dark:bg-meta-4 dark:text-white"
+                ? "bg-gray-50 text-blue-600"
+                : "bg-primary text-black dark:bg-meta-4 dark:text-white"
             }`}
           >
             Weekly
