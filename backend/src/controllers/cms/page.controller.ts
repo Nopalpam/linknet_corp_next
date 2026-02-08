@@ -72,8 +72,14 @@ export const saveComponents = async (req: Request, res: Response, next: NextFunc
         return;
       }
       const { components } = req.body;
+      
+      if (!Array.isArray(components)) {
+        res.status(400).json({ success: false, message: 'Components must be an array' });
+        return;
+      }
+      
       const result = await pageService.savePageComponents(id, components);
-      res.json({ success: true, data: result });
+      res.json({ success: true, message: 'Components saved successfully', data: result });
   } catch (error) {
       next(error);
   }

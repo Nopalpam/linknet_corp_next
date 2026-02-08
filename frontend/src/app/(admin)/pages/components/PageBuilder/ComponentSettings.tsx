@@ -2,6 +2,7 @@
 
 import React from "react";
 import { usePageBuilder, type ComponentSchema } from "./EnhancedPageBuilderContext";
+import { normalizeComponentType, getDisplayName } from "./componentRegistry";
 
 export default function ComponentSettings() {
   const { selectedComponent, updateComponent } = usePageBuilder();
@@ -34,9 +35,46 @@ export default function ComponentSettings() {
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
             No Component Selected
           </h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">
             Select a component from the canvas to edit its properties
           </p>
+        </div>
+
+        {/* Keyboard Shortcuts */}
+        <div className="mt-8 space-y-3">
+          <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">
+            Keyboard Shortcuts
+          </h4>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Delete</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Del</kbd>
+            </div>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Duplicate</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Ctrl+D</kbd>
+            </div>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Copy</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Ctrl+C</kbd>
+            </div>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Paste</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Ctrl+V</kbd>
+            </div>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Undo</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Ctrl+Z</kbd>
+            </div>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Redo</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Ctrl+Y</kbd>
+            </div>
+            <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <span className="text-gray-600 dark:text-gray-400">Save</span>
+              <kbd className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-300 font-mono text-xs">Ctrl+S</kbd>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -47,7 +85,10 @@ export default function ComponentSettings() {
   };
 
   const renderSettings = () => {
-    switch (selectedComponent.type) {
+    // Normalisasi type untuk menangani alias
+    const normalizedType = normalizeComponentType(selectedComponent.type);
+    
+    switch (normalizedType) {
       case "section":
         return (
           <>
@@ -250,8 +291,197 @@ export default function ComponentSettings() {
           </>
         );
 
+      case "hero-section":
+        return (
+          <>
+            <SettingField
+              label="Title"
+              type="text"
+              value={selectedComponent.props.title}
+              onChange={(value) => handleChange("title", value)}
+            />
+            <SettingField
+              label="Subtitle"
+              type="textarea"
+              value={selectedComponent.props.subtitle}
+              onChange={(value) => handleChange("subtitle", value)}
+            />
+            <SettingField
+              label="Background Image URL"
+              type="text"
+              value={selectedComponent.props.backgroundImage}
+              onChange={(value) => handleChange("backgroundImage", value)}
+              placeholder="https://example.com/hero.jpg"
+            />
+            <SettingField
+              label="Alignment"
+              type="select"
+              value={selectedComponent.props.alignment}
+              onChange={(value) => handleChange("alignment", value)}
+              options={[
+                { value: "left", label: "Left" },
+                { value: "center", label: "Center" },
+                { value: "right", label: "Right" },
+              ]}
+            />
+            <div>
+              <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <input
+                  type="checkbox"
+                  checked={selectedComponent.props.showButton}
+                  onChange={(e) => handleChange("showButton", e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Show Button
+              </label>
+            </div>
+            {selectedComponent.props.showButton && (
+              <>
+                <SettingField
+                  label="Button Text"
+                  type="text"
+                  value={selectedComponent.props.buttonText}
+                  onChange={(value) => handleChange("buttonText", value)}
+                />
+                <SettingField
+                  label="Button Link"
+                  type="text"
+                  value={selectedComponent.props.buttonLink}
+                  onChange={(value) => handleChange("buttonLink", value)}
+                  placeholder="https://example.com"
+                />
+              </>
+            )}
+          </>
+        );
+
+      case "pricing-section":
+        return (
+          <>
+            <SettingField
+              label="Section Title"
+              type="text"
+              value={selectedComponent.props.title}
+              onChange={(value) => handleChange("title", value)}
+            />
+            
+            <div className="mt-4 space-y-4">
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                Pricing Plans
+              </h4>
+              
+              {selectedComponent.props.plans?.map((plan: any, index: number) => (
+                <div
+                  key={index}
+                  className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Plan {index + 1}: {plan.name}
+                    </h5>
+                    <button
+                      onClick={() => {
+                        const newPlans = [...selectedComponent.props.plans];
+                        newPlans.splice(index, 1);
+                        handleChange("plans", newPlans);
+                      }}
+                      className="text-red-600 hover:text-red-700 text-xs"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  
+                  <input
+                    type="text"
+                    value={plan.name}
+                    onChange={(e) => {
+                      const newPlans = [...selectedComponent.props.plans];
+                      newPlans[index].name = e.target.value;
+                      handleChange("plans", newPlans);
+                    }}
+                    placeholder="Plan Name"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-700 dark:text-white"
+                  />
+                  
+                  <input
+                    type="text"
+                    value={plan.price}
+                    onChange={(e) => {
+                      const newPlans = [...selectedComponent.props.plans];
+                      newPlans[index].price = e.target.value;
+                      handleChange("plans", newPlans);
+                    }}
+                    placeholder="Price (e.g., $99)"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-700 dark:text-white"
+                  />
+                  
+                  <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={plan.isFeatured}
+                      onChange={(e) => {
+                        const newPlans = [...selectedComponent.props.plans];
+                        newPlans[index].isFeatured = e.target.checked;
+                        handleChange("plans", newPlans);
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    Featured Plan
+                  </label>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Features (one per line)
+                    </label>
+                    <textarea
+                      value={plan.features?.join('\n') || ''}
+                      onChange={(e) => {
+                        const newPlans = [...selectedComponent.props.plans];
+                        newPlans[index].features = e.target.value.split('\n').filter(f => f.trim());
+                        handleChange("plans", newPlans);
+                      }}
+                      rows={4}
+                      placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              <button
+                onClick={() => {
+                  const newPlans = [
+                    ...(selectedComponent.props.plans || []),
+                    {
+                      name: "New Plan",
+                      price: "$0",
+                      features: ["Feature 1", "Feature 2"],
+                      isFeatured: false,
+                    },
+                  ];
+                  handleChange("plans", newPlans);
+                }}
+                className="w-full px-3 py-2 text-sm font-medium text-brand-600 bg-brand-50 dark:bg-brand-900/20 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/30 transition"
+              >
+                + Add Plan
+              </button>
+            </div>
+          </>
+        );
+
       default:
-        return <p className="text-sm text-gray-600">No settings available</p>;
+        // Jangan tampilkan "No settings available" untuk component yang valid
+        // Ini hanya untuk component yang benar-benar tidak dikenali
+        return (
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-1">
+              Component type: {selectedComponent.type}
+            </p>
+            <p className="text-xs text-yellow-700 dark:text-yellow-300">
+              This component type does not have custom settings yet.
+            </p>
+          </div>
+        );
     }
   };
 
@@ -262,7 +492,7 @@ export default function ComponentSettings() {
           Component Settings
         </h3>
         <p className="text-xs text-gray-600 dark:text-gray-400">
-          Editing: <span className="font-medium">{selectedComponent.type}</span>
+          Editing: <span className="font-medium">{getDisplayName(selectedComponent.type)}</span>
         </p>
       </div>
 

@@ -6,6 +6,7 @@ import { pagesService, Page, UpdatePageData } from "@/services/pages.service";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import PageBuilderModal from "../components/PageBuilderModal";
+import ComponentPreview from "../components/PageBuilder/ComponentPreview";
 
 export default function EditPagePage() {
   const params = useParams();
@@ -27,6 +28,9 @@ export default function EditPagePage() {
     metaKeywords: "",
   });
 
+  // Track component count from loaded page
+  const [componentCount, setComponentCount] = useState(0);
+
   // Fetch page data
   useEffect(() => {
     const fetchPage = async () => {
@@ -42,6 +46,8 @@ export default function EditPagePage() {
           metaDescription: response.data.metaDescription || "",
           metaKeywords: response.data.metaKeywords || "",
         });
+        // Track component count from relation
+        setComponentCount(response.data.components?.length || 0);
       } catch (error: any) {
         toast.error(error.message || "Failed to fetch page");
         router.push("/pages");
@@ -58,7 +64,7 @@ export default function EditPagePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
+    if (!formData.title?.trim()) {
       toast.error("Title is required");
       return;
     }
@@ -144,13 +150,52 @@ export default function EditPagePage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No Content Yet
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Click &ldquo;Open Page Builder&rdquo; to start building your page with
-                    drag-and-drop components.
-                  </p>
+                  {componentCount > 0 ? (
+                    <>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        {componentCount} Component{componentCount !== 1 ? 's' : ''}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        This page has {componentCount} component{componentCount !== 1 ? 's' : ''}.
+                        Click &ldquo;Open Page Builder&rdquo; to edit.
+                      </p>
+                      
+                      {/* Component Preview List */}
+                      {page.components && page.components.length > 0 && (
+                        <div className="mt-6 space-y-2 text-left">
+                          <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">
+                            Components Preview
+                          </h4>
+                          {page.components.slice(0, 5).map((comp, index) => (
+                            <div
+                              key={comp.id}
+                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                            >
+                              <ComponentPreview 
+                                type={comp.type} 
+                                data={typeof comp.data === 'string' ? JSON.parse(comp.data) : comp.data}
+                              />
+                            </div>
+                          ))}
+                          {page.components.length > 5 && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2">
+                              + {page.components.length - 5} more component{page.components.length - 5 !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        No Content Yet
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Click &ldquo;Open Page Builder&rdquo; to start building your page with
+                        drag-and-drop components.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -227,7 +272,6 @@ export default function EditPagePage() {
                   >
                     <option value="DRAFT">Draft</option>
                     <option value="PUBLISHED">Published</option>
-                    <option value="ARCHIVED">Archived</option>
                   </select>
                 </div>
 
@@ -320,7 +364,16 @@ export default function EditPagePage() {
       {/* Page Builder Modal */}
       <PageBuilderModal
         isOpen={isBuilderOpen}
-        onClose={() => setIsBuilderOpen(false)}
+        onClose={() => {
+          setIsBuilderOpen(false);
+          // Refresh page data to update component count and preview
+          pagesService.getPageById(pageId).then((response) => {
+            setPage(response.data);
+            setComponentCount(response.data.components?.length || 0);
+          }).catch((error) => {
+            console.error('Failed to refresh page data:', error);
+          });
+        }}
         pageId={pageId}
       />
     </>

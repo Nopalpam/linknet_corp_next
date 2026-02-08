@@ -9,61 +9,111 @@ export interface Page {
   id: string;
   title: string;
   slug: string;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status: 'DRAFT' | 'PUBLISHED';
+  template?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  ogImage?: string;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
-  components?: string; // JSON string of component schema
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  // Components from PageComponent relation (returned by backend)
+  components?: PageComponent[];
+  _count?: {
+    components: number;
+  };
+}
+
+/**
+ * PageComponent maps to the `page_components` table (legacy schema).
+ * - type (component_type): e.g. 'hero-section', 'text-block', 'news_highlight'
+ * - data (component_data): JSON object with component configuration
+ * - order (sort_order): display order
+ * - isVisible (is_visible): visibility toggle
+ */
+export interface PageComponent {
+  id: string;
+  pageId?: string;
+  type: string;
+  data: Record<string, any>;
+  order: number;
+  isVisible?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreatePageData {
   title: string;
-  slug: string;
-  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  slug?: string;
+  status?: 'DRAFT' | 'PUBLISHED';
+  template?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
-  components?: string; // JSON string
+  ogImage?: string;
 }
 
-export interface UpdatePageData extends CreatePageData {
-  id?: string;
+export interface UpdatePageData {
+  title?: string;
+  slug?: string;
+  status?: 'DRAFT' | 'PUBLISHED';
+  template?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  ogImage?: string;
 }
 
-export interface PageComponent {
-  id: string;
-  pageId: string;
-  componentType: string;
+/**
+ * Component data sent from Page Builder to backend.
+ * Maps frontend ComponentSchema → backend PageComponent create format.
+ * - type: component_type (e.g. 'heading', 'section', 'hero-section')
+ * - data: component_data (JSON object with all props)
+ * - isVisible: is_visible flag
+ * - children: nested components (flattened before save)
+ */
+export interface SaveComponentData {
+  type: string;
   data: Record<string, any>;
-  order: number;
+  isVisible?: boolean;
 }
 
 class PagesService extends BaseService {
   /**
    * Get all pages (CMS)
    */
-  async getAllPages(status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'): Promise<{ data: Page[] }> {
-    const url = status 
-      ? `${this.getApiUrl('/cms/pages')}?status=${status}`
+  async getAllPages(params?: { status?: string; search?: string; page?: number; limit?: number }): Promise<{ success: boolean; data: Page[]; pagination?: any }> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    
+    const queryString = searchParams.toString();
+    const url = queryString 
+      ? `${this.getApiUrl('/cms/pages')}?${queryString}`
       : this.getApiUrl('/cms/pages');
     
     return this.fetchWithAuth(url);
   }
 
   /**
-   * Get single page by ID (CMS)
+   * Get single page by ID (CMS) - includes components relation
    */
-  async getPageById(id: string): Promise<{ data: Page }> {
+  async getPageById(id: string): Promise<{ success: boolean; data: Page }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}`));
   }
 
   /**
    * Create new page
    */
-  async createPage(data: CreatePageData): Promise<{ data: Page; message: string }> {
+  async createPage(data: CreatePageData): Promise<{ success: boolean; data: Page; message: string }> {
     return this.fetchWithAuth(this.getApiUrl('/cms/pages'), {
       method: 'POST',
       body: JSON.stringify(data),
@@ -71,9 +121,9 @@ class PagesService extends BaseService {
   }
 
   /**
-   * Update existing page
+   * Update existing page (metadata only, not components)
    */
-  async updatePage(id: string, data: UpdatePageData): Promise<{ data: Page; message: string }> {
+  async updatePage(id: string, data: UpdatePageData): Promise<{ success: boolean; data: Page; message: string }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}`), {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -83,16 +133,24 @@ class PagesService extends BaseService {
   /**
    * Delete page
    */
-  async deletePage(id: string): Promise<{ message: string }> {
+  async deletePage(id: string): Promise<{ success: boolean; message: string }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}`), {
       method: 'DELETE',
     });
   }
 
   /**
-   * Save page components
+   * Save page components (Replace All Strategy)
+   * Uses PUT /api/v1/cms/pages/:id/components
+   * 
+   * This maps to the legacy `page_components` table structure:
+   * - Deletes all existing components for the page
+   * - Re-creates them with new data and correct sort_order
+   * 
+   * @param id - Page ID
+   * @param components - Array of components to save
    */
-  async savePageComponents(id: string, components: PageComponent[]): Promise<{ message: string }> {
+  async savePageComponents(id: string, components: SaveComponentData[]): Promise<{ success: boolean; data: Page; message?: string }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}/components`), {
       method: 'PUT',
       body: JSON.stringify({ components }),
@@ -100,24 +158,42 @@ class PagesService extends BaseService {
   }
 
   /**
-   * Get public page by slug
+   * Get public page by slug (no auth required for rendering)
    */
-  async getPublicPageBySlug(slug: string): Promise<{ data: Page & { components: PageComponent[] } }> {
-    return this.fetchWithAuth(this.getApiUrl(`/pages/${slug}`));
+  async getPublicPageBySlug(slug: string): Promise<{ success: boolean; data: Page }> {
+    // Public pages endpoint doesn't require auth
+    const url = this.getApiUrl(`/pages/${slug}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Page not found' }));
+      throw new Error(error.message || 'Failed to fetch page');
+    }
+    return response.json();
   }
 
   /**
-   * Get page preview
+   * Get page preview by slug
    */
-  async getPagePreview(slug: string): Promise<{ data: Page & { components: PageComponent[] } }> {
-    return this.fetchWithAuth(this.getApiUrl(`/pages/preview/${slug}`));
+  async getPagePreview(slug: string, secret: string): Promise<{ success: boolean; data: Page }> {
+    const url = `${this.getApiUrl(`/pages/preview/${slug}`)}?secret=${encodeURIComponent(secret)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Preview not available' }));
+      throw new Error(error.message || 'Failed to fetch preview');
+    }
+    return response.json();
   }
 
   /**
-   * Get all published slugs
+   * Get all published page slugs (for static generation)
    */
-  async getPublishedSlugs(): Promise<{ data: string[] }> {
-    return this.fetchWithAuth(this.getApiUrl('/pages/slugs'));
+  async getPublishedSlugs(): Promise<{ success: boolean; data: string[] }> {
+    const url = this.getApiUrl('/pages/slugs');
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch published slugs');
+    }
+    return response.json();
   }
 }
 

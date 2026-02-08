@@ -18,7 +18,7 @@ export default function PagesListPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "DRAFT" | "PUBLISHED" | "ARCHIVED">("ALL");
+  const [filterStatus, setFilterStatus] = useState<"ALL" | "DRAFT" | "PUBLISHED">("ALL");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,7 +35,7 @@ export default function PagesListPage() {
     try {
       setLoading(true);
       const status = filterStatus === "ALL" ? undefined : filterStatus;
-      const response = await pagesService.getAllPages(status);
+      const response = await pagesService.getAllPages({ status });
       
       // Client-side filtering and pagination for now
       let filtered = response.data || [];
@@ -102,6 +102,7 @@ export default function PagesListPage() {
 
   const handleCreateSamplePage = async () => {
     try {
+      // Step 1: Create the page (metadata only)
       const response = await pagesService.createPage({
         title: 'Sample Linknet Page',
         slug: `sample-page-${Date.now()}`,
@@ -109,8 +110,18 @@ export default function PagesListPage() {
         metaTitle: 'Sample Page - Linknet Corporation',
         metaDescription: 'A beautiful sample page with pre-built components showcasing our services',
         metaKeywords: 'linknet, fiber optic, internet, sample',
-        components: getSamplePageJSON(),
       });
+      
+      // Step 2: Save sample components to the page via page_components table
+      const sampleComponents = JSON.parse(getSamplePageJSON());
+      if (Array.isArray(sampleComponents) && sampleComponents.length > 0) {
+        const componentsForSave = sampleComponents.map((comp: any) => ({
+          type: comp.type,
+          data: comp.props || {},
+          isVisible: true,
+        }));
+        await pagesService.savePageComponents(response.data.id, componentsForSave);
+      }
       
       toast.success("Sample page created! Redirecting to edit...");
       setTimeout(() => {
@@ -277,7 +288,6 @@ export default function PagesListPage() {
                 <option value="ALL">All Status</option>
                 <option value="DRAFT">Draft</option>
                 <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
               </select>
             </div>
           </div>

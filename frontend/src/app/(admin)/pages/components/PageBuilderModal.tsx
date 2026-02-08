@@ -15,7 +15,7 @@ interface PageBuilderModalProps {
 }
 
 function PageBuilderContent({ onClose, pageId }: { onClose: () => void; pageId: string }) {
-  const { components, saveComponents, saving } = usePageBuilder();
+  const { components, saveComponents, saving, canUndo } = usePageBuilder();
   const toast = useToast();
 
   const handleSave = async () => {
@@ -34,9 +34,16 @@ function PageBuilderContent({ onClose, pageId }: { onClose: () => void; pageId: 
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Page Builder
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Page Builder
+              </h2>
+              {canUndo && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded">
+                  Unsaved
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Build your page with drag-and-drop components
             </p>

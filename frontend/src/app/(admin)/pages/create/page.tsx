@@ -46,7 +46,7 @@ export default function CreatePagePage() {
       return;
     }
 
-    if (!formData.slug.trim()) {
+    if (!formData.slug?.trim()) {
       toast.error("Slug is required");
       return;
     }
@@ -138,7 +138,6 @@ export default function CreatePagePage() {
               >
                 <option value="DRAFT">Draft</option>
                 <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
               </select>
             </div>
 

@@ -9,6 +9,17 @@ import {
 } from './page.types';
 import { BadRequestError, NotFoundError } from '../../../utils/errors';
 
+/**
+ * @deprecated This service is NOT loaded by server.ts.
+ * The active page service is: backend/src/services/page.service.ts
+ * The active routes are: backend/src/routes/cms/page.routes.ts
+ * 
+ * This module exists as a reference but is NOT integrated into the application.
+ * All page/component operations go through:
+ * - backend/src/services/page.service.ts (page CRUD + savePageComponents)
+ * - backend/src/services/component.service.ts (individual component CRUD)
+ */
+
 export class PageService {
   constructor(private prisma: PrismaClient) {}
 

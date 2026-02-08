@@ -104,29 +104,62 @@ export class PageService {
 
   /**
    * Save page components (Replace All Strategy)
+   * 
+   * Maps to legacy page_components table structure:
+   * - component_type → type
+   * - component_data → data (JSONB in PostgreSQL)
+   * - sort_order → order (derived from array index)
+   * - is_visible → isVisible
+   * 
+   * Uses a transactional delete-all + create-many approach
+   * to ensure atomic replacement of all components.
    */
   async savePageComponents(pageId: string, components: any[]) {
+    // Verify page exists
+    const page = await prisma.page.findUnique({ where: { id: pageId } });
+    if (!page) throw new AppError('Page not found', 404);
+
+    console.log('📦 Saving page components:', {
+      pageId,
+      componentCount: components?.length || 0,
+      components: JSON.stringify(components, null, 2)
+    });
+
     return await prisma.$transaction(async (tx) => {
-        // Delete existing components
+        // Delete existing components for this page
         await tx.pageComponent.deleteMany({ where: { pageId } });
 
-        // Insert new ones
+        // Insert new components with correct sort_order
         if (components && components.length > 0) {
+            const componentsToCreate = components.map((c, index) => ({
+                pageId,
+                type: c.type,
+                // component_data: store all props including nested children as JSON
+                data: c.data || c.props || {},
+                // sort_order: derived from array position
+                order: index,
+                isVisible: c.isVisible ?? true
+            }));
+
+            console.log('💾 Creating components in DB:', JSON.stringify(componentsToCreate, null, 2));
+
             await tx.pageComponent.createMany({
-                data: components.map((c, index) => ({
-                    pageId,
-                    type: c.type,
-                    data: c.data || {},
-                    order: index,
-                    isVisible: c.isVisible ?? true
-                }))
+                data: componentsToCreate
             });
         }
         
-        return await tx.page.findUnique({
+        // Return updated page with components
+        const result = await tx.page.findUnique({
              where: { id: pageId },
-             include: { components: { orderBy: { order: 'asc' } } }
+             include: { 
+               components: { orderBy: { order: 'asc' } },
+               createdBy: { select: { id: true, firstName: true, lastName: true } }
+             }
         });
+
+        console.log('✅ Components saved successfully:', result?.components?.length || 0);
+        
+        return result;
     });
   }
 }

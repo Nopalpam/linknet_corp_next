@@ -1,9 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { pagesService } from "@/services/pages.service";
+import { pagesService, type PageComponent, type SaveComponentData } from "@/services/pages.service";
 import { useToast } from "@/context/ToastContext";
 import { useDebouncedCallback } from "use-debounce";
+import { 
+  normalizeComponentType, 
+  getComponentConfig, 
+  getDefaultProps,
+  isValidComponentType 
+} from "./componentRegistry";
 
 export interface ComponentSchema {
   id: string;
@@ -87,29 +93,58 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
   const hasUnsavedChanges = useRef(false);
 
   // Load components from backend
+  // Backend returns PageComponent[] from page_components table (legacy schema)
+  // We transform them to ComponentSchema[] for the page builder
   useEffect(() => {
     const loadComponents = async () => {
       try {
         setLoading(true);
         const response = await pagesService.getPageById(pageId);
         
-        // Transform backend data to component schema
+        console.log('📥 Loading page data:', response.data);
+        
+        // Transform backend PageComponent[] to frontend ComponentSchema[]
         let loadedComponents: ComponentSchema[] = [];
         
-        if (response.data.components) {
-          // Check if components is a string (JSON) or already parsed
-          const componentsData = typeof response.data.components === 'string' 
-            ? JSON.parse(response.data.components) 
-            : response.data.components;
+        if (response.data.components && Array.isArray(response.data.components)) {
+          // Components come from page_components table as PageComponent[]
+          // Each has: id, type (component_type), data (component_data), order (sort_order)
+          loadedComponents = response.data.components.map((comp: PageComponent) => {
+            // Parse data if it's a string (shouldn't be, but safety check)
+            let componentData = typeof comp.data === 'string' ? JSON.parse(comp.data) : (comp.data || {});
             
-          loadedComponents = Array.isArray(componentsData) 
-            ? componentsData.map((comp: any) => ({
-                id: comp.id,
-                type: comp.type,
-                props: comp.props || comp.data || {},
-                children: comp.children || undefined,
-              }))
-            : [];
+            // 🔧 NORMALISASI TYPE: hero → hero-section, pricing → pricing-section
+            const normalizedType = normalizeComponentType(comp.type);
+            
+            console.log('📦 Loading component:', {
+              id: comp.id,
+              originalType: comp.type,
+              normalizedType: normalizedType,
+              isValid: isValidComponentType(normalizedType),
+              data: componentData
+            });
+
+            // 🔧 MERGE dengan default props dari registry
+            const config = getComponentConfig(normalizedType);
+            if (config) {
+              // Merge: default props + data dari database
+              componentData = {
+                ...config.defaultProps,
+                ...componentData,
+              };
+            } else {
+              console.warn(`⚠️ Unknown component type: ${comp.type} (normalized: ${normalizedType})`);
+            }
+
+            return {
+              id: comp.id,
+              type: normalizedType, // Gunakan normalized type
+              props: componentData,
+              children: componentData.children || undefined,
+            };
+          });
+
+          console.log('✅ Loaded components:', loadedComponents);
         }
         
         setHistory({
@@ -120,7 +155,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
         
         setLastSaved(new Date());
       } catch (error: any) {
-        console.error("Failed to load components:", error);
+        console.error("❌ Failed to load components:", error);
         // Start with empty state if load fails
         setHistory({
           past: [],
@@ -156,13 +191,13 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
   }, []);
 
   // Clone component with new IDs
-  const cloneComponentWithNewIds = (component: ComponentSchema): ComponentSchema => {
+  const cloneComponentWithNewIds = useCallback((component: ComponentSchema): ComponentSchema => {
     return {
       ...component,
       id: generateId(),
-      children: component.children?.map(cloneComponentWithNewIds),
+      children: component.children?.map((child) => cloneComponentWithNewIds(child)),
     };
-  };
+  }, []);
 
   // Find component by ID
   const findComponent = useCallback((components: ComponentSchema[], id: string): ComponentSchema | null => {
@@ -177,7 +212,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
   }, []);
 
   // Update component in tree
-  const updateInTree = (
+  const updateInTree = useCallback((
     components: ComponentSchema[],
     id: string,
     updater: (comp: ComponentSchema) => ComponentSchema
@@ -194,25 +229,40 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       }
       return comp;
     });
-  };
+  }, []);
 
   // Remove component from tree
-  const removeFromTree = (components: ComponentSchema[], id: string): ComponentSchema[] => {
+  const removeFromTree = useCallback((components: ComponentSchema[], id: string): ComponentSchema[] => {
     return components
       .filter((comp) => comp.id !== id)
       .map((comp) => ({
         ...comp,
         children: comp.children ? removeFromTree(comp.children, id) : undefined,
       }));
-  };
+  }, []);
 
   // Add component
   const addComponent = useCallback(
     (component: Omit<ComponentSchema, "id">, parentId?: string) => {
+      // 🔧 NORMALISASI TYPE dan MERGE dengan default props
+      const normalizedType = normalizeComponentType(component.type);
+      const defaultProps = getDefaultProps(normalizedType);
+      
       const newComponent: ComponentSchema = {
         ...component,
         id: generateId(),
+        type: normalizedType, // Gunakan normalized type
+        props: {
+          ...defaultProps,      // Default props dari registry
+          ...component.props,   // Override dengan props yang diberikan
+        },
       };
+
+      console.log('➕ Adding component:', {
+        originalType: component.type,
+        normalizedType: normalizedType,
+        finalProps: newComponent.props,
+      });
 
       let newComponents: ComponentSchema[];
 
@@ -230,7 +280,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       addToHistory(newComponents);
       toast.success("Component added");
     },
-    [history.present, addToHistory, toast]
+    [history.present, addToHistory, updateInTree, toast]
   );
 
   // Update component
@@ -250,7 +300,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
         );
       }
     },
-    [history.present, addToHistory, selectedComponent]
+    [history.present, addToHistory, updateInTree, selectedComponent]
   );
 
   // Delete component
@@ -265,7 +315,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
 
       toast.success("Component deleted");
     },
-    [history.present, addToHistory, selectedComponent, toast]
+    [history.present, addToHistory, removeFromTree, selectedComponent, toast]
   );
 
   // Duplicate component
@@ -298,7 +348,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       addToHistory(newComponents);
       toast.success("Component duplicated");
     },
-    [history.present, addToHistory, findComponent, toast]
+    [history.present, addToHistory, findComponent, cloneComponentWithNewIds, toast]
   );
 
   // Copy component
@@ -337,7 +387,7 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       addToHistory(newComponents);
       toast.success("Component pasted");
     },
-    [copiedComponent, history.present, addToHistory, toast]
+    [copiedComponent, history.present, addToHistory, cloneComponentWithNewIds, updateInTree, toast]
   );
 
   // Select component
@@ -402,30 +452,65 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
     setSelectedComponent(null);
   }, []);
 
-  // Save components to backend
+  /**
+   * Flatten ComponentSchema[] tree into SaveComponentData[] for backend.
+   * The legacy page_components table stores a flat list with sort_order.
+   * Children/nested structures are stored inside component_data (JSON).
+   */
+  const flattenForSave = useCallback((components: ComponentSchema[]): SaveComponentData[] => {
+    const result = components.map((comp) => {
+      const componentData = {
+        ...comp.props,
+        // If component has children, store them in the data JSON
+        ...(comp.children && comp.children.length > 0
+          ? { children: comp.children.map(child => ({
+              id: child.id,
+              type: child.type,
+              props: child.props,
+              children: child.children,
+            })) }
+          : {}),
+      };
+
+      return {
+        type: comp.type,
+        data: componentData,
+        isVisible: true,
+      };
+    });
+
+    console.log('📋 Flattened components for save:', result);
+    return result;
+  }, []);
+
+  // Save components to backend using the page_components replace-all strategy
   const saveComponents = useCallback(async () => {
     try {
       setSaving(true);
       
-      // Transform to backend format - save as JSON string
-      const componentsJSON = JSON.stringify(history.present);
+      // Transform frontend ComponentSchema[] → backend SaveComponentData[]
+      const componentsToSave = flattenForSave(history.present);
       
-      await pagesService.updatePage(pageId, {
-        title: '', // Will be ignored by backend
-        slug: '', // Will be ignored by backend
-        components: componentsJSON,
+      console.log('🚀 Saving components to backend:', {
+        componentCount: componentsToSave.length,
+        components: componentsToSave
       });
+      
+      const result = await pagesService.savePageComponents(pageId, componentsToSave);
+      
+      console.log('✅ Save successful:', result);
       
       setLastSaved(new Date());
       hasUnsavedChanges.current = false;
       toast.success("Page content saved successfully");
     } catch (error: any) {
+      console.error('❌ Save failed:', error);
       toast.error(error.message || "Failed to save components");
       throw error;
     } finally {
       setSaving(false);
     }
-  }, [history.present, pageId, toast]);
+  }, [history.present, pageId, toast, flattenForSave]);
 
   // Auto-save with debounce
   const debouncedAutoSave = useDebouncedCallback(
@@ -434,17 +519,19 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       
       try {
         setSaving(true);
-        const componentsJSON = JSON.stringify(history.present);
+        const componentsToSave = flattenForSave(history.present);
         
-        await pagesService.updatePage(pageId, {
-          title: '', // Will be ignored by backend
-          slug: '', // Will be ignored by backend
-          components: componentsJSON,
+        console.log('🔄 Auto-saving components:', {
+          componentCount: componentsToSave.length,
+          components: componentsToSave
         });
+        
+        await pagesService.savePageComponents(pageId, componentsToSave);
         setLastSaved(new Date());
         hasUnsavedChanges.current = false;
+        console.log('✅ Auto-save successful');
       } catch (error) {
-        console.error("Auto-save failed:", error);
+        console.error("❌ Auto-save failed:", error);
       } finally {
         setSaving(false);
       }
@@ -452,11 +539,15 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
     5000 // Auto-save after 5 seconds of inactivity
   );
 
-  // Trigger auto-save when components change
+  // Trigger auto-save when components change, with cleanup to prevent memory leaks
   useEffect(() => {
     if (history.present.length > 0 && hasUnsavedChanges.current) {
       debouncedAutoSave();
     }
+    
+    return () => {
+      debouncedAutoSave.cancel();
+    };
   }, [history.present, debouncedAutoSave]);
 
   // Keyboard shortcuts
