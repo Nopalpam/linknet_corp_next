@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { usePageBuilder, type ComponentSchema } from "./EnhancedPageBuilderContext";
 import { normalizeComponentType, getDisplayName } from "./componentRegistry";
@@ -10,32 +10,78 @@ export default function PageCanvas() {
     usePageBuilder();
   const [isDragOver, setIsDragOver] = useState(false);
 
+  // Debug: Log component changes
+  useEffect(() => {
+    console.log('🖼️ Canvas components updated:', {
+      count: components.length,
+      components: components.map(c => ({ id: c.id, type: c.type })),
+      loading
+    });
+    
+    if (components.length > 0) {
+      console.log('✨ Canvas has components, should render now!');
+    }
+  }, [components, loading]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "copy";
-    setIsDragOver(true);
+    
+    if (!isDragOver) {
+      console.log('🎯 Drag over canvas');
+      setIsDragOver(true);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('👋 Drag leave canvas');
     setIsDragOver(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('⬇️ DROP EVENT TRIGGERED');
+    
     setIsDragOver(false);
 
     try {
-      const data = e.dataTransfer.getData("application/json");
-      if (data) {
-        const component = JSON.parse(data);
-        addComponent({
-          type: component.type,
-          props: component.props,
-        });
+      // Try to get data
+      const jsonData = e.dataTransfer.getData("application/json");
+      const textData = e.dataTransfer.getData("text/plain");
+      
+      console.log('📦 Drop data received:', { 
+        jsonData, 
+        textData,
+        types: Array.from(e.dataTransfer.types),
+        hasJsonData: !!jsonData,
+        hasTextData: !!textData
+      });
+      
+      if (!jsonData) {
+        console.error('❌ No JSON data in drop event!');
+        return;
       }
+      
+      const component = JSON.parse(jsonData);
+      console.log('✅ Parsed component:', component);
+      console.log('🚀 Calling addComponent with:', {
+        type: component.type,
+        props: component.props
+      });
+      
+      addComponent({
+        type: component.type,
+        props: component.props,
+      });
+      
+      console.log('✅ addComponent called successfully');
     } catch (error) {
-      console.error("Failed to parse dropped component:", error);
+      console.error("❌ Failed to process dropped component:", error);
+      console.error('Error details:', error);
     }
   };
 
@@ -82,7 +128,7 @@ export default function PageCanvas() {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {isDragOver 
               ? "Release to add the component to your page"
-              : "Drag components from the left panel or click to add them to your page"}
+              : "Drag components from the left panel to add them to your page"}
           </p>
         </div>
       </div>
@@ -156,6 +202,15 @@ function ComponentRenderer({
   const { addComponent } = usePageBuilder();
   const [isSectionDragOver, setIsSectionDragOver] = useState(false);
 
+  // Debug: Log when component renderer is called
+  useEffect(() => {
+    console.log('🎭 ComponentRenderer mounted:', {
+      id: component.id,
+      type: component.type,
+      isSelected
+    });
+  }, [component.id, component.type, isSelected]);
+
   const handleSectionDragOver = (e: React.DragEvent) => {
     if (component.type === "section") {
       e.preventDefault();
@@ -197,6 +252,13 @@ function ComponentRenderer({
   const renderComponent = () => {
     // Normalisasi type untuk menangani alias
     const normalizedType = normalizeComponentType(component.type);
+    
+    console.log('🎨 Rendering component:', {
+      id: component.id,
+      type: component.type,
+      normalizedType,
+      props: component.props
+    });
     
     switch (normalizedType) {
       case "section":
@@ -327,6 +389,7 @@ function ComponentRenderer({
         );
 
       case "hero-section":
+        console.log('🦸 Rendering hero-section with props:', component.props);
         return (
           <div
             style={{
@@ -524,6 +587,69 @@ function ComponentRenderer({
                   >
                     Choose Plan
                   </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "news_highlight":
+        return (
+          <div className={`py-12 ${component.props.bgSection || 'bg-gray-50'}`}>
+            {component.props.showIntro && (
+              <div className="text-center mb-8">
+                <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                  {component.props.introLabel || 'Latest News'}
+                </span>
+                <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                  {component.props.introTitle || 'Stay Updated'}
+                </h2>
+              </div>
+            )}
+            <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${component.props.gridCount || 3}, 1fr)` }}>
+              {/* Preview placeholder cards */}
+              {Array.from({ length: (component.props.featuredCount || 1) + (component.props.gridCount || 3) }).map((_, i) => (
+                <div key={i} className={`bg-white rounded-lg shadow-sm overflow-hidden ${i < (component.props.featuredCount || 1) ? 'col-span-2 row-span-2' : ''}`}>
+                  <div className="aspect-video bg-gray-200 flex items-center justify-center">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                  </div>
+                  <div className="p-4">
+                    <span className="text-xs text-blue-600 font-medium">Category</span>
+                    <h3 className="font-semibold text-gray-900 mt-1">News Title Placeholder</h3>
+                    <p className="text-sm text-gray-500 mt-2">This is a preview placeholder for news content...</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "news_list":
+        return (
+          <div className="py-8">
+            <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${component.props.gridColumns || 3}, 1fr)` }}>
+              {/* Preview placeholder cards */}
+              {Array.from({ length: component.props.itemsPerPage || 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                  <div className="aspect-video bg-gray-200 flex items-center justify-center">
+                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="p-4">
+                    {component.props.showCategory && (
+                      <span className="text-xs text-blue-600 font-medium">Category</span>
+                    )}
+                    <h3 className="font-semibold text-gray-900 mt-1 line-clamp-2">News Article Title {i + 1}</h3>
+                    {component.props.showExcerpt && (
+                      <p className="text-sm text-gray-500 mt-2 line-clamp-2">This is a preview placeholder for news excerpt content...</p>
+                    )}
+                    {component.props.showDate && (
+                      <span className="text-xs text-gray-400 mt-2 block">Feb 9, 2026</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

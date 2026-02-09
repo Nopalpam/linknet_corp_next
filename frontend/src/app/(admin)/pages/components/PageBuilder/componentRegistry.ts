@@ -162,6 +162,44 @@ export const COMPONENT_REGISTRY: Record<string, ComponentConfig> = {
       margin: "20px 0",
     },
   },
+
+  // ==================== NEWS HIGHLIGHT ====================
+  "news_highlight": {
+    type: "news_highlight",
+    aliases: ["news-highlight", "newsHighlight"],
+    displayName: "News Highlight",
+    category: "Dynamic",
+    icon: "news",
+    defaultProps: {
+      showIntro: true,
+      introLabel: "Latest News",
+      introTitle: "Stay Updated",
+      bgSection: "bg-gray-50",
+      featuredCount: 1,
+      gridCount: 3,
+      orderBy: "newsDate",
+      sortDirection: "desc",
+    },
+  },
+
+  // ==================== NEWS LIST ====================
+  "news_list": {
+    type: "news_list",
+    aliases: ["news-list", "newsList"],
+    displayName: "News List",
+    category: "Dynamic",
+    icon: "list",
+    defaultProps: {
+      categoryId: "",
+      itemsPerPage: 6,
+      orderBy: "newsDate",
+      sortDirection: "desc",
+      showDate: true,
+      showCategory: true,
+      showExcerpt: true,
+      gridColumns: 3,
+    },
+  },
 };
 
 /**

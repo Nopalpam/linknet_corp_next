@@ -19,11 +19,14 @@ function PageBuilderContent({ onClose, pageId }: { onClose: () => void; pageId: 
   const toast = useToast();
 
   const handleSave = async () => {
+    console.log('💾 Manual save triggered');
     try {
       await saveComponents();
+      console.log('✅ Manual save successful, closing modal');
       toast.success("Page saved successfully!");
       onClose();
     } catch (error) {
+      console.error('❌ Manual save failed:', error);
       toast.error("Failed to save page");
     }
   };
@@ -52,7 +55,13 @@ function PageBuilderContent({ onClose, pageId }: { onClose: () => void; pageId: 
         </div>
         
         <div className="flex items-center gap-4">
-          <AutoSaveIndicator />
+          {/* Auto-save disabled indicator */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+            <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Auto-save OFF - Use Save Button</span>
+          </div>
           <KeyboardShortcutsHint />
           
           <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-700">
@@ -111,16 +120,26 @@ export default function PageBuilderModal({
   onClose,
   pageId,
 }: PageBuilderModalProps) {
+  // Prevent backdrop click from bubbling
+  const handleBackdropClick = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose();
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center z-9999">
+    <div className="fixed inset-0 flex items-center justify-center z-[100001]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70" onClick={handleBackdropClick} />
 
       {/* Modal */}
-      <div className="relative w-full h-full max-w-[95vw] max-h-[95vh] bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
-        <PageBuilderProvider pageId={pageId}>
+      <div 
+        className="relative w-full h-full max-w-[95vw] max-h-[95vh] bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* CRITICAL: key={pageId} ensures Provider only remounts when pageId actually changes */}
+        <PageBuilderProvider key={pageId} pageId={pageId}>
           <PageBuilderContent onClose={onClose} pageId={pageId} />
         </PageBuilderProvider>
       </div>

@@ -49,34 +49,39 @@ const IconComponents: Record<string, React.ReactNode> = {
 };
 
 export default function ComponentLibrary() {
-  const { addComponent } = usePageBuilder();
   const [draggedComponent, setDraggedComponent] = React.useState<string | null>(null);
 
   // Get components from registry
   const componentsByCategory = getComponentsByCategory();
   const categories = Object.keys(componentsByCategory);
 
-  const handleAddComponent = (config: ComponentConfig) => {
-    addComponent({
+  const handleDragStart = (e: React.DragEvent, config: ComponentConfig) => {
+    console.log('🎨 DRAG START:', {
+      type: config.type,
+      displayName: config.displayName,
+      defaultProps: config.defaultProps
+    });
+    
+    e.dataTransfer.effectAllowed = "copy";
+    
+    const componentData = {
       type: config.type,
       props: config.defaultProps,
-    });
-  };
-
-  const handleDragStart = (e: React.DragEvent, config: ComponentConfig) => {
-    e.dataTransfer.effectAllowed = "copy";
-    e.dataTransfer.setData(
-      "application/json",
-      JSON.stringify({
-        type: config.type,
-        props: config.defaultProps,
-      })
-    );
+    };
+    
+    const jsonData = JSON.stringify(componentData);
+    console.log('📦 Setting drag data:', { jsonData, parsed: componentData });
+    
+    e.dataTransfer.setData("application/json", jsonData);
+    
+    // Also set as text for debugging
+    e.dataTransfer.setData("text/plain", config.type);
     
     setDraggedComponent(config.type);
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
+    console.log('🎨 DRAG END');
     setDraggedComponent(null);
   };
 
@@ -97,16 +102,15 @@ export default function ComponentLibrary() {
             </h4>
             <div className="space-y-2">
               {componentsByCategory[category].map((config) => (
-                <button
+                <div
                   key={config.type}
                   draggable
                   onDragStart={(e) => handleDragStart(e, config)}
                   onDragEnd={handleDragEnd}
-                  onClick={() => handleAddComponent(config)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition cursor-move ${
-                    draggedComponent === config.type ? "opacity-50 scale-95" : ""
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition cursor-move ${
+                    draggedComponent === config.type ? "opacity-50 scale-95 border-brand-500" : ""
                   }`}
-                  title={`Drag or click to add ${config.displayName}`}
+                  title={`Drag to canvas to add ${config.displayName}`}
                 >
                   <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded">
                     {IconComponents[config.icon] || IconComponents.section}
@@ -114,7 +118,7 @@ export default function ComponentLibrary() {
                   <span className="font-medium text-gray-900 dark:text-white">
                     {config.displayName}
                   </span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -123,7 +127,7 @@ export default function ComponentLibrary() {
 
       <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
         <p className="text-xs text-blue-800 dark:text-blue-300">
-          <strong>Tip:</strong> Drag & drop or click components to add them to your page.
+          <strong>Tip:</strong> Drag components to the canvas to add them to your page.
         </p>
       </div>
     </div>

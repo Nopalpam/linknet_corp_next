@@ -70,6 +70,9 @@ function SingleComponentRenderer({ component }: { component: PageComponent }) {
       return <BusinessTabComponent data={data} />;
     case "news_highlight":
       return <NewsHighlightComponent data={data} />;
+    case "news_list":
+    case "news-list":
+      return <NewsListComponent data={data} />;
     case "text-block":
     case "text_block":
       return <TextBlockComponent data={data} />;
@@ -380,35 +383,317 @@ function BusinessTabComponent({ data }: { data: Record<string, any> }) {
 }
 
 /**
- * News Highlight - shows recent news
- * Legacy type: 'news_highlight' (from page_components.sql)
+ * News Highlight - shows highlighted/recent news
+ * Fetches data from the API dynamically
  */
 function NewsHighlightComponent({ data }: { data: Record<string, any> }) {
-  const { intro_label, intro_title, bg_section, grid_count = 3, featured_count = 1 } = data;
+  const { 
+    showIntro = true,
+    introLabel = "Latest News",
+    introTitle = "Stay Updated",
+    bgSection = "bg-gray-50",
+    featuredCount = 1,
+    gridCount = 3,
+    // Legacy field support
+    intro_label,
+    intro_title,
+    bg_section,
+    featured_count,
+    grid_count,
+  } = data;
+
+  const [news, setNews] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  // Use legacy fields if new ones not provided
+  const finalIntroLabel = introLabel || intro_label;
+  const finalIntroTitle = introTitle || intro_title;
+  const finalBgSection = bgSection || bg_section || "bg-gray-50";
+  const finalFeaturedCount = featuredCount || featured_count || 1;
+  const finalGridCount = gridCount || grid_count || 3;
+
+  React.useEffect(() => {
+    async function fetchNews() {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const response = await fetch(`${API_URL}/news/highlighted`);
+        if (response.ok) {
+          const result = await response.json();
+          setNews(result.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch highlighted news:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNews();
+  }, []);
+
+  const totalItems = finalFeaturedCount + finalGridCount;
+  const displayNews = news.slice(0, totalItems);
+  const featuredNews = displayNews.slice(0, finalFeaturedCount);
+  const gridNews = displayNews.slice(finalFeaturedCount);
 
   return (
-    <section className={`py-16 md:py-24 ${bg_section || "bg-gray-50"}`}>
+    <section className={`py-16 md:py-24 ${finalBgSection}`}>
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          {intro_label && (
-            <span className="text-sm font-semibold text-brand-600 uppercase tracking-wider">
-              {intro_label}
-            </span>
-          )}
-          {intro_title && (
-            <h2 className="text-3xl md:text-4xl font-bold mt-2">{intro_title}</h2>
-          )}
-        </div>
-        {/* News items would be fetched separately or passed in data */}
-        <div className={`grid grid-cols-1 md:grid-cols-${grid_count} gap-6`}>
-          {Array.from({ length: grid_count + featured_count }).map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
-              <div className="h-40 bg-gray-200 rounded-lg mb-4" />
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-gray-200 rounded w-1/2" />
+        {showIntro && (finalIntroLabel || finalIntroTitle) && (
+          <div className="text-center mb-12">
+            {finalIntroLabel && (
+              <span className="text-sm font-semibold text-blue-600 uppercase tracking-wider">
+                {finalIntroLabel}
+              </span>
+            )}
+            {finalIntroTitle && (
+              <h2 className="text-3xl md:text-4xl font-bold mt-2">{finalIntroTitle}</h2>
+            )}
+          </div>
+        )}
+
+        {loading ? (
+          <div className={`grid grid-cols-1 md:grid-cols-${finalGridCount} gap-6`}>
+            {Array.from({ length: totalItems }).map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+                <div className="h-40 bg-gray-200 rounded-lg mb-4" />
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Featured News */}
+            {featuredNews.length > 0 && (
+              <div className="grid grid-cols-1 gap-6">
+                {featuredNews.map((item: any) => (
+                  <a
+                    key={item.id}
+                    href={`/news/${item.slug || item.id}`}
+                    className="group relative overflow-hidden rounded-xl bg-white shadow-lg hover:shadow-xl transition"
+                  >
+                    <div className="md:flex">
+                      <div className="md:w-1/2 aspect-video md:aspect-auto">
+                        {item.thumbnail ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={item.thumbnail}
+                            alt={item.titleEn || item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600" />
+                        )}
+                      </div>
+                      <div className="p-6 md:w-1/2 flex flex-col justify-center">
+                        <span className="text-sm text-blue-600 font-medium mb-2">
+                          {item.category?.nameEn || "News"}
+                        </span>
+                        <h3 className="text-2xl font-bold mb-3 group-hover:text-blue-600 transition">
+                          {item.titleEn || item.title}
+                        </h3>
+                        <p className="text-gray-600 line-clamp-3 mb-4">
+                          {item.excerptEn || item.excerpt}
+                        </p>
+                        <div className="text-sm text-gray-500">
+                          {new Date(item.newsDate || item.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Grid News */}
+            {gridNews.length > 0 && (
+              <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${finalGridCount} gap-6`}>
+                {gridNews.map((item: any) => (
+                  <a
+                    key={item.id}
+                    href={`/news/${item.slug || item.id}`}
+                    className="group bg-white rounded-lg shadow-sm hover:shadow-md transition overflow-hidden"
+                  >
+                    <div className="aspect-video">
+                      {item.thumbnail ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={item.thumbnail}
+                          alt={item.titleEn || item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <span className="text-xs text-blue-600 font-medium">
+                        {item.category?.nameEn || "News"}
+                      </span>
+                      <h4 className="font-semibold mt-1 mb-2 line-clamp-2 group-hover:text-blue-600 transition">
+                        {item.titleEn || item.title}
+                      </h4>
+                      <div className="text-sm text-gray-500">
+                        {new Date(item.newsDate || item.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {displayNews.length === 0 && !loading && (
+              <div className="text-center py-12 text-gray-500">
+                No news available at the moment.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * News List - shows paginated news list
+ * Fetches data from the API dynamically
+ */
+function NewsListComponent({ data }: { data: Record<string, any> }) {
+  const {
+    categoryId = "",
+    itemsPerPage = 6,
+    orderBy = "newsDate",
+    sortDirection = "desc",
+    showDate = true,
+    showCategory = true,
+    showExcerpt = true,
+    gridColumns = 3,
+  } = data;
+
+  const [news, setNews] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [page, setPage] = React.useState(1);
+  const [totalPages, setTotalPages] = React.useState(1);
+
+  React.useEffect(() => {
+    async function fetchNews() {
+      try {
+        setLoading(true);
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: itemsPerPage.toString(),
+          orderBy,
+          sortDirection,
+          status: "PUBLISHED",
+        });
+        if (categoryId) params.append("categoryId", categoryId);
+
+        const response = await fetch(`${API_URL}/news?${params}`);
+        if (response.ok) {
+          const result = await response.json();
+          setNews(result.data?.data || []);
+          setTotalPages(result.data?.pagination?.totalPages || 1);
+        }
+      } catch (error) {
+        console.error("Failed to fetch news:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNews();
+  }, [page, categoryId, itemsPerPage, orderBy, sortDirection]);
+
+  return (
+    <section className="py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        {loading ? (
+          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${gridColumns} gap-6`}>
+            {Array.from({ length: itemsPerPage }).map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+                <div className="h-40 bg-gray-200 rounded-lg mb-4" />
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${gridColumns} gap-6`}>
+              {news.map((item: any) => (
+                <a
+                  key={item.id}
+                  href={`/news/${item.slug || item.id}`}
+                  className="group bg-white rounded-lg shadow-sm hover:shadow-md transition overflow-hidden"
+                >
+                  <div className="aspect-video">
+                    {item.thumbnail ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.thumbnail}
+                        alt={item.titleEn || item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                    )}
+                  </div>
+                  <div className="p-4">
+                    {showCategory && (
+                      <span className="text-xs text-blue-600 font-medium">
+                        {item.category?.nameEn || "News"}
+                      </span>
+                    )}
+                    <h4 className="font-semibold mt-1 mb-2 line-clamp-2 group-hover:text-blue-600 transition">
+                      {item.titleEn || item.title}
+                    </h4>
+                    {showExcerpt && item.excerptEn && (
+                      <p className="text-sm text-gray-600 line-clamp-2 mb-2">{item.excerptEn}</p>
+                    )}
+                    {showDate && (
+                      <div className="text-sm text-gray-500">
+                        {new Date(item.newsDate || item.createdAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                </a>
+              ))}
             </div>
-          ))}
-        </div>
+
+            {news.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                No news available.
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                >
+                  Previous
+                </button>
+                <span className="px-4 py-2 text-sm text-gray-600">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

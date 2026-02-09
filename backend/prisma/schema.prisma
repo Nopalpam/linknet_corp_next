@@ -308,16 +308,22 @@ enum ContentStatus {
 
 model News {
   id              String        @id @default(uuid())
-  title           String
+  titleEn         String        @map("title_en")
+  titleId         String?       @map("title_id")
   slug            String        @unique
-  excerpt         String?       @db.Text
-  content         String        @db.Text
-  featuredImage   String?       @map("featured_image")
+  newsDate        DateTime      @map("news_date") @db.Date
+  thumbnail       String?       @map("news_thumbnail")
+  excerptEn       String?       @map("excerpt_en") @db.Text
+  excerptId       String?       @map("excerpt_id") @db.Text
+  contentEn       String        @map("content_en") @db.Text
+  contentId       String?       @map("content_id") @db.Text
+  newsLink        String?       @map("news_link")
   categoryId      String        @map("category_id")
-  metaTitle       String?       @map("meta_title")
-  metaDescription String?       @map("meta_description") @db.Text
-  metaKeywords    String?       @map("meta_keywords")
-  views           Int           @default(0)
+  metaKeywords    String?       @map("meta_keywords") @db.Text
+  customCss       String?       @map("custom_css") @db.Text
+  customJs        String?       @map("custom_js") @db.Text
+  viewCount       Int           @default(0) @map("view_count")
+  viewCountUnique Int           @default(0) @map("view_count_unique")
   status          ContentStatus @default(DRAFT)
   publishedAt     DateTime?     @map("published_at")
   createdById     String        @map("created_by_id")
@@ -332,10 +338,12 @@ model News {
   updatedBy  User?             @relation("NewsUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   highlights NewsHighlight[]
   tags       NewsTagRelation[]
+  views      NewsView[]
 
   @@index([slug])
   @@index([categoryId])
   @@index([status])
+  @@index([newsDate])
   @@index([publishedAt])
   @@index([createdAt])
   @@index([deletedAt])
@@ -344,13 +352,14 @@ model News {
 
 model NewsCategory {
   id          String    @id @default(uuid())
-  name        String
+  nameEn      String    @map("name_en")
+  nameId      String?   @map("name_id")
   slug        String    @unique
   description String?   @db.Text
-  icon        String?
-  color       String?
   position    Int       @default(0)
   isActive    Boolean   @default(true) @map("is_active")
+  createdById String?   @map("created_by")
+  updatedById String?   @map("updated_by")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -367,11 +376,10 @@ model NewsCategory {
 
 model NewsHighlight {
   id        String   @id @default(uuid())
-  newsId    String   @map("news_id")
-  position  Int      @default(0)
-  startDate DateTime @map("start_date")
-  endDate   DateTime @map("end_date")
-  isActive  Boolean  @default(true) @map("is_active")
+  newsId    String   @unique @map("news_id")
+  position  Int      @unique @default(0)
+  createdById String? @map("created_by")
+  updatedById String? @map("updated_by")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -380,9 +388,23 @@ model NewsHighlight {
 
   @@index([newsId])
   @@index([position])
-  @@index([isActive])
-  @@index([startDate, endDate])
   @@map("news_highlights")
+}
+
+model NewsView {
+  id        String   @id @default(uuid())
+  newsId    String   @map("news_id")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  news News @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@index([newsId])
+  @@index([ipAddress])
+  @@map("news_views")
 }
 
 model NewsTag {

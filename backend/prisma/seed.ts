@@ -880,10 +880,10 @@ async function main() {
   console.log('📰 Creating news categories...');
 
   const newsCategories = [
-    { name: 'Company News', slug: 'company-news', description: 'Company announcements and updates', icon: 'building', color: '#0066cc', position: 1 },
-    { name: 'Press Release', slug: 'press-release', description: 'Official press releases', icon: 'newspaper', color: '#00aa44', position: 2 },
-    { name: 'Events', slug: 'events', description: 'Company events and activities', icon: 'calendar', color: '#ff6600', position: 3 },
-    { name: 'Technology', slug: 'technology', description: 'Technology news and innovations', icon: 'laptop', color: '#9933ff', position: 4 },
+    { nameEn: 'Company News', nameId: 'Berita Perusahaan', slug: 'company-news', description: 'Company announcements and updates', position: 1, isActive: true },
+    { nameEn: 'Press Release', nameId: 'Siaran Pers', slug: 'press-release', description: 'Official press releases', position: 2, isActive: true },
+    { nameEn: 'Events', nameId: 'Acara', slug: 'events', description: 'Company events and activities', position: 3, isActive: true },
+    { nameEn: 'Technology', nameId: 'Teknologi', slug: 'technology', description: 'Technology news and innovations', position: 4, isActive: true },
   ];
 
   const createdCategories = await Promise.all(
@@ -901,29 +901,39 @@ async function main() {
 
   await prisma.news.create({
     data: {
-      title: 'LinkNet Expands Network Infrastructure in Jakarta',
+      titleEn: 'LinkNet Expands Network Infrastructure in Jakarta',
+      titleId: 'LinkNet Memperluas Infrastruktur Jaringan di Jakarta',
       slug: 'linknet-expands-network-infrastructure-jakarta',
-      excerpt: 'LinkNet announces major network expansion project to enhance connectivity across Jakarta metropolitan area.',
-      content: '<p>LinkNet Corp is pleased to announce a significant expansion of our network infrastructure across the Jakarta metropolitan area. This expansion will enhance connectivity and provide better service to our customers.</p><p>The project includes installation of new fiber optic cables, upgrade of existing infrastructure, and deployment of advanced networking equipment.</p>',
+      newsDate: new Date(),
+      excerptEn: 'LinkNet announces major network expansion project to enhance connectivity across Jakarta metropolitan area.',
+      excerptId: 'LinkNet mengumumkan proyek ekspansi jaringan besar untuk meningkatkan konektivitas di wilayah Jakarta.',
+      contentEn: '<p>LinkNet Corp is pleased to announce a significant expansion of our network infrastructure across the Jakarta metropolitan area. This expansion will enhance connectivity and provide better service to our customers.</p><p>The project includes installation of new fiber optic cables, upgrade of existing infrastructure, and deployment of advanced networking equipment.</p>',
+      contentId: '<p>LinkNet Corp dengan bangga mengumumkan ekspansi signifikan infrastruktur jaringan kami di wilayah Jakarta. Ekspansi ini akan meningkatkan konektivitas dan memberikan layanan yang lebih baik kepada pelanggan kami.</p><p>Proyek ini mencakup instalasi kabel fiber optik baru, upgrade infrastruktur yang ada, dan penerapan peralatan jaringan canggih.</p>',
       categoryId: createdCategories[0]!.id,
       status: 'PUBLISHED',
       publishedAt: new Date(),
       createdById: superAdmin.id,
-      views: 150,
+      viewCount: 150,
+      viewCountUnique: 120,
     },
   });
 
   await prisma.news.create({
     data: {
-      title: 'LinkNet Achieves ISO 27001 Certification',
+      titleEn: 'LinkNet Achieves ISO 27001 Certification',
+      titleId: 'LinkNet Meraih Sertifikasi ISO 27001',
       slug: 'linknet-achieves-iso-27001-certification',
-      excerpt: 'LinkNet receives ISO 27001 certification for information security management systems.',
-      content: '<p>We are proud to announce that LinkNet has achieved ISO 27001 certification, demonstrating our commitment to information security and data protection.</p><p>This certification validates our comprehensive approach to managing sensitive company and customer information.</p>',
+      newsDate: new Date(Date.now() - 86400000),
+      excerptEn: 'LinkNet receives ISO 27001 certification for information security management systems.',
+      excerptId: 'LinkNet menerima sertifikasi ISO 27001 untuk sistem manajemen keamanan informasi.',
+      contentEn: '<p>We are proud to announce that LinkNet has achieved ISO 27001 certification, demonstrating our commitment to information security and data protection.</p><p>This certification validates our comprehensive approach to managing sensitive company and customer information.</p>',
+      contentId: '<p>Kami dengan bangga mengumumkan bahwa LinkNet telah meraih sertifikasi ISO 27001, menunjukkan komitmen kami terhadap keamanan informasi dan perlindungan data.</p><p>Sertifikasi ini memvalidasi pendekatan komprehensif kami dalam mengelola informasi sensitif perusahaan dan pelanggan.</p>',
       categoryId: createdCategories[1]!.id,
       status: 'PUBLISHED',
       publishedAt: new Date(Date.now() - 86400000),
       createdById: superAdmin.id,
-      views: 89,
+      viewCount: 89,
+      viewCountUnique: 75,
     },
   });
 

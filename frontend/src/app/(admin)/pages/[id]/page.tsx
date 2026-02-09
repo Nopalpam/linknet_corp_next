@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { pagesService, Page, UpdatePageData } from "@/services/pages.service";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
-import PageBuilderModal from "../components/PageBuilderModal";
-import ComponentPreview from "../components/PageBuilder/ComponentPreview";
+import { PageBuilderModal } from "../components/PageBuilderV2";
+import { HeroRenderer, PricingRenderer, normalizeComponentType } from "../components/PageBuilderV2";
 
 export default function EditPagePage() {
   const params = useParams();
@@ -166,17 +166,28 @@ export default function EditPagePage() {
                           <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">
                             Components Preview
                           </h4>
-                          {page.components.slice(0, 5).map((comp, index) => (
-                            <div
-                              key={comp.id}
-                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                            >
-                              <ComponentPreview 
-                                type={comp.type} 
-                                data={typeof comp.data === 'string' ? JSON.parse(comp.data) : comp.data}
-                              />
-                            </div>
-                          ))}
+                          {page.components.slice(0, 5).map((comp, index) => {
+                            const normalizedType = normalizeComponentType(comp.type);
+                            const settings = typeof comp.data === 'string' ? JSON.parse(comp.data) : comp.data;
+                            
+                            return (
+                              <div
+                                key={comp.id}
+                                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 capitalize">
+                                    {normalizedType || comp.type}
+                                  </span>
+                                  {settings.title && (
+                                    <span className="text-xs text-gray-500 truncate">
+                                      - {settings.title}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                           {page.components.length > 5 && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2">
                               + {page.components.length - 5} more component{page.components.length - 5 !== 1 ? 's' : ''}
@@ -365,14 +376,23 @@ export default function EditPagePage() {
       <PageBuilderModal
         isOpen={isBuilderOpen}
         onClose={() => {
+          console.log('🔄 Page Builder closed, refreshing page data...');
           setIsBuilderOpen(false);
+          
           // Refresh page data to update component count and preview
-          pagesService.getPageById(pageId).then((response) => {
-            setPage(response.data);
-            setComponentCount(response.data.components?.length || 0);
-          }).catch((error) => {
-            console.error('Failed to refresh page data:', error);
-          });
+          pagesService.getPageById(pageId)
+            .then((response) => {
+              console.log('✅ Page data refreshed:', {
+                componentCount: response.data.components?.length || 0,
+                components: response.data.components
+              });
+              setPage(response.data);
+              setComponentCount(response.data.components?.length || 0);
+            })
+            .catch((error) => {
+              console.error('❌ Failed to refresh page data:', error);
+              toast.error('Failed to refresh page data');
+            });
         }}
         pageId={pageId}
       />

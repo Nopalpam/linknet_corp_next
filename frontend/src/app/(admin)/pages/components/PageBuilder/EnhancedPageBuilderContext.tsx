@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { pagesService, type PageComponent, type SaveComponentData } from "@/services/pages.service";
 import { useToast } from "@/context/ToastContext";
 import { useDebouncedCallback } from "use-debounce";
@@ -72,33 +72,91 @@ interface PageBuilderProviderProps {
 }
 
 const MAX_HISTORY = 50;
+const SESSION_STORAGE_KEY = 'pagebuilder_unsaved_state';
+const REMOUNT_THRESHOLD_MS = 1000; // Consider it a remount if within 1 second
+
+// Global timestamp to detect remounts across instances
+let lastUnmountTimestamp = 0;
 
 export function PageBuilderProvider({ children, pageId }: PageBuilderProviderProps) {
   const toast = useToast();
   
   // History state
-  const [history, setHistory] = useState<HistoryState>({
-    past: [],
-    present: [],
-    future: [],
+  const [history, setHistory] = useState<HistoryState>(() => {
+    // 🔧 FIX 1: Try to restore from sessionStorage on mount
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem(`${SESSION_STORAGE_KEY}_${pageId}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const timestamp = parsed.timestamp || 0;
+          
+          // Only restore if it's recent (within 5 seconds) and has components
+          if (Date.now() - timestamp < 5000 && parsed.components?.length > 0) {
+            console.log('🔄 Restoring state from session storage:', parsed.components.length, 'components');
+            return {
+              past: [],
+              present: parsed.components,
+              future: [],
+            };
+          } else {
+            console.log('⏭️ Session storage too old or empty, starting fresh');
+            sessionStorage.removeItem(`${SESSION_STORAGE_KEY}_${pageId}`);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to restore from session storage:', error);
+      }
+    }
+    
+    return {
+      past: [],
+      present: [],
+      future: [],
+    };
   });
   
   const [selectedComponent, setSelectedComponent] = useState<ComponentSchema | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false); // ⛔ DISABLED FOR DEBUGGING
   const [copiedComponent, setCopiedComponent] = useState<ComponentSchema | null>(null);
   
   const hasUnsavedChanges = useRef(false);
+  const hasLoadedInitially = useRef(false); // Track if initial load is done
+  const isRestoredFromSession = useRef(history.present.length > 0); // Track if we restored from session
 
   // Load components from backend
   // Backend returns PageComponent[] from page_components table (legacy schema)
   // We transform them to ComponentSchema[] for the page builder
   useEffect(() => {
     const loadComponents = async () => {
+      // 🔧 FIX 2: Detect remount
+      const timeSinceLastUnmount = Date.now() - lastUnmountTimestamp;
+      const isQuickRemount = timeSinceLastUnmount < REMOUNT_THRESHOLD_MS;
+      
+      if (isQuickRemount) {
+        console.log('⚡ Quick remount detected - skipping reload');
+        return;
+      }
+      
+      // 🔧 FIX 3: If we restored from session, skip initial load
+      if (isRestoredFromSession.current) {
+        console.log('♻️ Skipping load - state restored from session');
+        hasLoadedInitially.current = true;
+        return;
+      }
+      
+      // CRITICAL: Prevent reload if already loaded (fixes remounting issue)
+      if (hasLoadedInitially.current) {
+        console.log('⏭️ Skipping reload - already loaded');
+        return;
+      }
+
       try {
         setLoading(true);
+        console.log('📥 Initial load for pageId:', pageId);
         const response = await pagesService.getPageById(pageId);
         
         console.log('📥 Loading page data:', response.data);
@@ -154,6 +212,11 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
         });
         
         setLastSaved(new Date());
+        hasLoadedInitially.current = true; // Mark as loaded
+        
+        // Clear session storage after successful load
+        sessionStorage.removeItem(`${SESSION_STORAGE_KEY}_${pageId}`);
+        console.log('✅ Initial load complete, flag set');
       } catch (error: any) {
         console.error("❌ Failed to load components:", error);
         // Start with empty state if load fails
@@ -162,14 +225,44 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
           present: [],
           future: [],
         });
+        hasLoadedInitially.current = true; // Still mark as loaded to prevent retry loops
       } finally {
         setLoading(false);
       }
     };
 
-    if (pageId) {
+    if (pageId && !hasLoadedInitially.current) {
       loadComponents();
     }
+    
+    // 🔧 FIX 4: Save to session storage before unmount
+    return () => {
+      console.log('🧹 Provider unmounting');
+      lastUnmountTimestamp = Date.now();
+      
+      // Save current state to session storage if there are unsaved changes
+      setHistory((currentHistory) => {
+        if (currentHistory.present.length > 0) {
+          try {
+            const stateToSave = {
+              components: currentHistory.present,
+              timestamp: Date.now(),
+            };
+            sessionStorage.setItem(
+              `${SESSION_STORAGE_KEY}_${pageId}`,
+              JSON.stringify(stateToSave)
+            );
+            console.log('💾 Saved state to session storage:', currentHistory.present.length, 'components');
+          } catch (error) {
+            console.error('❌ Failed to save to session storage:', error);
+          }
+        }
+        return currentHistory; // No state change
+      });
+      
+      // Don't reset the flag immediately - let it stay to prevent reload
+      // hasLoadedInitially.current = false;
+    };
   }, [pageId]);
 
   // Generate unique ID
@@ -177,15 +270,31 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
     return `component-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // Add to history
-  const addToHistory = useCallback((newComponents: ComponentSchema[]) => {
+  // Add to history - FIXED: Direct state update to avoid stale closure
+  const addToHistory = useCallback((updater: (prev: ComponentSchema[]) => ComponentSchema[]) => {
     setHistory((prev) => {
+      const newComponents = updater(prev.present);
+      
+      console.log('📝 History update:', {
+        oldCount: prev.present.length,
+        newCount: newComponents.length,
+        added: newComponents.length - prev.present.length
+      });
+      
       const newPast = [...prev.past, prev.present].slice(-MAX_HISTORY);
-      return {
+      const newState = {
         past: newPast,
         present: newComponents,
-        future: [], // Clear future when new action is performed
+        future: [],
       };
+      
+      console.log('✅ New state:', {
+        presentLength: newState.present.length,
+        presentRef: newState.present !== prev.present,
+        components: newState.present.map(c => ({ id: c.id, type: c.type }))
+      });
+      
+      return newState;
     });
     hasUnsavedChanges.current = true;
   }, []);
@@ -241,57 +350,66 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       }));
   }, []);
 
-  // Add component
+  // Add component - FIXED: Use functional update to avoid stale closure
   const addComponent = useCallback(
     (component: Omit<ComponentSchema, "id">, parentId?: string) => {
-      // 🔧 NORMALISASI TYPE dan MERGE dengan default props
+      console.log('🚀 addComponent called', { component, parentId });
+      
+      // Normalize type and get default props
       const normalizedType = normalizeComponentType(component.type);
       const defaultProps = getDefaultProps(normalizedType);
       
       const newComponent: ComponentSchema = {
         ...component,
         id: generateId(),
-        type: normalizedType, // Gunakan normalized type
+        type: normalizedType,
         props: {
-          ...defaultProps,      // Default props dari registry
-          ...component.props,   // Override dengan props yang diberikan
+          ...defaultProps,
+          ...component.props,
         },
       };
 
-      console.log('➕ Adding component:', {
-        originalType: component.type,
-        normalizedType: normalizedType,
-        finalProps: newComponent.props,
+      console.log('➕ New component prepared:', newComponent);
+
+      // FIXED: Update state directly with functional update
+      addToHistory((prevComponents) => {
+        let result: ComponentSchema[];
+        
+        if (parentId) {
+          console.log('👨‍👧 Adding to parent:', parentId);
+          result = updateInTree(prevComponents, parentId, (parent) => ({
+            ...parent,
+            children: [...(parent.children || []), newComponent],
+          }));
+        } else {
+          console.log('🌳 Adding to root');
+          result = [...prevComponents, newComponent];
+        }
+        
+        console.log('📦 Result array:', {
+          length: result.length,
+          isNew: result !== prevComponents,
+          components: result.map(c => ({ id: c.id, type: c.type }))
+        });
+        
+        return result;
       });
 
-      let newComponents: ComponentSchema[];
-
-      if (parentId) {
-        // Add as child to parent
-        newComponents = updateInTree(history.present, parentId, (parent) => ({
-          ...parent,
-          children: [...(parent.children || []), newComponent],
-        }));
-      } else {
-        // Add to root
-        newComponents = [...history.present, newComponent];
-      }
-
-      addToHistory(newComponents);
       toast.success("Component added");
+      console.log('✅ addComponent completed');
     },
-    [history.present, addToHistory, updateInTree, toast]
+    [addToHistory, updateInTree, toast]
   );
 
-  // Update component
+  // Update component - FIXED: Use functional update
   const updateComponent = useCallback(
     (id: string, props: Record<string, any>) => {
-      const newComponents = updateInTree(history.present, id, (comp) => ({
-        ...comp,
-        props: { ...comp.props, ...props },
-      }));
-
-      addToHistory(newComponents);
+      addToHistory((prevComponents) => 
+        updateInTree(prevComponents, id, (comp) => ({
+          ...comp,
+          props: { ...comp.props, ...props },
+        }))
+      );
 
       // Update selected component
       if (selectedComponent?.id === id) {
@@ -300,14 +418,13 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
         );
       }
     },
-    [history.present, addToHistory, updateInTree, selectedComponent]
+    [addToHistory, updateInTree, selectedComponent]
   );
 
-  // Delete component
+  // Delete component - FIXED: Use functional update
   const deleteComponent = useCallback(
     (id: string) => {
-      const newComponents = removeFromTree(history.present, id);
-      addToHistory(newComponents);
+      addToHistory((prevComponents) => removeFromTree(prevComponents, id));
 
       if (selectedComponent?.id === id) {
         setSelectedComponent(null);
@@ -315,82 +432,86 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
 
       toast.success("Component deleted");
     },
-    [history.present, addToHistory, removeFromTree, selectedComponent, toast]
+    [addToHistory, removeFromTree, selectedComponent, toast]
   );
 
-  // Duplicate component
+  // Duplicate component - FIXED: Use functional update
   const duplicateComponent = useCallback(
     (id: string) => {
-      const component = findComponent(history.present, id);
-      if (!component) return;
+      addToHistory((prevComponents) => {
+        const component = findComponent(prevComponents, id);
+        if (!component) return prevComponents;
 
-      const cloned = cloneComponentWithNewIds(component);
+        const cloned = cloneComponentWithNewIds(component);
+        
+        // Find parent and add after current component
+        const addAfterComponent = (components: ComponentSchema[]): ComponentSchema[] => {
+          const result: ComponentSchema[] = [];
+          for (const comp of components) {
+            result.push(comp);
+            if (comp.id === id) {
+              result.push(cloned);
+            }
+            if (comp.children) {
+              result[result.length - 1] = {
+                ...result[result.length - 1],
+                children: addAfterComponent(comp.children),
+              };
+            }
+          }
+          return result;
+        };
+
+        return addAfterComponent(prevComponents);
+      });
       
-      // Find parent and add after current component
-      const addAfterComponent = (components: ComponentSchema[]): ComponentSchema[] => {
-        const result: ComponentSchema[] = [];
-        for (const comp of components) {
-          result.push(comp);
-          if (comp.id === id) {
-            result.push(cloned);
-          }
-          if (comp.children) {
-            result[result.length - 1] = {
-              ...result[result.length - 1],
-              children: addAfterComponent(comp.children),
-            };
-          }
-        }
-        return result;
-      };
-
-      const newComponents = addAfterComponent(history.present);
-      addToHistory(newComponents);
       toast.success("Component duplicated");
     },
-    [history.present, addToHistory, findComponent, cloneComponentWithNewIds, toast]
+    [addToHistory, findComponent, cloneComponentWithNewIds, toast]
   );
 
-  // Copy component
+  // Copy component - FIXED: Use functional approach to read current state
   const copyComponent = useCallback(
     (id: string) => {
-      const component = findComponent(history.present, id);
-      if (component) {
-        setCopiedComponent(component);
-        toast.success("Component copied to clipboard");
-      }
+      setHistory((prev) => {
+        const component = findComponent(prev.present, id);
+        if (component) {
+          setCopiedComponent(component);
+          toast.success("Component copied to clipboard");
+        }
+        return prev; // No state change
+      });
     },
-    [history.present, findComponent, toast]
+    [findComponent, toast]
   );
 
-  // Paste component
+  // Paste component - FIXED: Use functional update
   const pasteComponent = useCallback(
     (parentId?: string) => {
       if (!copiedComponent) {
-        toast.error("No component in clipboard");
+        toast.error("No component to paste");
         return;
       }
 
       const cloned = cloneComponentWithNewIds(copiedComponent);
       
-      let newComponents: ComponentSchema[];
-
-      if (parentId) {
-        newComponents = updateInTree(history.present, parentId, (parent) => ({
-          ...parent,
-          children: [...(parent.children || []), cloned],
-        }));
-      } else {
-        newComponents = [...history.present, cloned];
-      }
-
-      addToHistory(newComponents);
+      addToHistory((prevComponents) => {
+        if (parentId) {
+          return updateInTree(prevComponents, parentId, (parent) => ({
+            ...parent,
+            children: [...(parent.children || []), cloned],
+          }));
+        } else {
+          return [...prevComponents, cloned];
+        }
+      });
+      
       toast.success("Component pasted");
     },
-    [copiedComponent, history.present, addToHistory, cloneComponentWithNewIds, updateInTree, toast]
+    [copiedComponent, addToHistory, cloneComponentWithNewIds, updateInTree, toast]
   );
 
-  // Select component
+  // Select component - FIXED: Use functional approach
   const selectComponent = useCallback(
     (id: string | null) => {
       if (!id) {
@@ -398,18 +519,22 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
         return;
       }
 
-      const found = findComponent(history.present, id);
-      if (found) {
-        setSelectedComponent(found);
-      }
+      // Read directly from history state to find component
+      setHistory((prev) => {
+        const found = findComponent(prev.present, id);
+        if (found) {
+          setSelectedComponent(found);
+        }
+        return prev; // No state change, just accessing current value
+      });
     },
-    [history.present, findComponent]
+    [findComponent]
   );
 
-  // Reorder components (for drag & drop)
+  // Reorder components (for drag & drop) - FIXED: Accept updater function
   const reorderComponents = useCallback(
     (newComponents: ComponentSchema[]) => {
-      addToHistory(newComponents);
+      addToHistory(() => newComponents);
     },
     [addToHistory]
   );
@@ -502,6 +627,15 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
       
       setLastSaved(new Date());
       hasUnsavedChanges.current = false;
+      
+      // 🔧 FIX 5: Clear session storage after successful save
+      try {
+        sessionStorage.removeItem(`${SESSION_STORAGE_KEY}_${pageId}`);
+        console.log('🗑️ Cleared session storage after save');
+      } catch (e) {
+        console.warn('Failed to clear session storage:', e);
+      }
+      
       toast.success("Page content saved successfully");
     } catch (error: any) {
       console.error('❌ Save failed:', error);
@@ -512,43 +646,53 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
     }
   }, [history.present, pageId, toast, flattenForSave]);
 
-  // Auto-save with debounce
+  // Auto-save DISABLED - Only manual save for now
   const debouncedAutoSave = useDebouncedCallback(
     async () => {
-      if (!autoSaveEnabled || !hasUnsavedChanges.current) return;
+      console.log('⛔ Auto-save is DISABLED. Use manual save button.');
+      return;
       
-      try {
-        setSaving(true);
-        const componentsToSave = flattenForSave(history.present);
-        
-        console.log('🔄 Auto-saving components:', {
-          componentCount: componentsToSave.length,
-          components: componentsToSave
-        });
-        
-        await pagesService.savePageComponents(pageId, componentsToSave);
-        setLastSaved(new Date());
-        hasUnsavedChanges.current = false;
-        console.log('✅ Auto-save successful');
-      } catch (error) {
-        console.error("❌ Auto-save failed:", error);
-      } finally {
-        setSaving(false);
-      }
+      // Commented out for debugging
+      // if (!autoSaveEnabled || !hasUnsavedChanges.current) {
+      //   console.log('⏭️ Skipping auto-save:', { autoSaveEnabled, hasUnsavedChanges: hasUnsavedChanges.current });
+      //   return;
+      // }
+      // 
+      // try {
+      //   setSaving(true);
+      //   const componentsToSave = flattenForSave(history.present);
+      //   
+      //   console.log('🔄 Auto-saving components:', {
+      //     componentCount: componentsToSave.length,
+      //     components: componentsToSave
+      //   });
+      //   
+      //   await pagesService.savePageComponents(pageId, componentsToSave);
+      //   setLastSaved(new Date());
+      //   hasUnsavedChanges.current = false;
+      //   console.log('✅ Auto-save successful');
+      // } catch (error) {
+      //   console.error("❌ Auto-save failed:", error);
+      // } finally {
+      //   setSaving(false);
+      // }
     },
-    5000 // Auto-save after 5 seconds of inactivity
+    3000
   );
 
-  // Trigger auto-save when components change, with cleanup to prevent memory leaks
+  // Auto-save trigger DISABLED
   useEffect(() => {
-    if (history.present.length > 0 && hasUnsavedChanges.current) {
-      debouncedAutoSave();
-    }
-    
+    // Auto-save disabled - only manual save works
+    console.log('ℹ️ Auto-save is disabled. Component count:', history.present.length);
+    return undefined;
+  }, [history.present]);
+  
+  // No cleanup needed when auto-save is disabled
+  useEffect(() => {
     return () => {
       debouncedAutoSave.cancel();
     };
-  }, [history.present, debouncedAutoSave]);
+  }, [debouncedAutoSave]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -605,7 +749,8 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
     toast.success(autoSaveEnabled ? "Auto-save disabled" : "Auto-save enabled");
   }, [autoSaveEnabled, toast]);
 
-  const value: PageBuilderContextType = {
+  // CRITICAL: Memo context value to ensure reference changes trigger re-renders
+  const value: PageBuilderContextType = useMemo(() => ({
     components: history.present,
     selectedComponent,
     loading,
@@ -627,7 +772,56 @@ export function PageBuilderProvider({ children, pageId }: PageBuilderProviderPro
     saveComponents,
     toggleAutoSave,
     autoSaveEnabled,
-  };
+  }), [
+    history.present,
+    history.past.length,
+    history.future.length,
+    selectedComponent,
+    loading,
+    saving,
+    lastSaved,
+    addComponent,
+    updateComponent,
+    deleteComponent,
+    duplicateComponent,
+    selectComponent,
+    reorderComponents,
+    copyComponent,
+    pasteComponent,
+    copiedComponent,
+    undo,
+    redo,
+    saveComponents,
+    toggleAutoSave,
+    autoSaveEnabled,
+  ]);
+
+  // DEBUG: Log when components state changes
+  useEffect(() => {
+    console.log('🔄 Context components updated:', {
+      count: history.present.length,
+      components: history.present.map(c => ({ id: c.id, type: c.type })),
+      hasLoadedInitially: hasLoadedInitially.current,
+      isRestoredFromSession: isRestoredFromSession.current
+    });
+    
+    // 🔧 FIX 6: Backup to session storage whenever components change
+    if (history.present.length > 0 && hasLoadedInitially.current) {
+      try {
+        const stateToSave = {
+          components: history.present,
+          timestamp: Date.now(),
+        };
+        sessionStorage.setItem(
+          `${SESSION_STORAGE_KEY}_${pageId}`,
+          JSON.stringify(stateToSave)
+        );
+        console.log('💾 Auto-backup to session storage:', history.present.length, 'components');
+      } catch (error) {
+        console.warn('⚠️ Failed to backup to session storage:', error);
+      }
+    }
+  }, [history.present, pageId]);
 
   return (
     <PageBuilderContext.Provider value={value}>

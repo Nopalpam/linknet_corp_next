@@ -355,6 +355,179 @@ export default function ComponentSettings() {
           </>
         );
 
+      case "news_highlight":
+        return (
+          <>
+            <div>
+              <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <input
+                  type="checkbox"
+                  checked={selectedComponent.props.showIntro}
+                  onChange={(e) => handleChange("showIntro", e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Show Section Intro
+              </label>
+            </div>
+            {selectedComponent.props.showIntro && (
+              <>
+                <SettingField
+                  label="Intro Label"
+                  type="text"
+                  value={selectedComponent.props.introLabel}
+                  onChange={(value) => handleChange("introLabel", value)}
+                  placeholder="Latest News"
+                />
+                <SettingField
+                  label="Intro Title"
+                  type="text"
+                  value={selectedComponent.props.introTitle}
+                  onChange={(value) => handleChange("introTitle", value)}
+                  placeholder="Stay Updated"
+                />
+              </>
+            )}
+            <SettingField
+              label="Background CSS Class"
+              type="text"
+              value={selectedComponent.props.bgSection}
+              onChange={(value) => handleChange("bgSection", value)}
+              placeholder="bg-gray-50"
+            />
+            <SettingField
+              label="Featured Count"
+              type="select"
+              value={String(selectedComponent.props.featuredCount || 1)}
+              onChange={(value) => handleChange("featuredCount", parseInt(value))}
+              options={[
+                { value: "1", label: "1 Featured" },
+                { value: "2", label: "2 Featured" },
+                { value: "3", label: "3 Featured" },
+              ]}
+            />
+            <SettingField
+              label="Grid Count"
+              type="select"
+              value={String(selectedComponent.props.gridCount || 3)}
+              onChange={(value) => handleChange("gridCount", parseInt(value))}
+              options={[
+                { value: "2", label: "2 Items" },
+                { value: "3", label: "3 Items" },
+                { value: "4", label: "4 Items" },
+                { value: "6", label: "6 Items" },
+              ]}
+            />
+            <SettingField
+              label="Order By"
+              type="select"
+              value={selectedComponent.props.orderBy}
+              onChange={(value) => handleChange("orderBy", value)}
+              options={[
+                { value: "newsDate", label: "News Date" },
+                { value: "createdAt", label: "Created Date" },
+                { value: "viewCount", label: "View Count" },
+              ]}
+            />
+            <SettingField
+              label="Sort Direction"
+              type="select"
+              value={selectedComponent.props.sortDirection}
+              onChange={(value) => handleChange("sortDirection", value)}
+              options={[
+                { value: "desc", label: "Descending (Newest First)" },
+                { value: "asc", label: "Ascending (Oldest First)" },
+              ]}
+            />
+          </>
+        );
+
+      case "news_list":
+        return (
+          <>
+            <SettingField
+              label="Category Filter"
+              type="text"
+              value={selectedComponent.props.categoryId}
+              onChange={(value) => handleChange("categoryId", value)}
+              placeholder="Leave empty for all categories"
+            />
+            <SettingField
+              label="Items Per Page"
+              type="select"
+              value={String(selectedComponent.props.itemsPerPage || 6)}
+              onChange={(value) => handleChange("itemsPerPage", parseInt(value))}
+              options={[
+                { value: "3", label: "3 Items" },
+                { value: "6", label: "6 Items" },
+                { value: "9", label: "9 Items" },
+                { value: "12", label: "12 Items" },
+              ]}
+            />
+            <SettingField
+              label="Grid Columns"
+              type="select"
+              value={String(selectedComponent.props.gridColumns || 3)}
+              onChange={(value) => handleChange("gridColumns", parseInt(value))}
+              options={[
+                { value: "2", label: "2 Columns" },
+                { value: "3", label: "3 Columns" },
+                { value: "4", label: "4 Columns" },
+              ]}
+            />
+            <SettingField
+              label="Order By"
+              type="select"
+              value={selectedComponent.props.orderBy}
+              onChange={(value) => handleChange("orderBy", value)}
+              options={[
+                { value: "newsDate", label: "News Date" },
+                { value: "createdAt", label: "Created Date" },
+                { value: "viewCount", label: "View Count" },
+              ]}
+            />
+            <SettingField
+              label="Sort Direction"
+              type="select"
+              value={selectedComponent.props.sortDirection}
+              onChange={(value) => handleChange("sortDirection", value)}
+              options={[
+                { value: "desc", label: "Descending (Newest First)" },
+                { value: "asc", label: "Ascending (Oldest First)" },
+              ]}
+            />
+            <div className="space-y-2 mt-4">
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Display Options</h4>
+              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={selectedComponent.props.showDate}
+                  onChange={(e) => handleChange("showDate", e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Show Date
+              </label>
+              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={selectedComponent.props.showCategory}
+                  onChange={(e) => handleChange("showCategory", e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Show Category
+              </label>
+              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={selectedComponent.props.showExcerpt}
+                  onChange={(e) => handleChange("showExcerpt", e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Show Excerpt
+              </label>
+            </div>
+          </>
+        );
+
       case "pricing-section":
         return (
           <>

@@ -1,0 +1,351 @@
+/**
+ * PAGE BUILDER V2 - Canvas Component
+ * 
+ * The main canvas area where components are displayed and can be:
+ * - Selected for editing
+ * - Reordered via drag-and-drop
+ * - Deleted
+ * 
+ * Renders DIRECTLY from PageBuilder state - no local state duplication.
+ */
+
+'use client';
+
+import React, { useCallback } from 'react';
+import { usePageBuilder } from './context';
+import { getRegistryEntry } from './registry';
+import { ComponentType, DRAG_TYPE, DragItem } from './types';
+
+// =============================================================================
+// COMPONENT WRAPPER
+// =============================================================================
+
+interface CanvasComponentProps {
+  componentId: string;
+  index: number;
+}
+
+function CanvasComponent({ componentId, index }: CanvasComponentProps) {
+  const {
+    state,
+    selectedComponentId,
+    selectComponent,
+    removeComponent,
+    toggleVisibility,
+    moveComponent,
+  } = usePageBuilder();
+
+  const component = state.components.find((c) => c.id === componentId);
+  if (!component) return null;
+
+  const isSelected = selectedComponentId === componentId;
+  const registryEntry = getRegistryEntry(component.type);
+
+  // If component type is not registered, show error state
+  if (!registryEntry) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+        <p className="text-red-600 dark:text-red-400 font-medium">
+          Unknown component type: {component.type}
+        </p>
+        <button
+          onClick={() => removeComponent(componentId)}
+          className="mt-2 text-sm text-red-500 hover:text-red-700 underline"
+        >
+          Remove this component
+        </button>
+      </div>
+    );
+  }
+
+  const RenderComponent = registryEntry.render;
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent) => {
+    const dragData: DragItem = {
+      type: 'EXISTING_COMPONENT',
+      componentId: componentId,
+    };
+    e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(dragData));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    try {
+      const data = e.dataTransfer.getData(DRAG_TYPE);
+      if (!data) return;
+      
+      const dragItem: DragItem = JSON.parse(data);
+      
+      if (dragItem.type === 'EXISTING_COMPONENT' && dragItem.componentId) {
+        // Reorder existing component
+        if (dragItem.componentId !== componentId) {
+          moveComponent(dragItem.componentId, index);
+        }
+      }
+      // New components are handled by the drop zone, not here
+    } catch (error) {
+      console.error('[Canvas] Drop error:', error);
+    }
+  };
+
+  return (
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      className={`relative group transition-all duration-200 ${
+        !component.isVisible ? 'opacity-50' : ''
+      }`}
+    >
+      {/* Component Toolbar */}
+      <div
+        className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-lg transition-opacity ${
+          isSelected
+            ? 'opacity-100 bg-white dark:bg-gray-800 shadow-lg'
+            : 'opacity-0 group-hover:opacity-100 bg-white/90 dark:bg-gray-800/90 shadow'
+        }`}
+      >
+        {/* Type label */}
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-2">
+          {registryEntry.displayName}
+        </span>
+        
+        {/* Visibility toggle */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleVisibility(componentId);
+          }}
+          className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          title={component.isVisible ? 'Hide component' : 'Show component'}
+        >
+          {component.isVisible ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          )}
+        </button>
+
+        {/* Delete button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            removeComponent(componentId);
+          }}
+          className="p-1.5 text-red-500 hover:text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+          title="Delete component"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+
+        {/* Drag handle */}
+        <div
+          className="p-1.5 text-gray-400 cursor-grab active:cursor-grabbing"
+          title="Drag to reorder"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Component Selection Wrapper */}
+      <div
+        onClick={() => selectComponent(componentId)}
+        className={`cursor-pointer rounded-lg transition-all ${
+          isSelected
+            ? 'ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-gray-900'
+            : 'hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-600'
+        }`}
+      >
+        <RenderComponent
+          settings={component.settings}
+          isSelected={isSelected}
+        />
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// DROP ZONE
+// =============================================================================
+
+interface DropZoneProps {
+  index: number;
+  isLast?: boolean;
+}
+
+function DropZone({ index, isLast }: DropZoneProps) {
+  const { addComponent, moveComponent } = usePageBuilder();
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = e.dataTransfer.getData(DRAG_TYPE);
+      if (!data) return;
+
+      const dragItem: DragItem = JSON.parse(data);
+
+      if (dragItem.type === 'NEW_COMPONENT' && dragItem.componentType) {
+        // Add new component at this index
+        addComponent(dragItem.componentType, index);
+      } else if (dragItem.type === 'EXISTING_COMPONENT' && dragItem.componentId) {
+        // Move existing component to this index
+        moveComponent(dragItem.componentId, index);
+      }
+    } catch (error) {
+      console.error('[DropZone] Drop error:', error);
+    }
+  };
+
+  return (
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`relative transition-all duration-200 ${
+        isDragOver ? 'py-8' : 'py-2'
+      }`}
+    >
+      <div
+        className={`border-2 border-dashed rounded-lg transition-all ${
+          isDragOver
+            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 py-6'
+            : 'border-transparent py-0'
+        }`}
+      >
+        {isDragOver && (
+          <p className="text-center text-sm font-medium text-brand-600 dark:text-brand-400">
+            Drop component here
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// CANVAS
+// =============================================================================
+
+export function Canvas() {
+  const { state, selectComponent, addComponent } = usePageBuilder();
+  const { components, isLoading, error } = state;
+
+  // Handle clicking on empty canvas
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      selectComponent(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading components...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Failed to Load
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={handleCanvasClick}
+      className="h-full overflow-y-auto p-6 bg-gray-100 dark:bg-gray-950"
+    >
+      <div className="max-w-4xl mx-auto space-y-0">
+        {/* Initial drop zone */}
+        <DropZone index={0} />
+
+        {/* Components with drop zones between them */}
+        {components.map((component, index) => (
+          <React.Fragment key={component.id}>
+            <CanvasComponent componentId={component.id} index={index} />
+            <DropZone index={index + 1} />
+          </React.Fragment>
+        ))}
+
+        {/* Empty state */}
+        {components.length === 0 && (
+          <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No Components Yet
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Drag components from the sidebar or click below to get started.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => addComponent('hero')}
+                className="px-4 py-2 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+              >
+                + Add Hero
+              </button>
+              <button
+                onClick={() => addComponent('pricing')}
+                className="px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                + Add Pricing
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

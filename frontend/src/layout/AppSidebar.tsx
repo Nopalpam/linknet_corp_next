@@ -80,10 +80,11 @@ const menuSections: MenuSection[] = [
       // },
       {
         icon: <PageIcon />,
-        name: "News (On-Hold)",
+        name: "News",
         subItems: [
           { name: "News Category", path: "/news/category" },
           { name: "News Data", path: "/news/data" },
+          { name: "News Highlight", path: "/news/highlight" },
         ],
       },
       // {

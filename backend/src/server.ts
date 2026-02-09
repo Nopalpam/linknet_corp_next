@@ -191,6 +191,10 @@ app.use(`${API_PREFIX}/contact-us`, contactRoutes);
 import cmsContactRoutes from '@routes/cms/contactus.routes';
 app.use(`${API_PREFIX}/cms/contactus`, cmsContactRoutes);
 
+// News routes (Public + CMS)
+import newsRoutes from '@routes/news.routes';
+app.use(`${API_PREFIX}`, newsRoutes);
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
 
