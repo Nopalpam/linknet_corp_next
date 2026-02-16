@@ -3,6 +3,7 @@ import addFormats from 'ajv-formats';
 import prisma from '@config/database';
 import { AppError } from '../types/error.types';
 import { COMPONENT_SCHEMAS, COMPONENT_TYPES } from '@/schemas/components';
+import { sanitizeComponentByType } from '../utils/componentSanitizer';
 
 // Initialize Ajv
 const ajv = new Ajv({ allErrors: true, verbose: true });
@@ -123,8 +124,11 @@ export class ComponentService {
       throw new AppError(`Unknown component type: ${data.componentType}`, 400);
     }
 
+    // Sanitize component data before validation
+    const sanitizedData = sanitizeComponentByType(data.componentType, data.componentData);
+
     // Validate component data against schema
-    this.validateComponentData(data.componentType, data.componentData);
+    this.validateComponentData(data.componentType, sanitizedData);
 
     // Check if page exists
     const page = await prisma.page.findUnique({
@@ -151,7 +155,7 @@ export class ComponentService {
       data: {
         pageId: data.pageId,
         type: data.componentType,
-        data: data.componentData,
+        data: sanitizedData,
         order,
         isVisible: data.isVisible ?? true,
       },
@@ -175,7 +179,12 @@ export class ComponentService {
 
     // If updating component type or data, validate
     const componentType = data.componentType || existing.type;
-    const componentData = data.componentData || existing.data;
+    let componentData = data.componentData || existing.data;
+
+    // Sanitize component data if being updated
+    if (data.componentData) {
+      componentData = sanitizeComponentByType(componentType, data.componentData);
+    }
 
     if (data.componentType || data.componentData) {
       this.validateComponentData(componentType, componentData);
@@ -186,7 +195,7 @@ export class ComponentService {
       where: { id },
       data: {
         ...(data.componentType && { type: data.componentType }),
-        ...(data.componentData && { data: data.componentData }),
+        ...(data.componentData && { data: componentData }),
         ...(data.order !== undefined && { order: data.order }),
         ...(data.isVisible !== undefined && { isVisible: data.isVisible }),
       },

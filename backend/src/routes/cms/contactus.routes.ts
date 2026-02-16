@@ -10,6 +10,14 @@ import {
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { requirePermission } from '../../middleware/rbac.middleware';
 import { Permission } from '../../constants/permissions';
+import { validateRequest } from '../../middleware/validation.middleware';
+import {
+  getContactSubmissionsValidation,
+  getContactByIdValidation,
+  updateSubmissionStatusValidation,
+  deleteContactValidation,
+  bulkDeleteContactValidation
+} from '../../validators/contact.validator';
 
 const router = Router();
 
@@ -24,6 +32,8 @@ router.use(authMiddleware);
 router.get(
   '/',
   requirePermission(Permission.CONTACT_SUBMISSIONS_READ),
+  getContactSubmissionsValidation,
+  validateRequest,
   getContactSubmissions
 );
 
@@ -35,6 +45,8 @@ router.get(
 router.get(
   '/:id',
   requirePermission(Permission.CONTACT_SUBMISSIONS_READ),
+  getContactByIdValidation,
+  validateRequest,
   getContactSubmissionById
 );
 
@@ -46,6 +58,8 @@ router.get(
 router.patch(
   '/:id/status',
   requirePermission(Permission.CONTACT_SUBMISSIONS_REPLY),
+  updateSubmissionStatusValidation,
+  validateRequest,
   updateSubmissionStatus
 );
 
@@ -57,6 +71,8 @@ router.patch(
 router.delete(
   '/:id',
   requirePermission(Permission.CONTACT_SUBMISSIONS_DELETE),
+  deleteContactValidation,
+  validateRequest,
   deleteContactSubmission
 );
 
@@ -68,6 +84,8 @@ router.delete(
 router.post(
   '/destroy-multiple',
   requirePermission(Permission.CONTACT_SUBMISSIONS_DELETE),
+  bulkDeleteContactValidation,
+  validateRequest,
   deleteMultipleSubmissions
 );
 

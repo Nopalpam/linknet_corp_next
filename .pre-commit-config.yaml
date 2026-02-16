@@ -1,0 +1,103 @@
+# Pre-commit Hook Configuration
+# Control: MBSS2.0-ApplicationCoding-003 - File scanning before upload/transfer
+# Install: npx husky install && npx husky-init
+# Ensures code is scanned before committing to repository
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=5120']  # 5MB max
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Security - Secret detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package-lock.json
+
+  # JavaScript/TypeScript linting
+  - repo: local
+    hooks:
+      - id: eslint-backend
+        name: ESLint (Backend)
+        entry: bash -c 'cd backend && npm run lint'
+        language: system
+        types: [javascript, typescript]
+        files: ^backend/
+        pass_filenames: false
+      
+      - id: eslint-frontend
+        name: ESLint (Frontend)
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        types: [javascript, typescript]
+        files: ^frontend/
+        pass_filenames: false
+
+  # Dependency audit before commit
+  - repo: local
+    hooks:
+      - id: npm-audit-backend
+        name: NPM Audit (Backend)
+        entry: bash -c 'cd backend && npm audit --audit-level=high'
+        language: system
+        files: ^backend/package(-lock)?.json$
+        pass_filenames: false
+      
+      - id: npm-audit-frontend
+        name: NPM Audit (Frontend)
+        entry: bash -c 'cd frontend && npm audit --audit-level=high'
+        language: system
+        files: ^frontend/package(-lock)?.json$
+        pass_filenames: false
+
+  # TypeScript type checking
+  - repo: local
+    hooks:
+      - id: tsc-backend
+        name: TypeScript Check (Backend)
+        entry: bash -c 'cd backend && npx tsc --noEmit'
+        language: system
+        types: [typescript]
+        files: ^backend/
+        pass_filenames: false
+      
+      - id: tsc-frontend
+        name: TypeScript Check (Frontend)
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        types: [typescript]
+        files: ^frontend/
+        pass_filenames: false
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: ['--ignore', 'DL3018', '--ignore', 'DL3008']
+
+  # Commit message format
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+# Configuration
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+fail_fast: false

@@ -18,6 +18,7 @@ import {
 } from '../validators/auth.validator';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { loginRateLimiter } from '../middleware/rateLimiter.middleware';
+import { validateRequest } from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -28,22 +29,22 @@ const router = Router();
  */
 
 // Register new user (uses general auth rate limiter from server.ts)
-router.post('/register', registerValidation, register);
+router.post('/register', registerValidation, validateRequest, register);
 
 // Login user (with specific login rate limiting)
-router.post('/login', loginRateLimiter, loginValidation, login);
+router.post('/login', loginRateLimiter, loginValidation, validateRequest, login);
 
 // Logout user (no rate limiting needed)
 router.post('/logout', logout);
 
 // Refresh access token (no rate limiting - should be frequent)
-router.post('/refresh', refreshTokenValidation, refreshAccessToken);
+router.post('/refresh', refreshTokenValidation, validateRequest, refreshAccessToken);
 
 // Forgot password (uses general auth rate limiter from server.ts)
-router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
+router.post('/forgot-password', forgotPasswordValidation, validateRequest, forgotPassword);
 
 // Reset password (uses general auth rate limiter from server.ts)
-router.post('/reset-password', resetPasswordValidation, resetPassword);
+router.post('/reset-password', resetPasswordValidation, validateRequest, resetPassword);
 
 /**
  * Protected routes

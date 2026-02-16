@@ -34,9 +34,16 @@ export const comparePassword = async (
  * Validate password strength
  * - Minimum 8 characters
  * - At least 1 uppercase letter
+ * - At least 1 lowercase letter
  * - At least 1 number
+ * - At least 1 special character
+ * - Not identical to email or username
  */
-export const validatePasswordStrength = (password: string): {
+export const validatePasswordStrength = (
+  password: string,
+  email?: string,
+  username?: string
+): {
   isValid: boolean;
   errors: string[];
 } => {
@@ -50,8 +57,28 @@ export const validatePasswordStrength = (password: string): {
     errors.push('Password must contain at least 1 uppercase letter');
   }
 
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least 1 lowercase letter');
+  }
+
   if (!/[0-9]/.test(password)) {
     errors.push('Password must contain at least 1 number');
+  }
+
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Password must contain at least 1 special character');
+  }
+
+  // Check password is not identical to email or username
+  if (email) {
+    const emailLocal = email.split('@')[0].toLowerCase();
+    if (password.toLowerCase() === emailLocal || password.toLowerCase() === email.toLowerCase()) {
+      errors.push('Password cannot be identical to email or username');
+    }
+  }
+
+  if (username && password.toLowerCase() === username.toLowerCase()) {
+    errors.push('Password cannot be identical to username');
   }
 
   return {

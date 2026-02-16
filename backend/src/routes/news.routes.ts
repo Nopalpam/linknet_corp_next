@@ -3,6 +3,18 @@ import newsController from '../controllers/news.controller';
 import newsCategoryController from '../controllers/news-category.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
+import { validateRequest } from '../middleware/validation.middleware';
+import {
+  getNewsValidation,
+  getNewsByIdValidation,
+  getNewsBySlugValidation,
+  createNewsValidation,
+  updateNewsValidation,
+  deleteNewsValidation,
+  highlightNewsValidation,
+  reorderHighlightsValidation,
+  removeHighlightValidation,
+} from '../validators/news.validator';
 
 const router = Router();
 
@@ -15,7 +27,7 @@ router.get('/news', newsController.getActiveNews);
 router.get('/news/highlights', newsController.getHighlightedNews);
 
 // Get news by slug (Public)
-router.get('/news/:slug', newsController.getNewsBySlug);
+router.get('/news/:slug', getNewsBySlugValidation, validateRequest, newsController.getNewsBySlug);
 
 // Get active categories (Public)
 router.get('/news-categories', newsCategoryController.getActiveCategories);
@@ -30,6 +42,8 @@ router.get(
   '/cms/news',
   authMiddleware,
   requirePermission('news.read'),
+  getNewsValidation,
+  validateRequest,
   newsController.getNews
 );
 
@@ -38,6 +52,8 @@ router.get(
   '/cms/news/:id',
   authMiddleware,
   requirePermission('news.read'),
+  getNewsByIdValidation,
+  validateRequest,
   newsController.getNewsById
 );
 
@@ -46,6 +62,8 @@ router.post(
   '/cms/news',
   authMiddleware,
   requirePermission('news.create'),
+  createNewsValidation,
+  validateRequest,
   newsController.createNews
 );
 
@@ -54,6 +72,8 @@ router.put(
   '/cms/news/:id',
   authMiddleware,
   requirePermission('news.update'),
+  updateNewsValidation,
+  validateRequest,
   newsController.updateNews
 );
 
@@ -62,6 +82,8 @@ router.delete(
   '/cms/news/:id',
   authMiddleware,
   requirePermission('news.delete'),
+  deleteNewsValidation,
+  validateRequest,
   newsController.deleteNews
 );
 
@@ -80,6 +102,8 @@ router.post(
   '/cms/news-highlights',
   authMiddleware,
   requirePermission('news.update'),
+  highlightNewsValidation,
+  validateRequest,
   newsController.setHighlight
 );
 
@@ -88,6 +112,8 @@ router.post(
   '/cms/news-highlights/reorder',
   authMiddleware,
   requirePermission('news.update'),
+  reorderHighlightsValidation,
+  validateRequest,
   newsController.reorderHighlights
 );
 
@@ -96,6 +122,8 @@ router.delete(
   '/cms/news-highlights/:newsId',
   authMiddleware,
   requirePermission('news.update'),
+  removeHighlightValidation,
+  validateRequest,
   newsController.removeHighlight
 );
 

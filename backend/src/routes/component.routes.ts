@@ -3,6 +3,14 @@ import { ComponentController } from '@controllers/component.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
+import { validateRequest } from '../middleware/validation.middleware';
+import {
+  getComponentByIdValidation,
+  createComponentValidation,
+  updateComponentValidation,
+  deleteComponentValidation,
+  reorderComponentsValidation
+} from '../validators/component.validator';
 
 const router = Router();
 
@@ -41,6 +49,8 @@ router.get(
 router.post(
   '/:pageId/components',
   checkPermission(Permission.PAGES_CREATE),
+  createComponentValidation,
+  validateRequest,
   ComponentController.createComponent
 );
 
@@ -52,6 +62,8 @@ router.post(
 router.post(
   '/:pageId/components/reorder',
   checkPermission(Permission.PAGES_UPDATE),
+  reorderComponentsValidation,
+  validateRequest,
   ComponentController.reorderComponents
 );
 
@@ -63,6 +75,8 @@ router.post(
 router.get(
   '/components/:id',
   checkPermission(Permission.PAGES_READ),
+  getComponentByIdValidation,
+  validateRequest,
   ComponentController.getComponentById
 );
 
@@ -74,6 +88,8 @@ router.get(
 router.put(
   '/components/:id',
   checkPermission(Permission.PAGES_UPDATE),
+  updateComponentValidation,
+  validateRequest,
   ComponentController.updateComponent
 );
 
@@ -85,6 +101,8 @@ router.put(
 router.delete(
   '/components/:id',
   checkPermission(Permission.PAGES_DELETE),
+  deleteComponentValidation,
+  validateRequest,
   ComponentController.deleteComponent
 );
 
@@ -96,6 +114,8 @@ router.delete(
 router.post(
   '/components/:id/toggle-visibility',
   checkPermission(Permission.PAGES_UPDATE),
+  getComponentByIdValidation,
+  validateRequest,
   ComponentController.toggleVisibility
 );
 

@@ -16,20 +16,28 @@ datasource db {
 // ============================================
 
 model User {
-  id              String     @id @default(uuid())
-  email           String     @unique
-  username        String     @unique
-  password        String
-  firstName       String     @map("first_name")
-  lastName        String     @map("last_name")
-  avatar          String?
-  phone           String?
-  status          UserStatus @default(ACTIVE)
-  emailVerifiedAt DateTime?  @map("email_verified_at")
-  lastLoginAt     DateTime?  @map("last_login_at")
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
-  deletedAt       DateTime?  @map("deleted_at")
+  id                  String     @id @default(uuid())
+  email               String     @unique
+  username            String     @unique
+  password            String
+  firstName           String     @map("first_name")
+  lastName            String     @map("last_name")
+  avatar              String?
+  phone               String?
+  status              UserStatus @default(ACTIVE)
+  emailVerifiedAt     DateTime?  @map("email_verified_at")
+  lastLoginAt         DateTime?  @map("last_login_at")
+  // MBSS2.0-008: Failed login attempt tracking & account lockout
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  lockedAt            DateTime?  @map("locked_at")
+  lockedReason        String?    @map("locked_reason")
+  // MBSS2.0-009: Password age tracking
+  passwordChangedAt   DateTime   @default(now()) @map("password_changed_at")
+  // MBSS2.0-010: First-time login password change
+  mustChangePassword  Boolean    @default(true) @map("must_change_password")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  deletedAt           DateTime?  @map("deleted_at")
 
   // Relations
   userRoles          UserRole[]
@@ -40,6 +48,7 @@ model User {
   contactSubmissions ContactSubmission[]
   createdFiles       File[]              @relation("FileCreator")
   refreshTokens      RefreshToken[]
+  passwordHistories  PasswordHistory[]
 
   @@index([email])
   @@index([status])
@@ -78,6 +87,21 @@ model PasswordResetToken {
   @@index([token])
   @@index([expiresAt])
   @@map("password_reset_tokens")
+}
+
+// MBSS2.0-011: Password history to prevent reuse of last 6 passwords
+model PasswordHistory {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("password_histories")
 }
 
 enum UserStatus {

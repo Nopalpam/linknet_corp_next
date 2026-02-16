@@ -9,6 +9,12 @@ import {
 } from '../controllers/profile.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { avatarUpload } from '../config/upload';
+import { validateRequest } from '../middleware/validation.middleware';
+import {
+  updateProfileValidation,
+  changePasswordValidation,
+  deleteAccountValidation
+} from '../validators/profile.validator';
 
 const router = Router();
 
@@ -20,7 +26,7 @@ const router = Router();
 router.get('/', authMiddleware, getProfile);
 
 // Update profile information (name, email, phone)
-router.put('/', authMiddleware, updateProfile);
+router.put('/', authMiddleware, updateProfileValidation, validateRequest, updateProfile);
 
 // Upload/Update avatar
 router.put('/avatar', authMiddleware, avatarUpload.single('avatar'), updateAvatar);
@@ -29,9 +35,9 @@ router.put('/avatar', authMiddleware, avatarUpload.single('avatar'), updateAvata
 router.delete('/avatar', authMiddleware, deleteAvatar);
 
 // Change password
-router.put('/password', authMiddleware, changePassword);
+router.put('/password', authMiddleware, changePasswordValidation, validateRequest, changePassword);
 
 // Delete account (soft delete)
-router.delete('/', authMiddleware, deleteAccount);
+router.delete('/', authMiddleware, deleteAccountValidation, validateRequest, deleteAccount);
 
 export default router;

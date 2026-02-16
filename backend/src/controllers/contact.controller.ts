@@ -36,32 +36,6 @@ export const submitContactForm = async (req: Request, res: Response) => {
       message,
     } = req.body;
 
-    // Validation
-    if (!firstName || !lastName || !email || !inquiryType || !message) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please fill all required fields',
-      });
-    }
-
-    // Validate inquiry type
-    const validInquiryTypes = ['BUSINESS', 'SUPPORT', 'CAREER', 'OTHERS'];
-    if (!validInquiryTypes.includes(inquiryType.toUpperCase())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid inquiry type',
-      });
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format',
-      });
-    }
-
     // Get IP address
     const ipAddress =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||

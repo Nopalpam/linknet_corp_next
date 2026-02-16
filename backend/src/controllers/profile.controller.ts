@@ -6,11 +6,6 @@ import { processAvatarImage, validateImage } from '../utils/image.util';
 import { uploadToAzureBlob, deleteFromAzureBlob, extractBlobNameFromUrl } from '../utils/storage.util';
 import { sendVerificationEmail } from '../utils/email.util';
 import logger from '../utils/logger';
-import {
-  updateProfileSchema,
-  changePasswordSchema,
-  deleteAccountSchema
-} from '../validators/profile.validator';
 
 const prisma = new PrismaClient();
 
@@ -145,18 +140,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    // Validate input
-    const validation = updateProfileSchema.safeParse(req.body);
-    if (!validation.success) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: validation.error.issues
-      });
-      return;
-    }
-
-    const { firstName, lastName, username, email, phone } = validation.data;
+    const { firstName, lastName, username, email, phone } = req.body;
 
     // Get current user
     const currentUser = await prisma.user.findUnique({
@@ -471,6 +455,18 @@ export const deleteAvatar = async (req: AuthRequest, res: Response): Promise<voi
  * Change user password
  * PUT /api/profile/password
  */
+// MBSS2.0-011: Number of previous passwords to check against
+const PASSWORD_HISTORY_COUNT = 6;
+
+/**
+ * Change user password
+ * PUT /api/profile/password
+ * 
+ * Security controls enforced:
+ * - MBSS2.0-009: Reset password age timer on change
+ * - MBSS2.0-010: Clear mustChangePassword flag after change
+ * - MBSS2.0-011: Check against last 6 password hashes
+ */
 export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
@@ -483,18 +479,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    // Validate input
-    const validation = changePasswordSchema.safeParse(req.body);
-    if (!validation.success) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: validation.error.issues
-      });
-      return;
-    }
-
-    const { currentPassword, newPassword } = validation.data;
+    const { currentPassword, newPassword } = req.body;
 
     // Get current user
     const user = await prisma.user.findUnique({
@@ -519,21 +504,70 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
+    // MBSS2.0-011: Check password history (last 6 passwords)
+    const passwordHistories = await prisma.passwordHistory.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: PASSWORD_HISTORY_COUNT
+    });
+
+    for (const history of passwordHistories) {
+      const isReused = await comparePassword(newPassword, history.passwordHash);
+      if (isReused) {
+        res.status(400).json({
+          success: false,
+          message: `New password cannot be the same as any of your last ${PASSWORD_HISTORY_COUNT} passwords.`
+        });
+        return;
+      }
+    }
+
+    // Also check against current password hash
+    const isSameAsCurrent = await comparePassword(newPassword, user.password);
+    if (isSameAsCurrent) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be different from your current password.'
+      });
+      return;
+    }
+
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update password
+    // MBSS2.0-011: Store current password in history before updating
+    await prisma.passwordHistory.create({
+      data: {
+        userId,
+        passwordHash: user.password
+      }
+    });
+
+    // Cleanup: Keep only the last PASSWORD_HISTORY_COUNT entries
+    const allHistories = await prisma.passwordHistory.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (allHistories.length > PASSWORD_HISTORY_COUNT) {
+      const idsToDelete = allHistories.slice(PASSWORD_HISTORY_COUNT).map(h => h.id);
+      await prisma.passwordHistory.deleteMany({
+        where: { id: { in: idsToDelete } }
+      });
+    }
+
+    // Update password + reset age timer + clear mustChangePassword
     await prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword }
+      data: {
+        password: hashedPassword,
+        passwordChangedAt: new Date(),    // MBSS2.0-009: Reset password age
+        mustChangePassword: false          // MBSS2.0-010: Clear first-login flag
+      }
     });
 
     // Revoke all refresh tokens (force logout on all devices)
-    // Note: Current session will remain valid until access token expires
     await prisma.refreshToken.deleteMany({
-      where: {
-        userId
-      }
+      where: { userId }
     });
 
     // Log activity
@@ -550,7 +584,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
 
     res.status(200).json({
       success: true,
-      message: 'Password changed successfully. Other sessions have been logged out.'
+      message: 'Password changed successfully. All sessions have been logged out.'
     });
   } catch (error) {
     logger.error('Change password error:', error);
@@ -577,18 +611,7 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    // Validate input
-    const validation = deleteAccountSchema.safeParse(req.body);
-    if (!validation.success) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: validation.error.issues
-      });
-      return;
-    }
-
-    const { password } = validation.data;
+    const { password } = req.body;
 
     // Get current user
     const user = await prisma.user.findUnique({

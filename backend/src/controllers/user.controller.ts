@@ -124,3 +124,37 @@ export const bulkDeleteUsers = async (req: AuthRequest, res: Response) => {
     data: result,
   });
 };
+
+/**
+ * MBSS2.0-008: Unlock a locked user account (admin action)
+ * POST /api/cms/users/:id/unlock
+ */
+export const unlockUserAccount = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const unlockedBy = req.user!.userId;
+
+  const user = await userService.unlockUserAccount(id as string, unlockedBy);
+
+  res.json({
+    success: true,
+    message: 'User account has been unlocked successfully',
+    data: user,
+  });
+};
+
+/**
+ * MBSS2.0-010: Reset mustChangePassword flag (admin action)
+ * POST /api/cms/users/:id/force-password-change
+ */
+export const forcePasswordChange = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const updatedBy = req.user!.userId;
+
+  const user = await userService.forcePasswordChange(id as string, updatedBy);
+
+  res.json({
+    success: true,
+    message: 'User will be required to change password on next login',
+    data: user,
+  });
+};

@@ -288,6 +288,8 @@ export class UserService {
     }
 
     // Create user with roles
+    // MBSS2.0-010: mustChangePassword defaults to true (schema default)
+    // so admin-created users must change password on first login
     const user = await prisma.user.create({
       data: {
         email: dto.email,
@@ -297,6 +299,7 @@ export class UserService {
         lastName: dto.lastName,
         phone: dto.phone,
         status: dto.status || UserStatus.ACTIVE,
+        mustChangePassword: true,  // MBSS2.0-010: Force password change on first login
         userRoles: {
           create: dto.roles.map((roleId) => ({
             roleId,
@@ -636,6 +639,93 @@ export class UserService {
     });
 
     return { deleted: result.count };
+  }
+
+  /**
+   * MBSS2.0-008: Unlock a locked user account
+   * Resets failed login attempts and clears lock timestamp
+   */
+  async unlockUserAccount(userId: string, unlockedBy: string): Promise<UserDetailResponse> {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    if (!user.lockedAt) {
+      throw new AppError('User account is not locked', 400, 'NOT_LOCKED');
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        failedLoginAttempts: 0,
+        lockedAt: null,
+        lockedReason: null,
+      },
+    });
+
+    // Log activity
+    await prisma.logActivity.create({
+      data: {
+        userId: unlockedBy,
+        action: 'unlock_account',
+        module: 'users_management',
+        description: `Unlocked user account: ${user.email}`,
+        metadata: {
+          targetUserId: userId,
+          targetUserEmail: user.email,
+          previousLockedAt: user.lockedAt,
+          previousLockedReason: user.lockedReason,
+        },
+      },
+    });
+
+    return this.getUserById(userId);
+  }
+
+  /**
+   * MBSS2.0-010: Force a user to change password on next login
+   */
+  async forcePasswordChange(userId: string, updatedBy: string): Promise<UserDetailResponse> {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        mustChangePassword: true,
+      },
+    });
+
+    // Log activity
+    await prisma.logActivity.create({
+      data: {
+        userId: updatedBy,
+        action: 'force_password_change',
+        module: 'users_management',
+        description: `Set force password change for user: ${user.email}`,
+        metadata: {
+          targetUserId: userId,
+          targetUserEmail: user.email,
+        },
+      },
+    });
+
+    return this.getUserById(userId);
   }
 }
 

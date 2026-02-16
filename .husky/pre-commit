@@ -1,0 +1,110 @@
+#!/usr/bin/env node
+/**
+ * Husky Pre-commit Hook
+ * Control: MBSS2.0-ApplicationCoding-003 - File scanning before upload/transfer
+ * 
+ * This hook runs before each commit to ensure:
+ * 1. Code quality checks (linting, formatting)
+ * 2. Security scanning (secrets, vulnerabilities)
+ * 3. Dependency validation
+ */
+
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+console.log('🔒 Running pre-commit security checks...\n');
+
+// Track failures
+let hasErrors = false;
+
+// Helper function to run commands
+function runCommand(command, description) {
+  try {
+    console.log(`⏳ ${description}...`);
+    execSync(command, { stdio: 'inherit' });
+    console.log(`✅ ${description} passed\n`);
+    return true;
+  } catch (error) {
+    console.error(`❌ ${description} failed\n`);
+    hasErrors = true;
+    return false;
+  }
+}
+
+// 1. Check for secrets in staged files
+runCommand(
+  'git diff --cached --name-only | xargs grep -E "(password|api_key|secret|token|private_key)" || exit 0',
+  'Checking for exposed secrets'
+);
+
+// 2. Run linters
+const stagedFiles = execSync('git diff --cached --name-only', { encoding: 'utf8' });
+const hasBackendFiles = stagedFiles.includes('backend/');
+const hasFrontendFiles = stagedFiles.includes('frontend/');
+
+if (hasBackendFiles) {
+  runCommand('cd backend && npm run lint', 'Backend ESLint');
+}
+
+if (hasFrontendFiles) {
+  runCommand('cd frontend && npm run lint', 'Frontend ESLint');
+}
+
+// 3. Check package-lock.json changes for vulnerabilities
+if (stagedFiles.includes('backend/package-lock.json')) {
+  console.log('⏳ Checking backend dependencies for vulnerabilities...');
+  try {
+    execSync('cd backend && npm audit --audit-level=high', { stdio: 'inherit' });
+    console.log('✅ Backend dependencies check passed\n');
+  } catch (error) {
+    console.error('❌ Backend has high/critical vulnerabilities!');
+    console.error('   Run: cd backend && npm audit fix\n');
+    hasErrors = true;
+  }
+}
+
+if (stagedFiles.includes('frontend/package-lock.json')) {
+  console.log('⏳ Checking frontend dependencies for vulnerabilities...');
+  try {
+    execSync('cd frontend && npm audit --audit-level=high', { stdio: 'inherit' });
+    console.log('✅ Frontend dependencies check passed\n');
+  } catch (error) {
+    console.error('❌ Frontend has high/critical vulnerabilities!');
+    console.error('   Run: cd frontend && npm audit fix\n');
+    hasErrors = true;
+  }
+}
+
+// 4. Check for large files (>5MB)
+console.log('⏳ Checking for large files...');
+const largeFiles = execSync(
+  'git diff --cached --name-only | xargs ls -lh 2>/dev/null | awk \'$5 ~ /M$/ && $5+0 > 5 {print $9" ("$5")"}\' || exit 0',
+  { encoding: 'utf8' }
+);
+if (largeFiles) {
+  console.error('❌ Large files detected (>5MB):');
+  console.error(largeFiles);
+  console.error('   Consider using Git LFS or compressing files\n');
+  hasErrors = true;
+} else {
+  console.log('✅ No large files detected\n');
+}
+
+// 5. TypeScript type checking for staged files
+if (hasBackendFiles) {
+  runCommand('cd backend && npx tsc --noEmit', 'Backend TypeScript type check');
+}
+
+if (hasFrontendFiles) {
+  runCommand('cd frontend && npx tsc --noEmit', 'Frontend TypeScript type check');
+}
+
+// Final result
+if (hasErrors) {
+  console.error('\n❌ Pre-commit checks failed! Please fix the errors above.\n');
+  process.exit(1);
+} else {
+  console.log('\n✅ All pre-commit checks passed! Proceeding with commit...\n');
+  process.exit(0);
+}

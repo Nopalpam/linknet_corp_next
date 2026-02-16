@@ -36,6 +36,14 @@ const app: Application = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust proxy (required for HTTPS detection behind reverse proxies/load balancers)
+// This allows Express to trust X-Forwarded-* headers
+app.set('trust proxy', 1);
+
+// HTTPS enforcement middleware (must be early in the chain)
+import { httpsRedirectMiddleware } from '@middleware/httpsRedirect.middleware';
+app.use(httpsRedirectMiddleware);
+
 // Security middleware
 app.use(helmet());
 

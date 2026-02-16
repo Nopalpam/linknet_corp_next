@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { PrismaClient } from '@prisma/client';
 import { hashPassword, comparePassword } from '../utils/password.util';
 import {
@@ -25,17 +24,6 @@ const prisma = new PrismaClient();
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-      return;
-    }
-
     const { email, password, name, firstName, lastName } = req.body;
 
     // Check if email already exists
@@ -92,23 +80,22 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+// MBSS2.0-008: Maximum failed login attempts before account lockout
+const MAX_FAILED_LOGIN_ATTEMPTS = 3;
+// MBSS2.0-009: Password expiry in days
+const PASSWORD_MAX_AGE_DAYS = 60;
+
 /**
  * Login user
  * POST /api/auth/login
+ * 
+ * Security controls enforced:
+ * - MBSS2.0-008: Account lockout after 3 failed attempts (admin unlock required)
+ * - MBSS2.0-009: Password expiry after 60 days
+ * - MBSS2.0-010: Force password change on first login
  */
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-      return;
-    }
-
     const { email, password } = req.body;
 
     // Find user by email
@@ -124,13 +111,60 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // MBSS2.0-008: Check if account is locked
+    if (user.lockedAt) {
+      res.status(403).json({
+        success: false,
+        message: 'Your account has been locked due to too many failed login attempts. Please contact an administrator to unlock your account.',
+        code: 'ACCOUNT_LOCKED'
+      });
+      return;
+    }
+
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
 
     if (!isPasswordValid) {
+      // MBSS2.0-008: Increment failed login attempts
+      const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+      const isNowLocked = newFailedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS;
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newFailedAttempts,
+          ...(isNowLocked && {
+            lockedAt: new Date(),
+            lockedReason: `Account locked after ${MAX_FAILED_LOGIN_ATTEMPTS} failed login attempts`
+          })
+        }
+      });
+
+      // Log failed attempt
+      await prisma.logActivity.create({
+        data: {
+          userId: user.id,
+          action: 'login_failed',
+          module: 'auth',
+          description: `Failed login attempt ${newFailedAttempts}/${MAX_FAILED_LOGIN_ATTEMPTS}${isNowLocked ? ' - Account locked' : ''}`,
+          ipAddress: req.ip || '',
+          userAgent: req.get('user-agent') || ''
+        }
+      });
+
+      if (isNowLocked) {
+        res.status(403).json({
+          success: false,
+          message: 'Your account has been locked due to too many failed login attempts. Please contact an administrator to unlock your account.',
+          code: 'ACCOUNT_LOCKED'
+        });
+        return;
+      }
+
+      const remainingAttempts = MAX_FAILED_LOGIN_ATTEMPTS - newFailedAttempts;
       res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: `Invalid email or password. ${remainingAttempts} attempt(s) remaining before account lockout.`
       });
       return;
     }
@@ -151,6 +185,23 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
+
+    // MBSS2.0-008: Reset failed login attempts on successful login
+    if (user.failedLoginAttempts > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0 }
+      });
+    }
+
+    // MBSS2.0-009: Check password age (60 days max)
+    const passwordAge = Math.floor(
+      (Date.now() - new Date(user.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const isPasswordExpired = passwordAge >= PASSWORD_MAX_AGE_DAYS;
+
+    // MBSS2.0-010: Check if first-time login (must change password)
+    const requiresPasswordChange = user.mustChangePassword || isPasswordExpired;
 
     // Get user roles and permissions
     const userWithRoles = await prisma.user.findUnique({
@@ -213,9 +264,25 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       data: { lastLoginAt: new Date() }
     });
 
+    // Log successful login
+    await prisma.logActivity.create({
+      data: {
+        userId: user.id,
+        action: 'login',
+        module: 'auth',
+        description: 'Successful login',
+        ipAddress: req.ip || '',
+        userAgent: req.get('user-agent') || ''
+      }
+    });
+
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: requiresPasswordChange 
+        ? (user.mustChangePassword 
+            ? 'Login successful. You must change your password before continuing.' 
+            : 'Login successful. Your password has expired and must be changed.')
+        : 'Login successful',
       data: {
         user: {
           id: user.id,
@@ -226,7 +293,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           avatar: user.avatar,
           status: user.status,
           roles,
-          permissions
+          permissions,
+          // MBSS2.0-009 & 010: Signal frontend to force password change
+          mustChangePassword: requiresPasswordChange,
+          passwordExpired: isPasswordExpired,
+          passwordAgeDays: passwordAge
         },
         accessToken,
         refreshToken
@@ -322,17 +393,6 @@ export const logoutAll = async (req: AuthRequest, res: Response): Promise<void> 
  */
 export const refreshAccessToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-      return;
-    }
-
     const { refreshToken } = req.body;
 
     // Verify refresh token
@@ -464,17 +524,6 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
  */
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-      return;
-    }
-
     const { email } = req.body;
 
     // Find user by email
@@ -525,20 +574,14 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 /**
  * Reset password with token
  * POST /api/auth/reset-password
+ * 
+ * Security controls enforced:
+ * - MBSS2.0-009: Reset password age timer
+ * - MBSS2.0-010: Clear mustChangePassword flag
+ * - MBSS2.0-011: Check against last 6 password hashes
  */
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Validate request
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-      return;
-    }
-
     const { token, password } = req.body;
 
     // Find reset token
@@ -585,13 +628,65 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // MBSS2.0-011: Check password history (last 6 passwords)
+    const passwordHistories = await prisma.passwordHistory.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 6
+    });
+
+    for (const history of passwordHistories) {
+      const isReused = await comparePassword(password, history.passwordHash);
+      if (isReused) {
+        res.status(400).json({
+          success: false,
+          message: 'New password cannot be the same as any of your last 6 passwords.'
+        });
+        return;
+      }
+    }
+
+    // Also check against current password
+    const isSameAsCurrent = await comparePassword(password, user.password);
+    if (isSameAsCurrent) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be different from your current password.'
+      });
+      return;
+    }
+
     // Hash new password
     const hashedPassword = await hashPassword(password);
 
-    // Update password
+    // MBSS2.0-011: Store current password in history before updating
+    await prisma.passwordHistory.create({
+      data: {
+        userId: user.id,
+        passwordHash: user.password
+      }
+    });
+
+    // Cleanup: Keep only the last 6 entries
+    const allHistories = await prisma.passwordHistory.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (allHistories.length > 6) {
+      const idsToDelete = allHistories.slice(6).map(h => h.id);
+      await prisma.passwordHistory.deleteMany({
+        where: { id: { in: idsToDelete } }
+      });
+    }
+
+    // Update password + reset age timer + clear first-login flag
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword }
+      data: {
+        password: hashedPassword,
+        passwordChangedAt: new Date(),    // MBSS2.0-009
+        mustChangePassword: false          // MBSS2.0-010
+      }
     });
 
     // Mark token as used

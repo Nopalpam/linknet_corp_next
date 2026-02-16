@@ -93,8 +93,21 @@ export const createUserValidation = [
     .withMessage('Password must be at least 8 characters long')
     .matches(/[A-Z]/)
     .withMessage('Password must contain at least 1 uppercase letter')
+    .matches(/[a-z]/)
+    .withMessage('Password must contain at least 1 lowercase letter')
     .matches(/[0-9]/)
-    .withMessage('Password must contain at least 1 number'),
+    .withMessage('Password must contain at least 1 number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/)
+    .withMessage('Password must contain at least 1 special character')
+    .custom((value, { req }) => {
+      if (value && req.body.email) {
+        const emailLocal = req.body.email.split('@')[0].toLowerCase();
+        if (value.toLowerCase() === emailLocal || value.toLowerCase() === req.body.email.toLowerCase()) {
+          throw new Error('Password cannot be identical to email or username');
+        }
+      }
+      return true;
+    }),
   
   body('roles')
     .isArray({ min: 1 })

@@ -1,6 +1,7 @@
 import { PrismaClient, ContentStatus, Prisma } from '@prisma/client';
 import { AppError } from '../types/error.types';
 import slugify from 'slugify';
+import { sanitizeHtmlContent } from '../utils/htmlSanitizer';
 
 const prisma = new PrismaClient();
 
@@ -265,10 +266,10 @@ export class NewsService {
         slug,
         newsDate: new Date(data.newsDate),
         thumbnail: data.thumbnail,
-        excerptEn: data.excerptEn,
-        excerptId: data.excerptId,
-        contentEn: data.contentEn,
-        contentId: data.contentId,
+        excerptEn: data.excerptEn ? sanitizeHtmlContent(data.excerptEn) : undefined,
+        excerptId: data.excerptId ? sanitizeHtmlContent(data.excerptId) : undefined,
+        contentEn: sanitizeHtmlContent(data.contentEn),
+        contentId: data.contentId ? sanitizeHtmlContent(data.contentId) : undefined,
         newsLink: data.newsLink,
         categoryId: data.categoryId,
         metaKeywords: data.metaKeywords,
@@ -331,10 +332,10 @@ export class NewsService {
         ...(data.titleId !== undefined && { titleId: data.titleId }),
         ...(data.newsDate !== undefined && { newsDate: new Date(data.newsDate) }),
         ...(data.thumbnail !== undefined && { thumbnail: data.thumbnail }),
-        ...(data.excerptEn !== undefined && { excerptEn: data.excerptEn }),
-        ...(data.excerptId !== undefined && { excerptId: data.excerptId }),
-        ...(data.contentEn !== undefined && { contentEn: data.contentEn }),
-        ...(data.contentId !== undefined && { contentId: data.contentId }),
+        ...(data.excerptEn !== undefined && { excerptEn: sanitizeHtmlContent(data.excerptEn) }),
+        ...(data.excerptId !== undefined && { excerptId: data.excerptId ? sanitizeHtmlContent(data.excerptId) : undefined }),
+        ...(data.contentEn !== undefined && { contentEn: sanitizeHtmlContent(data.contentEn) }),
+        ...(data.contentId !== undefined && { contentId: data.contentId ? sanitizeHtmlContent(data.contentId) : undefined }),
         ...(data.newsLink !== undefined && { newsLink: data.newsLink }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.metaKeywords !== undefined && { metaKeywords: data.metaKeywords }),

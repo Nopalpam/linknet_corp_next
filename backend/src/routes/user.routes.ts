@@ -7,11 +7,14 @@ import {
   deleteUser,
   toggleUserStatus,
   bulkDeleteUsers,
+  unlockUserAccount,
+  forcePasswordChange,
 } from '../controllers/user.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 import { asyncHandler } from '../middleware/errorHandler.middleware';
+import { validateRequest } from '../middleware/validation.middleware';
 import {
   getUsersValidation,
   getUserByIdValidation,
@@ -34,6 +37,7 @@ router.get(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_READ),
   getUsersValidation,
+  validateRequest,
   asyncHandler(getUsers)
 );
 
@@ -47,6 +51,7 @@ router.get(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_READ),
   getUserByIdValidation,
+  validateRequest,
   asyncHandler(getUserById)
 );
 
@@ -60,6 +65,7 @@ router.post(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_CREATE),
   createUserValidation,
+  validateRequest,
   asyncHandler(createUser)
 );
 
@@ -73,6 +79,7 @@ router.put(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_UPDATE),
   updateUserValidation,
+  validateRequest,
   asyncHandler(updateUser)
 );
 
@@ -86,6 +93,7 @@ router.delete(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_DELETE),
   deleteUserValidation,
+  validateRequest,
   asyncHandler(deleteUser)
 );
 
@@ -99,6 +107,7 @@ router.post(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_UPDATE),
   toggleUserStatusValidation,
+  validateRequest,
   asyncHandler(toggleUserStatus)
 );
 
@@ -112,7 +121,32 @@ router.post(
   authMiddleware,
   requirePermission(Permission.USERS_MANAGEMENT_DELETE),
   bulkDeleteUsersValidation,
+  validateRequest,
   asyncHandler(bulkDeleteUsers)
+);
+
+/**
+ * @route   POST /api/cms/users/:id/unlock
+ * @desc    MBSS2.0-008: Unlock a locked user account (admin only)
+ * @access  Private (requires users_management.update permission)
+ */
+router.post(
+  '/:id/unlock',
+  authMiddleware,
+  requirePermission(Permission.USERS_MANAGEMENT_UPDATE),
+  asyncHandler(unlockUserAccount)
+);
+
+/**
+ * @route   POST /api/cms/users/:id/force-password-change
+ * @desc    MBSS2.0-010: Force user to change password on next login
+ * @access  Private (requires users_management.update permission)
+ */
+router.post(
+  '/:id/force-password-change',
+  authMiddleware,
+  requirePermission(Permission.USERS_MANAGEMENT_UPDATE),
+  asyncHandler(forcePasswordChange)
 );
 
 export default router;
