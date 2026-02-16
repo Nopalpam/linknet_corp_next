@@ -1,7 +1,7 @@
 # ================================
 # Stage 1: Dependencies
 # ================================
-FROM node:18-alpine AS dependencies
+FROM node:25-alpine AS dependencies
 
 # Set working directory
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN npx prisma generate
 # ================================
 # Stage 2: Build
 # ================================
-FROM node:18-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -50,7 +50,7 @@ RUN npm run build
 # ================================
 # Stage 3: Production
 # ================================
-FROM node:18-alpine AS production
+FROM node:25-alpine AS production
 
 # Install curl for health checks
 RUN apk add --no-cache curl openssl
