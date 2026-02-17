@@ -71,8 +71,9 @@ export const validatePasswordStrength = (
 
   // Check password is not identical to email or username
   if (email) {
-    const emailLocal = email.split('@')[0].toLowerCase();
-    if (password.toLowerCase() === emailLocal || password.toLowerCase() === email.toLowerCase()) {
+    const emailParts = email.split('@');
+    const emailLocal = emailParts[0]?.toLowerCase();
+    if (emailLocal && (password.toLowerCase() === emailLocal || password.toLowerCase() === email.toLowerCase())) {
       errors.push('Password cannot be identical to email or username');
     }
   }

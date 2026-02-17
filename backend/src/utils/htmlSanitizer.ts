@@ -128,7 +128,7 @@ export function sanitizeHtmlContent(html: string): string {
         }
         return { tagName, attribs };
       },
-      img: (tagName, attribs) => {
+      img: (_tagName, attribs) => {
         // Add loading="lazy" for images if not present
         return {
           tagName: 'img',
@@ -214,7 +214,7 @@ export function sanitizeUserContent(html: string): string {
     },
     allowedSchemes: ['http', 'https', 'mailto'],
     transformTags: {
-      a: (tagName, attribs) => ({
+      a: (_tagName, attribs) => ({
         tagName: 'a',
         attribs: {
           ...attribs,
