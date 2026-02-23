@@ -1011,9 +1011,9 @@ async function main() {
   console.log('👔 Creating management categories...');
 
   const managementCategories = [
-    { name: 'Board of Directors', slug: 'board-of-directors', description: 'Company board of directors', position: 1 },
-    { name: 'Executive Management', slug: 'executive-management', description: 'Executive management team', position: 2 },
-    { name: 'Department Heads', slug: 'department-heads', description: 'Department heads and managers', position: 3 },
+    { name: 'Board of Directors', slug: 'board-of-directors', description: 'Company board of directors', order: 1, status: 1 },
+    { name: 'Executive Management', slug: 'executive-management', description: 'Executive management team', order: 2, status: 1 },
+    { name: 'Department Heads', slug: 'department-heads', description: 'Department heads and managers', order: 3, status: 1 },
   ];
 
   const createdManagementCategories = await Promise.all(
@@ -1033,11 +1033,12 @@ async function main() {
     data: {
       categoryId: createdManagementCategories[0]!.id,
       name: 'John Doe',
-      slug: 'john-doe',
-      position: 'Chief Executive Officer',
-      description: 'John has over 20 years of experience in telecommunications industry.',
-      email: 'john.doe@linknet.co.id',
-      order: 1,
+      positionEn: 'Chief Executive Officer',
+      positionId: 'Direktur Utama',
+      bioEn: 'John has over 20 years of experience in telecommunications industry.',
+      bioId: 'John memiliki pengalaman lebih dari 20 tahun di industri telekomunikasi.',
+      dataOrder: 1,
+      dataStatus: 1,
     },
   });
 

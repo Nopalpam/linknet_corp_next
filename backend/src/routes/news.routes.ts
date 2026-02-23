@@ -3,31 +3,25 @@ import newsController from '../controllers/news.controller';
 import newsCategoryController from '../controllers/news-category.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
-import { validateRequest } from '../middleware/validation.middleware';
-import {
-  getNewsValidation,
-  getNewsByIdValidation,
-  getNewsBySlugValidation,
-  createNewsValidation,
-  updateNewsValidation,
-  deleteNewsValidation,
-  highlightNewsValidation,
-  reorderHighlightsValidation,
-  removeHighlightValidation,
-} from '../validators/news.validator';
 
 const router = Router();
 
 // ================== PUBLIC NEWS ROUTES ==================
 
 // Get active news (Public)
-router.get('/news', newsController.getActiveNews);
+router.get('/public/news', newsController.getActiveNews);
 
 // Get highlighted news (Public)
-router.get('/news/highlights', newsController.getHighlightedNews);
+router.get('/public/news/highlights', newsController.getHighlightedNews);
 
-// Get news by slug (Public)
-router.get('/news/:slug', getNewsBySlugValidation, validateRequest, newsController.getNewsBySlug);
+// Get news by slug (Public, auto-track view)
+router.get('/public/news/:slug', newsController.getNewsBySlug);
+
+// Get news by category slug (Public, paginated)
+router.get('/public/news/category/:categorySlug', newsController.getNewsByCategorySlug);
+
+// Track news view (Public, no auth)
+router.post('/news-views/:newsId', newsController.trackNewsView);
 
 // Get active categories (Public)
 router.get('/news-categories', newsCategoryController.getActiveCategories);
@@ -42,8 +36,6 @@ router.get(
   '/cms/news',
   authMiddleware,
   requirePermission('news.read'),
-  getNewsValidation,
-  validateRequest,
   newsController.getNews
 );
 
@@ -52,8 +44,6 @@ router.get(
   '/cms/news/:id',
   authMiddleware,
   requirePermission('news.read'),
-  getNewsByIdValidation,
-  validateRequest,
   newsController.getNewsById
 );
 
@@ -62,8 +52,6 @@ router.post(
   '/cms/news',
   authMiddleware,
   requirePermission('news.create'),
-  createNewsValidation,
-  validateRequest,
   newsController.createNews
 );
 
@@ -72,8 +60,6 @@ router.put(
   '/cms/news/:id',
   authMiddleware,
   requirePermission('news.update'),
-  updateNewsValidation,
-  validateRequest,
   newsController.updateNews
 );
 
@@ -82,8 +68,6 @@ router.delete(
   '/cms/news/:id',
   authMiddleware,
   requirePermission('news.delete'),
-  deleteNewsValidation,
-  validateRequest,
   newsController.deleteNews
 );
 
@@ -97,33 +81,43 @@ router.get(
   newsController.getHighlights
 );
 
-// Set highlight (CMS)
+// Get available news for highlight (CMS)
+router.get(
+  '/cms/news-highlights/available',
+  authMiddleware,
+  requirePermission('news.read'),
+  newsController.getAvailableForHighlight
+);
+
+// Create highlight (CMS)
 router.post(
   '/cms/news-highlights',
   authMiddleware,
   requirePermission('news.update'),
-  highlightNewsValidation,
-  validateRequest,
-  newsController.setHighlight
+  newsController.createHighlight
 );
 
 // Reorder highlights (CMS)
-router.post(
+router.put(
   '/cms/news-highlights/reorder',
   authMiddleware,
   requirePermission('news.update'),
-  reorderHighlightsValidation,
-  validateRequest,
   newsController.reorderHighlights
 );
 
-// Remove highlight (CMS)
+// Bulk delete highlights (CMS) - must be before :id route
 router.delete(
-  '/cms/news-highlights/:newsId',
+  '/cms/news-highlights/bulk',
   authMiddleware,
   requirePermission('news.update'),
-  removeHighlightValidation,
-  validateRequest,
+  newsController.bulkRemoveHighlights
+);
+
+// Delete single highlight (CMS)
+router.delete(
+  '/cms/news-highlights/:id',
+  authMiddleware,
+  requirePermission('news.update'),
   newsController.removeHighlight
 );
 
@@ -142,6 +136,22 @@ router.get(
   '/cms/news-categories/active',
   authMiddleware,
   newsCategoryController.getActiveCategories
+);
+
+// Reorder categories (CMS) - must be before :id route
+router.put(
+  '/cms/news-categories/reorder',
+  authMiddleware,
+  requirePermission('news.update'),
+  newsCategoryController.updateCategoryOrder
+);
+
+// Bulk delete categories (CMS) - must be before :id route
+router.delete(
+  '/cms/news-categories/bulk',
+  authMiddleware,
+  requirePermission('news.delete'),
+  newsCategoryController.bulkDeleteCategories
 );
 
 // Get single category by ID (CMS)
@@ -168,12 +178,12 @@ router.put(
   newsCategoryController.updateCategory
 );
 
-// Update category order (CMS)
-router.post(
-  '/cms/news-categories/update-order',
+// Toggle category status (CMS)
+router.patch(
+  '/cms/news-categories/:id/status',
   authMiddleware,
   requirePermission('news.update'),
-  newsCategoryController.updateCategoryOrder
+  newsCategoryController.toggleStatus
 );
 
 // Delete category (CMS)

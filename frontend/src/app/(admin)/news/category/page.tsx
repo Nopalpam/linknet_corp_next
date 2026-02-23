@@ -14,7 +14,7 @@ export default function NewsCategoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,14 +34,18 @@ export default function NewsCategoryPage() {
       setLoading(true);
       setError(null);
 
-      const response = await newsCategoryService.getPaginated({
+      const params: Record<string, any> = {
         page: currentPage,
         limit: itemsPerPage,
-        search: searchQuery,
-        isActive: filterStatus === "ALL" ? undefined : filterStatus === "ACTIVE",
-        sortBy: "position",
+        search: searchQuery || undefined,
+        sortBy: "dataOrder",
         sortOrder: "asc",
-      });
+      };
+
+      if (filterStatus === "ACTIVE") params.dataStatus = 1;
+      else if (filterStatus === "INACTIVE") params.dataStatus = 0;
+
+      const response = await newsCategoryService.getPaginated(params);
 
       setCategories(response.data || []);
       setTotalPages(response.pagination?.totalPages || 1);
@@ -60,47 +64,49 @@ export default function NewsCategoryPage() {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterStatus]);
 
-  // Handle create
   const handleCreate = () => {
     setFormMode("create");
     setSelectedCategory(null);
     setIsFormModalOpen(true);
   };
 
-  // Handle edit
   const handleEdit = (category: NewsCategory) => {
     setFormMode("edit");
     setSelectedCategory(category);
     setIsFormModalOpen(true);
   };
 
-  // Handle delete
   const handleDelete = (category: NewsCategory) => {
     setSelectedCategory(category);
     setIsDeleteModalOpen(true);
   };
 
-  // Handle form submit
+  const handleToggleStatus = async (category: NewsCategory) => {
+    try {
+      await newsCategoryService.toggleStatus(category.id);
+      toast.success("Status updated");
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle status");
+    }
+  };
+
   const handleFormSubmit = async (success: boolean, message?: string) => {
     setIsFormModalOpen(false);
     if (success) {
       toast.success(
-        message ||
-          (formMode === "create" ? "Category created successfully" : "Category updated successfully")
+        message || (formMode === "create" ? "Category created successfully" : "Category updated successfully")
       );
       await fetchCategories();
     }
   };
 
-  // Handle delete confirm
   const handleDeleteConfirm = async () => {
     if (!selectedCategory) return;
-
     try {
       await newsCategoryService.delete(selectedCategory.id);
       toast.success("Category deleted successfully");
@@ -113,10 +119,8 @@ export default function NewsCategoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <PageBreadCrumb pageTitle="News Category" />
 
-      {/* Header */}
       <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-900">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -140,7 +144,6 @@ export default function NewsCategoryPage() {
 
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-          {/* Search */}
           <div className="flex-1">
             <input
               type="text"
@@ -150,13 +153,11 @@ export default function NewsCategoryPage() {
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
-
-          {/* Status Filter */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => setFilterStatus(e.target.value)}
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="ALL">All Status</option>
@@ -166,22 +167,20 @@ export default function NewsCategoryPage() {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {/* Table */}
         <NewsCategoryTable
           categories={categories}
           loading={loading}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onToggleStatus={handleToggleStatus}
         />
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -207,7 +206,6 @@ export default function NewsCategoryPage() {
         )}
       </div>
 
-      {/* Form Modal */}
       <NewsCategoryFormModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
@@ -216,12 +214,11 @@ export default function NewsCategoryPage() {
         category={selectedCategory}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        title={selectedCategory?.nameEn || ""}
+        title={selectedCategory?.categoryName || ""}
       />
     </div>
   );

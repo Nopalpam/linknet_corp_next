@@ -1,4 +1,4 @@
-import { PrismaClient, ContentStatus, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { AppError } from '../types/error.types';
 import slugify from 'slugify';
 import { sanitizeHtmlContent } from '../utils/htmlSanitizer';
@@ -11,8 +11,8 @@ export interface NewsQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: ContentStatus;
-  categoryId?: string;
+  dataStatus?: number;
+  idCategory?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -21,48 +21,91 @@ export interface CreateNewsData {
   titleEn: string;
   titleId?: string;
   newsDate: Date | string;
-  thumbnail?: string;
+  newsThumbnail?: string;
   excerptEn?: string;
   excerptId?: string;
   contentEn: string;
   contentId?: string;
   newsLink?: string;
-  categoryId: string;
-  metaKeywords?: string;
+  idCategory?: number;
+  metaKeyword?: string;
   customCss?: string;
   customJs?: string;
-  status?: ContentStatus;
+  dataStatus?: number;
 }
 
-export interface UpdateNewsData extends Partial<CreateNewsData> {}
+export interface UpdateNewsData extends Omit<Partial<CreateNewsData>, 'idCategory'> {
+  idCategory?: number | null;
+}
+
+// ================== BIGINT SERIALIZER ==================
+
+function serializeNews(item: any) {
+  if (!item) return item;
+  return {
+    ...item,
+    id: item.id !== undefined ? Number(item.id) : item.id,
+    idCategory: item.idCategory !== undefined ? (item.idCategory !== null ? Number(item.idCategory) : null) : undefined,
+    viewCount: item.viewCount !== undefined ? Number(item.viewCount) : undefined,
+    viewCountUnique: item.viewCountUnique !== undefined ? Number(item.viewCountUnique) : undefined,
+    category: item.category ? {
+      ...item.category,
+      id: item.category.id !== undefined ? Number(item.category.id) : item.category.id,
+    } : undefined,
+    highlights: item.highlights ? item.highlights.map((h: any) => ({
+      ...h,
+      id: Number(h.id),
+      idNews: Number(h.idNews),
+    })) : undefined,
+    // Computed: reading time estimation (~200 words per minute)
+    readingTime: item.contentEn ? Math.max(1, Math.ceil(item.contentEn.replace(/<[^>]*>/g, '').split(/\s+/).length / 200)) : 1,
+  };
+}
+
+function serializeNewsList(items: any[]) {
+  return items.map(serializeNews);
+}
+
+function serializeHighlight(h: any) {
+  if (!h) return h;
+  return {
+    ...h,
+    id: Number(h.id),
+    idNews: Number(h.idNews),
+    dataOrder: h.dataOrder !== null ? Number(h.dataOrder) : null,
+    news: h.news ? serializeNews(h.news) : undefined,
+  };
+}
+
+function serializeHighlights(items: any[]) {
+  return items.map(serializeHighlight);
+}
 
 // ================== NEWS SERVICE ==================
 
 export class NewsService {
-  // Get news with pagination
-  async getNews(params: NewsQueryParams, _userId?: string) {
+  // Get news with pagination (CMS)
+  async getNews(params: NewsQueryParams) {
     const {
       page = 1,
       limit = 10,
       search,
-      status,
-      categoryId,
+      dataStatus,
+      idCategory,
       sortBy = 'newsDate',
       sortOrder = 'desc',
     } = params;
 
     const skip = (page - 1) * limit;
 
-    const where: Prisma.NewsWhereInput = {
-      deletedAt: null,
-    };
+    const where: Prisma.NewsContentWhereInput = {};
 
-    if (status) {
-      where.status = status;
+    if (dataStatus !== undefined) {
+      where.dataStatus = dataStatus;
     }
 
-    if (categoryId) {
-      where.categoryId = categoryId;
+    if (idCategory !== undefined) {
+      where.idCategory = BigInt(idCategory);
     }
 
     if (search) {
@@ -74,25 +117,22 @@ export class NewsService {
     }
 
     const [news, total] = await Promise.all([
-      prisma.news.findMany({
+      prisma.newsContent.findMany({
         where,
         include: {
           category: {
-            select: { id: true, nameEn: true, nameId: true, slug: true },
-          },
-          createdBy: {
-            select: { id: true, firstName: true, lastName: true },
+            select: { id: true, categoryName: true, slug: true },
           },
         },
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.news.count({ where }),
+      prisma.newsContent.count({ where }),
     ]);
 
     return {
-      data: news,
+      data: serializeNewsList(news),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -106,40 +146,81 @@ export class NewsService {
   async getActiveNews(params: NewsQueryParams) {
     const {
       page = 1,
-      limit = 10,
-      categoryId,
+      limit = 12,
+      idCategory,
       sortBy = 'newsDate',
       sortOrder = 'desc',
     } = params;
 
     const skip = (page - 1) * limit;
 
-    const where: Prisma.NewsWhereInput = {
-      deletedAt: null,
-      status: 'PUBLISHED',
+    const where: Prisma.NewsContentWhereInput = {
+      dataStatus: 1,
     };
 
-    if (categoryId) {
-      where.categoryId = categoryId;
+    if (idCategory !== undefined) {
+      where.idCategory = BigInt(idCategory);
     }
 
     const [news, total] = await Promise.all([
-      prisma.news.findMany({
+      prisma.newsContent.findMany({
         where,
         include: {
           category: {
-            select: { id: true, nameEn: true, nameId: true, slug: true },
+            select: { id: true, categoryName: true, slug: true },
           },
         },
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.news.count({ where }),
+      prisma.newsContent.count({ where }),
     ]);
 
     return {
-      data: news,
+      data: serializeNewsList(news),
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit,
+      },
+    };
+  }
+
+  // Get active news by category slug (public)
+  async getNewsByCategorySlug(categorySlug: string, page = 1, limit = 12) {
+    const category = await prisma.newsCategory.findFirst({
+      where: { slug: categorySlug, dataStatus: { in: [1, 2] } },
+    });
+
+    if (!category) {
+      throw new AppError('Category not found', 404);
+    }
+
+    const skip = (page - 1) * limit;
+    const where: Prisma.NewsContentWhereInput = {
+      dataStatus: 1,
+      idCategory: category.id,
+    };
+
+    const [news, total] = await Promise.all([
+      prisma.newsContent.findMany({
+        where,
+        include: {
+          category: {
+            select: { id: true, categoryName: true, slug: true },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { newsDate: 'desc' },
+      }),
+      prisma.newsContent.count({ where }),
+    ]);
+
+    return {
+      data: serializeNewsList(news),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -156,159 +237,157 @@ export class NewsService {
         news: {
           include: {
             category: {
-              select: { id: true, nameEn: true, nameId: true, slug: true },
+              select: { id: true, categoryName: true, slug: true },
             },
           },
         },
       },
-      orderBy: { position: 'asc' },
+      orderBy: { dataOrder: 'asc' },
       take: limit,
     });
 
-    return highlights
-      .filter((h) => h.news.deletedAt === null && h.news.status === 'PUBLISHED')
-      .map((h) => h.news);
+    return serializeHighlights(
+      highlights.filter((h) => h.news.dataStatus === 1)
+    );
   }
 
-  // Get single news by ID
-  async getNewsById(id: string) {
-    const news = await prisma.news.findUnique({
-      where: { id },
+  // Get single news by ID (CMS)
+  async getNewsById(id: number) {
+    const news = await prisma.newsContent.findUnique({
+      where: { id: BigInt(id) },
       include: {
         category: true,
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        updatedBy: {
-          select: { id: true, firstName: true, lastName: true },
-        },
         highlights: true,
       },
     });
 
-    if (!news || news.deletedAt) {
+    if (!news) {
       throw new AppError('News not found', 404);
     }
 
-    return news;
+    return serializeNews(news);
   }
 
   // Get news by slug (public)
   async getNewsBySlug(slug: string, trackView = false, ipAddress?: string, userAgent?: string) {
-    const news = await prisma.news.findUnique({
+    const news = await prisma.newsContent.findUnique({
       where: { slug },
       include: {
         category: true,
       },
     });
 
-    if (!news || news.deletedAt || news.status !== 'PUBLISHED') {
+    if (!news || news.dataStatus !== 1) {
       throw new AppError('News not found', 404);
     }
 
-    // Track view
     if (trackView) {
-      await this.trackView(news.id, ipAddress, userAgent);
+      await this.trackView(Number(news.id), ipAddress, userAgent);
     }
 
-    return news;
+    return serializeNews(news);
   }
 
   // Track news view
-  async trackView(newsId: string, ipAddress?: string, userAgent?: string) {
-    // Check if this IP has viewed this news before
+  async trackView(newsId: number, ipAddress?: string, userAgent?: string) {
     const existingView = ipAddress
       ? await prisma.newsView.findFirst({
-          where: { newsId, ipAddress },
+          where: {
+            mediaId: BigInt(newsId),
+            ipAddress,
+            userAgent: userAgent || null,
+          },
         })
       : null;
 
-    // Create view record
     await prisma.newsView.create({
-      data: { newsId, ipAddress, userAgent },
+      data: {
+        mediaId: BigInt(newsId),
+        ipAddress,
+        userAgent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     });
 
-    // Update view counts
-    await prisma.news.update({
-      where: { id: newsId },
+    await prisma.newsContent.update({
+      where: { id: BigInt(newsId) },
       data: {
         viewCount: { increment: 1 },
-        ...(existingView === null && { viewCountUnique: { increment: 1 } }),
+        ...(existingView === null && ipAddress ? { viewCountUnique: { increment: 1 } } : {}),
       },
     });
   }
 
   // Create news
-  async createNews(data: CreateNewsData, userId: string) {
-    // Validate category
-    const category = await prisma.newsCategory.findUnique({
-      where: { id: data.categoryId },
-    });
-
-    if (!category || category.deletedAt) {
-      throw new AppError('Category not found', 400);
+  async createNews(data: CreateNewsData, userEmail: string) {
+    if (data.idCategory) {
+      const category = await prisma.newsCategory.findUnique({
+        where: { id: BigInt(data.idCategory) },
+      });
+      if (!category) {
+        throw new AppError('Category not found', 400);
+      }
     }
 
-    // Generate slug
     const baseSlug = slugify(data.titleEn, { lower: true, strict: true });
     let slug = baseSlug;
     let counter = 1;
 
-    while (await prisma.news.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${counter}`;
+    while (await prisma.newsContent.findUnique({ where: { slug } })) {
+      slug = baseSlug + '-' + counter;
       counter++;
     }
 
-    const news = await prisma.news.create({
+    const now = new Date();
+    const news = await prisma.newsContent.create({
       data: {
         titleEn: data.titleEn,
         titleId: data.titleId,
         slug,
         newsDate: new Date(data.newsDate),
-        thumbnail: data.thumbnail,
+        newsThumbnail: data.newsThumbnail,
         excerptEn: data.excerptEn ? sanitizeHtmlContent(data.excerptEn) : undefined,
         excerptId: data.excerptId ? sanitizeHtmlContent(data.excerptId) : undefined,
         contentEn: sanitizeHtmlContent(data.contentEn),
         contentId: data.contentId ? sanitizeHtmlContent(data.contentId) : undefined,
         newsLink: data.newsLink,
-        categoryId: data.categoryId,
-        metaKeywords: data.metaKeywords,
+        idCategory: data.idCategory ? BigInt(data.idCategory) : null,
+        metaKeyword: data.metaKeyword,
         customCss: data.customCss,
         customJs: data.customJs,
-        status: data.status || 'DRAFT',
-        publishedAt: data.status === 'PUBLISHED' ? new Date() : null,
-        createdById: userId,
+        dataStatus: data.dataStatus ?? 1,
+        createdBy: userEmail,
+        createdAt: now,
+        updatedAt: now,
       },
       include: {
         category: true,
       },
     });
 
-    return news;
+    return serializeNews(news);
   }
 
   // Update news
-  async updateNews(id: string, data: UpdateNewsData, userId: string) {
-    const existingNews = await prisma.news.findUnique({
-      where: { id },
+  async updateNews(id: number, data: UpdateNewsData, userEmail: string) {
+    const existingNews = await prisma.newsContent.findUnique({
+      where: { id: BigInt(id) },
     });
 
-    if (!existingNews || existingNews.deletedAt) {
+    if (!existingNews) {
       throw new AppError('News not found', 404);
     }
 
-    // Validate category if changing
-    if (data.categoryId && data.categoryId !== existingNews.categoryId) {
+    if (data.idCategory !== undefined && data.idCategory !== null) {
       const category = await prisma.newsCategory.findUnique({
-        where: { id: data.categoryId },
+        where: { id: BigInt(data.idCategory) },
       });
-
-      if (!category || category.deletedAt) {
+      if (!category) {
         throw new AppError('Category not found', 400);
       }
     }
 
-    // Update slug if title changes
     let slug = existingNews.slug;
     if (data.titleEn && data.titleEn !== existingNews.titleEn) {
       const baseSlug = slugify(data.titleEn, { lower: true, strict: true });
@@ -316,61 +395,55 @@ export class NewsService {
       let counter = 1;
 
       while (true) {
-        const existing = await prisma.news.findFirst({
-          where: { slug, id: { not: id } },
+        const existing = await prisma.newsContent.findFirst({
+          where: { slug, id: { not: BigInt(id) } },
         });
         if (!existing) break;
-        slug = `${baseSlug}-${counter}`;
+        slug = baseSlug + '-' + counter;
         counter++;
       }
     }
 
-    const news = await prisma.news.update({
-      where: { id },
+    const news = await prisma.newsContent.update({
+      where: { id: BigInt(id) },
       data: {
         ...(data.titleEn !== undefined && { titleEn: data.titleEn, slug }),
         ...(data.titleId !== undefined && { titleId: data.titleId }),
         ...(data.newsDate !== undefined && { newsDate: new Date(data.newsDate) }),
-        ...(data.thumbnail !== undefined && { thumbnail: data.thumbnail }),
-        ...(data.excerptEn !== undefined && { excerptEn: sanitizeHtmlContent(data.excerptEn) }),
-        ...(data.excerptId !== undefined && { excerptId: data.excerptId ? sanitizeHtmlContent(data.excerptId) : undefined }),
+        ...(data.newsThumbnail !== undefined && { newsThumbnail: data.newsThumbnail }),
+        ...(data.excerptEn !== undefined && { excerptEn: data.excerptEn ? sanitizeHtmlContent(data.excerptEn) : null }),
+        ...(data.excerptId !== undefined && { excerptId: data.excerptId ? sanitizeHtmlContent(data.excerptId) : null }),
         ...(data.contentEn !== undefined && { contentEn: sanitizeHtmlContent(data.contentEn) }),
-        ...(data.contentId !== undefined && { contentId: data.contentId ? sanitizeHtmlContent(data.contentId) : undefined }),
+        ...(data.contentId !== undefined && { contentId: data.contentId ? sanitizeHtmlContent(data.contentId) : null }),
         ...(data.newsLink !== undefined && { newsLink: data.newsLink }),
-        ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
-        ...(data.metaKeywords !== undefined && { metaKeywords: data.metaKeywords }),
+        ...(data.idCategory !== undefined && { idCategory: data.idCategory ? BigInt(data.idCategory) : null }),
+        ...(data.metaKeyword !== undefined && { metaKeyword: data.metaKeyword }),
         ...(data.customCss !== undefined && { customCss: data.customCss }),
         ...(data.customJs !== undefined && { customJs: data.customJs }),
-        ...(data.status !== undefined && {
-          status: data.status,
-          publishedAt:
-            data.status === 'PUBLISHED' && !existingNews.publishedAt
-              ? new Date()
-              : existingNews.publishedAt,
-        }),
-        updatedById: userId,
+        ...(data.dataStatus !== undefined && { dataStatus: data.dataStatus }),
+        updatedBy: userEmail,
+        updatedAt: new Date(),
       },
       include: {
         category: true,
       },
     });
 
-    return news;
+    return serializeNews(news);
   }
 
-  // Delete news (soft delete)
-  async deleteNews(id: string) {
-    const existingNews = await prisma.news.findUnique({
-      where: { id },
+  // Delete news (hard delete, cascades to highlights & views via FK)
+  async deleteNews(id: number) {
+    const existingNews = await prisma.newsContent.findUnique({
+      where: { id: BigInt(id) },
     });
 
-    if (!existingNews || existingNews.deletedAt) {
+    if (!existingNews) {
       throw new AppError('News not found', 404);
     }
 
-    await prisma.news.update({
-      where: { id },
-      data: { deletedAt: new Date() },
+    await prisma.newsContent.delete({
+      where: { id: BigInt(id) },
     });
   }
 
@@ -386,65 +459,110 @@ export class NewsService {
             titleEn: true,
             titleId: true,
             slug: true,
-            thumbnail: true,
+            newsThumbnail: true,
             newsDate: true,
-            status: true,
+            dataStatus: true,
           },
         },
       },
-      orderBy: { position: 'asc' },
+      orderBy: { dataOrder: 'asc' },
     });
 
-    return highlights;
+    return serializeHighlights(highlights);
   }
 
-  // Set highlight
-  async setHighlight(newsId: string, position: number, userId: string) {
-    // Validate news
-    const news = await prisma.news.findUnique({
-      where: { id: newsId },
+  // Get available news for highlight (active & not yet highlighted)
+  async getAvailableForHighlight() {
+    const highlightedNewsIds = await prisma.newsHighlight.findMany({
+      select: { idNews: true },
     });
 
-    if (!news || news.deletedAt) {
+    const excludeIds = highlightedNewsIds.map((h) => h.idNews);
+
+    const where: Prisma.NewsContentWhereInput = {
+      dataStatus: 1,
+    };
+
+    if (excludeIds.length > 0) {
+      where.id = { notIn: excludeIds };
+    }
+
+    const news = await prisma.newsContent.findMany({
+      where,
+      orderBy: { newsDate: 'desc' },
+      select: {
+        id: true,
+        titleEn: true,
+        titleId: true,
+        slug: true,
+        newsThumbnail: true,
+        newsDate: true,
+      },
+    });
+
+    return news.map((n) => ({
+      ...n,
+      id: Number(n.id),
+    }));
+  }
+
+  // Create highlight
+  async createHighlight(idNews: number, userEmail: string) {
+    const news = await prisma.newsContent.findUnique({
+      where: { id: BigInt(idNews) },
+    });
+
+    if (!news) {
       throw new AppError('News not found', 404);
     }
 
-    // Check if position is taken
-    const existingPosition = await prisma.newsHighlight.findUnique({
-      where: { position },
-    });
-
-    if (existingPosition && existingPosition.newsId !== newsId) {
-      throw new AppError('Position is already taken', 400);
+    if (news.dataStatus !== 1) {
+      throw new AppError('Only active news can be highlighted', 400);
     }
 
-    // Check if news is already highlighted
-    const existingHighlight = await prisma.newsHighlight.findUnique({
-      where: { newsId },
+    const existing = await prisma.newsHighlight.findFirst({
+      where: { idNews: BigInt(idNews) },
     });
-
-    if (existingHighlight) {
-      // Update position
-      return prisma.newsHighlight.update({
-        where: { newsId },
-        data: { position, updatedById: userId },
-      });
+    if (existing) {
+      throw new AppError('News is already highlighted', 400);
     }
 
-    // Create new highlight
-    return prisma.newsHighlight.create({
+    const maxOrder = await prisma.newsHighlight.aggregate({
+      _max: { dataOrder: true },
+    });
+    const nextOrder = (maxOrder._max?.dataOrder || 0) + 1;
+
+    const highlight = await prisma.newsHighlight.create({
       data: {
-        newsId,
-        position,
-        createdById: userId,
+        idNews: BigInt(idNews),
+        dataOrder: nextOrder,
+        createdBy: userEmail,
+        updatedBy: userEmail,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      include: {
+        news: {
+          select: {
+            id: true,
+            titleEn: true,
+            titleId: true,
+            slug: true,
+            newsThumbnail: true,
+            newsDate: true,
+            dataStatus: true,
+          },
+        },
       },
     });
+
+    return serializeHighlight(highlight);
   }
 
   // Remove highlight
-  async removeHighlight(newsId: string) {
+  async removeHighlight(id: number) {
     const highlight = await prisma.newsHighlight.findUnique({
-      where: { newsId },
+      where: { id: BigInt(id) },
     });
 
     if (!highlight) {
@@ -452,17 +570,24 @@ export class NewsService {
     }
 
     await prisma.newsHighlight.delete({
-      where: { newsId },
+      where: { id: BigInt(id) },
+    });
+  }
+
+  // Bulk remove highlights
+  async bulkRemoveHighlights(ids: number[]) {
+    await prisma.newsHighlight.deleteMany({
+      where: { id: { in: ids.map((id) => BigInt(id)) } },
     });
   }
 
   // Reorder highlights
-  async reorderHighlights(updates: { newsId: string; position: number }[], userId: string) {
+  async reorderHighlights(updates: { id: number; order: number }[], userEmail: string) {
     await prisma.$transaction(
       updates.map((update) =>
         prisma.newsHighlight.update({
-          where: { newsId: update.newsId },
-          data: { position: update.position, updatedById: userId },
+          where: { id: BigInt(update.id) },
+          data: { dataOrder: update.order, updatedBy: userEmail, updatedAt: new Date() },
         })
       )
     );

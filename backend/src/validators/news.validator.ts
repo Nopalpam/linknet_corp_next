@@ -1,60 +1,66 @@
 import { body, query, param } from 'express-validator';
 
-/**
- * Validation rules for getting news list
- */
+// ================== HELPER: Integer ID validator ==================
+const intIdParam = (field: string, label: string) =>
+  param(field)
+    .notEmpty()
+    .withMessage(`${label} is required`)
+    .isInt({ min: 1 })
+    .withMessage(`${label} must be a positive integer`)
+    .toInt();
+
+// ================== NEWS LIST ==================
+
 export const getNewsValidation = [
   query('page')
     .optional()
     .isInt({ min: 1 })
     .withMessage('Page must be a positive integer')
     .toInt(),
-  
+
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Limit must be between 1 and 100')
     .toInt(),
-  
+
   query('search')
     .optional()
     .trim()
     .isLength({ max: 200 })
     .withMessage('Search query too long'),
-  
-  query('status')
+
+  query('dataStatus')
     .optional()
-    .isIn(['DRAFT', 'PUBLISHED', 'ARCHIVED'])
-    .withMessage('Invalid status value'),
-  
-  query('categoryId')
+    .isInt({ min: 0, max: 2 })
+    .withMessage('dataStatus must be 0 (inactive), 1 (active), or 2 (reserved)')
+    .toInt(),
+
+  query('idCategory')
     .optional()
-    .isUUID()
-    .withMessage('Invalid category ID format'),
-  
+    .isInt({ min: 1 })
+    .withMessage('Invalid category ID')
+    .toInt(),
+
   query('sortBy')
     .optional()
-    .isIn(['newsDate', 'createdAt', 'titleEn', 'titleId'])
+    .isIn(['newsDate', 'createdAt', 'titleEn', 'titleId', 'viewCount'])
     .withMessage('Invalid sort field'),
-  
+
   query('sortOrder')
     .optional()
     .isIn(['asc', 'desc'])
-    .withMessage('Sort order must be asc or desc')
+    .withMessage('Sort order must be asc or desc'),
 ];
 
-/**
- * Validation rules for getting news by ID
- */
+// ================== NEWS BY ID ==================
+
 export const getNewsByIdValidation = [
-  param('id')
-    .isUUID()
-    .withMessage('Invalid news ID format')
+  intIdParam('id', 'News ID'),
 ];
 
-/**
- * Validation rules for getting news by slug
- */
+// ================== NEWS BY SLUG ==================
+
 export const getNewsBySlugValidation = [
   param('slug')
     .trim()
@@ -63,157 +69,141 @@ export const getNewsBySlugValidation = [
     .isLength({ min: 1, max: 200 })
     .withMessage('Slug must be between 1 and 200 characters')
     .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-    .withMessage('Slug must contain only lowercase letters, numbers, and hyphens')
+    .withMessage('Slug must contain only lowercase letters, numbers, and hyphens'),
 ];
 
-/**
- * Validation rules for creating news
- */
+// ================== CREATE NEWS ==================
+
 export const createNewsValidation = [
   body('titleEn')
     .trim()
     .notEmpty()
     .withMessage('Title (English) is required')
     .isLength({ min: 1, max: 500 })
-    .withMessage('Title must be between 1 and 500 characters')
-    .escape(),
-  
+    .withMessage('Title must be between 1 and 500 characters'),
+
   body('titleId')
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Title (Indonesian) must not exceed 500 characters')
-    .escape(),
-  
+    .withMessage('Title (Indonesian) must not exceed 500 characters'),
+
   body('newsDate')
     .notEmpty()
     .withMessage('News date is required')
     .isISO8601()
     .withMessage('Invalid date format'),
-  
-  body('thumbnail')
+
+  body('newsThumbnail')
     .optional()
     .trim()
-    .isURL({ protocols: ['http', 'https'] })
-    .withMessage('Invalid thumbnail URL')
     .isLength({ max: 2000 })
-    .withMessage('URL too long'),
-  
+    .withMessage('Thumbnail URL too long'),
+
   body('excerptEn')
     .optional()
     .trim()
-    .isLength({ max: 1000 })
-    .withMessage('Excerpt (English) must not exceed 1000 characters'),
-  
+    .isLength({ max: 2000 })
+    .withMessage('Excerpt (English) must not exceed 2000 characters'),
+
   body('excerptId')
     .optional()
     .trim()
-    .isLength({ max: 1000 })
-    .withMessage('Excerpt (Indonesian) must not exceed 1000 characters'),
-  
+    .isLength({ max: 2000 })
+    .withMessage('Excerpt (Indonesian) must not exceed 2000 characters'),
+
   body('contentEn')
     .trim()
     .notEmpty()
     .withMessage('Content (English) is required')
     .isLength({ max: 100000 })
     .withMessage('Content (English) must not exceed 100000 characters'),
-  
+
   body('contentId')
     .optional()
     .trim()
     .isLength({ max: 100000 })
     .withMessage('Content (Indonesian) must not exceed 100000 characters'),
-  
+
   body('newsLink')
     .optional()
     .trim()
-    .isURL({ protocols: ['http', 'https'] })
-    .withMessage('Invalid news link URL')
     .isLength({ max: 2000 })
-    .withMessage('URL too long'),
-  
-  body('categoryId')
-    .notEmpty()
-    .withMessage('Category is required')
-    .isUUID()
-    .withMessage('Invalid category ID format'),
-  
-  body('metaKeywords')
+    .withMessage('News link URL too long'),
+
+  body('idCategory')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Invalid category ID')
+    .toInt(),
+
+  body('metaKeyword')
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Meta keywords must not exceed 500 characters'),
-  
+    .withMessage('Meta keyword must not exceed 500 characters'),
+
   body('customCss')
     .optional()
     .trim()
     .isLength({ max: 10000 })
     .withMessage('Custom CSS must not exceed 10000 characters'),
-  
+
   body('customJs')
     .optional()
     .trim()
     .isLength({ max: 10000 })
     .withMessage('Custom JS must not exceed 10000 characters'),
-  
-  body('status')
+
+  body('dataStatus')
     .optional()
-    .isIn(['DRAFT', 'PUBLISHED', 'ARCHIVED'])
-    .withMessage('Invalid status value')
+    .isInt({ min: 0, max: 1 })
+    .withMessage('dataStatus must be 0 (inactive) or 1 (active)')
+    .toInt(),
 ];
 
-/**
- * Validation rules for updating news
- */
+// ================== UPDATE NEWS ==================
+
 export const updateNewsValidation = [
-  param('id')
-    .isUUID()
-    .withMessage('Invalid news ID format'),
-  
+  intIdParam('id', 'News ID'),
+
   body('titleEn')
     .optional()
     .trim()
     .notEmpty()
     .withMessage('Title (English) cannot be empty')
     .isLength({ min: 1, max: 500 })
-    .withMessage('Title must be between 1 and 500 characters')
-    .escape(),
-  
+    .withMessage('Title must be between 1 and 500 characters'),
+
   body('titleId')
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Title (Indonesian) must not exceed 500 characters')
-    .escape(),
-  
+    .withMessage('Title (Indonesian) must not exceed 500 characters'),
+
   body('newsDate')
     .optional()
     .isISO8601()
     .withMessage('Invalid date format'),
-  
-  body('thumbnail')
+
+  body('newsThumbnail')
     .optional()
     .trim()
-    .custom((value) => {
-      if (value === '') return true; // Allow empty string to remove thumbnail
-      return /^https?:\/\/.+/.test(value);
-    })
-    .withMessage('Invalid thumbnail URL')
     .isLength({ max: 2000 })
-    .withMessage('URL too long'),
-  
+    .withMessage('Thumbnail URL too long'),
+
   body('excerptEn')
     .optional()
     .trim()
-    .isLength({ max: 1000 })
-    .withMessage('Excerpt (English) must not exceed 1000 characters'),
-  
+    .isLength({ max: 2000 })
+    .withMessage('Excerpt (English) must not exceed 2000 characters'),
+
   body('excerptId')
     .optional()
     .trim()
-    .isLength({ max: 1000 })
-    .withMessage('Excerpt (Indonesian) must not exceed 1000 characters'),
-  
+    .isLength({ max: 2000 })
+    .withMessage('Excerpt (Indonesian) must not exceed 2000 characters'),
+
   body('contentEn')
     .optional()
     .trim()
@@ -221,102 +211,222 @@ export const updateNewsValidation = [
     .withMessage('Content (English) cannot be empty')
     .isLength({ max: 100000 })
     .withMessage('Content (English) must not exceed 100000 characters'),
-  
+
   body('contentId')
     .optional()
     .trim()
     .isLength({ max: 100000 })
     .withMessage('Content (Indonesian) must not exceed 100000 characters'),
-  
+
   body('newsLink')
     .optional()
     .trim()
-    .custom((value) => {
-      if (value === '') return true; // Allow empty string to remove link
-      return /^https?:\/\/.+/.test(value);
-    })
-    .withMessage('Invalid news link URL')
     .isLength({ max: 2000 })
-    .withMessage('URL too long'),
-  
-  body('categoryId')
+    .withMessage('News link URL too long'),
+
+  body('idCategory')
     .optional()
-    .isUUID()
-    .withMessage('Invalid category ID format'),
-  
-  body('metaKeywords')
+    .custom((value) => {
+      if (value === null || value === '') return true; // Allow null to remove category
+      return Number.isInteger(Number(value)) && Number(value) >= 1;
+    })
+    .withMessage('Invalid category ID'),
+
+  body('metaKeyword')
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Meta keywords must not exceed 500 characters'),
-  
+    .withMessage('Meta keyword must not exceed 500 characters'),
+
   body('customCss')
     .optional()
     .trim()
     .isLength({ max: 10000 })
     .withMessage('Custom CSS must not exceed 10000 characters'),
-  
+
   body('customJs')
     .optional()
     .trim()
     .isLength({ max: 10000 })
     .withMessage('Custom JS must not exceed 10000 characters'),
-  
-  body('status')
+
+  body('dataStatus')
     .optional()
-    .isIn(['DRAFT', 'PUBLISHED', 'ARCHIVED'])
-    .withMessage('Invalid status value')
+    .isInt({ min: 0, max: 1 })
+    .withMessage('dataStatus must be 0 (inactive) or 1 (active)')
+    .toInt(),
 ];
 
-/**
- * Validation rules for deleting news
- */
+// ================== DELETE NEWS ==================
+
 export const deleteNewsValidation = [
-  param('id')
-    .isUUID()
-    .withMessage('Invalid news ID format')
+  intIdParam('id', 'News ID'),
 ];
 
-/**
- * Validation rules for highlight operations
- */
+// ================== HIGHLIGHT OPERATIONS ==================
+
 export const highlightNewsValidation = [
-  body('newsId')
+  body('idNews')
     .notEmpty()
     .withMessage('News ID is required')
-    .isUUID()
-    .withMessage('Invalid news ID format'),
-  
-  body('order')
+    .isInt({ min: 1 })
+    .withMessage('News ID must be a positive integer')
+    .toInt(),
+];
+
+export const reorderHighlightsValidation = [
+  body('updates')
+    .isArray({ min: 1 })
+    .withMessage('Updates array is required'),
+
+  body('updates.*.id')
+    .isInt({ min: 1 })
+    .withMessage('Highlight ID must be a positive integer')
+    .toInt(),
+
+  body('updates.*.order')
+    .isInt({ min: 0 })
+    .withMessage('Order must be a non-negative integer')
+    .toInt(),
+];
+
+export const removeHighlightValidation = [
+  intIdParam('id', 'Highlight ID'),
+];
+
+export const bulkRemoveHighlightsValidation = [
+  body('ids')
+    .isArray({ min: 1 })
+    .withMessage('IDs array is required'),
+
+  body('ids.*')
+    .isInt({ min: 1 })
+    .withMessage('Each ID must be a positive integer')
+    .toInt(),
+];
+
+// ================== CATEGORY VALIDATIONS ==================
+
+export const getCategoriesValidation = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer')
+    .toInt(),
+
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100')
+    .toInt(),
+
+  query('search')
+    .optional()
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Search query too long'),
+
+  query('dataStatus')
+    .optional()
+    .isInt({ min: 0, max: 2 })
+    .withMessage('dataStatus must be 0, 1, or 2')
+    .toInt(),
+];
+
+export const getCategoryByIdValidation = [
+  intIdParam('id', 'Category ID'),
+];
+
+export const createCategoryValidation = [
+  body('categoryName')
+    .trim()
+    .notEmpty()
+    .withMessage('Category name is required')
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Category name must be between 1 and 255 characters'),
+
+  body('slug')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Slug must not exceed 255 characters')
+    .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .withMessage('Slug must contain only lowercase letters, numbers, and hyphens'),
+
+  body('dataOrder')
     .optional()
     .isInt({ min: 0 })
-    .withMessage('Order must be a non-negative integer')
-    .toInt()
+    .withMessage('Data order must be a non-negative integer')
+    .toInt(),
+
+  body('dataStatus')
+    .optional()
+    .isInt({ min: 0, max: 2 })
+    .withMessage('dataStatus must be 0, 1, or 2')
+    .toInt(),
 ];
 
-/**
- * Validation rules for reordering highlights
- */
-export const reorderHighlightsValidation = [
-  body('highlights')
+export const updateCategoryValidation = [
+  intIdParam('id', 'Category ID'),
+
+  body('categoryName')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Category name cannot be empty')
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Category name must be between 1 and 255 characters'),
+
+  body('slug')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Slug must not exceed 255 characters'),
+
+  body('dataOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Data order must be a non-negative integer')
+    .toInt(),
+
+  body('dataStatus')
+    .optional()
+    .isInt({ min: 0, max: 2 })
+    .withMessage('dataStatus must be 0, 1, or 2')
+    .toInt(),
+];
+
+export const deleteCategoryValidation = [
+  intIdParam('id', 'Category ID'),
+];
+
+export const bulkDeleteCategoriesValidation = [
+  body('ids')
     .isArray({ min: 1 })
-    .withMessage('Highlights array is required'),
-  
-  body('highlights.*.newsId')
-    .isUUID()
-    .withMessage('Invalid news ID format'),
-  
-  body('highlights.*.order')
+    .withMessage('IDs array is required'),
+
+  body('ids.*')
+    .isInt({ min: 1 })
+    .withMessage('Each ID must be a positive integer')
+    .toInt(),
+];
+
+export const reorderCategoriesValidation = [
+  body('updates')
+    .isArray({ min: 1 })
+    .withMessage('Updates array is required'),
+
+  body('updates.*.id')
+    .isInt({ min: 1 })
+    .withMessage('Category ID must be a positive integer')
+    .toInt(),
+
+  body('updates.*.order')
     .isInt({ min: 0 })
     .withMessage('Order must be a non-negative integer')
-    .toInt()
+    .toInt(),
 ];
 
-/**
- * Validation rules for removing highlight
- */
-export const removeHighlightValidation = [
-  param('newsId')
-    .isUUID()
-    .withMessage('Invalid news ID format')
+export const trackNewsViewValidation = [
+  intIdParam('newsId', 'News ID'),
 ];

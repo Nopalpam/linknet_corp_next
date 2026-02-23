@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import newsCategoryService, {
   CategoryQueryParams,
@@ -13,13 +13,13 @@ export class NewsCategoryController {
   // Get all categories with pagination (CMS)
   async getCategories(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, search, isActive, sortBy, sortOrder } = req.query;
+      const { page, limit, search, dataStatus, sortBy, sortOrder } = req.query;
 
       const params: CategoryQueryParams = {
         page: page ? parseInt(page as string, 10) : 1,
         limit: limit ? parseInt(limit as string, 10) : 10,
         search: search as string,
-        isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+        dataStatus: dataStatus !== undefined ? parseInt(dataStatus as string, 10) : undefined,
         sortBy: sortBy as string,
         sortOrder: sortOrder as 'asc' | 'desc',
       };
@@ -52,10 +52,9 @@ export class NewsCategoryController {
   // Get single category by ID (CMS)
   async getCategoryById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-
-      if (!id) {
-        throw new AppError('Category ID is required', 400);
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) {
+        throw new AppError('Invalid Category ID', 400);
       }
 
       const category = await newsCategoryService.getCategoryById(id);
@@ -72,22 +71,21 @@ export class NewsCategoryController {
   // Create category (CMS)
   async createCategory(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { nameEn, nameId, description, position, isActive } = req.body;
+      const { categoryName, slug, dataOrder, dataStatus } = req.body;
 
-      // Validation
-      if (!nameEn || nameEn.trim() === '') {
-        throw new AppError('Name (English) is required', 400);
+      if (!categoryName || categoryName.trim() === '') {
+        throw new AppError('Category name is required', 400);
       }
 
       const data: CreateCategoryData = {
-        nameEn: nameEn.trim(),
-        nameId: nameId?.trim(),
-        description: description?.trim(),
-        position,
-        isActive,
+        categoryName: categoryName.trim(),
+        slug: slug?.trim(),
+        dataOrder: dataOrder !== undefined ? parseInt(dataOrder, 10) : undefined,
+        dataStatus: dataStatus !== undefined ? parseInt(dataStatus, 10) : undefined,
       };
 
-      const category = await newsCategoryService.createCategory(data, req.user!.id);
+      const userEmail = req.user?.email || 'system@admin.com';
+      const category = await newsCategoryService.createCategory(data, userEmail);
 
       res.status(201).json({
         success: true,
@@ -102,27 +100,26 @@ export class NewsCategoryController {
   // Update category (CMS)
   async updateCategory(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const { nameEn, nameId, description, position, isActive } = req.body;
-
-      if (!id) {
-        throw new AppError('Category ID is required', 400);
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) {
+        throw new AppError('Invalid Category ID', 400);
       }
 
-      // Validation
-      if (nameEn !== undefined && nameEn.trim() === '') {
-        throw new AppError('Name (English) cannot be empty', 400);
+      const { categoryName, slug, dataOrder, dataStatus } = req.body;
+
+      if (categoryName !== undefined && categoryName.trim() === '') {
+        throw new AppError('Category name cannot be empty', 400);
       }
 
       const data: UpdateCategoryData = {
-        ...(nameEn !== undefined && { nameEn: nameEn.trim() }),
-        ...(nameId !== undefined && { nameId: nameId?.trim() }),
-        ...(description !== undefined && { description: description?.trim() }),
-        ...(position !== undefined && { position }),
-        ...(isActive !== undefined && { isActive }),
+        ...(categoryName !== undefined && { categoryName: categoryName.trim() }),
+        ...(slug !== undefined && { slug: slug?.trim() }),
+        ...(dataOrder !== undefined && { dataOrder: parseInt(dataOrder, 10) }),
+        ...(dataStatus !== undefined && { dataStatus: parseInt(dataStatus, 10) }),
       };
 
-      const category = await newsCategoryService.updateCategory(id, data, req.user!.id);
+      const userEmail = req.user?.email || 'system@admin.com';
+      const category = await newsCategoryService.updateCategory(id, data, userEmail);
 
       res.json({
         success: true,
@@ -134,13 +131,33 @@ export class NewsCategoryController {
     }
   }
 
+  // Toggle status (CMS)
+  async toggleStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) {
+        throw new AppError('Invalid Category ID', 400);
+      }
+
+      const userEmail = req.user?.email || 'system@admin.com';
+      const category = await newsCategoryService.toggleStatus(id, userEmail);
+
+      res.json({
+        success: true,
+        message: 'Category status toggled successfully',
+        data: category,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Delete category (CMS)
   async deleteCategory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-
-      if (!id) {
-        throw new AppError('Category ID is required', 400);
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) {
+        throw new AppError('Invalid Category ID', 400);
       }
 
       await newsCategoryService.deleteCategory(id);
@@ -154,7 +171,30 @@ export class NewsCategoryController {
     }
   }
 
-  // Update category order (CMS)
+  // Bulk delete categories (CMS)
+  async bulkDeleteCategories(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        throw new AppError('IDs array is required', 400);
+      }
+
+      const result = await newsCategoryService.bulkDeleteCategories(
+        ids.map((id: any) => parseInt(id, 10))
+      );
+
+      res.json({
+        success: true,
+        message: 'Categories deleted successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Reorder categories (CMS)
   async updateCategoryOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const { updates } = req.body;
@@ -180,7 +220,6 @@ export class NewsCategoryController {
   async getCategoryBySlug(req: Request, res: Response, next: NextFunction) {
     try {
       const { slug } = req.params;
-
       if (!slug) {
         throw new AppError('Slug is required', 400);
       }

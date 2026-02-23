@@ -10,12 +10,12 @@ import DeleteConfirmModal from "./components/DeleteConfirmModal";
 
 export default function NewsDataPage() {
   const toast = useToast();
-  const [news, setNews] = useState<News[]>([]);
+  const [newsList, setNewsList] = useState<News[]>([]);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "DRAFT" | "PUBLISHED" | "ARCHIVED">("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
 
   // Pagination
@@ -29,19 +29,13 @@ export default function NewsDataPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<News | null>(null);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch categories for filter
+  // Fetch categories for filter/dropdown
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await newsCategoryService.getActiveCategories();
-        setCategories(response.data || []);
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      }
-    };
-    fetchCategories();
+    newsCategoryService
+      .getActiveCategories()
+      .then((res) => setCategories(res.data || []))
+      .catch(() => {});
   }, []);
 
   // Fetch news
@@ -50,23 +44,28 @@ export default function NewsDataPage() {
       setLoading(true);
       setError(null);
 
-      const response = await newsService.getPaginated({
+      const params: Record<string, any> = {
         page: currentPage,
         limit: itemsPerPage,
-        search: searchQuery,
-        status: filterStatus === "ALL" ? undefined : filterStatus,
-        categoryId: filterCategory === "ALL" ? undefined : filterCategory,
+        search: searchQuery || undefined,
         sortBy: "newsDate",
         sortOrder: "desc",
-      });
+      };
 
-      setNews(response.data || []);
+      if (filterStatus === "ACTIVE") params.dataStatus = 1;
+      else if (filterStatus === "INACTIVE") params.dataStatus = 0;
+
+      if (filterCategory !== "ALL") params.idCategory = parseInt(filterCategory, 10);
+
+      const response = await newsService.getPaginated(params);
+
+      setNewsList(response.data || []);
       setTotalPages(response.pagination?.totalPages || 1);
       setTotalItems(response.pagination?.totalItems || 0);
     } catch (err: any) {
       const errorMsg = err.message || "Failed to fetch news";
       setError(errorMsg);
-      setNews([]);
+      setNewsList([]);
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -77,72 +76,57 @@ export default function NewsDataPage() {
     fetchNews();
   }, [fetchNews]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterStatus, filterCategory]);
 
-  // Handle create
   const handleCreate = () => {
     setFormMode("create");
     setSelectedNews(null);
     setIsFormModalOpen(true);
   };
 
-  // Handle edit
-  const handleEdit = (item: News) => {
+  const handleEdit = (news: News) => {
     setFormMode("edit");
-    setSelectedNews(item);
+    setSelectedNews(news);
     setIsFormModalOpen(true);
   };
 
-  // Handle delete
-  const handleDelete = (item: News) => {
-    setSelectedNews(item);
+  const handleDelete = (news: News) => {
+    setSelectedNews(news);
     setIsDeleteModalOpen(true);
   };
 
-  // Handle form submit
   const handleFormSubmit = async (success: boolean, message?: string) => {
     setIsFormModalOpen(false);
     if (success) {
-      toast.success(
-        message ||
-          (formMode === "create" ? "News created successfully" : "News updated successfully")
-      );
+      toast.success(message || (formMode === "create" ? "News created" : "News updated"));
       await fetchNews();
     }
   };
 
-  // Handle delete confirm
   const handleDeleteConfirm = async () => {
     if (!selectedNews) return;
-
     try {
-      setDeleteLoading(true);
       await newsService.delete(selectedNews.id);
       toast.success("News deleted successfully");
       setIsDeleteModalOpen(false);
       await fetchNews();
     } catch (err: any) {
       toast.error(err.message || "Failed to delete news");
-    } finally {
-      setDeleteLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <PageBreadCrumb pageTitle="News Data" />
 
-      {/* Header */}
       <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-900">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">News Data</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Manage news content ({totalItems} total)
+              Manage news articles ({totalItems} total)
             </p>
           </div>
           <button
@@ -158,7 +142,6 @@ export default function NewsDataPage() {
 
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-          {/* Search */}
           <div className="flex-1">
             <input
               type="text"
@@ -168,51 +151,42 @@ export default function NewsDataPage() {
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
-
-          {/* Category Filter */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Category:</label>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="ALL">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.nameEn}
-                </option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.categoryName}</option>
               ))}
             </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="ALL">All Status</option>
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
             </select>
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {/* Table */}
-        <NewsTable news={news} loading={loading} onEdit={handleEdit} onDelete={handleDelete} />
+        <NewsTable
+          news={newsList}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -238,7 +212,6 @@ export default function NewsDataPage() {
         )}
       </div>
 
-      {/* Form Modal */}
       <NewsFormModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
@@ -248,13 +221,11 @@ export default function NewsDataPage() {
         categories={categories}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        news={selectedNews}
-        loading={deleteLoading}
+        title={selectedNews?.titleEn || ""}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { newsService, News, NewsCategory, CreateNewsData } from "@/services/news.service";
+import { newsService, News, NewsCategory, CreateNewsData, UpdateNewsData } from "@/services/news.service";
 
 interface NewsFormModalProps {
   isOpen: boolean;
@@ -24,88 +24,94 @@ export default function NewsFormModal({
     titleEn: "",
     titleId: "",
     newsDate: new Date().toISOString().split("T")[0],
-    thumbnail: "",
+    newsThumbnail: "",
     excerptEn: "",
     excerptId: "",
     contentEn: "",
     contentId: "",
     newsLink: "",
-    categoryId: "",
-    metaKeywords: "",
+    idCategory: undefined,
+    metaKeyword: "",
     customCss: "",
     customJs: "",
-    status: "DRAFT",
+    dataStatus: 1,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"english" | "indonesian" | "settings">("english");
+  const [activeTab, setActiveTab] = useState<"en" | "id">("en");
 
-  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       if (mode === "edit" && news) {
         setFormData({
-          titleEn: news.titleEn,
+          titleEn: news.titleEn || "",
           titleId: news.titleId || "",
-          newsDate: news.newsDate.split("T")[0],
-          thumbnail: news.thumbnail || "",
+          newsDate: news.newsDate ? news.newsDate.split("T")[0] : new Date().toISOString().split("T")[0],
+          newsThumbnail: news.newsThumbnail || "",
           excerptEn: news.excerptEn || "",
           excerptId: news.excerptId || "",
-          contentEn: news.contentEn,
+          contentEn: news.contentEn || "",
           contentId: news.contentId || "",
           newsLink: news.newsLink || "",
-          categoryId: news.categoryId,
-          metaKeywords: news.metaKeywords || "",
+          idCategory: news.idCategory || undefined,
+          metaKeyword: news.metaKeyword || "",
           customCss: news.customCss || "",
           customJs: news.customJs || "",
-          status: news.status,
+          dataStatus: news.dataStatus ?? 1,
         });
       } else {
         setFormData({
           titleEn: "",
           titleId: "",
           newsDate: new Date().toISOString().split("T")[0],
-          thumbnail: "",
+          newsThumbnail: "",
           excerptEn: "",
           excerptId: "",
           contentEn: "",
           contentId: "",
           newsLink: "",
-          categoryId: categories[0]?.id || "",
-          metaKeywords: "",
+          idCategory: undefined,
+          metaKeyword: "",
           customCss: "",
           customJs: "",
-          status: "DRAFT",
+          dataStatus: 1,
         });
       }
       setError(null);
-      setActiveTab("english");
+      setActiveTab("en");
     }
-  }, [isOpen, mode, news, categories]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, [isOpen, mode, news]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.titleEn.trim()) {
+      setError("Title (English) is required");
+      return;
+    }
+    if (!formData.contentEn.trim()) {
+      setError("Content (English) is required");
+      return;
+    }
+    if (!formData.newsDate) {
+      setError("News date is required");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       if (mode === "create") {
-        await newsService.create(formData);
-        onSuccess(true, "News created successfully");
+        await newsService.createNews(formData);
       } else if (news) {
-        await newsService.update(news.id, formData);
-        onSuccess(true, "News updated successfully");
+        const updateData: UpdateNewsData = { ...formData };
+        await newsService.updateNews(news.id, updateData);
       }
+      onSuccess(true);
     } catch (err: any) {
-      setError(err.message || "An error occurred");
-      onSuccess(false);
+      setError(err.message || "Failed to save news");
+      onSuccess(false, err.message);
     } finally {
       setLoading(false);
     }
@@ -114,308 +120,218 @@ export default function NewsFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100000] flex items-center justify-center overflow-y-auto">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative my-8 w-full max-w-4xl rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {mode === "create" ? "Add New News" : "Edit News"}
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 pt-10 pb-10" onClick={onClose}>
+      <div
+        className="w-full max-w-4xl rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            {mode === "create" ? "Add News" : "Edit News"}
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex gap-4">
-            {[
-              { id: "english", label: "English Content" },
-              { id: "indonesian", label: "Indonesian Content" },
-              { id: "settings", label: "Settings" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`border-b-2 pb-3 text-sm font-medium transition ${
-                  activeTab === tab.id
-                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400"
-                }`}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Row 1: Date, Category, Status */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                News Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={formData.newsDate}
+                onChange={(e) => setFormData({ ...formData, newsDate: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+              <select
+                value={formData.idCategory || ""}
+                onChange={(e) => setFormData({ ...formData, idCategory: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+                <option value="">-- No Category --</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.categoryName}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+              <select
+                value={formData.dataStatus ?? 1}
+                onChange={(e) => setFormData({ ...formData, dataStatus: parseInt(e.target.value, 10) })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value={1}>Active</option>
+                <option value={0}>Inactive</option>
+              </select>
+            </div>
+          </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {/* English Content Tab */}
-          {activeTab === "english" && (
+          {/* EN / ID Language Tabs */}
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => setActiveTab("en")}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === "en"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              }`}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("id")}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === "id"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              }`}
+            >
+              Indonesian
+            </button>
+          </div>
+
+          {/* Content fields per language */}
+          {activeTab === "en" ? (
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Title (English) <span className="text-red-500">*</span>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Title (EN) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="titleEn"
                   value={formData.titleEn}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Enter news title in English"
+                  onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter English title"
                 />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Excerpt (English)
-                </label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Excerpt (EN)</label>
                 <textarea
-                  name="excerptEn"
-                  value={formData.excerptEn}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Short summary of the news"
+                  value={formData.excerptEn || ""}
+                  onChange={(e) => setFormData({ ...formData, excerptEn: e.target.value })}
+                  rows={2}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Short summary..."
                 />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Content (English) <span className="text-red-500">*</span>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Content (EN) <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  name="contentEn"
                   value={formData.contentEn}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
                   rows={10}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Full news content in English (supports HTML)"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter English content (supports HTML)"
                 />
               </div>
             </div>
-          )}
-
-          {/* Indonesian Content Tab */}
-          {activeTab === "indonesian" && (
+          ) : (
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Title (Indonesian)
-                </label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Title (ID)</label>
                 <input
                   type="text"
-                  name="titleId"
-                  value={formData.titleId}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Enter news title in Indonesian"
+                  value={formData.titleId || ""}
+                  onChange={(e) => setFormData({ ...formData, titleId: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Enter Indonesian title"
                 />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Excerpt (Indonesian)
-                </label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Excerpt (ID)</label>
                 <textarea
-                  name="excerptId"
-                  value={formData.excerptId}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Short summary of the news in Indonesian"
+                  value={formData.excerptId || ""}
+                  onChange={(e) => setFormData({ ...formData, excerptId: e.target.value })}
+                  rows={2}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Ringkasan singkat..."
                 />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Content (Indonesian)
-                </label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Content (ID)</label>
                 <textarea
-                  name="contentId"
-                  value={formData.contentId}
-                  onChange={handleChange}
+                  value={formData.contentId || ""}
+                  onChange={(e) => setFormData({ ...formData, contentId: e.target.value })}
                   rows={10}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Full news content in Indonesian (supports HTML)"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Masukkan konten bahasa Indonesia (HTML)"
                 />
               </div>
             </div>
           )}
 
-          {/* Settings Tab */}
-          {activeTab === "settings" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Category <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="categoryId"
-                    value={formData.categoryId}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.nameEn}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    News Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="newsDate"
-                    value={formData.newsDate}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="DRAFT">Draft</option>
-                    <option value="PUBLISHED">Published</option>
-                    <option value="ARCHIVED">Archived</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Thumbnail URL
-                  </label>
-                  <input
-                    type="text"
-                    name="thumbnail"
-                    value={formData.thumbnail}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  External Link
-                </label>
-                <input
-                  type="text"
-                  name="newsLink"
-                  value={formData.newsLink}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="https://example.com/news"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Meta Keywords
-                </label>
-                <input
-                  type="text"
-                  name="metaKeywords"
-                  value={formData.metaKeywords}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="keyword1, keyword2, keyword3"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Custom CSS
-                  </label>
-                  <textarea
-                    name="customCss"
-                    value={formData.customCss}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder=".custom-class { ... }"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Custom JS
-                  </label>
-                  <textarea
-                    name="customJs"
-                    value={formData.customJs}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="console.log('Hello');"
-                  />
-                </div>
-              </div>
+          {/* Thumbnail & Link */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Thumbnail URL</label>
+              <input
+                type="text"
+                value={formData.newsThumbnail || ""}
+                onChange={(e) => setFormData({ ...formData, newsThumbnail: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="https://..."
+              />
             </div>
-          )}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">News Link</label>
+              <input
+                type="text"
+                value={formData.newsLink || ""}
+                onChange={(e) => setFormData({ ...formData, newsLink: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+
+          {/* Meta & Custom */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Meta Keyword</label>
+            <input
+              type="text"
+              value={formData.metaKeyword || ""}
+              onChange={(e) => setFormData({ ...formData, metaKeyword: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="keyword1, keyword2"
+            />
+          </div>
 
           {/* Actions */}
-          <div className="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="flex justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
-              {loading ? "Saving..." : mode === "create" ? "Create" : "Update"}
+              {loading ? "Saving..." : mode === "create" ? "Create" : "Save Changes"}
             </button>
           </div>
         </form>

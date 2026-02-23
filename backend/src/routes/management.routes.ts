@@ -10,6 +10,18 @@ const router = Router();
 // ============================================
 
 /**
+ * @route   POST /cms/managements/categories/update-order
+ * @desc    Update categories order (drag & drop)
+ * @access  Private (requires CMS access)
+ */
+router.post(
+  '/categories/update-order',
+  authMiddleware,
+  requirePermission('management.update'),
+  managementController.updateCategoriesOrder.bind(managementController)
+);
+
+/**
  * @route   GET /cms/managements/categories
  * @desc    Get all management categories
  * @access  Private (requires CMS access)
@@ -17,7 +29,7 @@ const router = Router();
 router.get(
   '/categories',
   authMiddleware,
-  requirePermission('managements.read'),
+  requirePermission('management.read'),
   managementController.getCategories.bind(managementController)
 );
 
@@ -29,7 +41,7 @@ router.get(
 router.get(
   '/categories/:id',
   authMiddleware,
-  requirePermission('managements.read'),
+  requirePermission('management.read'),
   managementController.getCategoryById.bind(managementController)
 );
 
@@ -41,7 +53,7 @@ router.get(
 router.post(
   '/categories',
   authMiddleware,
-  requirePermission('managements.create'),
+  requirePermission('management_categories.create'),
   managementController.createCategory.bind(managementController)
 );
 
@@ -53,7 +65,7 @@ router.post(
 router.put(
   '/categories/:id',
   authMiddleware,
-  requirePermission('managements.update'),
+  requirePermission('management_categories.update'),
   managementController.updateCategory.bind(managementController)
 );
 
@@ -65,7 +77,7 @@ router.put(
 router.delete(
   '/categories/:id',
   authMiddleware,
-  requirePermission('managements.delete'),
+  requirePermission('management_categories.delete'),
   managementController.deleteCategory.bind(managementController)
 );
 
@@ -81,19 +93,19 @@ router.delete(
 router.post(
   '/bulk-delete',
   authMiddleware,
-  requirePermission('managements.delete'),
+  requirePermission('management.delete'),
   managementController.bulkDeleteManagements.bind(managementController)
 );
 
 /**
  * @route   POST /cms/managements/update-order
- * @desc    Update managements order
+ * @desc    Update managements data_order (drag & drop)
  * @access  Private (requires CMS access)
  */
 router.post(
   '/update-order',
   authMiddleware,
-  requirePermission('managements.update'),
+  requirePermission('management.update'),
   managementController.updateManagementsOrder.bind(managementController)
 );
 
@@ -109,7 +121,7 @@ router.post(
 router.get(
   '/',
   authMiddleware,
-  requirePermission('managements.read'),
+  requirePermission('management.read'),
   managementController.getManagements.bind(managementController)
 );
 
@@ -121,7 +133,7 @@ router.get(
 router.get(
   '/:id',
   authMiddleware,
-  requirePermission('managements.read'),
+  requirePermission('management.read'),
   managementController.getManagementById.bind(managementController)
 );
 
@@ -133,7 +145,7 @@ router.get(
 router.post(
   '/',
   authMiddleware,
-  requirePermission('managements.create'),
+  requirePermission('management.create'),
   managementController.createManagement.bind(managementController)
 );
 
@@ -145,7 +157,7 @@ router.post(
 router.put(
   '/:id',
   authMiddleware,
-  requirePermission('managements.update'),
+  requirePermission('management.update'),
   managementController.updateManagement.bind(managementController)
 );
 
@@ -157,7 +169,7 @@ router.put(
 router.delete(
   '/:id',
   authMiddleware,
-  requirePermission('managements.delete'),
+  requirePermission('management.delete'),
   managementController.deleteManagement.bind(managementController)
 );
 

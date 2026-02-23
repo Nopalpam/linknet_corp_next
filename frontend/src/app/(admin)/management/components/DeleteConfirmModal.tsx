@@ -7,14 +7,16 @@ interface DeleteConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  managementName: string;
+  itemName: string;
+  itemType?: string; // "category" | "management" etc.
 }
 
 export default function DeleteConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  managementName,
+  itemName,
+  itemType = "item",
 }: DeleteConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -41,12 +43,12 @@ export default function DeleteConfirmModal({
         {/* Content */}
         <div className="mt-4 text-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Delete Management
+            Delete {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
           </h3>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Are you sure you want to delete{" "}
             <span className="font-semibold text-gray-900 dark:text-white">
-              {managementName}
+              {itemName}
             </span>
             ? This action cannot be undone.
           </p>

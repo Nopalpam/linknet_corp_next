@@ -1,218 +1,209 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  newsHighlightService,
-  newsService,
-  NewsHighlight,
-  News,
-} from "@/services/news.service";
+import { newsHighlightService, NewsHighlight, News } from "@/services/news.service";
+import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 
 export default function NewsHighlightPage() {
+  const toast = useToast();
   const [highlights, setHighlights] = useState<NewsHighlight[]>([]);
-  const [newsList, setNewsList] = useState<News[]>([]);
+  const [availableNews, setAvailableNews] = useState<Pick<News, "id" | "titleEn" | "titleId" | "slug" | "newsThumbnail" | "newsDate">[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [selectedNewsIds, setSelectedNewsIds] = useState<{ [position: number]: string }>({});
+  const [selectedNewsId, setSelectedNewsId] = useState<string>("");
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
-  const positions = [1, 2, 3, 4, 5];
-
-  const fetchData = useCallback(async () => {
+  const fetchHighlights = useCallback(async () => {
     try {
       setLoading(true);
-      const [highlightRes, newsRes] = await Promise.all([
+      const [hlRes, availRes] = await Promise.all([
         newsHighlightService.getHighlights(),
-        newsService.getAll(),
+        newsHighlightService.getAvailable(),
       ]);
-
-      const highlightData = highlightRes.data || [];
-      const newsData = (newsRes.data || []).filter((n: News) => n.status === "PUBLISHED");
-
-      setHighlights(highlightData);
-      setNewsList(newsData);
-
-      // Map position to selected news
-      const selected: { [position: number]: string } = {};
-      highlightData.forEach((h: NewsHighlight) => {
-        selected[h.position] = h.newsId;
-      });
-      setSelectedNewsIds(selected);
-    } catch (err) {
-      console.error("Failed to fetch data:", err);
+      setHighlights(hlRes.data || []);
+      setAvailableNews(availRes.data || []);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to fetch highlights");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchHighlights();
+  }, [fetchHighlights]);
 
-  const handleSelectChange = (position: number, newsId: string) => {
-    setSelectedNewsIds((prev) => ({
-      ...prev,
-      [position]: newsId,
-    }));
-  };
-
-  const handleSave = async () => {
+  const handleAddHighlight = async () => {
+    if (!selectedNewsId) return;
     try {
-      setSaving(true);
-      setMessage(null);
-
-      // Update highlights for each position
-      for (const position of positions) {
-        const newsId = selectedNewsIds[position];
-        const existingHighlight = highlights.find((h) => h.position === position);
-
-        if (newsId) {
-          // Set or update highlight
-          await newsHighlightService.setHighlight(newsId, position);
-        } else if (existingHighlight) {
-          // Remove highlight if no news selected - use the newsId from existing highlight
-          await newsHighlightService.removeHighlight(existingHighlight.newsId);
-        }
-      }
-
-      setMessage({ type: "success", text: "Highlights saved successfully" });
-      fetchData();
+      await newsHighlightService.createHighlight(parseInt(selectedNewsId, 10));
+      toast.success("Highlight added");
+      setSelectedNewsId("");
+      await fetchHighlights();
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Failed to save highlights" });
-    } finally {
-      setSaving(false);
+      toast.error(err.message || "Failed to add highlight");
     }
   };
 
-  const getNewsById = (id: string) => newsList.find((n) => n.id === id);
-
-  const getUsedNewsIds = () => {
-    return Object.values(selectedNewsIds).filter(Boolean);
+  const handleRemove = async (id: number) => {
+    try {
+      await newsHighlightService.removeHighlight(id);
+      toast.success("Highlight removed");
+      await fetchHighlights();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove highlight");
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
-    );
-  }
+  // Drag & Drop reorder
+  const handleDragStart = (idx: number) => {
+    setDraggedIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === idx) return;
+
+    const newItems = [...highlights];
+    const [dragged] = newItems.splice(draggedIdx, 1);
+    newItems.splice(idx, 0, dragged);
+    setHighlights(newItems);
+    setDraggedIdx(idx);
+  };
+
+  const handleDragEnd = async () => {
+    setDraggedIdx(null);
+    // Save new order
+    const updates = highlights.map((h, i) => ({ id: h.id, order: i + 1 }));
+    try {
+      await newsHighlightService.reorderHighlights(updates);
+      toast.success("Order updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save order");
+      await fetchHighlights();
+    }
+  };
+
+  const formatDate = (d: string) => {
+    try {
+      return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    } catch {
+      return d;
+    }
+  };
 
   return (
-    <div className="mx-auto max-w-screen-2xl p-4 md:p-6">
+    <div className="space-y-6">
       <PageBreadCrumb pageTitle="News Highlight" />
 
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">News Highlight</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Select up to 5 news articles to highlight on the homepage
+      <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-900">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">News Highlights</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Manage featured news. Drag to reorder. ({highlights.length} items)
           </p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
-      </div>
 
-      {/* Message */}
-      {message && (
-        <div
-          className={`mb-4 rounded-lg p-3 text-sm ${
-            message.type === "success"
-              ? "bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-              : "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-
-      {/* Highlights Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {positions.map((position) => {
-          const selectedNews = selectedNewsIds[position]
-            ? getNewsById(selectedNewsIds[position])
-            : null;
-          const usedIds = getUsedNewsIds();
-
-          return (
-            <div
-              key={position}
-              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+        {/* Add Highlight */}
+        <div className="mb-6 flex items-end gap-3">
+          <div className="flex-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Add News to Highlight
+            </label>
+            <select
+              value={selectedNewsId}
+              onChange={(e) => setSelectedNewsId(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  Position #{position}
-                </span>
-                {selectedNews && (
-                  <button
-                    onClick={() => handleSelectChange(position, "")}
-                    className="text-xs text-red-600 hover:text-red-800 dark:text-red-400"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
+              <option value="">-- Select News --</option>
+              {availableNews.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.titleEn} ({formatDate(n.newsDate)})
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={handleAddHighlight}
+            disabled={!selectedNewsId}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Add
+          </button>
+        </div>
 
-              {/* Thumbnail Preview */}
-              <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-                {selectedNews?.thumbnail ? (
-                  <img
-                    src={selectedNews.thumbnail}
-                    alt={selectedNews.titleEn}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-gray-400">
-                    <svg
-                      className="h-8 w-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              {/* News Title */}
-              {selectedNews && (
-                <p className="mb-3 line-clamp-2 text-sm font-medium text-gray-900 dark:text-white">
-                  {selectedNews.titleEn}
-                </p>
-              )}
-
-              {/* Select Dropdown */}
-              <select
-                value={selectedNewsIds[position] || ""}
-                onChange={(e) => handleSelectChange(position, e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        {/* Highlights List */}
+        {loading ? (
+          <div className="flex h-40 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          </div>
+        ) : highlights.length === 0 ? (
+          <div className="flex h-40 items-center justify-center text-gray-500 dark:text-gray-400">
+            <p>No highlights configured. Add news articles above.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {highlights.map((h, idx) => (
+              <div
+                key={h.id}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+                className={`flex items-center gap-4 rounded-lg border p-3 transition-colors ${
+                  draggedIdx === idx
+                    ? "border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20"
+                    : "border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-800/80"
+                } cursor-grab active:cursor-grabbing`}
               >
-                <option value="">Select news...</option>
-                {newsList.map((news) => {
-                  const isUsed = usedIds.includes(news.id) && selectedNewsIds[position] !== news.id;
-                  return (
-                    <option key={news.id} value={news.id} disabled={isUsed}>
-                      {news.titleEn} {isUsed && "(In use)"}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          );
-        })}
+                {/* Drag Handle */}
+                <div className="text-gray-400">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 6h2v2H8V6zm6 0h2v2h-2V6zM8 11h2v2H8v-2zm6 0h2v2h-2v-2zM8 16h2v2H8v-2zm6 0h2v2h-2v-2z" />
+                  </svg>
+                </div>
+
+                {/* Position Badge */}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  {idx + 1}
+                </div>
+
+                {/* Thumbnail */}
+                {h.news?.newsThumbnail && (
+                  <img
+                    src={h.news.newsThumbnail}
+                    alt=""
+                    className="h-12 w-16 rounded object-cover"
+                  />
+                )}
+
+                {/* Info */}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                    {h.news?.titleEn || "Unknown News"}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {h.news?.newsDate ? formatDate(h.news.newsDate) : ""}
+                    {h.news?.dataStatus !== 1 && (
+                      <span className="ml-2 text-yellow-600 dark:text-yellow-400">(Inactive)</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Remove */}
+                <button
+                  onClick={() => handleRemove(h.id)}
+                  className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  title="Remove highlight"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

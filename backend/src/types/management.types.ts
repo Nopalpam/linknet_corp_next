@@ -1,35 +1,77 @@
 /**
  * Management Module DTOs and Types
+ * Compatible with MySQL legacy structure (BigInt IDs, bilingual fields)
  */
 
-export interface CreateManagementDTO {
-  categoryId: string;
+// ============================================
+// MANAGEMENT CATEGORY TYPES
+// ============================================
+
+export interface CreateManagementCategoryDTO {
   name: string;
-  position: string;
+  slug?: string;
   description?: string;
-  photo?: string;
-  email?: string;
-  phone?: string;
-  linkedin?: string;
   order?: number;
-  isActive?: boolean;
+  status?: number; // 1 = active, 0 = inactive
+  createdBy?: string;
 }
 
-export interface UpdateManagementDTO extends Partial<CreateManagementDTO> {}
+export interface UpdateManagementCategoryDTO {
+  name?: string;
+  slug?: string;
+  description?: string;
+  order?: number;
+  status?: number;
+  updatedBy?: string;
+}
+
+export interface ManagementCategoryQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// ============================================
+// MANAGEMENT (DATA) TYPES
+// ============================================
+
+export interface CreateManagementDTO {
+  name: string;
+  positionEn?: string;
+  positionId?: string;
+  category?: string;
+  categoryId?: bigint | number | string;
+  photo?: string;
+  bioEn?: string;
+  bioId?: string;
+  dataOrder?: number;
+  dataStatus?: number; // 1 = active, 0 = inactive
+  createdBy?: string;
+}
+
+export interface UpdateManagementDTO {
+  name?: string;
+  positionEn?: string;
+  positionId?: string;
+  category?: string;
+  categoryId?: bigint | number | string;
+  photo?: string;
+  bioEn?: string;
+  bioId?: string;
+  dataOrder?: number;
+  dataStatus?: number;
+  updatedBy?: string;
+}
 
 export interface ManagementQueryParams {
   page?: number;
   limit?: number;
   search?: string;
   categoryId?: string;
-  isActive?: boolean;
+  dataStatus?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-}
-
-export interface ManagementCategoryDTO {
-  name: string;
-  description?: string;
-  position?: number;
-  isActive?: boolean;
 }

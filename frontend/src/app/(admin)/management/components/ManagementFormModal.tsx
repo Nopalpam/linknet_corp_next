@@ -5,9 +5,7 @@ import { Modal } from "@/components/ui/modal";
 import {
   managementService,
   Management,
-  ManagementCategory,
   CreateManagementData,
-  UpdateManagementData,
 } from "@/services/management.service";
 
 interface ManagementFormModalProps {
@@ -16,7 +14,8 @@ interface ManagementFormModalProps {
   onSuccess: (success: boolean, message?: string) => void;
   mode: "create" | "edit";
   management: Management | null;
-  categories: ManagementCategory[];
+  categoryId: string;
+  categoryName: string;
 }
 
 export default function ManagementFormModal({
@@ -25,100 +24,91 @@ export default function ManagementFormModal({
   onSuccess,
   mode,
   management,
-  categories,
+  categoryId,
+  categoryName,
 }: ManagementFormModalProps) {
-  const [formData, setFormData] = useState<CreateManagementData>({
-    categoryId: "",
+  const [formData, setFormData] = useState({
     name: "",
-    position: "",
-    description: "",
+    positionEn: "",
+    positionId: "",
+    category: "",
     photo: "",
-    email: "",
-    phone: "",
-    linkedin: "",
-    order: 0,
-    isActive: true,
+    bioEn: "",
+    bioId: "",
+    dataStatus: 1,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Populate form when editing
   useEffect(() => {
     if (mode === "edit" && management) {
       setFormData({
-        categoryId: management.categoryId,
-        name: management.name,
-        position: management.position,
-        description: management.description || "",
+        name: management.name || "",
+        positionEn: management.positionEn || "",
+        positionId: management.positionId || "",
+        category: management.category || "",
         photo: management.photo || "",
-        email: management.email || "",
-        phone: management.phone || "",
-        linkedin: management.linkedin || "",
-        order: management.order,
-        isActive: management.isActive,
+        bioEn: management.bioEn || "",
+        bioId: management.bioId || "",
+        dataStatus: management.dataStatus ?? 1,
       });
     } else {
-      // Reset form for create mode
       setFormData({
-        categoryId: "",
         name: "",
-        position: "",
-        description: "",
+        positionEn: "",
+        positionId: "",
+        category: "",
         photo: "",
-        email: "",
-        phone: "",
-        linkedin: "",
-        order: 0,
-        isActive: true,
+        bioEn: "",
+        bioId: "",
+        dataStatus: 1,
       });
     }
-    setError(null);
+    setErrors({});
   }, [mode, management, isOpen]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-          : type === "number"
-          ? parseInt(value) || 0
-          : value,
-    }));
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
+    if (!validate()) return;
 
+    setLoading(true);
     try {
-      // Validation
-      if (!formData.categoryId.trim()) {
-        throw new Error("Category is required");
-      }
-      if (!formData.name.trim()) {
-        throw new Error("Name is required");
-      }
-      if (!formData.position.trim()) {
-        throw new Error("Position is required");
-      }
+      const payload: CreateManagementData = {
+        name: formData.name.trim(),
+        positionEn: formData.positionEn.trim() || undefined,
+        positionId: formData.positionId.trim() || undefined,
+        category: formData.category.trim() || undefined,
+        categoryId,
+        photo: formData.photo.trim() || undefined,
+        bioEn: formData.bioEn.trim() || undefined,
+        bioId: formData.bioId.trim() || undefined,
+        dataStatus: formData.dataStatus,
+      };
 
       if (mode === "create") {
-        await managementService.create(formData);
-        onSuccess(true, "Management berhasil ditambahkan");
+        await managementService.createManagement(payload);
+        onSuccess(true, "Data berhasil ditambahkan");
       } else if (management) {
-        const updateData: UpdateManagementData = {
-          ...formData,
-        };
-        await managementService.update(management.id, updateData);
-        onSuccess(true, "Management berhasil diperbarui");
+        await managementService.updateManagement(management.id, payload);
+        onSuccess(true, "Data berhasil diperbarui");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to save management");
+      const errorMsg =
+        err?.response?.data?.message ||
+        err.message ||
+        "Failed to save data";
+      setErrors({ submit: errorMsg });
+    } finally {
       setLoading(false);
     }
   };
@@ -127,183 +117,168 @@ export default function ManagementFormModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
-      <div className="p-6">
+      <div className="max-h-[85vh] overflow-y-auto p-6">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {mode === "create" ? "Add New Management" : "Edit Management"}
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {mode === "create" ? "Add New Member" : "Edit Member"}
           </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Category: <span className="font-medium">{categoryName}</span>
+          </p>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {error}
+        {/* Error */}
+        {errors.submit && (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+            {errors.submit}
           </div>
         )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Category */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Name */}
-            <div>
+            <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                name="name"
                 value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                placeholder="John Doe"
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 dark:bg-gray-800 dark:text-white ${
+                  errors.name
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-700"
+                }`}
+                placeholder="Full name"
               />
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+              )}
             </div>
 
-            {/* Position */}
+            {/* Position EN */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Position <span className="text-red-500">*</span>
+                Position (English)
               </label>
               <input
                 type="text"
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                placeholder="Chief Executive Officer"
+                value={formData.positionEn}
+                onChange={(e) =>
+                  setFormData({ ...formData, positionEn: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="e.g. Chief Executive Officer"
               />
             </div>
 
-            {/* Order */}
+            {/* Position ID */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Order
+                Position (Indonesian)
               </label>
               <input
-                type="number"
-                name="order"
-                value={formData.order}
-                onChange={handleChange}
-                min="0"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                type="text"
+                value={formData.positionId}
+                onChange={(e) =>
+                  setFormData({ ...formData, positionId: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="e.g. Direktur Utama"
               />
             </div>
 
-            {/* Email */}
+            {/* Category Label (varchar from MySQL) */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
+                Category Label
               </label>
               <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                placeholder="john.doe@example.com"
+                type="text"
+                value={formData.category}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Optional text label"
               />
             </div>
 
-            {/* Phone */}
+            {/* Photo URL */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Phone
+                Photo URL
               </label>
               <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                placeholder="+62 812 3456 7890"
+                type="url"
+                value={formData.photo}
+                onChange={(e) =>
+                  setFormData({ ...formData, photo: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="https://example.com/photo.jpg"
               />
             </div>
           </div>
 
-          {/* Photo URL */}
+          {/* Bio EN */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Photo URL
-            </label>
-            <input
-              type="url"
-              name="photo"
-              value={formData.photo}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              placeholder="https://example.com/photo.jpg"
-            />
-          </div>
-
-          {/* LinkedIn */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              LinkedIn Profile
-            </label>
-            <input
-              type="url"
-              name="linkedin"
-              value={formData.linkedin}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              placeholder="https://linkedin.com/in/johndoe"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description
+              Bio (English)
             </label>
             <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
+              value={formData.bioEn}
+              onChange={(e) =>
+                setFormData({ ...formData, bioEn: e.target.value })
+              }
               rows={4}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-              placeholder="Brief bio or description..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="Brief biography in English..."
+            />
+          </div>
+
+          {/* Bio ID */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Bio (Indonesian)
+            </label>
+            <textarea
+              value={formData.bioId}
+              onChange={(e) =>
+                setFormData({ ...formData, bioId: e.target.value })
+              }
+              rows={4}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="Brief biography in Indonesian..."
             />
           </div>
 
           {/* Status */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
-            />
-            <label className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Active
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Status
             </label>
+            <select
+              value={formData.dataStatus}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  dataStatus: parseInt(e.target.value),
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option value={1}>Active</option>
+              <option value={0}>Inactive</option>
+            </select>
           </div>
 
-          {/* Actions */}
+          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -316,9 +291,30 @@ export default function ManagementFormModal({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? "Saving..." : mode === "create" ? "Create" : "Update"}
+              {loading && (
+                <svg
+                  className="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              )}
+              {mode === "create" ? "Create Member" : "Update Member"}
             </button>
           </div>
         </form>

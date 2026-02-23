@@ -207,6 +207,10 @@ app.use(`${API_PREFIX}`, newsRoutes);
 import careerRoutes from '@routes/career.routes';
 app.use(`${API_PREFIX}`, careerRoutes);
 
+// Report routes (Public + CMS)
+import reportRoutes from '@routes/report.routes';
+app.use(`${API_PREFIX}`, reportRoutes);
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
 

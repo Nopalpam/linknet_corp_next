@@ -50,25 +50,34 @@ const menuSections: MenuSection[] = [
   {
     label: "Main Components",
     items: [
-      // {
-      //   icon: <BoxCubeIcon />,
-      //   name: "Awards",
-      //   path: "/awards",
-      // },
-      // {
-      //   icon: <TableIcon />,
-      //   name: "Management",
-      //   path: "/management",
-      // },
-      // {
-      //   icon: <ListIcon />,
-      //   name: "Report",
-      //   subItems: [
-      //     { name: "Report Type", path: "/report/type" },
-      //     { name: "Report Section", path: "/report/section" },
-      //     { name: "Report Item", path: "/report/item" },
-      //   ],
-      // },
+      {
+        icon: <BoxCubeIcon />,
+        name: "Awards",
+        path: "/awards",
+      },
+      {
+        icon: <TableIcon />,
+        name: "Management",
+        path: "/management",
+      },
+      {
+        icon: <ListIcon />,
+        name: "Reports",
+        subItems: [
+          { name: "Report Types", path: "/reports/report-types" },
+          { name: "Report Sections", path: "/reports/report-sections" },
+          { name: "Report Items", path: "/reports/report-items" },
+        ],
+      },
+      {
+        icon: <ListIcon />,
+        name: "Announcements",
+        subItems: [
+          { name: "Announcements Types", path: "/announcements/announcement-types" },
+          { name: "Announcements Sections", path: "/announcements/announcement-sections" },
+          { name: "Announcements Items", path: "/announcements/announcement-items" },
+        ],
+      },
       // {
       //   icon: <CalenderIcon />,
       //   name: "Announcement",
@@ -295,15 +304,8 @@ const AppSidebar: React.FC = () => {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(autoOpenSubmenu);
   
   useEffect(() => {
-    // Use flushSync pattern - update in next tick to avoid cascading render warning
-    const timeoutId = setTimeout(() => {
-      if (autoOpenSubmenu && autoOpenSubmenu !== openSubmenu) {
-        setOpenSubmenu(autoOpenSubmenu);
-      }
-    }, 0);
-    
-    return () => clearTimeout(timeoutId);
-  }, [autoOpenSubmenu, openSubmenu]);
+    setOpenSubmenu(autoOpenSubmenu);
+  }, [autoOpenSubmenu]);
 
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
     {}

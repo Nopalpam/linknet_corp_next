@@ -1,4 +1,5 @@
 import { Outfit } from 'next/font/google';
+import { Metadata } from 'next';
 import './globals.css';
 import "flatpickr/dist/flatpickr.css";
 import { SidebarProvider } from '@/context/SidebarContext';
@@ -9,6 +10,14 @@ import { ToastProvider } from '@/context/ToastContext';
 const outfit = Outfit({
   subsets: ["latin"],
 });
+
+export const metadata: Metadata = {
+  icons: {
+    icon: '/images/favicon.png',
+    shortcut: '/images/favicon.png',
+    apple: '/images/favicon.png',
+  },
+};
 
 export default function RootLayout({
   children,
