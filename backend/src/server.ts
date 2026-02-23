@@ -203,6 +203,10 @@ app.use(`${API_PREFIX}/cms/contactus`, cmsContactRoutes);
 import newsRoutes from '@routes/news.routes';
 app.use(`${API_PREFIX}`, newsRoutes);
 
+// Career routes (Public + CMS)
+import careerRoutes from '@routes/career.routes';
+app.use(`${API_PREFIX}`, careerRoutes);
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
 

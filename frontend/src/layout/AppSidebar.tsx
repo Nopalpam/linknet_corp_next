@@ -87,11 +87,11 @@ const menuSections: MenuSection[] = [
           { name: "News Highlight", path: "/news/highlight" },
         ],
       },
-      // {
-      //   icon: <BoxCubeIcon />,
-      //   name: "Career",
-      //   path: "/career",
-      // },
+      {
+        icon: <BoxCubeIcon />,
+        name: "Career",
+        path: "/careers",
+      },
       {
         icon: <TableIcon />,
         name: "Contact Us Data Bank",
