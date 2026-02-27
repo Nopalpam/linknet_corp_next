@@ -128,8 +128,8 @@ export class FileUploadScanner {
    */
   private async validateFile(
     filePath: string,
-    originalName: string,
-    mimeType: string
+    _originalName: string,
+    _mimeType: string
   ): Promise<void> {
     // Check if file exists
     try {
@@ -171,7 +171,7 @@ export class FileUploadScanner {
     // Check for double extensions (e.g., file.pdf.exe)
     const parts = fileName.split('.');
     if (parts.length > 2) {
-      const secondExt = '.' + parts[parts.length - 2].toLowerCase();
+      const secondExt = '.' + parts[parts.length - 2]!.toLowerCase();
       if (this.dangerousExtensions.includes(secondExt)) {
         throw new Error(`Suspicious double extension detected: ${fileName}`);
       }
@@ -204,14 +204,14 @@ export class FileUploadScanner {
       await execAsync('which clamscan');
 
       // Run ClamAV scan
-      const { stdout, stderr } = await execAsync(`clamscan --no-summary "${filePath}"`);
+      const { stdout, stderr: _stderr } = await execAsync(`clamscan --no-summary "${filePath}"`);
 
       // Parse results
       if (stdout.includes('FOUND')) {
         const threats = stdout
           .split('\n')
           .filter((line) => line.includes('FOUND'))
-          .map((line) => line.split(':')[1].trim());
+          .map((line) => line.split(':')[1]!.trim());
         return { safe: false, threats };
       }
 
@@ -228,7 +228,7 @@ export class FileUploadScanner {
         const threats = error.stdout
           .split('\n')
           .filter((line: string) => line.includes('FOUND'))
-          .map((line: string) => line.split(':')[1].trim());
+          .map((line: string) => line.split(':')[1]!.trim());
         return { safe: false, threats };
       }
 

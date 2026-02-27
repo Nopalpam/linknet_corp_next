@@ -6,7 +6,7 @@ import { pagesService, Page, UpdatePageData } from "@/services/pages.service";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { PageBuilderModal } from "../components/PageBuilderV2";
-import { HeroRenderer, PricingRenderer, normalizeComponentType } from "../components/PageBuilderV2";
+import { HeroRenderer, PricingRenderer, normalizeComponentType, getLocalizedValue } from "../components/PageBuilderV2";
 
 export default function EditPagePage() {
   const params = useParams();
@@ -181,7 +181,7 @@ export default function EditPagePage() {
                                   </span>
                                   {settings.title && (
                                     <span className="text-xs text-gray-500 truncate">
-                                      - {settings.title}
+                                      - {getLocalizedValue(settings.title)}
                                     </span>
                                   )}
                                 </div>

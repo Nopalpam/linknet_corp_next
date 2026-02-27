@@ -8,12 +8,13 @@
 // Main Modal Component
 export { PageBuilderModal, default } from './Modal';
 
-// Context and Hooks (for advanced usage)
+// Context and Hooks
 export { PageBuilderProvider, usePageBuilder } from './context';
 
-// Registry (for extending with new components)
+// Registry
 export {
   COMPONENT_REGISTRY,
+  STATIC_COMPONENT_TYPES,
   isRegisteredType,
   getRegistryEntry,
   getDefaultSettings,
@@ -35,12 +36,15 @@ export type {
   ComponentRegistryEntry,
   PageBuilderAction,
   DragItem,
+  MultilingualValue,
 } from './types';
 
 export {
   DEFAULT_HERO_SETTINGS,
   DEFAULT_PRICING_SETTINGS,
   DRAG_TYPE,
+  isMultilingual,
+  getLocalizedValue,
 } from './types';
 
 // Individual Components (for custom canvas implementations)

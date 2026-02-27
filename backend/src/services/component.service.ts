@@ -2,8 +2,13 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import prisma from '@config/database';
 import { AppError } from '../types/error.types';
-import { COMPONENT_SCHEMAS, COMPONENT_TYPES } from '@/schemas/components';
+import { COMPONENT_SCHEMAS } from '@/schemas/components';
 import { sanitizeComponentByType } from '../utils/componentSanitizer';
+import {
+  COMPONENT_TYPE_MAP,
+  ALL_COMPONENT_TYPES,
+  getDefaultComponentData,
+} from '../constants/componentDefaults';
 
 // Initialize Ajv
 const ajv = new Ajv({ allErrors: true, verbose: true });
@@ -42,11 +47,19 @@ export interface ReorderComponentsDTO {
 export class ComponentService {
   /**
    * Validate component data against schema
+   * Falls back to basic validation for new component types without JSON schema
    */
   static validateComponentData(componentType: string, data: any): void {
     const validate = compiledSchemas[componentType];
     
     if (!validate) {
+      // For new page builder component types, do basic validation
+      if (COMPONENT_TYPE_MAP[componentType]) {
+        if (!data || typeof data !== 'object') {
+          throw new AppError('Component data must be an object', 400);
+        }
+        return; // Pass - component type is registered
+      }
       throw new AppError(`Unknown component type: ${componentType}`, 400);
     }
 
@@ -119,13 +132,27 @@ export class ComponentService {
    * Create new component
    */
   static async createComponent(data: CreateComponentDTO) {
-    // Validate component type
-    if (!compiledSchemas[data.componentType]) {
+    // Validate component type - check both old schemas and new type map
+    const hasSchema = !!compiledSchemas[data.componentType];
+    const hasTypeMap = !!COMPONENT_TYPE_MAP[data.componentType];
+    
+    if (!hasSchema && !hasTypeMap) {
       throw new AppError(`Unknown component type: ${data.componentType}`, 400);
     }
 
-    // Sanitize component data before validation
-    const sanitizedData = sanitizeComponentByType(data.componentType, data.componentData);
+    // If no component data provided, use defaults from the type map
+    let componentData = data.componentData;
+    if (!componentData || Object.keys(componentData).length === 0) {
+      const defaults = getDefaultComponentData(data.componentType);
+      if (defaults) {
+        componentData = defaults;
+      }
+    }
+
+    // Sanitize component data before validation (only for old schema types)
+    const sanitizedData = hasSchema
+      ? sanitizeComponentByType(data.componentType, componentData)
+      : componentData;
 
     // Validate component data against schema
     this.validateComponentData(data.componentType, sanitizedData);
@@ -287,10 +314,18 @@ export class ComponentService {
   }
 
   /**
-   * Get available component types with schemas
+   * Get available component types with schemas and defaults
    */
   static getComponentTypes() {
-    return COMPONENT_TYPES;
+    // Return new comprehensive component types with defaults
+    return ALL_COMPONENT_TYPES.map((ct) => ({
+      type: ct.type,
+      name: ct.name,
+      description: ct.description,
+      icon: ct.icon,
+      category: ct.category,
+      defaultData: ct.defaultData,
+    }));
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { PageService } from './page.service';
 import prisma from '../../../config/database';
 import {
@@ -6,13 +6,12 @@ import {
   updatePageSchema,
   pageQuerySchema,
   CreatePageInput,
-  UpdatePageInput,
-  PageQueryInput,
 } from './page.validation';
-import { asyncHandler } from '../../../middleware/asyncHandler';
-import { requirePermission } from '../../../middleware/rbac';
+import { asyncHandler } from '../../../middleware/errorHandler.middleware';
+import { requirePermission } from '../../../middleware/rbac.middleware';
+import { AuthRequest } from '../../../middleware/auth.middleware';
 import { ZodError } from 'zod';
-import { BadRequestError } from '../../../utils/errors';
+import { ValidationError } from '../../../types/error.types';
 
 const pageService = new PageService(prisma);
 
@@ -25,7 +24,7 @@ export const getPages = [
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const query = pageQuerySchema.parse(req.query);
-      const result = await pageService.getPages(query, req.user?.id);
+      const result = await pageService.getPages(query, (req as AuthRequest).user?.id);
 
       res.json({
         success: true,
@@ -34,7 +33,7 @@ export const getPages = [
       });
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new BadRequestError('Invalid query parameters', error.errors);
+        throw new ValidationError('Invalid query parameters');
       }
       throw error;
     }
@@ -49,7 +48,7 @@ export const getPageById = [
   requirePermission('pages_read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const page = await pageService.getPageById(id);
+    const page = await pageService.getPageById(id!);
 
     res.json({
       success: true,
@@ -67,7 +66,7 @@ export const createPage = [
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const data: CreatePageInput = createPageSchema.parse(req.body);
-      const page = await pageService.createPage(data, req.user!.id);
+      const page = await pageService.createPage(data, (req as AuthRequest).user!.id);
 
       res.status(201).json({
         success: true,
@@ -76,7 +75,7 @@ export const createPage = [
       });
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new BadRequestError('Invalid page data', error.errors);
+        throw new ValidationError('Invalid page data');
       }
       throw error;
     }
@@ -92,8 +91,8 @@ export const updatePage = [
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const data: UpdatePageInput = updatePageSchema.parse(req.body);
-      const page = await pageService.updatePage(id, data);
+      const data = updatePageSchema.parse(req.body);
+      const page = await pageService.updatePage(id!, data as any);
 
       res.json({
         success: true,
@@ -102,7 +101,7 @@ export const updatePage = [
       });
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new BadRequestError('Invalid page data', error.errors);
+        throw new ValidationError('Invalid page data');
       }
       throw error;
     }
@@ -117,7 +116,7 @@ export const deletePage = [
   requirePermission('pages_delete'),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    await pageService.deletePage(id);
+    await pageService.deletePage(id!);
 
     res.json({
       success: true,

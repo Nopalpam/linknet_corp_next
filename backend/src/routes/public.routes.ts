@@ -4,6 +4,7 @@ import {
   getPagePreview,
   getPublishedSlugs,
   triggerRevalidation,
+  getAvailableComponents,
 } from '../controllers/public.controller';
 import managementController from '../controllers/management.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
@@ -11,10 +12,15 @@ import { checkPermission } from '../middleware/rbac.middleware';
 
 const router = Router();
 
+// Available component types (no auth required)
+router.get('/available-components', getAvailableComponents);
+
 // Public routes (no auth required)
-router.get('/pages/:slug', getPublicPageBySlug);
-router.get('/pages/preview/:slug', getPagePreview);
 router.get('/pages/slugs', getPublishedSlugs);
+router.get('/pages/preview/:slug', getPagePreview);
+
+// Nested slug support via wildcard: "about", "about/management", "investor/annual-report"
+router.get(/^\/pages\/(.+)$/, getPublicPageBySlug);
 
 // Public Management routes
 router.get(

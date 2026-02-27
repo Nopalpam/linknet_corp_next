@@ -4,39 +4,34 @@
 
 /** Page data returned from /api/v1/pages/:slug */
 export interface Page {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  ogImage?: string;
   status: string;
   components: PageComponent[];
   createdAt: string;
   updatedAt: string;
 }
 
-/** Page component / section */
+/** Page component / section mapped from page_components table */
 export interface PageComponent {
-  id: number;
+  id: string;
   componentType: string;
-  title?: string;
-  subtitle?: string;
-  content?: string;
+  componentData: Record<string, any>;
   order: number;
-  settings?: Record<string, unknown>;
-  items?: ComponentItem[];
+  isVisible: boolean;
+  /** MAIN components may have enriched data fetched by the backend */
+  mainData?: any;
 }
 
-/** Items within a component (e.g., slider items, cards) */
-export interface ComponentItem {
-  id: number;
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  image?: string;
-  link?: string;
-  order: number;
+/** Multilingual value pattern used in component_data */
+export interface MultilingualValue {
+  en: string;
+  id: string;
 }
 
 /** Menu item from /api/v1/menu */

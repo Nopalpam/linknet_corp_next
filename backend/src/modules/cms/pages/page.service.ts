@@ -7,7 +7,7 @@ import {
   PageListResponse,
   PageDetail,
 } from './page.types';
-import { BadRequestError, NotFoundError } from '../../../utils/errors';
+import { ValidationError as BadRequestError, NotFoundError } from '../../../types/error.types';
 
 /**
  * @deprecated This service is NOT loaded by server.ts.
@@ -74,7 +74,7 @@ export class PageService {
   /**
    * Get pages list with pagination and filters
    */
-  async getPages(params: PageQueryParams, userId?: string): Promise<PageListResponse> {
+  async getPages(params: PageQueryParams, _userId?: string): Promise<PageListResponse> {
     const {
       page = 1,
       limit = 10,

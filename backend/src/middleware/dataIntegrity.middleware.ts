@@ -21,7 +21,7 @@ export const validatePaginationParams = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -39,7 +39,7 @@ export const validatePaginationParams = (
     next();
   } catch (error) {
     if (error instanceof DataIntegrityError) {
-      return res.status(error.statusCode).json({
+      res.status(error.statusCode).json({
         success: false,
         error: {
           code: error.code,
@@ -59,7 +59,7 @@ export const validateBulkOperationSize = (
   maxSize: number = 100,
   fieldName: string = 'ids'
 ) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const items = req.body[fieldName];
 
@@ -76,7 +76,7 @@ export const validateBulkOperationSize = (
       next();
     } catch (error) {
       if (error instanceof DataIntegrityError) {
-        return res.status(error.statusCode).json({
+        res.status(error.statusCode).json({
           success: false,
           error: {
             code: error.code,
@@ -97,7 +97,7 @@ export const validateOrderParams = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   try {
     const { order, sortOrder } = req.body;
 
@@ -115,7 +115,7 @@ export const validateOrderParams = (
     next();
   } catch (error) {
     if (error instanceof DataIntegrityError) {
-      return res.status(error.statusCode).json({
+      res.status(error.statusCode).json({
         success: false,
         error: {
           code: error.code,
@@ -135,7 +135,7 @@ export const validateDateRangeParams = (
   startField: string = 'startDate',
   endField: string = 'endDate'
 ) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const startDate = req.query[startField] ? new Date(req.query[startField] as string) : null;
       const endDate = req.query[endField] ? new Date(req.query[endField] as string) : null;
@@ -167,7 +167,7 @@ export const validateDateRangeParams = (
       next();
     } catch (error) {
       if (error instanceof DataIntegrityError) {
-        return res.status(error.statusCode).json({
+        res.status(error.statusCode).json({
           success: false,
           error: {
             code: error.code,
@@ -223,7 +223,7 @@ export const logDataProcessing = (
  * Middleware to validate JSON body structure
  */
 export const validateJsonStructure = (requiredFields: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const body = req.body;
 
@@ -249,7 +249,7 @@ export const validateJsonStructure = (requiredFields: string[]) => {
       next();
     } catch (error) {
       if (error instanceof DataIntegrityError) {
-        return res.status(error.statusCode).json({
+        res.status(error.statusCode).json({
           success: false,
           error: {
             code: error.code,

@@ -6,7 +6,7 @@ import {
   updatePage,
   deletePage,
 } from './page.controller';
-import { authenticate } from '../../../middleware/auth';
+import { authMiddleware as authenticate } from '../../../middleware/auth.middleware';
 
 const router = Router();
 

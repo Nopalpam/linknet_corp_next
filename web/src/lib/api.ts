@@ -46,8 +46,24 @@ async function fetchApi<T>(
 /** Get a published page by its slug */
 export async function getPageBySlug(slug: string): Promise<Page | null> {
   try {
-    const response = await fetchApi<ApiResponse<Page>>(`/pages/${slug}`);
-    return response.data;
+    const response = await fetchApi<ApiResponse<any>>(`/pages/${slug}`);
+    const raw = response.data;
+    if (!raw) return null;
+
+    // Transform backend field names to frontend interface:
+    // Backend sends: { type, data, order, ... }
+    // Frontend expects: { componentType, componentData, order, isVisible, ... }
+    return {
+      ...raw,
+      components: (raw.components || []).map((c: any) => ({
+        id: c.id,
+        componentType: c.type ?? c.componentType,
+        componentData: c.data ?? c.componentData ?? {},
+        order: c.order ?? 0,
+        isVisible: c.isVisible !== false,
+        mainData: c.mainData,
+      })),
+    } as Page;
   } catch {
     return null;
   }
@@ -56,8 +72,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
 /** Get all published page slugs (for static generation) */
 export async function getPublishedSlugs(): Promise<string[]> {
   try {
-    const response = await fetchApi<ApiResponse<string[]>>("/pages/slugs");
-    return response.data;
+    const response = await fetchApi<ApiResponse<{ slug: string; updatedAt: string }[]>>("/pages/slugs");
+    // Backend returns objects with slug + updatedAt; extract just the slug strings
+    return response.data.map((page) => page.slug);
   } catch {
     return [];
   }

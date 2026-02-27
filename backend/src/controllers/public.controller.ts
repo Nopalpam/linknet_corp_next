@@ -1,17 +1,176 @@
 import { Request, Response } from 'express';
 import { PrismaClient, PageStatus } from '@prisma/client';
+import { isMainComponent, ALL_COMPONENT_TYPES } from '../constants/componentDefaults';
 
 const prisma = new PrismaClient();
 
+// ============================================================================
+// MAIN COMPONENT DATA FETCHERS
+// ============================================================================
+
+async function fetchMainComponentData(type: string, config: any): Promise<any> {
+  try {
+    switch (type) {
+      case 'news_highlight': {
+        const featuredCount = config.featured_count || 1;
+        const gridCount = config.grid_count || 4;
+        const highlights = await prisma.newsHighlight.findMany({
+          include: { news: { include: { category: true } } },
+          orderBy: { dataOrder: 'asc' },
+          take: featuredCount,
+        });
+        const latest = await prisma.newsContent.findMany({
+          where: { dataStatus: 1 },
+          include: { category: true },
+          orderBy: { newsDate: 'desc' },
+          take: gridCount,
+        });
+        return { featured: highlights.map(h => h.news), grid: latest };
+      }
+      case 'news_list': {
+        const maxData = config.max_data || 12;
+        const news = await prisma.newsContent.findMany({
+          where: {
+            dataStatus: 1,
+            ...(config.category_id ? { idCategory: BigInt(config.category_id) } : {}),
+          },
+          include: { category: true },
+          orderBy: { newsDate: 'desc' },
+          take: maxData,
+        });
+        const categories = await prisma.newsCategory.findMany({
+          where: { dataStatus: 1 },
+          orderBy: { dataOrder: 'asc' },
+        });
+        return { news, categories, total: news.length };
+      }
+      case 'career_highlight': {
+        const maxDisplay = config.max_display || 6;
+        const careers = await prisma.careerContent.findMany({
+          where: { status: 'active' },
+          orderBy: { createdAt: 'desc' },
+          take: maxDisplay,
+        });
+        return { careers };
+      }
+      case 'career_list': {
+        const perPage = config.per_page || 10;
+        const careers = await prisma.careerContent.findMany({
+          where: { status: 'active' },
+          orderBy: { createdAt: 'desc' },
+          take: perPage,
+        });
+        return { careers, total: careers.length };
+      }
+      case 'management_list': {
+        const managements = await prisma.management.findMany({
+          where: { dataStatus: 1 },
+          include: { managementCategory: true },
+          orderBy: { dataOrder: 'asc' },
+        });
+        const categories = await prisma.managementCategory.findMany({
+          where: { status: 1 },
+          orderBy: { order: 'asc' },
+        });
+        return { managements, categories };
+      }
+      case 'announcement_list': {
+        const announcements = await prisma.announcement.findMany({
+          where: { status: 'PUBLISHED' },
+          include: { section: { include: { type: true } } },
+          orderBy: { publishedAt: 'desc' },
+          take: config.per_page || 10,
+        });
+        const types = await prisma.announcementType.findMany({
+          where: { isActive: true },
+          orderBy: { position: 'asc' },
+        });
+        return { announcements, types };
+      }
+      case 'report_list': {
+        const reportTypes = await prisma.reportType.findMany({
+          where: { isActive: true, deletedAt: null },
+          include: {
+            reportSections: {
+              where: { isActive: true, deletedAt: null },
+              include: {
+                reportItems: {
+                  where: { isActive: true, deletedAt: null },
+                  orderBy: { sortOrder: 'asc' },
+                },
+              },
+              orderBy: { sortOrder: 'asc' },
+            },
+            reportItems: {
+              where: { isActive: true, deletedAt: null, reportSectionId: null },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
+        return { reportTypes };
+      }
+      case 'awards_list': {
+        const awards = await prisma.award.findMany({
+          where: { isActive: true, deletedAt: null },
+          orderBy: [{ year: 'desc' }, { position: 'asc' }],
+        });
+        return { awards };
+      }
+      default:
+        return null;
+    }
+  } catch (error) {
+    console.error(`Error fetching data for ${type}:`, error);
+    return null;
+  }
+}
+
+// ============================================================================
+// AVAILABLE COMPONENTS ENDPOINT
+// ============================================================================
+
+/**
+ * GET /api/v1/available-components
+ * Returns list of all available component types with defaults
+ */
+export const getAvailableComponents = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    res.json({
+      success: true,
+      data: ALL_COMPONENT_TYPES.map((ct) => ({
+        type: ct.type,
+        name: ct.name,
+        description: ct.description,
+        icon: ct.icon,
+        category: ct.category,
+        defaultData: ct.defaultData,
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching available components:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+// ============================================================================
+// PUBLIC PAGE ENDPOINTS
+// ============================================================================
+
 /**
  * Get published page by slug (public access)
+ * Supports nested slugs (e.g., "about/management") via wildcard param
  */
 export const getPublicPageBySlug = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const { slug } = req.params;
+    // Support both :slug and catch-all *slug (0 param) for nested paths
+    const slug = req.params.slug || req.params[0] || '';
 
     const page = await prisma.page.findFirst({
       where: {
@@ -44,16 +203,37 @@ export const getPublicPageBySlug = async (
       return;
     }
 
-    res.json({
-      success: true,
-      data: {
-        ...page,
-        components: page.components.map((c: any) => ({
+    // For MAIN components, fetch additional data
+    const componentsWithData = await Promise.all(
+      page.components.map(async (c: any) => {
+        const base = {
           id: c.id,
           type: c.type,
           data: c.data,
           order: c.order,
-        })),
+        };
+
+        if (isMainComponent(c.type)) {
+          const mainData = await fetchMainComponentData(c.type, c.data);
+          return { ...base, mainData };
+        }
+
+        return base;
+      })
+    );
+
+    res.json({
+      success: true,
+      data: {
+        id: page.id,
+        title: page.title,
+        slug: page.slug,
+        metaTitle: page.metaTitle,
+        metaDescription: page.metaDescription,
+        metaKeywords: page.metaKeywords,
+        ogImage: page.ogImage,
+        status: page.status,
+        components: componentsWithData,
       },
     });
   } catch (error) {

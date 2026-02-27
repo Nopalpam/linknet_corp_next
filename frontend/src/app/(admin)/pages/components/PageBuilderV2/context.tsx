@@ -24,7 +24,6 @@ import {
   PageState,
   PageComponent,
   PageBuilderAction,
-  ComponentType,
   ComponentSettings,
 } from './types';
 import {
@@ -82,12 +81,12 @@ function pageBuilderReducer(
       };
 
     case 'ADD_COMPONENT': {
-      const defaultSettings = getDefaultSettings(action.componentType);
+      const defaultSettings = action.defaultData || getDefaultSettings(action.componentType);
       if (!defaultSettings) {
-        console.error(`[Reducer] Cannot add unregistered type: ${action.componentType}`);
+        console.error(`[Reducer] Cannot add type without defaults: ${action.componentType}`);
         return {
           ...state,
-          error: `Unknown component type: ${action.componentType}`,
+          error: `No default settings for: ${action.componentType}`,
         };
       }
 
@@ -229,7 +228,7 @@ interface PageBuilderContextValue {
   selectedComponentId: string | null;
   
   // Actions
-  addComponent: (type: ComponentType, index?: number) => void;
+  addComponent: (type: string, index?: number) => void;
   removeComponent: (id: string) => void;
   updateComponent: (id: string, settings: ComponentSettings) => void;
   moveComponent: (id: string, newIndex: number) => void;
@@ -279,24 +278,18 @@ export function PageBuilderProvider({
         const components: PageComponent[] = (page.components || [])
           .map((dbComp, index) => {
             // Normalize type from database
-            const normalizedType = normalizeComponentType(dbComp.type);
-            
-            if (!normalizedType) {
-              console.warn(`[Load] Skipping unknown component type: ${dbComp.type}`);
-              return null;
-            }
+            const normalizedType = normalizeComponentType(dbComp.type) || dbComp.type;
 
             // Parse settings from database (could be string or object)
-            let settings: ComponentSettings;
+            let settings: Record<string, any>;
             try {
               settings = typeof dbComp.data === 'string' 
                 ? JSON.parse(dbComp.data) 
-                : dbComp.data;
+                : (dbComp.data || {});
             } catch {
               console.error(`[Load] Failed to parse settings for component ${dbComp.id}`);
               const defaultSettings = getDefaultSettings(normalizedType);
               if (!defaultSettings) {
-                console.warn(`[Load] No default settings for type: ${normalizedType}`);
                 return null;
               }
               settings = defaultSettings;
@@ -329,11 +322,7 @@ export function PageBuilderProvider({
   }, [pageId]);
 
   // Actions
-  const addComponent = useCallback((type: ComponentType, index?: number) => {
-    if (!isRegisteredType(type)) {
-      console.error(`[Action] Cannot add unregistered type: ${type}`);
-      return;
-    }
+  const addComponent = useCallback((type: string, index?: number) => {
     dispatch({ type: 'ADD_COMPONENT', componentType: type, index });
   }, []);
 

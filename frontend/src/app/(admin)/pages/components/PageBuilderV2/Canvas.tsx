@@ -7,6 +7,7 @@
  * - Deleted
  * 
  * Renders DIRECTLY from PageBuilder state - no local state duplication.
+ * Uses a generic preview card for all component types.
  */
 
 'use client';
@@ -14,7 +15,65 @@
 import React, { useCallback } from 'react';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
-import { ComponentType, DRAG_TYPE, DragItem } from './types';
+import { DRAG_TYPE, DragItem, getLocalizedValue } from './types';
+
+// =============================================================================
+// GENERIC COMPONENT PREVIEW
+// =============================================================================
+
+function ComponentPreview({ type, settings, registryName }: { type: string; settings: Record<string, any>; registryName: string }) {
+  // Extract a title to display from common fields
+  const displayTitle =
+    getLocalizedValue(settings.title) ||
+    getLocalizedValue(settings.name) ||
+    getLocalizedValue(settings.label) ||
+    settings.symbol ||
+    registryName;
+
+  const displayDescription =
+    getLocalizedValue(settings.description) ||
+    getLocalizedValue(settings.content)?.replace(/<[^>]*>/g, '').substring(0, 120) ||
+    '';
+
+  // Determine badge color for category
+  const isMain = ['news_highlight', 'news_list', 'career_highlight', 'career_list', 'management_list', 'announcement_list', 'report_list', 'awards_list'].includes(type);
+
+  return (
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 min-h-[80px]">
+      <div className="flex items-start gap-3">
+        {/* Type badge */}
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
+          isMain
+            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+        }`}>
+          {type.replace(/_/g, ' ')}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            {displayTitle}
+          </p>
+          {displayDescription && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+              {displayDescription}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Array indicators */}
+      {settings.slides && Array.isArray(settings.slides) && (
+        <p className="text-xs text-gray-400 mt-2">{settings.slides.length} slide(s)</p>
+      )}
+      {settings.items && Array.isArray(settings.items) && (
+        <p className="text-xs text-gray-400 mt-2">{settings.items.length} item(s)</p>
+      )}
+      {settings.tabs && Array.isArray(settings.tabs) && (
+        <p className="text-xs text-gray-400 mt-2">{settings.tabs.length} tab(s)</p>
+      )}
+    </div>
+  );
+}
 
 // =============================================================================
 // COMPONENT WRAPPER
@@ -40,25 +99,7 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
 
   const isSelected = selectedComponentId === componentId;
   const registryEntry = getRegistryEntry(component.type);
-
-  // If component type is not registered, show error state
-  if (!registryEntry) {
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
-        <p className="text-red-600 dark:text-red-400 font-medium">
-          Unknown component type: {component.type}
-        </p>
-        <button
-          onClick={() => removeComponent(componentId)}
-          className="mt-2 text-sm text-red-500 hover:text-red-700 underline"
-        >
-          Remove this component
-        </button>
-      </div>
-    );
-  }
-
-  const RenderComponent = registryEntry.render;
+  const displayName = registryEntry?.name || component.type.replace(/_/g, ' ');
 
   // Drag handlers
   const handleDragStart = (e: React.DragEvent) => {
@@ -116,7 +157,7 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
       >
         {/* Type label */}
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-2">
-          {registryEntry.displayName}
+          {displayName}
         </span>
         
         {/* Visibility toggle */}
@@ -174,9 +215,10 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
             : 'hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-600'
         }`}
       >
-        <RenderComponent
+        <ComponentPreview
+          type={component.type}
           settings={component.settings}
-          isSelected={isSelected}
+          registryName={displayName}
         />
       </div>
     </div>
@@ -331,16 +373,16 @@ export function Canvas() {
             </p>
             <div className="flex justify-center gap-3">
               <button
-                onClick={() => addComponent('hero')}
+                onClick={() => addComponent('hero_section')}
                 className="px-4 py-2 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
                 + Add Hero
               </button>
               <button
-                onClick={() => addComponent('pricing')}
+                onClick={() => addComponent('text_block')}
                 className="px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
-                + Add Pricing
+                + Add Text Block
               </button>
             </div>
           </div>
