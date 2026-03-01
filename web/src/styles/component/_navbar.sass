@@ -1,0 +1,53 @@
+// path: src/styles/components/navbar.sass
+
+/* --- 1. Visual Glassmorphism & Container --- */
+.navbar-glass
+  position: relative // Penting untuk anchor indikator absolute
+  background-color: rgba(255, 255, 255, 0.1)
+  backdrop-filter: blur(12px)
+  border: 1px solid rgba(255, 255, 255, 0.15)
+  // Padding & Radius dihandle Tailwind
+
+.navbar-scrolled
+  background: rgba(0, 0, 0, 0.8)
+  backdrop-filter: blur(8px)
+
+/* --- 2. Sliding Indicator Animation (Desktop) --- */
+.nav-indicator
+  position: absolute
+  top: 4px // Sesuai padding container (p-1)
+  bottom: 4px
+  height: calc(100% - 8px)
+  background: rgba(255, 255, 255, 0.2) // Warna background active
+  border-radius: 9999px // Full rounded
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) // Efek sliding smooth
+  z-index: 0
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1)
+  pointer-events: none // Agar klik tembus ke button di bawahnya
+
+.menu-item
+  position: relative
+  z-index: 10
+  background: transparent !important
+  transition: color 0.3s ease
+  
+  &.is-active
+    // Font weight dihandle Tailwind (font-bold)
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3)
+
+/* --- 3. Responsive Force Display (Fix md:flex issue) --- */
+.desktop-only
+  display: none !important
+  @media (min-width: 768px)
+    display: flex !important
+
+.mobile-only
+  display: block !important
+  @media (min-width: 768px)
+    display: none !important
+
+/* --- 4. Bottom Sheet Animation --- */
+.bottom-sheet-content
+  border-top-left-radius: var(--radius-xlarge)
+  border-top-right-radius: var(--radius-xlarge)
+  // Transform animasi dihandle Tailwind transition-transform

@@ -98,7 +98,7 @@ export function ComponentRenderer({ component, locale }: ComponentRendererProps)
     // Unknown component type — render nothing in production, debug info in dev
     if (process.env.NODE_ENV === 'development') {
       return (
-        <div className="py-4 px-6 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg my-2">
+        <div className="py-4 px-6 bg-warning/10 border border-warning/30 text-warning text-caption-c2 rounded-2xl my-2 container mx-auto">
           Unknown component: <strong>{component.componentType}</strong>
         </div>
       );

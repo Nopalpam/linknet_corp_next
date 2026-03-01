@@ -1,0 +1,255 @@
+// Navbar component styles
+@import "../_tokens.sass"
+
+    
+.lnHero
+    position: relative
+    border-radius: var(--radius-32)
+    overflow: hidden
+    min-height: clamp(580px, 60vw, 640px)
+    box-shadow: var(--shadow-xl)
+    background: #0a0f1a
+
+    @media (max-width: 575.98px)
+        border-radius: var(--radius-24)
+
+    &__small
+        min-height: clamp(360px, 60vw, 520px)
+
+    &__media
+        position: absolute
+        inset: 0
+
+        img
+            position: absolute
+            inset: 0
+            width: 100%
+            height: 100%
+            object-fit: cover
+            object-position: center 35%
+            filter: saturate(1.05) contrast(1.05)
+            display: block
+            transform: translate3d(0, var(--parallax-y, 0), 0) // why: digerakkan JS
+            will-change: transform
+            filter: saturate(1.05) contrast(1.05)
+
+    // Gradient layer as element (bukan background-image)
+    &__gradient
+        position: absolute
+        inset: 0
+        pointer-events: none
+        background: linear-gradient(360deg, rgba(7, 10, 20, .72) 0%, rgba(7, 10, 20, .55) 38%, rgba(7, 10, 20, .20) 58%, rgba(7, 10, 20, .15) 100%), linear-gradient(0deg, rgba(0, 0, 0, .45) 0%, rgba(0, 0, 0, .15) 100%)
+
+
+    &__content
+        position: absolute
+        bottom: 0 // jarak dari bawah
+        left: 0  // jarak dari kiri
+        z-index: var(--z-content)
+        padding: clamp(24px, 4vw, 56px)
+        max-width: 44rem
+
+
+    &__pill
+        display: inline-flex
+        align-items: center
+        gap: var(--space-8)
+        padding: var(--space-8) var(--space-12)
+        color: var(--color-white)
+        background: rgba(255, 255, 255, .18)
+        border-radius: var(--radius-full)
+        backdrop-filter: blur(6px)
+        height: 28px
+
+    &__title
+        margin: 0
+        color: var(--color-white)
+        letter-spacing: var(--tracking-tight)
+
+        + .lnHero__desc
+            margin-top: 8px
+
+    &__desc
+        margin: 0
+        color: var(--color-neutral-200)
+        @media (min-width: 320px) and (max-width: 480px)
+            width: 90% !important
+
+    &__actions
+        display: flex
+        align-items: center
+        gap: var(--space-12)
+        margin-top: clamp(12px, 2vw, 32px)
+
+        img
+            width: 18px
+            height: 18px
+
+    // theme
+    &--themeLight
+        .lnHero__title,
+        .lnHero__pill
+            color: var(--color-black)
+        .lnHero__desc
+            color: var(--color-neutral-800)
+
+
+.lnHeroSwiper
+    position: relative
+
+    .lnHeroSwiper-nav
+        position: absolute
+        right: clamp(12px, 2vw, 24px)
+        bottom: clamp(12px, 2vw, 24px)
+        display: flex
+        gap: 10px
+        z-index: 5
+
+        // sembunyikan di tablet/mobile
+        @media (max-width: 991.98px)
+            display: none
+
+        &-prev,
+        &-next
+            width: 44px
+            height: 44px
+            display: grid
+            place-items: center
+            background: rgba(0, 0, 0, .22)
+            border: 1px solid rgba(255, 255, 255, .35)
+            border-radius: var(--radius-12, 12px)
+            color: var(--color-white)
+            cursor: pointer
+            backdrop-filter: blur(4px)
+            transition: background .2s ease, transform .06s ease, border-color .2s ease
+
+            &:hover
+                background: rgba(0, 0, 0, .32)
+            &:active
+                transform: translateY(1px)
+            &:focus-visible
+                outline: 2px solid rgba(255,255,255,.65)
+                outline-offset: 2px
+
+            img
+                display: block
+                width: 22px
+                height: 22px
+
+@media (max-width: 560px)
+    .lnHero
+        &__actions
+            margin-top: 24px
+
+// Parallax: beri bleed supaya tidak terlihat crop saat bergerak
+.lnHero--parallax
+    .lnHero__media img
+        height: 120%
+        top: -10%
+
+// Aksesibilitas
+@media (prefers-reduced-motion: reduce)
+    .lnHero--parallax .lnHero__media img
+        transform: none !important
+        will-change: auto
+
+
+/* /src/styles/lnHero-indicators.sass (update, indent 4 spasi) */
+
+/* Container jadi flex */
+.lnHeroIndicators
+    display: flex
+    gap: var(--space-8)
+    align-items: flex-end
+    margin: 10px auto 0
+
+/* Item fleksibel: aktif lebih panjang via --w */
+.lnHeroIndicator
+    flex: 1           // inactive = 1
+    min-width: 0
+    display: grid
+    grid-template-rows: auto auto
+    gap: var(--space-12)
+    cursor: pointer
+    user-select: none
+    border: 0
+    padding: 8px 12px
+    background: transparent
+    border-radius: var(--radius-medium)
+    text-align: left
+    transition: flex .25s ease        // halus saat jadi aktif
+
+    &:hover
+        background: var(--bg-light-1)
+
+    &__head
+        display: inline-flex
+        align-items: center
+        gap: 8px
+        color: var(--color-neutral-300)
+        font-size: 14px
+        line-height: 18px
+        font-weight: var(--font-weight-medium, 500)
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
+        @media (max-width: 768px)
+            display: none
+
+    &__dot
+        width: 10px
+        height: 10px
+        border-radius: 50%
+        background: var(--color-neutral-100)
+        box-shadow: 0 0 0 2px rgba(255,255,255,.08) inset
+        flex: 0 0 auto
+
+    &__label
+        overflow: hidden
+        text-overflow: ellipsis
+
+    &__track
+        position: relative
+        height: 4px
+        border-radius: 999px
+        background: var(--bg-light-1)
+        overflow: hidden
+
+    &__bar
+        position: absolute
+        left: 0
+        top: 0
+        bottom: 0
+        width: calc(var(--p, 0) * 1%)
+        border-radius: inherit
+        transition: width .12s linear
+
+/* State: aktif lebih panjang + warna aktif */
+.lnHeroIndicator.is-active
+    flex: 1.2              // aktif lebih panjang dari yang lain
+    .lnHeroIndicator__head
+        color: var(--text-black)
+    .lnHeroIndicator__dot
+        background: var(--dot-color, var(--color-red-500))
+    .lnHeroIndicator__bar
+        background: var(--bar-color, var(--color-yellow-500))
+
+/* Tablet & Mobile: hanya active menampilkan label+dot, lainnya garis saja */
+@media (max-width: 992px)
+    .lnHeroIndicators
+        gap: 0px
+        justify-content: center
+    .lnHeroIndicator
+        flex: .14
+        padding: 4px 8px
+        &:hover
+            background: unset
+        &__head
+            opacity: 0             // sembunyikan semua
+    .lnHeroIndicator.is-active
+        flex: .14
+        .lnHeroIndicator__head
+            color: var(--text-black)
+            opacity: 1
+        .lnHeroIndicator__track
+            background: var(--bg-warning)

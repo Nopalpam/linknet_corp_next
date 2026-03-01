@@ -1,7 +1,6 @@
 /**
  * Stats Renderer
- * 
- * Renders a statistics/numbers section with counters.
+ * Clean statistics section with design system typography
  * Component type: "stats"
  */
 
@@ -22,21 +21,21 @@ export function StatsRenderer({ data, locale }: Props) {
   const columns = data.columns || items.length || 4;
 
   return (
-    <div className="py-16 px-4">
-      <div className="max-w-6xl mx-auto">
+    <section className="py-16 md:py-24 bg-white">
+      <div className="container mx-auto px-4 md:px-0">
         {/* Section Header */}
         {(data.title || data.heading) && (
-          <div className="text-center mb-12">
+          <div className="mb-12 md:mb-16 text-center">
             {data.label && (
-              <span className="text-sm font-semibold text-brand-600 uppercase tracking-wider">
+              <div className="text-caption-c1 font-bold uppercase text-warning tracking-wider leading-none">
                 {t(data.label, locale)}
-              </span>
+              </div>
             )}
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">
+            <h2 className="text-headline-h3 font-bold text-black mt-3 leading-tight">
               {t(data.title || data.heading, locale)}
             </h2>
             {data.description && (
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-body-b4 text-secondary mt-4 max-w-2xl mx-auto">
                 {t(data.description, locale)}
               </p>
             )}
@@ -45,21 +44,21 @@ export function StatsRenderer({ data, locale }: Props) {
 
         {/* Stats Grid */}
         <div
-          className="grid gap-8"
+          className="grid gap-8 md:gap-12"
           style={{ gridTemplateColumns: `repeat(${Math.min(columns, 6)}, minmax(0, 1fr))` }}
         >
           {items.map((item, index) => (
             <div key={index} className="text-center p-6">
-              <div className="text-4xl md:text-5xl font-bold text-brand-600">
+              <div className="text-headline-h1 font-bold text-warning leading-none">
                 {item.prefix || ''}
                 {item.value}
                 {item.suffix || ''}
               </div>
-              <div className="mt-2 text-lg font-medium text-gray-900">
+              <div className="mt-3 text-body-b4 font-bold text-neutral-900">
                 {t(item.label, locale)}
               </div>
               {item.description && (
-                <div className="mt-1 text-sm text-gray-500">
+                <div className="mt-1 text-body-b5 text-secondary">
                   {t(item.description, locale)}
                 </div>
               )}
@@ -67,6 +66,6 @@ export function StatsRenderer({ data, locale }: Props) {
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

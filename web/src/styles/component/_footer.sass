@@ -1,0 +1,158 @@
+.lnFooter
+    background: white
+    
+/* ===== Level 1: Contact ===== */
+.lnFooter__contact
+    // background: #F6F7FA
+    background: linear-gradient(to bottom, transparent 0%, #F6F7FA 100%)
+    box-shadow: var(--shadow-lg)
+    // padding: 20px
+    @media (min-width: 900px)
+        padding: 24px
+    .lnFooterContact
+        border-radius: var(--radius-24)
+        padding: clamp(20px, 2.5vw, 36px)
+        background: #fff
+        box-shadow: 0 8px 24px -2px rgba(19, 19, 19, 0.08)
+        @media (min-width: 900px)
+            // margin: 0 36px
+            
+    .lnFooterContact__ask
+        background: #fff
+        border-radius: var(--radius-16)
+        display: flex
+        gap: 20px
+        align-items: flex-start
+        flex-direction: column
+        @media (max-width: 900px)
+            width: 75%
+        @media (min-width: 900px)
+            width: 320px
+    .lnFooterContact__badge
+        width: 28px
+        height: 28px
+        display: grid
+        place-items: center
+        border-radius: 999px
+        background: var(--bg-warning-bg-light)
+        color: var(--text-black)
+        font-weight: var(--font-weight-bold)
+    .lnFooterContact__box
+        border: 1px solid var(--stroke-default)
+        border-radius: var(--radius-16)
+        padding: clamp(14px, 2vw, 18px)
+        background: #fff
+    .lnFooterContact__more
+        border-radius: var(--radius-16)
+        padding: clamp(14px, 2vw, 18px)
+        background: var(--bg-light)
+    .lnFooterContact__link
+        display: inline-flex
+        align-items: center
+        gap: 8px
+        text-decoration: none
+        color: var(--text-black)
+        overflow-wrap: anywhere
+        &:hover
+            text-decoration: underline
+
+/* /styles/lnFooter__main-row.sass */
+.lnFooter__main
+    background: #F6F7FA
+    padding: clamp(36px, 4vw, 40px) 0
+    border-radius: 36px
+
+/* Brand block */
+.lnFooterBrand
+    @media (min-width: 900px)
+        max-width: 360px
+
+.lnFooterBrand__logos img,
+.lnFooterBrand__subs img
+    display: block
+
+
+.lnFooterBrand__addr
+    margin: 0
+
+.lnFooterContact__link
+    display: inline-flex
+    align-items: center
+    gap: 8px
+    color: var(--text-black)
+    text-decoration: none
+    &:hover
+        text-decoration: underline
+
+.lnFooterBrand__inquiry
+    color: var(--text-secondary)
+
+.lnFooterBrand__social a
+    display: inline-flex
+
+
+/* Desktop 4 columns */
+.lnFooterGrid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: 16px 32px
+
+.lnFooterMenuTitle
+    font-weight: var(--font-weight-bold)
+    color: var(--text-black)
+    margin-bottom: 8px
+
+.lnFooterList
+    display: grid
+    gap: 8px
+    a
+        color: var(--text-secondary)
+        text-decoration: none
+        &:hover
+            text-decoration: underline
+
+/* Bootstrap Accordion (mobile) with custom chevron-down */
+.lnFooterMenus--mobile.accordion
+    --bs-accordion-border-color: var(--stroke-default)
+    --bs-accordion-btn-padding-y: 20px
+    --bs-accordion-btn-padding-x: 0
+    --bs-accordion-body-padding-y: 10px
+    --bs-accordion-body-padding-x: 0
+    --bs-accordion-bg: transparent
+    --bs-accordion-active-bg: transparent
+    --bs-accordion-btn-focus-box-shadow: 0 0 0 0 rgba(0,0,0,0)
+
+    .accordion-item
+        border: none
+        border-bottom: 1px solid var(--stroke-default)
+        &:last-child
+            border-bottom: 0
+
+    .accordion-button
+        font-weight: var(--font-weight-bold)
+        color: var(--text-black)
+        background: transparent
+        &::after
+            background-image: url('../../../src/assets/icons/chevron-down.svg') !important
+            background-size: 20px 20px
+        &:not(.collapsed)
+            box-shadow: none
+            color: var(--text-black)
+
+/* Language dropdown */
+.lnFooterLang__btn
+    display: inline-flex
+    align-items: center
+    gap: 8px
+    border: 1px solid var(--stroke-default)
+    background: var(--bg-white)
+    border-radius: var(--radius-32)
+    padding: 8px 12px
+    color: var(--text-black)
+    &::after
+        display: none
+
+
+/* ===== Level 3: Copyright ===== */
+.lnFooter__copyright
+    // background: var(--bg-light)
+    padding: 20px 0 24px 0

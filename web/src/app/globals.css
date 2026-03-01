@@ -1,26 +1,14 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "../styles/main.sass";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: 'Axiata', sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Brand colors bridge: expose _tokens.sass values as Tailwind utilities */
+  --color-brand-50: #FFF8E1;
+  --color-brand-100: #FFECB3;
+  --color-brand-400: #FFB800;
+  --color-brand-500: #FFA000;
+  --color-brand-600: #FF8F00;
+  --color-brand-700: #FF6F00;
 }

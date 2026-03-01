@@ -1,3 +1,8 @@
+/**
+ * TradingView Widget Renderer
+ * Embeds TradingView advanced chart with design system styling
+ */
+
 'use client';
 
 import { t, type Locale } from '@/lib/i18n';
@@ -44,16 +49,22 @@ export function TradingViewRenderer({ data, locale }: Props) {
   }, [symbol, theme, locale]);
 
   return (
-    <div className="py-16 px-4">
-      <div className="max-w-5xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">{t(data.title, locale)}</h2>}
-        <div className="rounded-xl overflow-hidden border border-gray-200 bg-white" style={{ height }}>
+    <section className="py-16 md:py-24 bg-white">
+      <div className="container mx-auto px-4 md:px-0 max-w-5xl">
+        {data.title && (
+          <h2 className="text-headline-h3 font-bold text-black text-center mb-8 leading-tight">
+            {t(data.title, locale)}
+          </h2>
+        )}
+        <div className="rounded-2xl overflow-hidden border border-neutral-100 bg-white" style={{ height }}>
           <div ref={containerRef} className="tradingview-widget-container w-full h-full" />
         </div>
         {data.disclaimer && (
-          <p className="text-xs text-gray-500 mt-3 text-center">{t(data.disclaimer, locale)}</p>
+          <p className="text-caption-c2 text-secondary mt-3 text-center">
+            {t(data.disclaimer, locale)}
+          </p>
         )}
       </div>
-    </div>
+    </section>
   );
 }

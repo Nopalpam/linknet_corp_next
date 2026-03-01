@@ -1,21 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { Header, Footer } from "@/components/layout";
+import { Navbar, FooterCorp } from "@/components/layout";
 import { SITE_NAME } from "@/config/env";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {
-    default: SITE_NAME,
+    default: `${SITE_NAME} - We LINK the nation for better lives`,
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "LinkNet - Connecting Indonesia with reliable and innovative network solutions.",
+    "PT Link Net Tbk - Connecting Indonesia with reliable and innovative network solutions.",
   robots: { index: true, follow: true },
 };
 
@@ -26,10 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <Header />
+      <body className="font-sans antialiased">
+        <Navbar />
         <main className="min-h-screen">{children}</main>
-        <Footer />
+        <FooterCorp />
       </body>
     </html>
   );

@@ -1,3 +1,8 @@
+/**
+ * News List Renderer
+ * Paginated news grid with search, using design system
+ */
+
 'use client';
 
 import { t, type Locale } from '@/lib/i18n';
@@ -24,9 +29,11 @@ export function NewsListRenderer({ data, locale, mainData }: Props) {
   const items = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
-    <div className="py-16 px-4">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">{t(data.title, locale)}</h2>
+    <section className="py-16 md:py-24 bg-white">
+      <div className="container mx-auto px-4 md:px-0">
+        <h2 className="text-headline-h3 font-bold text-black text-center mb-8 leading-tight">
+          {t(data.title, locale)}
+        </h2>
 
         {/* Search */}
         <div className="max-w-md mx-auto mb-10">
@@ -35,31 +42,35 @@ export function NewsListRenderer({ data, locale, mainData }: Props) {
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder={locale === 'id' ? 'Cari berita...' : 'Search news...'}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            className="w-full px-4 py-3 border border-neutral-200 rounded-xl bg-light-2 focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors text-body-b5"
           />
         </div>
 
         {items.length === 0 ? (
-          <p className="text-gray-500 text-center py-10">{locale === 'id' ? 'Tidak ada berita ditemukan.' : 'No news found.'}</p>
+          <p className="text-body-b4 text-secondary text-center py-10">
+            {locale === 'id' ? 'Tidak ada berita ditemukan.' : 'No news found.'}
+          </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((n: any) => (
-              <a key={n.id} href={`/news/${n.slug}`} className="group bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all">
-                <div className="h-48 overflow-hidden bg-gray-100">
+              <a key={n.id} href={`/newsroom/${n.slug}`} className="group bg-white rounded-2xl overflow-hidden border border-neutral-100 hover:shadow-lg transition-all">
+                <div className="h-48 overflow-hidden bg-neutral-100">
                   {n.image ? (
-                    <img src={n.image} alt={t(n.title, locale)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img src={n.image} alt={t(n.title, locale) || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="icon icon__image text-neutral-300" style={{ '--icon-size': '48px' } as React.CSSProperties} />
                     </div>
                   )}
                 </div>
                 <div className="p-5">
-                  {n.category && <span className="text-xs font-medium text-brand-600 uppercase">{n.category}</span>}
-                  <h3 className="mt-1 font-semibold text-gray-900 line-clamp-2 group-hover:text-brand-600">{t(n.title, locale)}</h3>
-                  <p className="mt-2 text-gray-600 text-sm line-clamp-2">{t(n.summary || n.excerpt, locale)}</p>
+                  {n.category && <span className="text-caption-c2 font-medium text-warning uppercase">{n.category}</span>}
+                  <h3 className="mt-1 text-body-b4 font-bold text-neutral-900 line-clamp-2 group-hover:text-warning transition-colors">{t(n.title, locale)}</h3>
+                  <p className="mt-2 text-body-b5 text-secondary line-clamp-2">{t(n.summary || n.excerpt, locale)}</p>
                   {n.publishedAt && (
-                    <time className="text-xs text-gray-500 mt-3 block">{new Date(n.publishedAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</time>
+                    <time className="text-caption-c2 text-neutral-400 mt-3 block">
+                      {new Date(n.publishedAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </time>
                   )}
                 </div>
               </a>
@@ -71,22 +82,24 @@ export function NewsListRenderer({ data, locale, mainData }: Props) {
         {totalPages > 1 && (
           <div className="flex justify-center gap-2 mt-10">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50">
+              className="px-4 py-2 border border-neutral-200 rounded-xl text-body-b5 disabled:opacity-40 hover:bg-light-2 transition-colors">
               ←
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
               <button key={p} onClick={() => setPage(p)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${p === page ? 'bg-brand-600 text-white' : 'border border-gray-300 hover:bg-gray-50'}`}>
+                className={`px-4 py-2 rounded-xl text-body-b5 font-bold transition-colors ${
+                  p === page ? 'bg-warning text-black' : 'border border-neutral-200 hover:bg-light-2'
+                }`}>
                 {p}
               </button>
             ))}
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50">
+              className="px-4 py-2 border border-neutral-200 rounded-xl text-body-b5 disabled:opacity-40 hover:bg-light-2 transition-colors">
               →
             </button>
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
