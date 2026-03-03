@@ -80,6 +80,28 @@ const RENDERERS: Record<string, React.ComponentType<{ data: Record<string, any>;
   announcement_list: AnnouncementListRenderer,
   report_list: ReportListRenderer,
   awards_list: AwardsListRenderer,
+
+  // ─── Legacy / Seed Aliases ───────────────────────────────────────────
+  // The database seeder stores component types with these legacy names.
+  // Map them to the existing renderers so they render correctly.
+  'hero': HeroSectionRenderer,
+  'hero-section': HeroSectionRenderer,
+  'text-block': TextBlockRenderer,
+  'features': UspGridRenderer,           // "features" grid → USP grid
+  'cta': TextBlockRenderer,              // "cta" section → text block with CTA
+  'call-to-action': TextBlockRenderer,
+  'stats-counter': StatsRenderer,
+  'contact-info': InfoContactsRenderer,
+  'contact-form': ContactUsRenderer,
+  'custom-html': CKEditorRenderer,
+  'latest-news': NewsHighlightRenderer,
+  'image-gallery': ImageRenderer,
+  'video-embed': CKEditorRenderer,
+  'tabs': TabsWithCardRenderer,
+  'testimonials': TextBlockRenderer,
+  'team-grid': ManagementListRenderer,
+  'pricing-table': TextBlockRenderer,
+  'pricing': TextBlockRenderer,
 };
 
 // =============================================================================

@@ -39,10 +39,22 @@ export interface MenuItem {
   id: number;
   title: string;
   url: string;
+  slug?: string | null;
   target?: string;
   position: string;
+  type: string;               // 'link' | 'dropdown' | 'mega'
   order: number;
   parentId?: number | null;
+  sectionTitle?: string | null;
+  sectionOrder?: number;
+  icon?: string | null;
+  image?: string | null;
+  description?: string | null;
+  badge?: string | null;
+  isActive?: boolean;
+  openNewTab?: boolean;
+  cssClass?: string | null;
+  translations?: Record<string, any> | null;
   children?: MenuItem[];
 }
 

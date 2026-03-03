@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Navbar, FooterCorp } from "@/components/layout";
+import { NavbarServer, FooterCorp } from "@/components/layout";
 import { SITE_NAME } from "@/config/env";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="font-sans antialiased">
-        <Navbar />
+        <NavbarServer />
         <main className="min-h-screen">{children}</main>
         <FooterCorp />
       </body>

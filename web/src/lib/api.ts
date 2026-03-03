@@ -82,7 +82,7 @@ export async function getPublishedSlugs(): Promise<string[]> {
 
 // ----- Menus -----
 
-/** Get public navigation menus */
+/** Get public navigation menus (tree structure) */
 export async function getMenus(): Promise<MenuItem[]> {
   try {
     const response = await fetchApi<ApiResponse<MenuItem[]>>("/menu");

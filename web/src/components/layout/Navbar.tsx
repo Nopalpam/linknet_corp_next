@@ -3,7 +3,7 @@
  * Adapted from ln-corporate/components/main/Navbar.jsx
  * 
  * Design: IDENTICAL to ln-corporate (mega menu desktop + full-screen mobile drawer)
- * Data: Uses static navData.ts (can be replaced with API fetch later)
+ * Data: Receives navItems via props from NavbarServer (API-driven), falls back to static
  * Changes: Removed next-intl dependency, converted to TypeScript, uses Next.js Link
  */
 
@@ -11,15 +11,22 @@
 
 import { useState, useEffect } from 'react';
 import NextLink from 'next/link';
-import { navItems } from '@/data/navData';
+import { navItems as staticNavItems, type NavItem } from '@/data/navData';
 import Button from '@/components/base/Button';
 import Icon from '@/components/base/Icon';
 
-export default function Navbar() {
+interface NavbarProps {
+  items?: NavItem[];
+}
+
+export default function Navbar({ items }: NavbarProps) {
+  const navItems = items && items.length > 0 ? items : staticNavItems;
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeMobileSubMenu, setActiveMobileSubMenu] = useState<string | null>(null);
+  const [showMobileTooltip, setShowMobileTooltip] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -145,10 +152,28 @@ export default function Navbar() {
             </ul>
           </div>
 
-          {/* RIGHT: SEARCH, LANG, CTA */}
+          {/* RIGHT: IDX, SEARCH, LANG, CTA */}
           <div className="flex items-center gap-2" onMouseEnter={() => setActiveDropdown(null)}>
             {/* DESKTOP RIGHT ITEMS */}
             <div className="hidden xl:flex items-center gap-4">
+              {/* Market Info (IDX Ticker) */}
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-caption-c2 uppercase text-secondary font-medium">IDX: LINK</span>
+                <div className="flex items-center gap-1 font-medium text-body-b4 text-black relative group/tooltip cursor-help">
+                  Rp2.560,00
+                  <Icon name="info" className="text-neutral-300 hover:text-blue-600 transition-colors" style={{ '--icon-size': '16px' } as React.CSSProperties} />
+                  <div className="absolute top-full right-0 mt-3 w-64 p-4 bg-neutral-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 pointer-events-none transform origin-top-right">
+                    <div className="font-bold mb-1 text-sm text-yellow-400 flex items-center gap-2">
+                      Market Info
+                    </div>
+                    <p className="text-neutral-300 leading-relaxed">
+                      Harga saham terkini diperbarui secara berkala (delay 15 menit).
+                    </p>
+                    <div className="absolute bottom-full right-2 -mb-1 border-8 border-transparent border-b-neutral-900"></div>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-4">
                 <Button
                   variant="secondary-plain"
@@ -200,6 +225,30 @@ export default function Navbar() {
 
             {/* MOBILE RIGHT ITEMS */}
             <div className="xl:hidden flex items-center gap-3">
+              {/* IDX Ticker (Mobile) */}
+              <div className="flex flex-col items-end leading-tight relative">
+                <span className="text-[10px] uppercase text-neutral-400 font-medium tracking-wider">IDX: LINK</span>
+                <div
+                  className="flex items-center gap-1 cursor-pointer"
+                  onClick={() => setShowMobileTooltip(!showMobileTooltip)}
+                >
+                  <span className="text-body-b4 font-medium text-black">Rp2.560,00</span>
+                  <Icon name="info" className="text-neutral-400" style={{ '--icon-size': '14px' } as React.CSSProperties} />
+                </div>
+
+                {/* Tooltip Popup */}
+                {showMobileTooltip && (
+                  <>
+                    <div className="fixed inset-0 z-[25]" onClick={() => setShowMobileTooltip(false)}></div>
+                    <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-[30] animate-in fade-in slide-in-from-top-1">
+                      <div className="font-bold mb-1 text-yellow-400">Market Info</div>
+                      <p className="text-neutral-300 leading-snug">Harga saham terkini diperbarui secara berkala (delay 15 menit).</p>
+                      <div className="absolute bottom-full right-2 -mb-1 border-4 border-transparent border-b-neutral-900"></div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <button
                 className="text-black hover:bg-neutral-50 rounded-full transition-colors"
                 onClick={() => setIsDrawerOpen(true)}
@@ -231,6 +280,27 @@ export default function Navbar() {
           <div className="flex items-center justify-between px-[16px] py-3 bg-white z-10">
             <img src="/assets/logos/linknet-logo.svg" alt="Link Net" className="h-8 w-auto" />
             <div className="flex items-center gap-3">
+              {/* Mobile IDX with Tooltip (in drawer) */}
+              <div className="flex flex-col items-end leading-tight relative">
+                <span className="text-[10px] uppercase text-neutral-400 font-medium tracking-wider">IDX: LINK</span>
+                <div
+                  className="flex items-center gap-1 cursor-pointer"
+                  onClick={() => setShowMobileTooltip(!showMobileTooltip)}
+                >
+                  <span className="text-body-b4 font-medium text-black">Rp2.560,00</span>
+                  <Icon name="info" className="text-neutral-400" style={{ '--icon-size': '14px' } as React.CSSProperties} />
+                </div>
+                {showMobileTooltip && (
+                  <>
+                    <div className="fixed inset-0 z-[25]" onClick={() => setShowMobileTooltip(false)}></div>
+                    <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-[30]">
+                      <div className="font-bold mb-1 text-yellow-400">Market Info</div>
+                      <p className="text-neutral-300 leading-snug">Harga saham terkini diperbarui secara berkala (delay 15 menit).</p>
+                      <div className="absolute bottom-full right-2 -mb-1 border-4 border-transparent border-b-neutral-900"></div>
+                    </div>
+                  </>
+                )}
+              </div>
               <button
                 onClick={() => {
                   setIsDrawerOpen(false);
