@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import azureStorageService from '../services/azureStorage.service';
+import { storageService } from '../utils/upload';
 import imageProcessingService from '../services/imageProcessing.service';
 import { getFileCategory } from '../middleware/upload.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
@@ -40,8 +40,8 @@ export const uploadFiles = async (req: AuthRequest, res: Response) => {
         const category = getFileCategory(file.mimetype);
         const folderPath = category === 'unknown' ? 'uploads/misc' : `uploads/${category}`;
 
-        // Upload original file
-        const uploadResult = await azureStorageService.uploadFile(
+        // Upload original file via unified storage service
+        const uploadResult = await storageService.uploadFile(
           file.buffer,
           file.originalname,
           {
@@ -67,7 +67,7 @@ export const uploadFiles = async (req: AuthRequest, res: Response) => {
 
             // Upload thumbnails
             const [smallUpload, mediumUpload, largeUpload] = await Promise.all([
-              azureStorageService.uploadFile(
+              storageService.uploadFile(
                 thumbnailResults.small.buffer,
                 `thumb_small_${path.parse(uploadResult.cloudKey).name}.webp`,
                 {
@@ -75,7 +75,7 @@ export const uploadFiles = async (req: AuthRequest, res: Response) => {
                   contentType: 'image/webp',
                 }
               ),
-              azureStorageService.uploadFile(
+              storageService.uploadFile(
                 thumbnailResults.medium.buffer,
                 `thumb_medium_${path.parse(uploadResult.cloudKey).name}.webp`,
                 {
@@ -83,7 +83,7 @@ export const uploadFiles = async (req: AuthRequest, res: Response) => {
                   contentType: 'image/webp',
                 }
               ),
-              azureStorageService.uploadFile(
+              storageService.uploadFile(
                 thumbnailResults.large.buffer,
                 `thumb_large_${path.parse(uploadResult.cloudKey).name}.webp`,
                 {
@@ -113,7 +113,7 @@ export const uploadFiles = async (req: AuthRequest, res: Response) => {
             size: file.size,
             path: uploadResult.path,
             url: uploadResult.url,
-            cloudProvider: 'azure',
+            cloudProvider: storageService.getDriver(),
             cloudPath: uploadResult.path,
             cloudKey: uploadResult.cloudKey,
             thumbnail: thumbnails?.medium || null,
@@ -435,30 +435,47 @@ export const deleteFile = async (req: AuthRequest, res: Response) => {
     // TODO: Check if file is used in content (pages, news, etc.)
     // For now, we'll allow deletion
 
-    // Delete from cloud storage
+    // Delete from cloud storage (unified — works with local, azure, or s3)
     try {
-      await azureStorageService.deleteFile(file.cloudKey!);
+      await storageService.deleteFile(file.cloudKey!);
 
       // Delete thumbnails if exist
       if (file.thumbnails && typeof file.thumbnails === 'object') {
         const thumbnails = file.thumbnails as any;
         const thumbnailPaths: string[] = [];
 
+        // Extract keys from URLs for cloud providers
+        const extractKey = (url: string): string | null => {
+          try {
+            if (url.startsWith('/uploads/')) {
+              return url.replace('/uploads/', '');
+            }
+            const urlObj = new URL(url);
+            const parts = urlObj.pathname.substring(1).split('/');
+            // For Azure: skip container name; For S3: the full path is the key
+            return storageService.getDriver() === 'azure'
+              ? parts.slice(1).join('/')
+              : parts.join('/');
+          } catch {
+            return url;
+          }
+        };
+
         if (thumbnails.small) {
-          const smallPath = new URL(thumbnails.small).pathname.substring(1);
-          thumbnailPaths.push(smallPath.split('/').slice(1).join('/'));
+          const key = extractKey(thumbnails.small);
+          if (key) thumbnailPaths.push(key);
         }
         if (thumbnails.medium) {
-          const mediumPath = new URL(thumbnails.medium).pathname.substring(1);
-          thumbnailPaths.push(mediumPath.split('/').slice(1).join('/'));
+          const key = extractKey(thumbnails.medium);
+          if (key) thumbnailPaths.push(key);
         }
         if (thumbnails.large) {
-          const largePath = new URL(thumbnails.large).pathname.substring(1);
-          thumbnailPaths.push(largePath.split('/').slice(1).join('/'));
+          const key = extractKey(thumbnails.large);
+          if (key) thumbnailPaths.push(key);
         }
 
         if (thumbnailPaths.length > 0) {
-          await azureStorageService.deleteFiles(thumbnailPaths);
+          await storageService.deleteFiles(thumbnailPaths);
         }
       }
     } catch (error) {

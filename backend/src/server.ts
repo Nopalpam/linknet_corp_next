@@ -163,6 +163,14 @@ app.use(`${API_PREFIX}`, menuRoutes);
 import filemanagerRoutes from '@routes/filemanager.routes';
 app.use(`${API_PREFIX}/filemanager`, filemanagerRoutes);
 
+// Upload routes (unified S3/Azure/Local upload + presigned URLs)
+import uploadRoutes from '@routes/upload.routes';
+app.use(`${API_PREFIX}/upload`, uploadRoutes);
+
+// File management routes (S3-based listing & deletion)
+import fileRoutes from '@routes/file.routes';
+app.use(`${API_PREFIX}/files`, fileRoutes);
+
 // Page Component routes (CMS) - MUST be before page routes to avoid route conflicts
 import componentRoutes from '@routes/component.routes';
 app.use(`${API_PREFIX}/cms/pages`, componentRoutes);

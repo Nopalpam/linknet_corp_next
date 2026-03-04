@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import logger from './logger';
+import s3Service from '../services/s3/s3Service';
 
 // Storage configuration from environment
 const STORAGE_DRIVER = process.env.STORAGE_DRIVER || 'local'; // 'local' | 'azure' | 's3'
@@ -144,10 +145,19 @@ export const uploadToAzureBlob = async (
     case 'azure':
       return uploadToAzure(buffer, filename, contentType);
 
-    case 's3':
-      // TODO: Implement S3 upload when needed
-      logger.warn('S3 storage not implemented yet, falling back to local');
-      return uploadToLocal(buffer, filename);
+    case 's3': {
+      const result = await s3Service.uploadFile(buffer, filename, {
+        folder: 'avatars',
+        contentType: contentType,
+        isPublic: true,
+      });
+      logger.info(`Uploaded avatar to S3: ${result.cloudKey}`);
+      return {
+        url: result.url,
+        filename: result.cloudKey,
+        size: result.size,
+      };
+    }
 
     default:
       logger.warn(`Unknown storage driver: ${driver}, falling back to local`);
@@ -247,9 +257,14 @@ export const deleteFromAzureBlob = async (filenameOrUrl: string): Promise<boolea
       return deleteFromAzure(filename);
 
     case 's3':
-      // TODO: Implement S3 delete when needed
-      logger.warn('S3 storage not implemented yet');
-      return false;
+      try {
+        await s3Service.deleteFile(filename);
+        logger.info(`Deleted avatar from S3: ${filename}`);
+        return true;
+      } catch (error) {
+        logger.error('Failed to delete from S3:', error);
+        return false;
+      }
 
     default:
       logger.warn(`Unknown storage driver: ${driver}`);
