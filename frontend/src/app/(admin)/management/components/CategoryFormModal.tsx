@@ -25,7 +25,7 @@ export default function CategoryFormModal({
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    status: 1,
+    is_active: true,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -35,10 +35,10 @@ export default function CategoryFormModal({
       setFormData({
         name: category.name || "",
         description: category.description || "",
-        status: category.status ?? 1,
+        is_active: category.is_active ?? true,
       });
     } else {
-      setFormData({ name: "", description: "", status: 1 });
+      setFormData({ name: "", description: "", is_active: true });
     }
     setErrors({});
   }, [category, mode, isOpen]);
@@ -61,7 +61,7 @@ export default function CategoryFormModal({
       const payload = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
-        status: formData.status,
+        is_active: formData.is_active,
       };
 
       if (mode === "create") {
@@ -143,14 +143,14 @@ export default function CategoryFormModal({
               Status
             </label>
             <select
-              value={formData.status}
+              value={formData.is_active ? "true" : "false"}
               onChange={(e) =>
-                setFormData({ ...formData, status: parseInt(e.target.value) })
+                setFormData({ ...formData, is_active: e.target.value === "true" })
               }
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
-              <option value={1}>Active</option>
-              <option value={0}>Inactive</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
             </select>
           </div>
 

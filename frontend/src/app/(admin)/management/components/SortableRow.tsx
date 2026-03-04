@@ -87,12 +87,12 @@ export function SortableRow({
       <td className="px-4 py-3 text-center">
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            category.status === 1
+            category.is_active
               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
               : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
           }`}
         >
-          {category.status === 1 ? "Active" : "Inactive"}
+          {category.is_active ? "Active" : "Inactive"}
         </span>
       </td>
 

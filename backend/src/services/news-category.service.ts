@@ -1,6 +1,7 @@
 ﻿import { PrismaClient, Prisma } from '@prisma/client';
 import { AppError } from '../types/error.types';
 import slugify from 'slugify';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
@@ -10,28 +11,28 @@ export interface CategoryQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  dataStatus?: number;
+  is_active?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
 
 export interface CreateCategoryData {
-  categoryName: string;
+  name_en: string;
+  name_id?: string;
   slug?: string;
-  dataOrder?: number;
-  dataStatus?: number;
+  description?: string;
+  position?: number;
+  is_active?: boolean;
 }
 
 export interface UpdateCategoryData extends Partial<CreateCategoryData> {}
 
-// ================== BIGINT SERIALIZER ==================
+// ================== SERIALIZER ==================
 
 function serializeCategory(cat: any) {
   if (!cat) return cat;
   return {
     ...cat,
-    id: cat.id !== undefined ? Number(cat.id) : cat.id,
-    dataOrder: cat.dataOrder !== undefined ? (cat.dataOrder !== null ? Number(cat.dataOrder) : null) : undefined,
     _count: cat._count,
   };
 }
@@ -49,28 +50,28 @@ export class NewsCategoryService {
       page = 1,
       limit = 10,
       search,
-      dataStatus,
-      sortBy = 'dataOrder',
+      is_active,
+      sortBy = 'position',
       sortOrder = 'asc',
     } = params;
 
     const skip = (page - 1) * limit;
 
-    const where: Prisma.NewsCategoryWhereInput = {};
+    const where: Prisma.news_categoriesWhereInput = {};
 
-    if (dataStatus !== undefined) {
-      where.dataStatus = dataStatus;
+    if (is_active !== undefined) {
+      where.is_active = is_active;
     }
 
     if (search) {
       where.OR = [
-        { categoryName: { contains: search, mode: 'insensitive' } },
+        { name_en: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     const [categories, total] = await Promise.all([
-      prisma.newsCategory.findMany({
+      prisma.news_categories.findMany({
         where,
         include: {
           _count: {
@@ -81,7 +82,7 @@ export class NewsCategoryService {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.newsCategory.count({ where }),
+      prisma.news_categories.count({ where }),
     ]);
 
     return {
@@ -97,20 +98,21 @@ export class NewsCategoryService {
 
   // Get all active categories (for dropdowns, public)
   async getActiveCategories() {
-    const categories = await prisma.newsCategory.findMany({
+    const categories = await prisma.news_categories.findMany({
       where: {
-        dataStatus: { in: [1, 2] },
+        is_active: true,
+        deleted_at: null,
       },
-      orderBy: { dataOrder: 'asc' },
+      orderBy: { position: 'asc' },
     });
 
     return serializeCategories(categories);
   }
 
   // Get single category by ID
-  async getCategoryById(id: number) {
-    const category = await prisma.newsCategory.findUnique({
-      where: { id: BigInt(id) },
+  async getCategoryById(id: string) {
+    const category = await prisma.news_categories.findUnique({
+      where: { id },
       include: {
         _count: {
           select: { news: true },
@@ -127,8 +129,8 @@ export class NewsCategoryService {
 
   // Get category by slug
   async getCategoryBySlug(slug: string) {
-    const category = await prisma.newsCategory.findFirst({
-      where: { slug, dataStatus: { in: [1, 2] } },
+    const category = await prisma.news_categories.findFirst({
+      where: { slug, is_active: true, deleted_at: null },
     });
 
     if (!category) {
@@ -139,34 +141,37 @@ export class NewsCategoryService {
   }
 
   // Create category
-  async createCategory(data: CreateCategoryData, userEmail: string) {
-    const baseSlug = data.slug || slugify(data.categoryName, { lower: true, strict: true });
+  async createCategory(data: CreateCategoryData, userId: string) {
+    const baseSlug = data.slug || slugify(data.name_en, { lower: true, strict: true });
     let slug = baseSlug;
     let counter = 1;
 
-    while (await prisma.newsCategory.findFirst({ where: { slug } })) {
+    while (await prisma.news_categories.findFirst({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
 
-    let dataOrder = data.dataOrder ?? null;
-    if (dataOrder === null) {
-      const maxOrder = await prisma.newsCategory.aggregate({
-        _max: { dataOrder: true },
+    let position = data.position ?? null;
+    if (position === null) {
+      const maxOrder = await prisma.news_categories.aggregate({
+        _max: { position: true },
       });
-      dataOrder = (maxOrder._max?.dataOrder || 0) + 1;
+      position = (maxOrder._max?.position || 0) + 1;
     }
 
     const now = new Date();
-    const category = await prisma.newsCategory.create({
+    const category = await prisma.news_categories.create({
       data: {
-        categoryName: data.categoryName,
+        id: uuidv4(),
+        name_en: data.name_en,
+        name_id: data.name_id,
         slug,
-        dataOrder,
-        dataStatus: data.dataStatus ?? 1,
-        createdBy: userEmail,
-        createdAt: now,
-        updatedAt: now,
+        description: data.description,
+        position,
+        is_active: data.is_active ?? true,
+        created_by: userId,
+        created_at: now,
+        updated_at: now,
       },
     });
 
@@ -174,28 +179,24 @@ export class NewsCategoryService {
   }
 
   // Update category
-  async updateCategory(id: number, data: UpdateCategoryData, userEmail: string) {
-    const existingCategory = await prisma.newsCategory.findUnique({
-      where: { id: BigInt(id) },
+  async updateCategory(id: string, data: UpdateCategoryData, userId: string) {
+    const existingCategory = await prisma.news_categories.findUnique({
+      where: { id },
     });
 
     if (!existingCategory) {
       throw new AppError('Category not found', 404);
     }
 
-    if (Number(existingCategory.id) === 1 && data.categoryName && data.categoryName !== existingCategory.categoryName) {
-      throw new AppError('Cannot rename the Uncategorized category', 400);
-    }
-
     let slug = existingCategory.slug;
-    if (data.categoryName && data.categoryName !== existingCategory.categoryName) {
-      const baseSlug = data.slug || slugify(data.categoryName, { lower: true, strict: true });
+    if (data.name_en && data.name_en !== existingCategory.name_en) {
+      const baseSlug = data.slug || slugify(data.name_en, { lower: true, strict: true });
       slug = baseSlug;
       let counter = 1;
 
       while (true) {
-        const existing = await prisma.newsCategory.findFirst({
-          where: { slug, id: { not: BigInt(id) } },
+        const existing = await prisma.news_categories.findFirst({
+          where: { slug, id: { not: id } },
         });
         if (!existing) break;
         slug = `${baseSlug}-${counter}`;
@@ -203,14 +204,16 @@ export class NewsCategoryService {
       }
     }
 
-    const category = await prisma.newsCategory.update({
-      where: { id: BigInt(id) },
+    const category = await prisma.news_categories.update({
+      where: { id },
       data: {
-        ...(data.categoryName !== undefined && { categoryName: data.categoryName, slug }),
-        ...(data.dataOrder !== undefined && { dataOrder: data.dataOrder }),
-        ...(data.dataStatus !== undefined && { dataStatus: data.dataStatus }),
-        updatedBy: userEmail,
-        updatedAt: new Date(),
+        ...(data.name_en !== undefined && { name_en: data.name_en, slug }),
+        ...(data.name_id !== undefined && { name_id: data.name_id }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.position !== undefined && { position: data.position }),
+        ...(data.is_active !== undefined && { is_active: data.is_active }),
+        updated_by: userId,
+        updated_at: new Date(),
       },
     });
 
@@ -218,84 +221,72 @@ export class NewsCategoryService {
   }
 
   // Toggle status
-  async toggleStatus(id: number, userEmail: string) {
-    const category = await prisma.newsCategory.findUnique({
-      where: { id: BigInt(id) },
+  async toggleStatus(id: string, userId: string) {
+    const category = await prisma.news_categories.findUnique({
+      where: { id },
     });
 
     if (!category) {
       throw new AppError('Category not found', 404);
     }
 
-    if (Number(category.id) === 1) {
-      throw new AppError('Cannot change status of Uncategorized category', 400);
-    }
+    const newStatus = !category.is_active;
 
-    const newStatus = category.dataStatus === 1 ? 0 : 1;
-
-    const updated = await prisma.newsCategory.update({
-      where: { id: BigInt(id) },
+    const updated = await prisma.news_categories.update({
+      where: { id },
       data: {
-        dataStatus: newStatus,
-        updatedBy: userEmail,
-        updatedAt: new Date(),
+        is_active: newStatus,
+        updated_by: userId,
+        updated_at: new Date(),
       },
     });
 
     return serializeCategory(updated);
   }
 
-  // Delete category (reassign content to Uncategorized id=1)
-  async deleteCategory(id: number) {
-    if (id === 1) {
-      throw new AppError('Cannot delete the default Uncategorized category', 400);
-    }
-
-    const existingCategory = await prisma.newsCategory.findUnique({
-      where: { id: BigInt(id) },
+  // Delete category (soft delete)
+  async deleteCategory(id: string) {
+    const existingCategory = await prisma.news_categories.findUnique({
+      where: { id },
     });
 
     if (!existingCategory) {
       throw new AppError('Category not found', 404);
     }
 
-    await prisma.newsContent.updateMany({
-      where: { idCategory: BigInt(id) },
-      data: { idCategory: BigInt(1) },
-    });
-
-    await prisma.newsCategory.delete({
-      where: { id: BigInt(id) },
+    await prisma.news_categories.update({
+      where: { id },
+      data: {
+        deleted_at: new Date(),
+        is_active: false,
+      },
     });
   }
 
   // Bulk delete categories
-  async bulkDeleteCategories(ids: number[]) {
-    const validIds = ids.filter((id) => id !== 1);
-
-    if (validIds.length === 0) {
-      throw new AppError('No valid categories to delete (Uncategorized cannot be deleted)', 400);
+  async bulkDeleteCategories(ids: string[]) {
+    if (ids.length === 0) {
+      throw new AppError('No valid categories to delete', 400);
     }
 
-    await prisma.newsContent.updateMany({
-      where: { idCategory: { in: validIds.map((id) => BigInt(id)) } },
-      data: { idCategory: BigInt(1) },
+    await prisma.news_categories.updateMany({
+      where: { id: { in: ids } },
+      data: {
+        deleted_at: new Date(),
+        is_active: false,
+      },
     });
 
-    await prisma.newsCategory.deleteMany({
-      where: { id: { in: validIds.map((id) => BigInt(id)) } },
-    });
-
-    return { deleted: validIds.length };
+    return { deleted: ids.length };
   }
 
   // Update category order (reorder)
-  async updateCategoryOrder(updates: { id: number; order: number }[]) {
+  async updateCategoryOrder(updates: { id: string; order: number }[]) {
     await prisma.$transaction(
       updates.map((update) =>
-        prisma.newsCategory.update({
-          where: { id: BigInt(update.id) },
-          data: { dataOrder: update.order, updatedAt: new Date() },
+        prisma.news_categories.update({
+          where: { id: update.id },
+          data: { position: update.order, updated_at: new Date() },
         })
       )
     );

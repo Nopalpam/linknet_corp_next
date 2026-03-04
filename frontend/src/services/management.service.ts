@@ -1,7 +1,6 @@
 /**
  * Management Service
  * Handles all API calls related to Management & ManagementCategory CRUD operations
- * Compatible with MySQL legacy structure (BigInt IDs, bilingual fields)
  */
 
 import { BaseCrudService, PaginatedResponse, ApiResponse } from './baseCrud.service';
@@ -11,37 +10,36 @@ import { BaseCrudService, PaginatedResponse, ApiResponse } from './baseCrud.serv
 // ============================================
 
 export interface ManagementCategory {
-  id: string; // BigInt serialized as string
+  id: string;
   name: string;
   slug: string;
   description?: string | null;
-  order: number | null;
-  status: number; // 1 = active, 0 = inactive
-  createdBy?: string | null;
-  updatedBy?: string | null;
+  position: number;
+  is_active: boolean;
   createdAt: string;
   updatedAt: string;
+  deleted_at?: string | null;
   _count?: {
     managements: number;
   };
 }
 
 export interface Management {
-  id: string; // BigInt serialized as string
+  id: string;
+  categoryId: string;
   name: string;
-  positionEn?: string | null;
-  positionId?: string | null;
-  category?: string | null;
-  categoryId?: string | null;
+  slug: string;
+  position: string; // job title / role (text)
+  description?: string | null;
   photo?: string | null;
-  bioEn?: string | null;
-  bioId?: string | null;
-  dataOrder: number | null;
-  dataStatus: number; // 1 = active, 0 = inactive
-  createdBy?: string | null;
-  updatedBy?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  linkedin?: string | null;
+  order: number;
+  is_active: boolean;
   createdAt: string;
   updatedAt: string;
+  deleted_at?: string | null;
   managementCategory?: {
     id: string;
     name: string;
@@ -51,24 +49,26 @@ export interface Management {
 
 export interface CreateManagementCategoryData {
   name: string;
+  slug?: string;
   description?: string;
-  order?: number;
-  status?: number;
+  position?: number;
+  is_active?: boolean;
 }
 
 export interface UpdateManagementCategoryData extends Partial<CreateManagementCategoryData> {}
 
 export interface CreateManagementData {
   name: string;
-  positionEn?: string;
-  positionId?: string;
-  category?: string;
-  categoryId?: string;
+  slug?: string;
+  categoryId: string;
+  position?: string;
+  description?: string;
   photo?: string;
-  bioEn?: string;
-  bioId?: string;
-  dataOrder?: number;
-  dataStatus?: number;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  order?: number;
+  is_active?: boolean;
 }
 
 export interface UpdateManagementData extends Partial<CreateManagementData> {}
@@ -105,7 +105,7 @@ class ManagementService extends BaseCrudService<Management> {
     limit?: number;
     search?: string;
     categoryId?: string;
-    dataStatus?: number;
+    is_active?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<PaginatedResponse<Management>> {
@@ -161,7 +161,7 @@ class ManagementService extends BaseCrudService<Management> {
    * Update managements data_order (drag & drop)
    * POST /api/v1/cms/managements/update-order
    */
-  async updateManagementsOrder(updates: { id: string; dataOrder: number }[]): Promise<ApiResponse<void>> {
+  async updateManagementsOrder(updates: { id: string; order: number }[]): Promise<ApiResponse<void>> {
     const url = `${API_URL}/api/v1${this.baseEndpoint}/update-order`;
     return this.fetchWithAuth(url, {
       method: 'POST',

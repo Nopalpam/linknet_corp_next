@@ -9,14 +9,14 @@ export class NewsController {
   // Get all news with pagination (CMS)
   async getNews(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { page, limit, search, dataStatus, idCategory, sortBy, sortOrder } = req.query;
+      const { page, limit, search, status, category_id, sortBy, sortOrder } = req.query;
 
       const params: NewsQueryParams = {
         page: page ? parseInt(page as string, 10) : 1,
         limit: limit ? parseInt(limit as string, 10) : 10,
         search: search as string,
-        dataStatus: dataStatus !== undefined ? parseInt(dataStatus as string, 10) : undefined,
-        idCategory: idCategory ? parseInt(idCategory as string, 10) : undefined,
+        status: status as string | undefined,
+        category_id: category_id as string | undefined,
         sortBy: sortBy as string,
         sortOrder: sortOrder as 'asc' | 'desc',
       };
@@ -35,8 +35,8 @@ export class NewsController {
   // Get single news by ID (CMS)
   async getNewsById(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = parseInt(String(req.params.id), 10);
-      if (isNaN(id)) {
+      const { id } = req.params;
+      if (!id) {
         throw new AppError('Invalid News ID', 400);
       }
 
@@ -55,51 +55,51 @@ export class NewsController {
   async createNews(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const {
-        titleEn,
-        titleId,
-        newsDate,
-        newsThumbnail,
-        excerptEn,
-        excerptId,
-        contentEn,
-        contentId,
-        newsLink,
-        idCategory,
-        metaKeyword,
-        customCss,
-        customJs,
-        dataStatus,
+        title_en,
+        title_id,
+        news_date,
+        news_thumbnail,
+        excerpt_en,
+        excerpt_id,
+        content_en,
+        content_id,
+        news_link,
+        category_id,
+        meta_keywords,
+        custom_css,
+        custom_js,
+        status,
       } = req.body;
 
-      if (!titleEn || titleEn.trim() === '') {
+      if (!title_en || title_en.trim() === '') {
         throw new AppError('Title (English) is required', 400);
       }
-      if (!contentEn || contentEn.trim() === '') {
+      if (!content_en || content_en.trim() === '') {
         throw new AppError('Content (English) is required', 400);
       }
-      if (!newsDate) {
+      if (!news_date) {
         throw new AppError('News date is required', 400);
       }
 
       const data: CreateNewsData = {
-        titleEn: titleEn.trim(),
-        titleId: titleId?.trim(),
-        newsDate,
-        newsThumbnail,
-        excerptEn: excerptEn?.trim(),
-        excerptId: excerptId?.trim(),
-        contentEn: contentEn.trim(),
-        contentId: contentId?.trim(),
-        newsLink: newsLink?.trim(),
-        idCategory: idCategory ? parseInt(idCategory, 10) : undefined,
-        metaKeyword: metaKeyword?.trim(),
-        customCss: customCss?.trim(),
-        customJs: customJs?.trim(),
-        dataStatus: dataStatus !== undefined ? parseInt(dataStatus, 10) : undefined,
+        title_en: title_en.trim(),
+        title_id: title_id?.trim(),
+        news_date,
+        news_thumbnail,
+        excerpt_en: excerpt_en?.trim(),
+        excerpt_id: excerpt_id?.trim(),
+        content_en: content_en.trim(),
+        content_id: content_id?.trim(),
+        news_link: news_link?.trim(),
+        category_id: category_id || undefined,
+        meta_keywords: meta_keywords?.trim(),
+        custom_css: custom_css?.trim(),
+        custom_js: custom_js?.trim(),
+        status: status || undefined,
       };
 
-      const userEmail = req.user?.email || 'system@admin.com';
-      const news = await newsService.createNews(data, userEmail);
+      const userId = req.user?.id || 'system';
+      const news = await newsService.createNews(data, userId);
 
       res.status(201).json({
         success: true,
@@ -114,54 +114,54 @@ export class NewsController {
   // Update news (CMS)
   async updateNews(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const id = parseInt(String(req.params.id), 10);
-      if (isNaN(id)) {
+      const { id } = req.params;
+      if (!id) {
         throw new AppError('Invalid News ID', 400);
       }
 
       const {
-        titleEn,
-        titleId,
-        newsDate,
-        newsThumbnail,
-        excerptEn,
-        excerptId,
-        contentEn,
-        contentId,
-        newsLink,
-        idCategory,
-        metaKeyword,
-        customCss,
-        customJs,
-        dataStatus,
+        title_en,
+        title_id,
+        news_date,
+        news_thumbnail,
+        excerpt_en,
+        excerpt_id,
+        content_en,
+        content_id,
+        news_link,
+        category_id,
+        meta_keywords,
+        custom_css,
+        custom_js,
+        status,
       } = req.body;
 
-      if (titleEn !== undefined && titleEn.trim() === '') {
+      if (title_en !== undefined && title_en.trim() === '') {
         throw new AppError('Title (English) cannot be empty', 400);
       }
-      if (contentEn !== undefined && contentEn.trim() === '') {
+      if (content_en !== undefined && content_en.trim() === '') {
         throw new AppError('Content (English) cannot be empty', 400);
       }
 
       const data: UpdateNewsData = {
-        ...(titleEn !== undefined && { titleEn: titleEn.trim() }),
-        ...(titleId !== undefined && { titleId: titleId?.trim() }),
-        ...(newsDate !== undefined && { newsDate }),
-        ...(newsThumbnail !== undefined && { newsThumbnail }),
-        ...(excerptEn !== undefined && { excerptEn: excerptEn?.trim() }),
-        ...(excerptId !== undefined && { excerptId: excerptId?.trim() }),
-        ...(contentEn !== undefined && { contentEn: contentEn.trim() }),
-        ...(contentId !== undefined && { contentId: contentId?.trim() }),
-        ...(newsLink !== undefined && { newsLink: newsLink?.trim() }),
-        ...(idCategory !== undefined && { idCategory: idCategory ? parseInt(idCategory, 10) : null }),
-        ...(metaKeyword !== undefined && { metaKeyword: metaKeyword?.trim() }),
-        ...(customCss !== undefined && { customCss: customCss?.trim() }),
-        ...(customJs !== undefined && { customJs: customJs?.trim() }),
-        ...(dataStatus !== undefined && { dataStatus: parseInt(dataStatus, 10) }),
+        ...(title_en !== undefined && { title_en: title_en.trim() }),
+        ...(title_id !== undefined && { title_id: title_id?.trim() }),
+        ...(news_date !== undefined && { news_date }),
+        ...(news_thumbnail !== undefined && { news_thumbnail }),
+        ...(excerpt_en !== undefined && { excerpt_en: excerpt_en?.trim() }),
+        ...(excerpt_id !== undefined && { excerpt_id: excerpt_id?.trim() }),
+        ...(content_en !== undefined && { content_en: content_en.trim() }),
+        ...(content_id !== undefined && { content_id: content_id?.trim() }),
+        ...(news_link !== undefined && { news_link: news_link?.trim() }),
+        ...(category_id !== undefined && { category_id: category_id || undefined }),
+        ...(meta_keywords !== undefined && { meta_keywords: meta_keywords?.trim() }),
+        ...(custom_css !== undefined && { custom_css: custom_css?.trim() }),
+        ...(custom_js !== undefined && { custom_js: custom_js?.trim() }),
+        ...(status !== undefined && { status }),
       };
 
-      const userEmail = req.user?.email || 'system@admin.com';
-      const news = await newsService.updateNews(id, data, userEmail);
+      const userId = req.user?.id || 'system';
+      const news = await newsService.updateNews(id, data, userId);
 
       res.json({
         success: true,
@@ -176,8 +176,8 @@ export class NewsController {
   // Delete news (CMS)
   async deleteNews(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = parseInt(String(req.params.id), 10);
-      if (isNaN(id)) {
+      const { id } = req.params;
+      if (!id) {
         throw new AppError('Invalid News ID', 400);
       }
 
@@ -197,12 +197,12 @@ export class NewsController {
   // Get active news (Public)
   async getActiveNews(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, idCategory, sortBy, sortOrder } = req.query;
+      const { page, limit, category_id, sortBy, sortOrder } = req.query;
 
       const params: NewsQueryParams = {
         page: page ? parseInt(page as string, 10) : 1,
         limit: limit ? parseInt(limit as string, 10) : 12,
-        idCategory: idCategory ? parseInt(idCategory as string, 10) : undefined,
+        category_id: category_id as string | undefined,
         sortBy: sortBy as string,
         sortOrder: sortOrder as 'asc' | 'desc',
       };
@@ -315,14 +315,14 @@ export class NewsController {
   // Create highlight (CMS)
   async createHighlight(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { idNews } = req.body;
+      const { news_id } = req.body;
 
-      if (!idNews) {
+      if (!news_id) {
         throw new AppError('News ID is required', 400);
       }
 
-      const userEmail = req.user?.email || 'system@admin.com';
-      const highlight = await newsService.createHighlight(parseInt(idNews, 10), userEmail);
+      const userId = req.user?.id || 'system';
+      const highlight = await newsService.createHighlight(news_id, userId);
 
       res.status(201).json({
         success: true,
@@ -337,8 +337,8 @@ export class NewsController {
   // Remove highlight (CMS)
   async removeHighlight(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = parseInt(String(req.params.id), 10);
-      if (isNaN(id)) {
+      const { id } = req.params;
+      if (!id) {
         throw new AppError('Invalid Highlight ID', 400);
       }
 
@@ -362,7 +362,7 @@ export class NewsController {
         throw new AppError('IDs array is required', 400);
       }
 
-      await newsService.bulkRemoveHighlights(ids.map((id: any) => parseInt(id, 10)));
+      await newsService.bulkRemoveHighlights(ids);
 
       res.json({
         success: true,
@@ -382,8 +382,8 @@ export class NewsController {
         throw new AppError('Updates array is required', 400);
       }
 
-      const userEmail = req.user?.email || 'system@admin.com';
-      await newsService.reorderHighlights(updates, userEmail);
+      const userId = req.user?.id || 'system';
+      await newsService.reorderHighlights(updates, userId);
 
       res.json({
         success: true,
@@ -399,8 +399,8 @@ export class NewsController {
   // Track view (Public, no auth)
   async trackNewsView(req: Request, res: Response, next: NextFunction) {
     try {
-      const newsId = parseInt(String(req.params.newsId), 10);
-      if (isNaN(newsId)) {
+      const { newsId } = req.params;
+      if (!newsId) {
         throw new AppError('Invalid News ID', 400);
       }
 

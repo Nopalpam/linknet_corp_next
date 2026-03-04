@@ -1,6 +1,3 @@
-// This is your Prisma schema file
-// Learn more: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
@@ -11,42 +8,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// AUTHENTICATION MODULE
-// ============================================
-
 model User {
-  id                  String     @id @default(uuid())
-  email               String     @unique
-  username            String     @unique
-  password            String
-  firstName           String     @map("first_name")
-  lastName            String     @map("last_name")
-  avatar              String?
-  phone               String?
-  status              UserStatus @default(ACTIVE)
-  emailVerifiedAt     DateTime?  @map("email_verified_at")
-  lastLoginAt         DateTime?  @map("last_login_at")
-  // MBSS2.0-008: Failed login attempt tracking & account lockout
-  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
-  lockedAt            DateTime?  @map("locked_at")
-  lockedReason        String?    @map("locked_reason")
-  // MBSS2.0-009: Password age tracking
-  passwordChangedAt   DateTime   @default(now()) @map("password_changed_at")
-  // MBSS2.0-010: First-time login password change
-  mustChangePassword  Boolean    @default(true) @map("must_change_password")
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
-  deletedAt           DateTime?  @map("deleted_at")
-
-  // Relations
-  userRoles          UserRole[]
-  logActivities      LogActivity[]
-  createdPages       Page[]              @relation("PageCreator")
-  contactSubmissions ContactSubmission[]
-  createdFiles       File[]              @relation("FileCreator")
-  refreshTokens      RefreshToken[]
-  passwordHistories  PasswordHistory[]
+  id                             String              @id @default(uuid())
+  email                          String              @unique
+  username                       String              @unique
+  password                       String
+  firstName                      String              @map("first_name")
+  lastName                       String              @map("last_name")
+  avatar                         String?
+  phone                          String?
+  status                         UserStatus          @default(ACTIVE)
+  emailVerifiedAt                DateTime?           @map("email_verified_at")
+  lastLoginAt                    DateTime?           @map("last_login_at")
+  failedLoginAttempts            Int                 @default(0) @map("failed_login_attempts")
+  lockedAt                       DateTime?           @map("locked_at")
+  lockedReason                   String?             @map("locked_reason")
+  passwordChangedAt              DateTime            @default(now()) @map("password_changed_at")
+  mustChangePassword             Boolean             @default(true) @map("must_change_password")
+  createdAt                      DateTime            @default(now()) @map("created_at")
+  updatedAt                      DateTime            @updatedAt @map("updated_at")
+  deletedAt                      DateTime?           @map("deleted_at")
+  contactSubmissions             ContactSubmission[]
+  createdFiles                   File[]              @relation("FileCreator")
+  logActivities                  LogActivity[]
+  news_news_created_by_idTousers news[]              @relation("news_created_by_idTousers")
+  news_news_updated_by_idTousers news[]              @relation("news_updated_by_idTousers")
+  createdPages                   Page[]              @relation("PageCreator")
+  passwordHistories              PasswordHistory[]
+  refreshTokens                  RefreshToken[]
+  userRoles                      UserRole[]
 
   @@index([email])
   @@index([status])
@@ -58,13 +48,11 @@ model User {
 model RefreshToken {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
-  tokenId   String   @unique @map("token_id") // UUID for token rotation tracking
-  tokenHash String   @unique @map("token_hash") @db.Text // Hashed refresh token
+  tokenId   String   @unique @map("token_id")
+  tokenHash String   @unique @map("token_hash")
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tokenId])
@@ -76,7 +64,7 @@ model RefreshToken {
 model PasswordResetToken {
   id        String    @id @default(uuid())
   email     String
-  token     String    @unique @db.Text
+  token     String    @unique
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
@@ -87,40 +75,29 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-// MBSS2.0-011: Password history to prevent reuse of last 6 passwords
 model PasswordHistory {
   id           String   @id @default(uuid())
   userId       String   @map("user_id")
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
   @@map("password_histories")
 }
 
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
 model Role {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
-  description String?
-  isSystem    Boolean   @default(false) @map("is_system")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-
-  // Relations
-  userRoles       UserRole[]
+  id              String           @id @default(uuid())
+  name            String           @unique
+  slug            String           @unique
+  description     String?
+  isSystem        Boolean          @default(false) @map("is_system")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  deletedAt       DateTime?        @map("deleted_at")
   rolePermissions RolePermission[]
+  userRoles       UserRole[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -128,15 +105,13 @@ model Role {
 }
 
 model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  slug        String   @unique
-  module      String
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
+  id              String           @id @default(uuid())
+  name            String           @unique
+  slug            String           @unique
+  module          String
+  description     String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   rolePermissions RolePermission[]
 
   @@index([module])
@@ -145,14 +120,12 @@ model Permission {
 }
 
 model RolePermission {
-  id           String   @id @default(uuid())
-  roleId       String   @map("role_id")
-  permissionId String   @map("permission_id")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  // Relations
-  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -165,20 +138,14 @@ model UserRole {
   userId    String   @map("user_id")
   roleId    String   @map("role_id")
   createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
   @@map("user_roles")
 }
-
-// ============================================
-// CORE MODULE
-// ============================================
 
 model Setting {
   id          String      @id @default(uuid())
@@ -189,8 +156,8 @@ model Setting {
   label       String
   description String?
   isPublic    Boolean     @default(false) @map("is_public")
-  isSystem    Boolean     @default(false) @map("is_system") // Prevent deletion of system settings
-  options     Json? // For select type: { options: ["option1", "option2"] }
+  isSystem    Boolean     @default(false) @map("is_system")
+  options     Json?
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
@@ -200,83 +167,54 @@ model Setting {
   @@map("settings")
 }
 
-enum SettingType {
-  STRING
-  NUMBER
-  BOOLEAN
-  JSON
-  IMAGE
-  SELECT
-}
-
 model Menu {
-  id            BigInt        @id @default(autoincrement())
-  parentId      BigInt?       @map("parent_id")
-  sectionTitle  String?       @map("section_title") @db.VarChar(191)
-  sectionOrder  Int           @default(0) @map("section_order")
-  title         String        @db.VarChar(191)
-  translations  Json?         // Multi-language support: { "id": { "title": "...", "slug": "...", "description": "..." }, "en": {...} }
-  slug          String?       @db.VarChar(191)
-  url           String?       @db.VarChar(191)
-  icon          String?       @db.VarChar(191)
-  image         String?       @db.VarChar(191)
-  description   String?       @db.VarChar(191)
-  badge         String?       @db.VarChar(191)
-  position      MenuPosition  @default(HEADER)
-  type          MenuType      @default(LINK)
-  order         Int           @default(0)
-  isActive      Boolean       @default(true) @map("is_active")
-  openNewTab    Boolean       @default(false) @map("open_new_tab")
-  cssClass      String?       @map("css_class") @db.VarChar(191)
-  createdBy     String?       @map("created_by") @db.VarChar(191)
-  updatedBy     String?       @map("updated_by") @db.VarChar(191)
-  createdAt     DateTime?     @default(now()) @map("created_at")
-  updatedAt     DateTime?     @updatedAt @map("updated_at")
-
-  // Self-referencing relation for hierarchical structure
-  parent   Menu?  @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children Menu[] @relation("MenuHierarchy")
+  id           BigInt       @id @default(autoincrement())
+  parentId     BigInt?      @map("parent_id")
+  sectionTitle String?      @map("section_title") @db.VarChar(191)
+  sectionOrder Int          @default(0) @map("section_order")
+  title        String       @db.VarChar(191)
+  translations Json?
+  slug         String?      @db.VarChar(191)
+  url          String?      @db.VarChar(191)
+  icon         String?      @db.VarChar(191)
+  image        String?      @db.VarChar(191)
+  description  String?      @db.VarChar(191)
+  badge        String?      @db.VarChar(191)
+  position     MenuPosition @default(HEADER)
+  type         MenuType     @default(LINK)
+  order        Int          @default(0)
+  isActive     Boolean      @default(true) @map("is_active")
+  openNewTab   Boolean      @default(false) @map("open_new_tab")
+  cssClass     String?      @map("css_class") @db.VarChar(191)
+  createdBy    String?      @map("created_by") @db.VarChar(191)
+  updatedBy    String?      @map("updated_by") @db.VarChar(191)
+  createdAt    DateTime?    @default(now()) @map("created_at")
+  updatedAt    DateTime?    @updatedAt @map("updated_at")
+  parent       Menu?        @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Menu[]       @relation("MenuHierarchy")
 
   @@index([parentId])
   @@index([position, order, isActive])
   @@map("menus")
 }
 
-enum MenuPosition {
-  HEADER  @map("header")
-  FOOTER  @map("footer")
-  BOTH    @map("both")
-}
-
-enum MenuType {
-  LINK     @map("link")
-  DROPDOWN @map("dropdown")
-  MEGA     @map("mega")
-}
-
-// ============================================
-// CONTENT MODULE
-// ============================================
-
 model Page {
-  id              String       @id @default(uuid())
+  id              String          @id @default(uuid())
   title           String
-  slug            String       @unique
-  template        PageTemplate @default(DEFAULT)
-  metaTitle       String?      @map("meta_title")
-  metaDescription String?      @map("meta_description") @db.Text
-  metaKeywords    String?      @map("meta_keywords") @db.Text
-  ogImage         String?      @map("og_image")
-  status          PageStatus   @default(DRAFT)
-  publishedAt     DateTime?    @map("published_at")
-  createdById     String       @map("created_by_id")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
-  deletedAt       DateTime?    @map("deleted_at")
-
-  // Relations
-  createdBy  User            @relation("PageCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  components PageComponent[]
+  slug            String          @unique
+  template        PageTemplate    @default(DEFAULT)
+  metaTitle       String?         @map("meta_title")
+  metaDescription String?         @map("meta_description")
+  metaKeywords    String?         @map("meta_keywords")
+  ogImage         String?         @map("og_image")
+  status          PageStatus      @default(DRAFT)
+  publishedAt     DateTime?       @map("published_at")
+  createdById     String          @map("created_by_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  deletedAt       DateTime?       @map("deleted_at")
+  components      PageComponent[]
+  createdBy       User            @relation("PageCreator", fields: [createdById], references: [id])
 
   @@index([slug])
   @@index([status])
@@ -288,17 +226,6 @@ model Page {
   @@map("pages")
 }
 
-enum PageTemplate {
-  DEFAULT
-  FULL_WIDTH
-  LANDING
-}
-
-enum PageStatus {
-  DRAFT
-  PUBLISHED
-}
-
 model PageComponent {
   id        String   @id @default(uuid())
   pageId    String   @map("page_id")
@@ -308,9 +235,7 @@ model PageComponent {
   isVisible Boolean  @default(true) @map("is_visible")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@index([pageId])
   @@index([order])
@@ -318,120 +243,19 @@ model PageComponent {
   @@map("page_components")
 }
 
-enum ContentStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
-// ============================================
-// NEWS MODULE (MySQL-compatible schema for data migration)
-// ============================================
-
-model NewsCategory {
-  id           BigInt    @id @default(autoincrement())
-  categoryName String    @map("category_name") @db.VarChar(255)
-  dataOrder    Int?      @map("data_order")
-  slug         String    @db.VarChar(255)
-  dataStatus   Int       @default(1) @map("data_status") @db.SmallInt
-  createdBy    String?   @map("created_by") @db.VarChar(255)
-  updatedBy    String?   @map("updated_by") @db.VarChar(255)
-  createdAt    DateTime? @map("created_at") @db.Timestamptz()
-  updatedAt    DateTime? @map("updated_at") @db.Timestamptz()
-
-  // Relations
-  news NewsContent[]
-
-  @@index([dataOrder])
-  @@map("news_category")
-}
-
-model NewsContent {
-  id              BigInt    @id @default(autoincrement())
-  idCategory      BigInt?   @map("id_category")
-  titleEn         String    @map("title_en") @db.VarChar(255)
-  titleId         String?   @map("title_id") @db.VarChar(255)
-  slug            String    @unique @db.VarChar(255)
-  newsDate        DateTime  @map("news_date") @db.Date
-  newsThumbnail   String?   @map("news_thumbnail") @db.VarChar(255)
-  excerptEn       String?   @map("excerpt_en") @db.Text
-  excerptId       String?   @map("excerpt_id") @db.Text
-  contentEn       String    @map("content_en") @db.Text
-  contentId       String?   @map("content_id") @db.Text
-  newsLink        String?   @map("news_link") @db.VarChar(255)
-  dataStatus      Int       @default(1) @map("data_status") @db.SmallInt
-  viewCount       BigInt    @default(0) @map("view_count")
-  viewCountUnique BigInt    @default(0) @map("view_count_unique")
-  customCss       String?   @map("custom_css") @db.Text
-  customJs        String?   @map("custom_js") @db.Text
-  metaKeyword     String?   @map("meta_keyword") @db.Text
-  createdBy       String?   @map("created_by") @db.VarChar(255)
-  updatedBy       String?   @map("updated_by") @db.VarChar(255)
-  createdAt       DateTime? @map("created_at") @db.Timestamptz()
-  updatedAt       DateTime? @map("updated_at") @db.Timestamptz()
-
-  // Relations
-  category   NewsCategory?  @relation(fields: [idCategory], references: [id], onDelete: SetNull)
-  highlights NewsHighlight[]
-  views      NewsView[]
-
-  @@index([idCategory])
-  @@index([newsDate])
-  @@index([dataStatus])
-  @@map("news_content")
-}
-
-model NewsHighlight {
-  id        BigInt   @id @default(autoincrement())
-  idNews    BigInt   @map("id_news")
-  dataOrder Int?     @unique @map("data_order")
-  createdBy String   @map("created_by") @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedBy String?  @map("updated_by") @db.VarChar(255)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
-
-  // Relations
-  news NewsContent @relation(fields: [idNews], references: [id], onDelete: Cascade)
-
-  @@index([idNews])
-  @@map("news_highlight")
-}
-
-model NewsView {
-  id        BigInt    @id @default(autoincrement())
-  mediaId   BigInt?   @map("media_id")
-  ipAddress String?   @map("ip_address") @db.VarChar(255)
-  userAgent String?   @map("user_agent") @db.VarChar(255)
-  createdAt DateTime? @map("created_at") @db.Timestamptz()
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz()
-
-  // Relations
-  news NewsContent? @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-
-  @@index([mediaId])
-  @@index([mediaId, ipAddress, userAgent])
-  @@map("news_view")
-}
-
-// ============================================
-// DOCUMENTS MODULE (3-TIER: ANNOUNCEMENTS)
-// ============================================
-
 model AnnouncementType {
-  id          String    @id @default(uuid())
+  id          String                @id @default(uuid())
   name        String
-  slug        String    @unique
-  description String?   @db.Text
+  slug        String                @unique
+  description String?
   icon        String?
   color       String?
-  position    Int       @default(0)
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-
-  // Relations
-  sections AnnouncementSection[]
+  position    Int                   @default(0)
+  isActive    Boolean               @default(true) @map("is_active")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  deletedAt   DateTime?             @map("deleted_at")
+  sections    AnnouncementSection[]
 
   @@index([slug])
   @@index([position])
@@ -441,20 +265,18 @@ model AnnouncementType {
 }
 
 model AnnouncementSection {
-  id          String    @id @default(uuid())
-  typeId      String    @map("type_id")
+  id          String           @id @default(uuid())
+  typeId      String           @map("type_id")
   name        String
   slug        String
-  description String?   @db.Text
-  position    Int       @default(0)
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-
-  // Relations
-  type  AnnouncementType @relation(fields: [typeId], references: [id], onDelete: Cascade)
-  items Announcement[]
+  description String?
+  position    Int              @default(0)
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+  type        AnnouncementType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  items       Announcement[]
 
   @@unique([typeId, slug])
   @@index([typeId])
@@ -466,25 +288,23 @@ model AnnouncementSection {
 }
 
 model Announcement {
-  id          String        @id @default(uuid())
-  sectionId   String        @map("section_id")
+  id          String              @id @default(uuid())
+  sectionId   String              @map("section_id")
   title       String
   slug        String
-  description String?       @db.Text
-  content     String?       @db.Text
-  fileUrl     String?       @map("file_url")
-  fileSize    Int?          @map("file_size")
-  fileType    String?       @map("file_type")
+  description String?
+  content     String?
+  fileUrl     String?             @map("file_url")
+  fileSize    Int?                @map("file_size")
+  fileType    String?             @map("file_type")
   thumbnail   String?
-  downloads   Int           @default(0)
-  status      ContentStatus @default(DRAFT)
-  publishedAt DateTime?     @map("published_at")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  deletedAt   DateTime?     @map("deleted_at")
-
-  // Relations
-  section AnnouncementSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  downloads   Int                 @default(0)
+  status      ContentStatus       @default(DRAFT)
+  publishedAt DateTime?           @map("published_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  deletedAt   DateTime?           @map("deleted_at")
+  section     AnnouncementSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([sectionId, slug])
   @@index([sectionId])
@@ -496,10 +316,6 @@ model Announcement {
   @@map("announcements")
 }
 
-// ============================================
-// HR MODULE
-// ============================================
-
 model Career {
   id               String         @id @default(uuid())
   title            String
@@ -507,10 +323,10 @@ model Career {
   department       String
   location         String
   employmentType   EmploymentType @default(FULL_TIME) @map("employment_type")
-  description      String         @db.Text
-  requirements     String         @db.Text
-  responsibilities String         @db.Text
-  benefits         String?        @db.Text
+  description      String
+  requirements     String
+  responsibilities String
+  benefits         String?
   salaryRange      String?        @map("salary_range")
   closingDate      DateTime?      @map("closing_date")
   status           CareerStatus   @default(OPEN)
@@ -529,31 +345,18 @@ model Career {
   @@map("careers")
 }
 
-enum EmploymentType {
-  FULL_TIME
-  PART_TIME
-  CONTRACT
-  INTERNSHIP
-}
-
-enum CareerStatus {
-  OPEN
-  CLOSED
-  DRAFT
-}
-
 model Award {
   id          String    @id @default(uuid())
   title       String
   slug        String    @unique
-  description String?   @db.Text
+  description String?
   image       String?
   issuer      String
-  year        Int // Using year instead of issueDate for simplicity
-  issueDate   DateTime  @map("issue_date") // Keep for backward compatibility
+  year        Int
+  issueDate   DateTime  @map("issue_date")
   position    Int       @default(0)
   isActive    Boolean   @default(true) @map("is_active")
-  status      String    @default("ACTIVE") // ACTIVE, INACTIVE for better compatibility
+  status      String    @default("ACTIVE")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -568,61 +371,50 @@ model Award {
   @@map("awards")
 }
 
-// ============================================
-// MANAGEMENT MODULE (MySQL-compatible)
-// Migrated from Laravel MySQL - column names preserved for data import
-// ============================================
-
 model ManagementCategory {
-  id          BigInt    @id @default(autoincrement())
-  name        String    @db.VarChar(191)
-  slug        String    @unique @db.VarChar(191)
-  description String?   @db.Text
-  order       Int?
-  status      Int       @default(1) @db.SmallInt
-  createdBy   String?   @map("created_by") @db.VarChar(100)
-  updatedBy   String?   @map("updated_by") @db.VarChar(100)
-  createdAt   DateTime? @default(now()) @map("created_at")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
-
-  // Relations
+  id          String       @id
+  name        String
+  slug        String       @unique
+  description String?
+  position    Int          @default(0)
+  is_active   Boolean      @default(true)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  deleted_at  DateTime?
   managements Management[]
 
   @@index([slug])
-  @@index([status])
-  @@index([order])
+  @@index([deleted_at])
+  @@index([is_active])
+  @@index([position])
   @@map("management_categories")
 }
 
 model Management {
-  id         BigInt    @id @default(autoincrement())
-  name       String    @db.VarChar(191)
-  positionEn String?   @map("position_en") @db.VarChar(191)
-  positionId String?   @map("position_id") @db.VarChar(191)
-  category   String?   @db.VarChar(100)
-  categoryId BigInt?   @map("category_id")
-  photo      String?   @db.VarChar(191)
-  bioEn      String?   @map("bio_en") @db.Text
-  bioId      String?   @map("bio_id") @db.Text
-  dataOrder  Int?      @map("data_order")
-  dataStatus Int       @default(1) @map("data_status")
-  createdBy  String?   @map("created_by") @db.VarChar(100)
-  updatedBy  String?   @map("updated_by") @db.VarChar(100)
-  createdAt  DateTime? @default(now()) @map("created_at")
-  updatedAt  DateTime? @updatedAt @map("updated_at")
-
-  // Relations
-  managementCategory ManagementCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  id                 String             @id
+  categoryId         String             @map("category_id")
+  name               String
+  slug               String             @unique
+  position           String
+  description        String?
+  photo              String?
+  email              String?
+  phone              String?
+  linkedin           String?
+  order              Int                @default(0)
+  is_active          Boolean            @default(true)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  deleted_at         DateTime?
+  managementCategory ManagementCategory @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
-  @@index([dataOrder])
-  @@index([dataStatus])
+  @@index([deleted_at])
+  @@index([is_active])
+  @@index([order])
+  @@index([slug])
   @@map("managements")
 }
-
-// ============================================
-// COMMUNICATION MODULE
-// ============================================
 
 model ContactSubmission {
   id        String           @id @default(uuid())
@@ -631,7 +423,7 @@ model ContactSubmission {
   email     String
   phone     String?
   subject   String
-  message   String           @db.Text
+  message   String
   type      ContactType      @default(GENERAL)
   status    SubmissionStatus @default(NEW)
   ipAddress String?          @map("ip_address")
@@ -641,9 +433,7 @@ model ContactSubmission {
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
   deletedAt DateTime?        @map("deleted_at")
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?            @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([email])
@@ -654,42 +444,21 @@ model ContactSubmission {
   @@map("contact_submissions")
 }
 
-enum ContactType {
-  GENERAL
-  SUPPORT
-  SALES
-  PARTNERSHIP
-  COMPLAINT
-}
-
-enum SubmissionStatus {
-  NEW
-  READ
-  REPLIED
-  CLOSED
-}
-
-// ============================================
-// SYSTEM MODULE
-// ============================================
-
 model LogActivity {
   id          String    @id @default(uuid())
   userId      String?   @map("user_id")
-  action      String // create, update, delete, login, logout, etc.
-  module      String // users, news, pages, roles, permissions, etc.
-  recordId    String?   @map("record_id") // ID of the affected record
-  oldData     Json?     @map("old_data") // Previous state (for updates/deletes)
-  newData     Json?     @map("new_data") // New state (for creates/updates)
-  description String?   @db.Text
-  metadata    Json? // Additional context/metadata
+  action      String
+  module      String
+  recordId    String?   @map("record_id")
+  oldData     Json?     @map("old_data")
+  newData     Json?     @map("new_data")
+  description String?
+  metadata    Json?
   ipAddress   String?   @map("ip_address")
   userAgent   String?   @map("user_agent")
   createdAt   DateTime  @default(now()) @map("created_at")
-  deletedAt   DateTime? @map("deleted_at") // Soft delete for logs
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  deletedAt   DateTime? @map("deleted_at")
+  user        User?     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])
@@ -717,10 +486,6 @@ model UrlRedirect {
   @@map("url_redirects")
 }
 
-// ============================================
-// FILES MODULE (Cloud Storage Metadata)
-// ============================================
-
 model Folder {
   id        String    @id @default(uuid())
   parentId  String?   @map("parent_id")
@@ -731,11 +496,9 @@ model Folder {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
-
-  // Self-referencing relation for hierarchical structure
-  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children Folder[] @relation("FolderHierarchy")
-  files    File[]
+  files     File[]
+  parent    Folder?   @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]  @relation("FolderHierarchy")
 
   @@index([parentId])
   @@index([path])
@@ -757,7 +520,7 @@ model File {
   cloudPath     String?   @map("cloud_path")
   cloudKey      String?   @map("cloud_key")
   thumbnail     String?
-  thumbnails    Json? // {small: url, medium: url, large: url}
+  thumbnails    Json?
   width         Int?
   height        Int?
   duration      Int?
@@ -767,10 +530,8 @@ model File {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
-
-  // Relations
-  folder    Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  createdBy User    @relation("FileCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy     User      @relation("FileCreator", fields: [createdById], references: [id])
+  folder        Folder?   @relation(fields: [folderId], references: [id])
 
   @@index([folderId])
   @@index([createdById])
@@ -781,10 +542,6 @@ model File {
   @@map("files")
 }
 
-// ============================================
-// CONTACT US MODULE
-// ============================================
-
 model ContactUs {
   id          String        @id @default(uuid())
   firstName   String        @map("first_name")
@@ -794,10 +551,10 @@ model ContactUs {
   role        String?
   company     String?
   inquiryType InquiryType   @map("inquiry_type")
-  message     String        @db.Text
+  message     String
   status      ContactStatus @default(NEW)
   ipAddress   String?       @map("ip_address")
-  userAgent   String?       @map("user_agent") @db.Text
+  userAgent   String?       @map("user_agent")
   readAt      DateTime?     @map("read_at")
   submittedAt DateTime      @default(now()) @map("submitted_at")
   createdAt   DateTime      @default(now()) @map("created_at")
@@ -811,6 +568,298 @@ model ContactUs {
   @@map("contact_us")
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model CareerContent {
+  id             BigInt    @id @default(autoincrement())
+  position       String    @db.VarChar(255)
+  slug           String?   @db.VarChar(255)
+  division       String?   @db.VarChar(255)
+  type           String?   @db.VarChar(100)
+  linkJob        String?   @map("link_job") @db.VarChar(500)
+  location       String?   @db.VarChar(255)
+  description    String?
+  descriptionId  String?   @map("description_id")
+  requirements   String?
+  requirementsId String?   @map("requirements_id")
+  status         String    @default("active") @db.VarChar(20)
+  expiryDate     DateTime? @map("expiry_date") @db.Timestamp(6)
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime? @default(now()) @map("updated_at") @db.Timestamp(0)
+  createdBy      String?   @map("created_by") @db.VarChar(255)
+  updatedBy      String?   @map("updated_by") @db.VarChar(255)
+
+  @@index([createdAt(sort: Desc)], map: "idx_career_content_created_at_desc")
+  @@index([division], map: "idx_career_content_division")
+  @@index([expiryDate], map: "idx_career_content_expiry_date")
+  @@index([location], map: "idx_career_content_location")
+  @@index([status], map: "idx_career_content_status")
+  @@index([type], map: "idx_career_content_type")
+  @@map("career_content")
+}
+
+model ReportType {
+  id              String          @id
+  name            String
+  slug            String          @unique
+  description     String?
+  icon            String?
+  color           String?
+  position        Int             @default(0)
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  deletedAt       DateTime?       @map("deleted_at")
+  report_sections ReportSection[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([position])
+  @@index([slug])
+  @@map("report_types")
+}
+
+model ReportSection {
+  id           String     @id
+  type_id      String
+  name         String
+  slug         String
+  description  String?
+  position     Int        @default(0)
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+  report_types ReportType @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  reports      reports[]
+
+  @@unique([type_id, slug])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([position])
+  @@index([slug])
+  @@index([type_id])
+  @@map("report_sections")
+}
+
+model news {
+  id                              String               @id
+  title_en                        String
+  title_id                        String?
+  slug                            String               @unique
+  news_date                       DateTime             @db.Date
+  news_thumbnail                  String?
+  excerpt_en                      String?
+  excerpt_id                      String?
+  content_en                      String
+  content_id                      String?
+  news_link                       String?
+  category_id                     String
+  meta_keywords                   String?
+  custom_css                      String?
+  custom_js                       String?
+  view_count                      Int                  @default(0)
+  view_count_unique               Int                  @default(0)
+  status                          ContentStatus        @default(DRAFT)
+  published_at                    DateTime?
+  created_by_id                   String
+  updated_by_id                   String?
+  created_at                      DateTime             @default(now())
+  updated_at                      DateTime
+  deleted_at                      DateTime?
+  news_categories                 news_categories      @relation(fields: [category_id], references: [id])
+  users_news_created_by_idTousers User                 @relation("news_created_by_idTousers", fields: [created_by_id], references: [id])
+  users_news_updated_by_idTousers User?                @relation("news_updated_by_idTousers", fields: [updated_by_id], references: [id])
+  news_highlights                 news_highlights?
+  news_tag_relations              news_tag_relations[]
+  news_views                      news_views[]
+
+  @@index([category_id])
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([news_date])
+  @@index([published_at])
+  @@index([slug])
+  @@index([status])
+}
+
+model news_categories {
+  id          String    @id
+  name_en     String
+  name_id     String?
+  slug        String    @unique
+  description String?
+  position    Int       @default(0)
+  is_active   Boolean   @default(true)
+  created_by  String?
+  updated_by  String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime
+  deleted_at  DateTime?
+  news        news[]
+
+  @@index([deleted_at])
+  @@index([is_active])
+  @@index([position])
+  @@index([slug])
+}
+
+model news_highlights {
+  id         String   @id
+  news_id    String   @unique
+  position   Int      @unique @default(0)
+  created_by String?
+  updated_by String?
+  created_at DateTime @default(now())
+  updated_at DateTime
+  news       news     @relation(fields: [news_id], references: [id], onDelete: Cascade)
+
+  @@index([news_id])
+  @@index([position])
+}
+
+model news_tag_relations {
+  id         String    @id
+  news_id    String
+  tag_id     String
+  created_at DateTime  @default(now())
+  news       news      @relation(fields: [news_id], references: [id], onDelete: Cascade)
+  news_tags  news_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([news_id, tag_id])
+  @@index([news_id])
+  @@index([tag_id])
+}
+
+model news_tags {
+  id                 String               @id
+  name               String
+  slug               String               @unique
+  created_at         DateTime             @default(now())
+  updated_at         DateTime
+  deleted_at         DateTime?
+  news_tag_relations news_tag_relations[]
+
+  @@index([deleted_at])
+  @@index([slug])
+}
+
+model news_views {
+  id         String   @id
+  news_id    String
+  ip_address String?
+  user_agent String?
+  created_at DateTime @default(now())
+  updated_at DateTime
+  news       news     @relation(fields: [news_id], references: [id], onDelete: Cascade)
+
+  @@index([ip_address])
+  @@index([news_id])
+}
+
+model reports {
+  id              String        @id
+  section_id      String
+  title           String
+  slug            String
+  description     String?
+  period          String?
+  year            Int?
+  quarter         Int?
+  file_url        String?
+  file_size       Int?
+  file_type       String?
+  thumbnail       String?
+  downloads       Int           @default(0)
+  status          ContentStatus @default(DRAFT)
+  published_at    DateTime?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime
+  deleted_at      DateTime?
+  report_sections ReportSection @relation(fields: [section_id], references: [id], onDelete: Cascade)
+
+  @@unique([section_id, slug])
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([published_at])
+  @@index([quarter])
+  @@index([section_id])
+  @@index([slug])
+  @@index([status])
+  @@index([year])
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SettingType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  IMAGE
+  SELECT
+}
+
+enum MenuPosition {
+  HEADER @map("header")
+  FOOTER @map("footer")
+  BOTH   @map("both")
+}
+
+enum MenuType {
+  LINK     @map("link")
+  DROPDOWN @map("dropdown")
+  MEGA     @map("mega")
+}
+
+enum PageTemplate {
+  DEFAULT
+  FULL_WIDTH
+  LANDING
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum CareerStatus {
+  OPEN
+  CLOSED
+  DRAFT
+}
+
+enum ContactType {
+  GENERAL
+  SUPPORT
+  SALES
+  PARTNERSHIP
+  COMPLAINT
+}
+
+enum SubmissionStatus {
+  NEW
+  READ
+  REPLIED
+  CLOSED
+}
+
 enum InquiryType {
   BUSINESS
   SUPPORT
@@ -821,123 +870,4 @@ enum InquiryType {
 enum ContactStatus {
   NEW
   READ
-}
-
-// ============================================
-// CAREER MODULE (Standalone - No FK)
-// Migrated from Laravel MySQL
-// ============================================
-
-model CareerContent {
-  id             BigInt    @id @default(autoincrement())
-  position       String    @db.VarChar(255)
-  slug           String?   @db.VarChar(255)
-  division       String?   @db.VarChar(255)
-  type           String?   @db.VarChar(100)
-  linkJob        String?   @map("link_job") @db.VarChar(500)
-  location       String?   @db.VarChar(255)
-  description    String?   @db.Text
-  descriptionId  String?   @map("description_id") @db.Text
-  requirements   String?   @db.Text
-  requirementsId String?   @map("requirements_id") @db.Text
-  status         String    @default("active") @db.VarChar(20)
-  expiryDate     DateTime? @map("expiry_date")
-  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt      DateTime? @default(now()) @map("updated_at") @db.Timestamp(0)
-  createdBy      String?   @map("created_by") @db.VarChar(255)
-  updatedBy      String?   @map("updated_by") @db.VarChar(255)
-
-  @@index([status])
-  @@index([expiryDate])
-  @@index([location])
-  @@index([type])
-  @@index([division])
-  @@index([createdAt(sort: Desc)])
-  @@map("career_content")
-}
-
-// ============================================
-// REPORT MODULE (MySQL-compatible)
-// Migrated from Laravel MySQL - column names preserved for data import
-// 3-level hierarchy: ReportType → ReportSection → ReportItem
-// Two display modes: Grid (type→items) and List (type→sections→items)
-// ============================================
-
-model ReportType {
-  id        BigInt    @id @default(autoincrement())
-  name      String    @db.VarChar(255)
-  type      String    @default("Grid") @db.VarChar(10) // 'Grid' or 'List'
-  sortOrder Int       @default(0) @map("sort_order")
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
-
-  // Relations
-  reportSections ReportSection[]
-  reportItems    ReportItem[]    @relation("ReportTypeItems")
-
-  @@index([type])
-  @@index([sortOrder])
-  @@index([isActive])
-  @@index([deletedAt])
-  @@map("report_types")
-}
-
-model ReportSection {
-  id           BigInt    @id @default(autoincrement())
-  reportTypeId BigInt    @map("report_type_id")
-  title        String    @db.VarChar(255)
-  description  String?   @db.Text
-  reportYear   Int?      @map("report_year")
-  ctaEnabled   Boolean   @default(true) @map("cta_enabled")
-  ctaText      String?   @map("cta_text") @db.VarChar(255)
-  ctaUrl       String?   @map("cta_url") @db.VarChar(255)
-  sortOrder    Int       @default(0) @map("sort_order")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
-
-  // Relations
-  reportType  ReportType   @relation(fields: [reportTypeId], references: [id], onDelete: Cascade)
-  reportItems ReportItem[] @relation("ReportSectionItems")
-
-  @@index([reportTypeId])
-  @@index([reportYear])
-  @@index([sortOrder])
-  @@index([isActive])
-  @@index([deletedAt])
-  @@map("report_sections")
-}
-
-model ReportItem {
-  id              BigInt    @id @default(autoincrement())
-  reportTypeId    BigInt?   @map("report_type_id")
-  reportSectionId BigInt?   @map("report_section_id")
-  title           String    @db.VarChar(255)
-  subDescription  String?   @map("sub_description") @db.Text
-  pdfFile         String?   @map("pdf_file") @db.Text
-  coverImage      String?   @map("cover_image") @db.VarChar(255)
-  dataType        String?   @map("data_type") @db.VarChar(20) // 'Consolidated' or 'Interim'
-  auditStatus     String?   @map("audit_status") @db.VarChar(20) // 'Audited', 'Unaudited', 'Limited Review'
-  fileSize        String?   @map("file_size") @db.VarChar(255)
-  sortOrder       Int       @default(0) @map("sort_order")
-  isActive        Boolean   @default(true) @map("is_active")
-  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime? @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
-
-  // Relations
-  reportType    ReportType?    @relation("ReportTypeItems", fields: [reportTypeId], references: [id], onDelete: Cascade)
-  reportSection ReportSection? @relation("ReportSectionItems", fields: [reportSectionId], references: [id], onDelete: Cascade)
-
-  @@index([reportTypeId])
-  @@index([reportSectionId])
-  @@index([dataType])
-  @@index([auditStatus])
-  @@index([sortOrder])
-  @@index([isActive])
-  @@index([deletedAt])
-  @@map("report_items")
 }

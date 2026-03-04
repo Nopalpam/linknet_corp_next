@@ -6,7 +6,6 @@ import { ManagementQueryParams, ManagementCategoryQueryParams } from '../types/m
 /**
  * Management Controller
  * Handles HTTP requests for Management & ManagementCategory CRUD operations
- * Compatible with MySQL legacy structure
  */
 export class ManagementController {
   // ============================================
@@ -24,11 +23,11 @@ export class ManagementController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
         search: req.query.search as string,
         categoryId: req.query.categoryId as string,
-        dataStatus:
-          req.query.dataStatus !== undefined
-            ? parseInt(req.query.dataStatus as string)
+        is_active:
+          req.query.is_active !== undefined
+            ? req.query.is_active === 'true'
             : undefined,
-        sortBy: (req.query.sortBy as string) || 'dataOrder',
+        sortBy: (req.query.sortBy as string) || 'order',
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc',
       };
 
@@ -109,37 +108,37 @@ export class ManagementController {
     try {
       const {
         name,
-        positionEn,
-        positionId,
-        category,
+        slug,
+        position,
         categoryId,
         photo,
-        bioEn,
-        bioId,
-        dataOrder,
-        dataStatus,
+        description,
+        email,
+        phone,
+        linkedin,
+        order,
+        is_active,
       } = req.body;
 
-      // Validation
       if (!name || name.trim() === '') {
         throw new AppError('Name is required', 400);
       }
-
-      // Get username from auth
-      const createdBy = (req as any).user?.username || null;
+      if (!categoryId) {
+        throw new AppError('Category ID is required', 400);
+      }
 
       const management = await managementService.createManagement({
         name: name.trim(),
-        positionEn: positionEn?.trim(),
-        positionId: positionId?.trim(),
-        category: category?.trim(),
+        slug: slug?.trim(),
+        position: position?.trim(),
         categoryId,
         photo,
-        bioEn: bioEn?.trim(),
-        bioId: bioId?.trim(),
-        dataOrder,
-        dataStatus,
-        createdBy,
+        description: description?.trim(),
+        email: email?.trim(),
+        phone: phone?.trim(),
+        linkedin: linkedin?.trim(),
+        order,
+        is_active,
       });
 
       res.status(201).json({
@@ -161,35 +160,34 @@ export class ManagementController {
       const { id } = req.params;
       const {
         name,
-        positionEn,
-        positionId,
-        category,
+        slug,
+        position,
         categoryId,
         photo,
-        bioEn,
-        bioId,
-        dataOrder,
-        dataStatus,
+        description,
+        email,
+        phone,
+        linkedin,
+        order,
+        is_active,
       } = req.body;
 
       if (!id) {
         throw new AppError('Management ID is required', 400);
       }
 
-      const updatedBy = (req as any).user?.username || null;
-
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
-      if (positionEn !== undefined) updateData.positionEn = positionEn?.trim();
-      if (positionId !== undefined) updateData.positionId = positionId?.trim();
-      if (category !== undefined) updateData.category = category?.trim();
+      if (slug !== undefined) updateData.slug = slug?.trim();
+      if (position !== undefined) updateData.position = position?.trim();
       if (categoryId !== undefined) updateData.categoryId = categoryId;
       if (photo !== undefined) updateData.photo = photo;
-      if (bioEn !== undefined) updateData.bioEn = bioEn?.trim();
-      if (bioId !== undefined) updateData.bioId = bioId?.trim();
-      if (dataOrder !== undefined) updateData.dataOrder = dataOrder;
-      if (dataStatus !== undefined) updateData.dataStatus = dataStatus;
-      updateData.updatedBy = updatedBy;
+      if (description !== undefined) updateData.description = description?.trim();
+      if (email !== undefined) updateData.email = email?.trim();
+      if (phone !== undefined) updateData.phone = phone?.trim();
+      if (linkedin !== undefined) updateData.linkedin = linkedin?.trim();
+      if (order !== undefined) updateData.order = order;
+      if (is_active !== undefined) updateData.is_active = is_active;
 
       const management = await managementService.updateManagement(id, updateData);
 
@@ -250,7 +248,7 @@ export class ManagementController {
   }
 
   /**
-   * Update managements data_order (drag & drop)
+   * Update managements order (drag & drop)
    * POST /cms/managements/update-order
    */
   async updateManagementsOrder(req: Request, res: Response, next: NextFunction) {
@@ -284,15 +282,18 @@ export class ManagementController {
     try {
       const params: ManagementCategoryQueryParams = {
         search: req.query.search as string,
-        status:
-          req.query.status !== undefined
-            ? parseInt(req.query.status as string)
+        is_active:
+          req.query.is_active !== undefined
+            ? req.query.is_active === 'true'
             : undefined,
+        page: req.query.page ? parseInt(req.query.page as string) : undefined,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+        sortBy: req.query.sortBy as string,
+        sortOrder: req.query.sortOrder as 'asc' | 'desc',
       };
 
       const categories = await managementService.getCategories(params);
 
-      // If result has pagination, it's paginated response
       if (Array.isArray(categories)) {
         res.json({
           success: true,
@@ -338,20 +339,18 @@ export class ManagementController {
    */
   async createCategory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, description, order, status } = req.body;
+      const { name, slug, description, position, is_active } = req.body;
 
       if (!name || name.trim() === '') {
         throw new AppError('Name is required', 400);
       }
 
-      const createdBy = (req as any).user?.username || null;
-
       const category = await managementService.createCategory({
         name: name.trim(),
+        slug: slug?.trim(),
         description: description?.trim(),
-        order,
-        status,
-        createdBy,
+        position,
+        is_active,
       });
 
       res.status(201).json({
@@ -371,20 +370,18 @@ export class ManagementController {
   async updateCategory(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { name, description, order, status } = req.body;
+      const { name, slug, description, position, is_active } = req.body;
 
       if (!id) {
         throw new AppError('Category ID is required', 400);
       }
 
-      const updatedBy = (req as any).user?.username || null;
-
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
+      if (slug !== undefined) updateData.slug = slug?.trim();
       if (description !== undefined) updateData.description = description?.trim();
-      if (order !== undefined) updateData.order = order;
-      if (status !== undefined) updateData.status = status;
-      updateData.updatedBy = updatedBy;
+      if (position !== undefined) updateData.position = position;
+      if (is_active !== undefined) updateData.is_active = is_active;
 
       const category = await managementService.updateCategory(id, updateData);
 

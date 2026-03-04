@@ -104,30 +104,6 @@ router.post(
 );
 
 /**
- * @route   GET /cms/report-types/:id/grid-items
- * @desc    Get grid items for a report type
- * @access  Private
- */
-router.get(
-  '/cms/report-types/:id/grid-items',
-  authMiddleware,
-  requirePermission('reports.read'),
-  reportController.getReportTypeGridItems.bind(reportController)
-);
-
-/**
- * @route   POST /cms/report-types/:id/grid-items/update-order
- * @desc    Reorder grid items within a report type
- * @access  Private
- */
-router.post(
-  '/cms/report-types/:id/grid-items/update-order',
-  authMiddleware,
-  requirePermission('reports.update'),
-  reportController.updateGridItemsOrder.bind(reportController)
-);
-
-/**
  * @route   GET /cms/report-types
  * @desc    Get report types with pagination
  * @access  Private

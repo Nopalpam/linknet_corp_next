@@ -1,6 +1,6 @@
 /**
  * Management Module DTOs and Types
- * Compatible with MySQL legacy structure (BigInt IDs, bilingual fields)
+ * Matches actual DB: management_categories + managements tables
  */
 
 // ============================================
@@ -11,25 +11,23 @@ export interface CreateManagementCategoryDTO {
   name: string;
   slug?: string;
   description?: string;
-  order?: number;
-  status?: number; // 1 = active, 0 = inactive
-  createdBy?: string;
+  position?: number;
+  is_active?: boolean;
 }
 
 export interface UpdateManagementCategoryDTO {
   name?: string;
   slug?: string;
   description?: string;
-  order?: number;
-  status?: number;
-  updatedBy?: string;
+  position?: number;
+  is_active?: boolean;
 }
 
 export interface ManagementCategoryQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: number;
+  is_active?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -39,31 +37,31 @@ export interface ManagementCategoryQueryParams {
 // ============================================
 
 export interface CreateManagementDTO {
+  categoryId: string;
   name: string;
-  positionEn?: string;
-  positionId?: string;
-  category?: string;
-  categoryId?: bigint | number | string;
+  slug?: string;
+  position?: string;
+  description?: string;
   photo?: string;
-  bioEn?: string;
-  bioId?: string;
-  dataOrder?: number;
-  dataStatus?: number; // 1 = active, 0 = inactive
-  createdBy?: string;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  order?: number;
+  is_active?: boolean;
 }
 
 export interface UpdateManagementDTO {
+  categoryId?: string;
   name?: string;
-  positionEn?: string;
-  positionId?: string;
-  category?: string;
-  categoryId?: bigint | number | string;
+  slug?: string;
+  position?: string;
+  description?: string;
   photo?: string;
-  bioEn?: string;
-  bioId?: string;
-  dataOrder?: number;
-  dataStatus?: number;
-  updatedBy?: string;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  order?: number;
+  is_active?: boolean;
 }
 
 export interface ManagementQueryParams {
@@ -71,7 +69,7 @@ export interface ManagementQueryParams {
   limit?: number;
   search?: string;
   categoryId?: string;
-  dataStatus?: number;
+  is_active?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }

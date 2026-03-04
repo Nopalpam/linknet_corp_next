@@ -12,23 +12,6 @@ import {
 const prisma = new PrismaClient();
 
 /**
- * Helper: serialize BigInt fields to string for JSON responses
- */
-function serializeBigInt(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'bigint') return obj.toString();
-  if (Array.isArray(obj)) return obj.map(serializeBigInt);
-  if (typeof obj === 'object') {
-    const result: any = {};
-    for (const key in obj) {
-      result[key] = serializeBigInt(obj[key]);
-    }
-    return result;
-  }
-  return obj;
-}
-
-/**
  * Helper: generate slug from string
  */
 function generateSlug(text: string): string {
@@ -40,8 +23,9 @@ function generateSlug(text: string): string {
 
 /**
  * Management Service
- * Handles business logic for Management CRUD operations
- * Compatible with MySQL legacy structure
+ * Uses actual DB schema:
+ *   management_categories: id(text), name, slug, description, position(int), is_active(bool), created_at, updated_at, deleted_at
+ *   managements: id(text), category_id(text), name, slug, position(text), description, photo, email, phone, linkedin, order(int), is_active(bool), created_at, updated_at, deleted_at
  */
 export class ManagementService {
   // ============================================
@@ -57,47 +41,31 @@ export class ManagementService {
       limit = 10,
       search,
       categoryId,
-      dataStatus,
-      sortBy = 'dataOrder',
+      is_active,
+      sortBy = 'order',
       sortOrder = 'asc',
     } = params;
 
     const skip = (page - 1) * limit;
-
-    // Build where clause
-    const where: any = {};
+    const where: any = { deleted_at: null };
 
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { positionEn: { contains: search, mode: 'insensitive' } },
-        { positionId: { contains: search, mode: 'insensitive' } },
+        { position: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (categoryId) where.categoryId = categoryId;
+    if (is_active !== undefined) where.is_active = is_active;
 
-    if (categoryId) {
-      where.categoryId = BigInt(categoryId);
-    }
-
-    if (dataStatus !== undefined) {
-      where.dataStatus = dataStatus;
-    }
-
-    // Map sortBy to correct field names
-    const sortField = sortBy === 'data_order' ? 'dataOrder' : sortBy;
+    const validSortFields = ['order', 'name', 'created_at', 'updated_at'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'order';
 
     const [managements, total] = await Promise.all([
       prisma.management.findMany({
         where,
-        include: {
-          managementCategory: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
+        include: { managementCategory: { select: { id: true, name: true, slug: true } } },
         skip,
         take: limit,
         orderBy: { [sortField]: sortOrder },
@@ -106,7 +74,7 @@ export class ManagementService {
     ]);
 
     return {
-      data: serializeBigInt(managements),
+      data: managements,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -120,195 +88,133 @@ export class ManagementService {
    * Get active managements (Public)
    */
   async getActiveManagements(categoryId?: string) {
-    const where: any = {
-      dataStatus: 1,
-    };
-
-    if (categoryId) {
-      where.categoryId = BigInt(categoryId);
-    }
-
-    const managements = await prisma.management.findMany({
+    const where: any = { is_active: true, deleted_at: null };
+    if (categoryId) where.categoryId = categoryId;
+    return prisma.management.findMany({
       where,
-      include: {
-        managementCategory: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
-      orderBy: { dataOrder: 'asc' },
+      include: { managementCategory: { select: { id: true, name: true, slug: true } } },
+      orderBy: { order: 'asc' },
     });
-
-    return serializeBigInt(managements);
   }
 
   /**
    * Get managements grouped by category (Public)
    */
   async getManagementsByCategory() {
-    const categories = await prisma.managementCategory.findMany({
-      where: {
-        status: 1,
-      },
+    return prisma.managementCategory.findMany({
+      where: { is_active: true, deleted_at: null },
       include: {
-        managements: {
-          where: {
-            dataStatus: 1,
-          },
-          orderBy: { dataOrder: 'asc' },
-        },
+        managements: { where: { is_active: true, deleted_at: null }, orderBy: { order: 'asc' } },
       },
-      orderBy: { order: 'asc' },
+      orderBy: { position: 'asc' },
     });
-
-    return serializeBigInt(categories);
   }
 
   /**
    * Get single management by ID
    */
   async getManagementById(id: string) {
-    const management = await prisma.management.findUnique({
-      where: { id: BigInt(id) },
-      include: {
-        managementCategory: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+    const management = await prisma.management.findFirst({
+      where: { id, deleted_at: null },
+      include: { managementCategory: { select: { id: true, name: true, slug: true } } },
     });
-
-    if (!management) {
-      throw new AppError('Management not found', 404);
-    }
-
-    return serializeBigInt(management);
+    if (!management) throw new AppError('Management not found', 404);
+    return management;
   }
 
   /**
    * Create new management
    */
   async createManagement(data: CreateManagementDTO) {
-    // Validate category exists if categoryId provided
-    if (data.categoryId) {
-      const category = await prisma.managementCategory.findUnique({
-        where: { id: BigInt(data.categoryId as any) },
-      });
-      if (!category) {
-        throw new AppError('Category not found', 404);
-      }
-    }
-
-    // Get max data_order if not provided
-    let dataOrder = data.dataOrder ?? null;
-    if (dataOrder === null || dataOrder === undefined) {
-      const maxOrder = await prisma.management.aggregate({
-        where: data.categoryId ? { categoryId: BigInt(data.categoryId as any) } : {},
-        _max: { dataOrder: true },
-      });
-      dataOrder = (maxOrder._max?.dataOrder || 0) + 1;
-    }
-
-    const management = await prisma.management.create({
-      data: {
-        name: data.name,
-        positionEn: data.positionEn || null,
-        positionId: data.positionId || null,
-        category: data.category || null,
-        categoryId: data.categoryId ? BigInt(data.categoryId as any) : null,
-        photo: data.photo || null,
-        bioEn: data.bioEn || null,
-        bioId: data.bioId || null,
-        dataOrder,
-        dataStatus: data.dataStatus ?? 1,
-        createdBy: data.createdBy || null,
-      },
-      include: {
-        managementCategory: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+    const category = await prisma.managementCategory.findFirst({
+      where: { id: data.categoryId, deleted_at: null },
     });
+    if (!category) throw new AppError('Category not found', 404);
 
-    return serializeBigInt(management);
+    const baseSlug = data.slug || generateSlug(data.name);
+    let slug = baseSlug;
+    let counter = 1;
+    while (await prisma.management.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter++}`;
+    }
+
+    let order = data.order;
+    if (order === undefined || order === null) {
+      const maxOrder = await prisma.management.aggregate({
+        where: { categoryId: data.categoryId, deleted_at: null },
+        _max: { order: true },
+      });
+      order = (maxOrder._max?.order ?? 0) + 1;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { randomUUID } = require('crypto');
+    return prisma.management.create({
+      data: {
+        id: randomUUID(),
+        categoryId: data.categoryId,
+        name: data.name,
+        slug,
+        position: data.position || '',
+        description: data.description || null,
+        photo: data.photo || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        linkedin: data.linkedin || null,
+        order,
+        is_active: data.is_active ?? true,
+      },
+      include: { managementCategory: { select: { id: true, name: true, slug: true } } },
+    });
   }
 
   /**
    * Update management
    */
   async updateManagement(id: string, data: UpdateManagementDTO) {
-    const existing = await prisma.management.findUnique({
-      where: { id: BigInt(id) },
-    });
-    if (!existing) {
-      throw new AppError('Management not found', 404);
+    const existing = await prisma.management.findFirst({ where: { id, deleted_at: null } });
+    if (!existing) throw new AppError('Management not found', 404);
+
+    if (data.categoryId) {
+      const cat = await prisma.managementCategory.findFirst({ where: { id: data.categoryId, deleted_at: null } });
+      if (!cat) throw new AppError('Category not found', 404);
     }
 
-    // Validate category if provided
-    if (data.categoryId) {
-      const category = await prisma.managementCategory.findUnique({
-        where: { id: BigInt(data.categoryId as any) },
-      });
-      if (!category) {
-        throw new AppError('Category not found', 404);
+    let slug = existing.slug;
+    if (data.name && data.name !== existing.name) {
+      const baseSlug = data.slug || generateSlug(data.name);
+      slug = baseSlug;
+      let counter = 1;
+      while (await prisma.management.findFirst({ where: { slug, id: { not: id } } })) {
+        slug = `${baseSlug}-${counter++}`;
       }
     }
 
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.positionEn !== undefined) updateData.positionEn = data.positionEn;
-    if (data.positionId !== undefined) updateData.positionId = data.positionId;
-    if (data.category !== undefined) updateData.category = data.category;
-    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId ? BigInt(data.categoryId as any) : null;
-    if (data.photo !== undefined) updateData.photo = data.photo;
-    if (data.bioEn !== undefined) updateData.bioEn = data.bioEn;
-    if (data.bioId !== undefined) updateData.bioId = data.bioId;
-    if (data.dataOrder !== undefined) updateData.dataOrder = data.dataOrder;
-    if (data.dataStatus !== undefined) updateData.dataStatus = data.dataStatus;
-    if (data.updatedBy !== undefined) updateData.updatedBy = data.updatedBy;
-
-    const management = await prisma.management.update({
-      where: { id: BigInt(id) },
-      data: updateData,
-      include: {
-        managementCategory: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
+    return prisma.management.update({
+      where: { id },
+      data: {
+        ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+        ...(data.name !== undefined && { name: data.name, slug }),
+        ...(data.position !== undefined && { position: data.position }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.photo !== undefined && { photo: data.photo }),
+        ...(data.email !== undefined && { email: data.email }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.linkedin !== undefined && { linkedin: data.linkedin }),
+        ...(data.order !== undefined && { order: data.order }),
+        ...(data.is_active !== undefined && { is_active: data.is_active }),
       },
+      include: { managementCategory: { select: { id: true, name: true, slug: true } } },
     });
-
-    return serializeBigInt(management);
   }
 
   /**
    * Delete management (hard delete to match MySQL behavior)
    */
   async deleteManagement(id: string) {
-    const existing = await prisma.management.findUnique({
-      where: { id: BigInt(id) },
-    });
-    if (!existing) {
-      throw new AppError('Management not found', 404);
-    }
-
-    await prisma.management.delete({
-      where: { id: BigInt(id) },
-    });
-
+    const existing = await prisma.management.findFirst({ where: { id, deleted_at: null } });
+    if (!existing) throw new AppError('Management not found', 404);
+    await prisma.management.update({ where: { id }, data: { deleted_at: new Date() } });
     return { message: 'Management deleted successfully' };
   }
 
@@ -316,30 +222,18 @@ export class ManagementService {
    * Bulk delete managements
    */
   async bulkDeleteManagements(ids: string[]) {
-    if (!ids || ids.length === 0) {
-      throw new AppError('No IDs provided', 400);
-    }
-
-    await prisma.management.deleteMany({
-      where: { id: { in: ids.map((id) => BigInt(id)) } },
-    });
-
+    if (!ids?.length) throw new AppError('No IDs provided', 400);
+    await prisma.management.updateMany({ where: { id: { in: ids } }, data: { deleted_at: new Date() } });
     return { message: `${ids.length} managements deleted successfully` };
   }
 
   /**
    * Update managements data_order (for drag & drop sorting)
    */
-  async updateManagementsOrder(updates: { id: string; dataOrder: number }[]) {
+  async updateManagementsOrder(updates: { id: string; order: number }[]) {
     await Promise.all(
-      updates.map(({ id, dataOrder }) =>
-        prisma.management.update({
-          where: { id: BigInt(id) },
-          data: { dataOrder },
-        })
-      )
+      updates.map(({ id, order }) => prisma.management.update({ where: { id }, data: { order } }))
     );
-
     return { message: 'Order updated successfully' };
   }
 
@@ -351,60 +245,41 @@ export class ManagementService {
    * Get all management categories with optional pagination
    */
   async getCategories(params?: ManagementCategoryQueryParams) {
-    // If no params, return all ordered by order
-    if (!params || (!params.page && !params.limit)) {
-      const categories = await prisma.managementCategory.findMany({
-        where: params?.status !== undefined ? { status: params.status } : {},
-        include: {
-          _count: {
-            select: { managements: true },
-          },
-        },
-        orderBy: { order: 'asc' },
-      });
-      return serializeBigInt(categories);
-    }
-
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      status,
-      sortBy = 'order',
-      sortOrder = 'asc',
-    } = params;
-
-    const skip = (page - 1) * limit;
-    const where: any = {};
-
-    if (search) {
+    const where: any = { deleted_at: null };
+    if (params?.is_active !== undefined) where.is_active = params.is_active;
+    if (params?.search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { slug: { contains: search, mode: 'insensitive' } },
+        { name: { contains: params.search, mode: 'insensitive' } },
+        { slug: { contains: params.search, mode: 'insensitive' } },
       ];
     }
 
-    if (status !== undefined) {
-      where.status = status;
+    if (!params || (!params.page && !params.limit)) {
+      return prisma.managementCategory.findMany({
+        where,
+        include: { _count: { select: { managements: true } } },
+        orderBy: { position: 'asc' },
+      });
     }
+
+    const { page = 1, limit = 10, sortBy = 'position', sortOrder = 'asc' } = params;
+    const skip = (page - 1) * limit;
+    const validSortFields = ['position', 'name', 'created_at'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'position';
 
     const [categories, total] = await Promise.all([
       prisma.managementCategory.findMany({
         where,
-        include: {
-          _count: {
-            select: { managements: true },
-          },
-        },
+        include: { _count: { select: { managements: true } } },
         skip,
         take: limit,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { [sortField]: sortOrder },
       }),
       prisma.managementCategory.count({ where }),
     ]);
 
     return {
-      data: serializeBigInt(categories),
+      data: categories,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -418,143 +293,88 @@ export class ManagementService {
    * Get single category by ID
    */
   async getCategoryById(id: string) {
-    const category = await prisma.managementCategory.findUnique({
-      where: { id: BigInt(id) },
+    const category = await prisma.managementCategory.findFirst({
+      where: { id, deleted_at: null },
       include: {
-        managements: {
-          orderBy: { dataOrder: 'asc' },
-        },
-        _count: {
-          select: { managements: true },
-        },
+        managements: { where: { deleted_at: null }, orderBy: { order: 'asc' } },
+        _count: { select: { managements: true } },
       },
     });
-
-    if (!category) {
-      throw new AppError('Category not found', 404);
-    }
-
-    return serializeBigInt(category);
+    if (!category) throw new AppError('Category not found', 404);
+    return category;
   }
 
   /**
    * Create new category
    */
   async createCategory(data: CreateManagementCategoryDTO) {
-    // Generate slug from name
     const slug = data.slug || generateSlug(data.name);
+    const existing = await prisma.managementCategory.findUnique({ where: { slug } });
+    if (existing) throw new AppError('Category with similar name already exists', 400);
 
-    // Check if slug exists
-    const existing = await prisma.managementCategory.findUnique({
-      where: { slug },
-    });
-    if (existing) {
-      throw new AppError('Category with similar name already exists', 400);
-    }
-
-    // Get max order if not provided
-    let order = data.order ?? null;
-    if (order === null || order === undefined) {
-      const maxOrder = await prisma.managementCategory.aggregate({
-        _max: { order: true },
+    let position = data.position;
+    if (position === undefined || position === null) {
+      const maxPos = await prisma.managementCategory.aggregate({
+        where: { deleted_at: null },
+        _max: { position: true },
       });
-      order = (maxOrder._max?.order || 0) + 1;
+      position = (maxPos._max?.position ?? 0) + 1;
     }
 
-    const category = await prisma.managementCategory.create({
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { randomUUID } = require('crypto');
+    return prisma.managementCategory.create({
       data: {
+        id: randomUUID(),
         name: data.name,
         slug,
         description: data.description || null,
-        order,
-        status: data.status ?? 1,
-        createdBy: data.createdBy || null,
+        position,
+        is_active: data.is_active ?? true,
       },
-      include: {
-        _count: {
-          select: { managements: true },
-        },
-      },
+      include: { _count: { select: { managements: true } } },
     });
-
-    return serializeBigInt(category);
   }
 
   /**
    * Update category
    */
   async updateCategory(id: string, data: UpdateManagementCategoryDTO) {
-    const existing = await prisma.managementCategory.findUnique({
-      where: { id: BigInt(id) },
-    });
-    if (!existing) {
-      throw new AppError('Category not found', 404);
-    }
+    const existing = await prisma.managementCategory.findFirst({ where: { id, deleted_at: null } });
+    if (!existing) throw new AppError('Category not found', 404);
 
-    // Generate new slug if name is updated
     let slug = existing.slug;
     if (data.name && data.name !== existing.name) {
       slug = data.slug || generateSlug(data.name);
-
-      const slugExists = await prisma.managementCategory.findFirst({
-        where: {
-          slug,
-          id: { not: BigInt(id) },
-        },
-      });
-      if (slugExists) {
-        throw new AppError('Category with similar name already exists', 400);
-      }
+      const slugExists = await prisma.managementCategory.findFirst({ where: { slug, id: { not: id }, deleted_at: null } });
+      if (slugExists) throw new AppError('Category with similar name already exists', 400);
     }
 
-    const updateData: any = { slug };
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.order !== undefined) updateData.order = data.order;
-    if (data.status !== undefined) updateData.status = data.status;
-    if (data.updatedBy !== undefined) updateData.updatedBy = data.updatedBy;
-
-    const category = await prisma.managementCategory.update({
-      where: { id: BigInt(id) },
-      data: updateData,
-      include: {
-        _count: {
-          select: { managements: true },
-        },
+    return prisma.managementCategory.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name, slug }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.position !== undefined && { position: data.position }),
+        ...(data.is_active !== undefined && { is_active: data.is_active }),
       },
+      include: { _count: { select: { managements: true } } },
     });
-
-    return serializeBigInt(category);
   }
 
   /**
    * Delete category
    */
   async deleteCategory(id: string) {
-    const existing = await prisma.managementCategory.findUnique({
-      where: { id: BigInt(id) },
-      include: {
-        _count: {
-          select: { managements: true },
-        },
-      },
+    const existing = await prisma.managementCategory.findFirst({
+      where: { id, deleted_at: null },
+      include: { _count: { select: { managements: { where: { deleted_at: null } } } } },
     });
-
-    if (!existing) {
-      throw new AppError('Category not found', 404);
-    }
-
+    if (!existing) throw new AppError('Category not found', 404);
     if (existing._count.managements > 0) {
-      throw new AppError(
-        'Cannot delete category with existing managements. Delete all management data first.',
-        400
-      );
+      throw new AppError('Cannot delete category with existing members. Delete all members first.', 400);
     }
-
-    await prisma.managementCategory.delete({
-      where: { id: BigInt(id) },
-    });
-
+    await prisma.managementCategory.update({ where: { id }, data: { deleted_at: new Date() } });
     return { message: 'Category deleted successfully' };
   }
 
@@ -564,13 +384,9 @@ export class ManagementService {
   async updateCategoriesOrder(updates: { id: string; order: number }[]) {
     await Promise.all(
       updates.map(({ id, order }) =>
-        prisma.managementCategory.update({
-          where: { id: BigInt(id) },
-          data: { order },
-        })
+        prisma.managementCategory.update({ where: { id }, data: { position: order } })
       )
     );
-
     return { message: 'Category order updated successfully' };
   }
 }

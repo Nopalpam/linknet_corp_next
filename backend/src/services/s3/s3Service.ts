@@ -30,6 +30,7 @@ import {
   ListObjectsV2Command,
   CopyObjectCommand,
   GetObjectCommand,
+  type _Object,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -231,7 +232,7 @@ class S3Service {
       });
 
       if (onProgress) {
-        upload.on('httpUploadProgress', (progress) => {
+        upload.on('httpUploadProgress', (progress: { loaded?: number; total?: number }) => {
           onProgress({
             loaded: progress.loaded || 0,
             total: buffer.length,
@@ -580,7 +581,7 @@ class S3Service {
 
       const response = await client.send(command);
 
-      const files: S3FileInfo[] = (response.Contents || []).map((item) => ({
+      const files: S3FileInfo[] = (response.Contents || []).map((item: _Object) => ({
         key: item.Key || '',
         size: item.Size || 0,
         lastModified: item.LastModified,

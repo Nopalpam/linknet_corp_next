@@ -95,13 +95,29 @@ export class BaseCrudService<T> {
       ...options.headers,
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (networkError: any) {
+      console.error('❌ [BaseCrud] Network error:', {
+        url,
+        message: networkError?.message || 'Unknown network error',
+      });
+      throw new Error(
+        `Cannot connect to server. Please make sure the backend is running. (${networkError?.message || 'Network error'})`
+      );
+    }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
+      let error: any = { message: `HTTP error! status: ${response.status}` };
+      try {
+        error = await response.json();
+      } catch (_parseError) {
+        // Response body is not valid JSON, use default error
+      }
       console.error('❌ [BaseCrud] Request failed:', {
         url,
         status: response.status,

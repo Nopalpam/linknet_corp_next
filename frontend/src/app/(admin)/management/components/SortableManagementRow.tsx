@@ -79,14 +79,7 @@ export function SortableManagementRow({
       {/* Position EN */}
       <td className="px-4 py-3">
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          {management.positionEn || "-"}
-        </span>
-      </td>
-
-      {/* Position ID */}
-      <td className="px-4 py-3">
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          {management.positionId || "-"}
+          {management.position || "-"}
         </span>
       </td>
 
@@ -94,12 +87,12 @@ export function SortableManagementRow({
       <td className="px-4 py-3 text-center">
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            management.dataStatus === 1
+            management.is_active
               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
               : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
           }`}
         >
-          {management.dataStatus === 1 ? "Active" : "Inactive"}
+          {management.is_active ? "Active" : "Inactive"}
         </span>
       </td>
 

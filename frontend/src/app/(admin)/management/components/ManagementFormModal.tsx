@@ -29,13 +29,13 @@ export default function ManagementFormModal({
 }: ManagementFormModalProps) {
   const [formData, setFormData] = useState({
     name: "",
-    positionEn: "",
-    positionId: "",
-    category: "",
+    position: "",
     photo: "",
-    bioEn: "",
-    bioId: "",
-    dataStatus: 1,
+    description: "",
+    email: "",
+    phone: "",
+    linkedin: "",
+    is_active: true,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,24 +45,24 @@ export default function ManagementFormModal({
     if (mode === "edit" && management) {
       setFormData({
         name: management.name || "",
-        positionEn: management.positionEn || "",
-        positionId: management.positionId || "",
-        category: management.category || "",
+        position: management.position || "",
         photo: management.photo || "",
-        bioEn: management.bioEn || "",
-        bioId: management.bioId || "",
-        dataStatus: management.dataStatus ?? 1,
+        description: management.description || "",
+        email: management.email || "",
+        phone: management.phone || "",
+        linkedin: management.linkedin || "",
+        is_active: management.is_active ?? true,
       });
     } else {
       setFormData({
         name: "",
-        positionEn: "",
-        positionId: "",
-        category: "",
+        position: "",
         photo: "",
-        bioEn: "",
-        bioId: "",
-        dataStatus: 1,
+        description: "",
+        email: "",
+        phone: "",
+        linkedin: "",
+        is_active: true,
       });
     }
     setErrors({});
@@ -85,14 +85,14 @@ export default function ManagementFormModal({
     try {
       const payload: CreateManagementData = {
         name: formData.name.trim(),
-        positionEn: formData.positionEn.trim() || undefined,
-        positionId: formData.positionId.trim() || undefined,
-        category: formData.category.trim() || undefined,
+        position: formData.position.trim() || undefined,
         categoryId,
         photo: formData.photo.trim() || undefined,
-        bioEn: formData.bioEn.trim() || undefined,
-        bioId: formData.bioId.trim() || undefined,
-        dataStatus: formData.dataStatus,
+        description: formData.description.trim() || undefined,
+        email: formData.email.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        linkedin: formData.linkedin.trim() || undefined,
+        is_active: formData.is_active,
       };
 
       if (mode === "create") {
@@ -146,9 +146,7 @@ export default function ManagementFormModal({
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 dark:bg-gray-800 dark:text-white ${
                   errors.name
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -161,100 +159,88 @@ export default function ManagementFormModal({
               )}
             </div>
 
-            {/* Position EN */}
-            <div>
+            {/* Position */}
+            <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Position (English)
+                Position / Job Title
               </label>
               <input
                 type="text"
-                value={formData.positionEn}
-                onChange={(e) =>
-                  setFormData({ ...formData, positionEn: e.target.value })
-                }
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 placeholder="e.g. Chief Executive Officer"
               />
             </div>
 
-            {/* Position ID */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Position (Indonesian)
-              </label>
-              <input
-                type="text"
-                value={formData.positionId}
-                onChange={(e) =>
-                  setFormData({ ...formData, positionId: e.target.value })
-                }
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="e.g. Direktur Utama"
-              />
-            </div>
-
-            {/* Category Label (varchar from MySQL) */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Category Label
-              </label>
-              <input
-                type="text"
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="Optional text label"
-              />
-            </div>
-
             {/* Photo URL */}
-            <div>
+            <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Photo URL
               </label>
               <input
                 type="url"
                 value={formData.photo}
-                onChange={(e) =>
-                  setFormData({ ...formData, photo: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 placeholder="https://example.com/photo.jpg"
               />
             </div>
+
+            {/* Email */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="email@example.com"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Phone
+              </label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="+62 xxx-xxxx-xxxx"
+              />
+            </div>
+
+            {/* LinkedIn */}
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                LinkedIn URL
+              </label>
+              <input
+                type="url"
+                value={formData.linkedin}
+                onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
           </div>
 
-          {/* Bio EN */}
+          {/* Description */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Bio (English)
+              Description / Bio
             </label>
             <textarea
-              value={formData.bioEn}
-              onChange={(e) =>
-                setFormData({ ...formData, bioEn: e.target.value })
-              }
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              placeholder="Brief biography in English..."
-            />
-          </div>
-
-          {/* Bio ID */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Bio (Indonesian)
-            </label>
-            <textarea
-              value={formData.bioId}
-              onChange={(e) =>
-                setFormData({ ...formData, bioId: e.target.value })
-              }
-              rows={4}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              placeholder="Brief biography in Indonesian..."
+              placeholder="Brief biography..."
             />
           </div>
 
@@ -264,17 +250,12 @@ export default function ManagementFormModal({
               Status
             </label>
             <select
-              value={formData.dataStatus}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  dataStatus: parseInt(e.target.value),
-                })
-              }
+              value={formData.is_active ? "true" : "false"}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.value === "true" })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
-              <option value={1}>Active</option>
-              <option value={0}>Inactive</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
             </select>
           </div>
 
@@ -294,24 +275,9 @@ export default function ManagementFormModal({
               className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {loading && (
-                <svg
-                  className="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
+                <svg className="-ml-1 mr-2 h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
               )}
               {mode === "create" ? "Create Member" : "Update Member"}

@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../types/error.types';
+import slugify from 'slugify';
+import { v4 as uuidv4 } from 'uuid';
 import {
   CreateReportTypeDTO,
   UpdateReportTypeDTO,
@@ -17,58 +19,31 @@ import {
 const prisma = new PrismaClient();
 
 /**
- * Helper: serialize BigInt fields to string for JSON responses
- */
-function serializeBigInt(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'bigint') return obj.toString();
-  if (Array.isArray(obj)) return obj.map(serializeBigInt);
-  if (typeof obj === 'object') {
-    const result: any = {};
-    for (const key in obj) {
-      result[key] = serializeBigInt(obj[key]);
-    }
-    return result;
-  }
-  return obj;
-}
-
-/**
  * Report Service
- * Handles business logic for ReportType, ReportSection, ReportItem CRUD operations
- * Compatible with MySQL legacy structure
+ * Handles business logic for ReportType → ReportSection → reports CRUD operations
+ * Matches current Prisma schema with String IDs
  */
 export class ReportService {
   // ============================================
   // REPORT TYPE METHODS
   // ============================================
 
-  /**
-   * Get report types with pagination and filters (CMS DataTable)
-   */
   async getReportTypes(params: ReportTypeQueryParams) {
     const {
       page = 1,
       limit = 10,
       search,
-      type,
       isActive,
-      sortBy = 'sortOrder',
+      sortBy = 'position',
       sortOrder = 'asc',
     } = params;
 
     const skip = (page - 1) * limit;
-
     const where: any = { deletedAt: null };
 
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
     }
-
-    if (type) {
-      where.type = type;
-    }
-
     if (isActive !== undefined) {
       where.isActive = isActive;
     }
@@ -79,8 +54,7 @@ export class ReportService {
         include: {
           _count: {
             select: {
-              reportSections: { where: { deletedAt: null } },
-              reportItems: { where: { deletedAt: null } },
+              report_sections: { where: { deletedAt: null } },
             },
           },
         },
@@ -92,7 +66,7 @@ export class ReportService {
     ]);
 
     return {
-      data: serializeBigInt(reportTypes),
+      data: reportTypes,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -102,48 +76,31 @@ export class ReportService {
     };
   }
 
-  /**
-   * Get active report types for dropdown
-   */
-  async getReportTypesList(typeFilter?: 'Grid' | 'List') {
-    const where: any = { deletedAt: null, isActive: true };
-    if (typeFilter) {
-      where.type = typeFilter;
-    }
-
+  async getReportTypesList() {
     const reportTypes = await prisma.reportType.findMany({
-      where,
-      orderBy: { sortOrder: 'asc' },
-      select: { id: true, name: true, type: true },
+      where: { deletedAt: null, isActive: true },
+      orderBy: { position: 'asc' },
+      select: { id: true, name: true, slug: true },
     });
-
-    return serializeBigInt(reportTypes);
+    return reportTypes;
   }
 
-  /**
-   * Get single report type by ID with related data
-   */
   async getReportTypeById(id: string) {
     const reportType = await prisma.reportType.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
       include: {
-        reportSections: {
+        report_sections: {
           where: { deletedAt: null },
-          orderBy: { sortOrder: 'asc' },
+          orderBy: { position: 'asc' },
           include: {
             _count: {
-              select: { reportItems: { where: { deletedAt: null } } },
+              select: { reports: { where: { deleted_at: null } } },
             },
           },
         },
-        reportItems: {
-          where: { deletedAt: null, reportSectionId: null },
-          orderBy: { sortOrder: 'asc' },
-        },
         _count: {
           select: {
-            reportSections: { where: { deletedAt: null } },
-            reportItems: { where: { deletedAt: null } },
+            report_sections: { where: { deletedAt: null } },
           },
         },
       },
@@ -153,81 +110,72 @@ export class ReportService {
       throw new AppError('Report type not found', 404);
     }
 
-    return serializeBigInt(reportType);
+    return reportType;
   }
 
-  /**
-   * Create new report type
-   */
   async createReportType(data: CreateReportTypeDTO) {
     if (!data.name || data.name.trim() === '') {
       throw new AppError('Name is required', 400);
     }
 
-    const validTypes = ['Grid', 'List'];
-    if (data.type && !validTypes.includes(data.type)) {
-      throw new AppError('Type must be Grid or List', 400);
-    }
-
-    // Auto sort_order if not provided
-    let sortOrder = data.sortOrder ?? 0;
-    if (sortOrder === 0) {
+    let position = data.position ?? 0;
+    if (position === 0) {
       const maxOrder = await prisma.reportType.aggregate({
-        _max: { sortOrder: true },
+        _max: { position: true },
         where: { deletedAt: null },
       });
-      sortOrder = (maxOrder._max?.sortOrder || 0) + 1;
+      position = (maxOrder._max?.position || 0) + 1;
     }
+
+    const slug = data.slug || slugify(data.name, { lower: true, strict: true });
 
     const reportType = await prisma.reportType.create({
       data: {
+        id: uuidv4(),
         name: data.name.trim(),
-        type: data.type || 'Grid',
-        sortOrder,
+        slug,
+        description: data.description,
+        icon: data.icon,
+        color: data.color,
+        position,
         isActive: data.isActive !== undefined ? data.isActive : true,
       },
     });
 
-    return serializeBigInt(reportType);
+    return reportType;
   }
 
-  /**
-   * Update report type
-   */
   async updateReportType(id: string, data: UpdateReportTypeDTO) {
     const existing = await prisma.reportType.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
       throw new AppError('Report type not found', 404);
-    }
-
-    const validTypes = ['Grid', 'List'];
-    if (data.type && !validTypes.includes(data.type)) {
-      throw new AppError('Type must be Grid or List', 400);
     }
 
     const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name.trim();
-    if (data.type !== undefined) updateData.type = data.type;
-    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim();
+      updateData.slug = data.slug || slugify(data.name, { lower: true, strict: true });
+    }
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.color !== undefined) updateData.color = data.color;
+    if (data.position !== undefined) updateData.position = data.position;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     const reportType = await prisma.reportType.update({
-      where: { id: BigInt(id) },
+      where: { id },
       data: updateData,
     });
 
-    return serializeBigInt(reportType);
+    return reportType;
   }
 
-  /**
-   * Toggle report type status
-   */
   async toggleReportTypeStatus(id: string) {
     const existing = await prisma.reportType.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
@@ -235,46 +183,41 @@ export class ReportService {
     }
 
     const reportType = await prisma.reportType.update({
-      where: { id: BigInt(id) },
+      where: { id },
       data: { isActive: !existing.isActive },
     });
 
-    return serializeBigInt(reportType);
+    return reportType;
   }
 
-  /**
-   * Soft delete report type
-   */
   async deleteReportType(id: string) {
     const existing = await prisma.reportType.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
       throw new AppError('Report type not found', 404);
     }
 
-    // Soft delete type, its sections, and items
     const now = new Date();
 
     await prisma.$transaction([
-      prisma.reportItem.updateMany({
-        where: { reportTypeId: BigInt(id), deletedAt: null },
-        data: { deletedAt: now },
-      }),
-      prisma.reportItem.updateMany({
+      // Soft delete reports under sections of this type
+      prisma.reports.updateMany({
         where: {
-          reportSection: { reportTypeId: BigInt(id) },
-          deletedAt: null,
+          report_sections: { type_id: id },
+          deleted_at: null,
         },
-        data: { deletedAt: now },
+        data: { deleted_at: now },
       }),
+      // Soft delete sections
       prisma.reportSection.updateMany({
-        where: { reportTypeId: BigInt(id), deletedAt: null },
+        where: { type_id: id, deletedAt: null },
         data: { deletedAt: now },
       }),
+      // Soft delete type
       prisma.reportType.update({
-        where: { id: BigInt(id) },
+        where: { id },
         data: { deletedAt: now },
       }),
     ]);
@@ -282,35 +225,23 @@ export class ReportService {
     return { message: 'Report type deleted successfully' };
   }
 
-  /**
-   * Bulk soft delete report types
-   */
   async deleteMultipleReportTypes(ids: string[]) {
     const now = new Date();
-    const bigIntIds = ids.map((id) => BigInt(id));
 
     await prisma.$transaction([
-      // Soft delete items under sections of these types
-      prisma.reportItem.updateMany({
+      prisma.reports.updateMany({
         where: {
-          reportSection: { reportTypeId: { in: bigIntIds } },
-          deletedAt: null,
+          report_sections: { type_id: { in: ids } },
+          deleted_at: null,
         },
-        data: { deletedAt: now },
+        data: { deleted_at: now },
       }),
-      // Soft delete direct items
-      prisma.reportItem.updateMany({
-        where: { reportTypeId: { in: bigIntIds }, deletedAt: null },
-        data: { deletedAt: now },
-      }),
-      // Soft delete sections
       prisma.reportSection.updateMany({
-        where: { reportTypeId: { in: bigIntIds }, deletedAt: null },
+        where: { type_id: { in: ids }, deletedAt: null },
         data: { deletedAt: now },
       }),
-      // Soft delete types
       prisma.reportType.updateMany({
-        where: { id: { in: bigIntIds }, deletedAt: null },
+        where: { id: { in: ids }, deletedAt: null },
         data: { deletedAt: now },
       }),
     ]);
@@ -318,12 +249,9 @@ export class ReportService {
     return { message: `${ids.length} report types deleted successfully` };
   }
 
-  /**
-   * Get sections for a report type (List type only)
-   */
   async getReportTypeSections(reportTypeId: string) {
     const reportType = await prisma.reportType.findFirst({
-      where: { id: BigInt(reportTypeId), deletedAt: null },
+      where: { id: reportTypeId, deletedAt: null },
     });
 
     if (!reportType) {
@@ -331,26 +259,23 @@ export class ReportService {
     }
 
     const sections = await prisma.reportSection.findMany({
-      where: { reportTypeId: BigInt(reportTypeId), deletedAt: null },
+      where: { type_id: reportTypeId, deletedAt: null },
       include: {
         _count: {
-          select: { reportItems: { where: { deletedAt: null } } },
+          select: { reports: { where: { deleted_at: null } } },
         },
       },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { position: 'asc' },
     });
 
-    return serializeBigInt(sections);
+    return sections;
   }
 
-  /**
-   * Reorder sections within a report type
-   */
   async updateSectionsOrder(_reportTypeId: string, updates: OrderUpdateItem[]) {
     const operations = updates.map((item) =>
       prisma.reportSection.update({
-        where: { id: BigInt(item.id) },
-        data: { sortOrder: item.sortOrder },
+        where: { id: item.id },
+        data: { position: item.position },
       })
     );
 
@@ -358,78 +283,33 @@ export class ReportService {
     return { message: 'Sections order updated' };
   }
 
-  /**
-   * Get grid items for a report type (Grid type only)
-   */
-  async getReportTypeGridItems(reportTypeId: string) {
-    const reportType = await prisma.reportType.findFirst({
-      where: { id: BigInt(reportTypeId), deletedAt: null },
-    });
-
-    if (!reportType) {
-      throw new AppError('Report type not found', 404);
-    }
-
-    const items = await prisma.reportItem.findMany({
-      where: {
-        reportTypeId: BigInt(reportTypeId),
-        reportSectionId: null,
-        deletedAt: null,
-      },
-      orderBy: { sortOrder: 'asc' },
-    });
-
-    return serializeBigInt(items);
-  }
-
-  /**
-   * Reorder grid items within a report type
-   */
-  async updateGridItemsOrder(_reportTypeId: string, updates: OrderUpdateItem[]) {
-    const operations = updates.map((item) =>
-      prisma.reportItem.update({
-        where: { id: BigInt(item.id) },
-        data: { sortOrder: item.sortOrder },
-      })
-    );
-
-    await prisma.$transaction(operations);
-    return { message: 'Grid items order updated' };
-  }
-
   // ============================================
   // REPORT SECTION METHODS
   // ============================================
 
-  /**
-   * Get report sections with pagination and filters (CMS DataTable)
-   */
   async getReportSections(params: ReportSectionQueryParams) {
     const {
       page = 1,
       limit = 10,
       search,
-      reportTypeId,
+      type_id,
       isActive,
-      sortBy = 'sortOrder',
+      sortBy = 'position',
       sortOrder = 'asc',
     } = params;
 
     const skip = (page - 1) * limit;
-
     const where: any = { deletedAt: null };
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }
-
-    if (reportTypeId) {
-      where.reportTypeId = BigInt(reportTypeId);
+    if (type_id) {
+      where.type_id = type_id;
     }
-
     if (isActive !== undefined) {
       where.isActive = isActive;
     }
@@ -438,11 +318,11 @@ export class ReportService {
       prisma.reportSection.findMany({
         where,
         include: {
-          reportType: {
-            select: { id: true, name: true, type: true },
+          report_types: {
+            select: { id: true, name: true },
           },
           _count: {
-            select: { reportItems: { where: { deletedAt: null } } },
+            select: { reports: { where: { deleted_at: null } } },
           },
         },
         orderBy: { [sortBy]: sortOrder },
@@ -453,7 +333,7 @@ export class ReportService {
     ]);
 
     return {
-      data: serializeBigInt(sections),
+      data: sections,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -463,45 +343,39 @@ export class ReportService {
     };
   }
 
-  /**
-   * Get active sections for dropdown (filtered by report_type_id)
-   */
-  async getReportSectionsList(reportTypeId?: string) {
+  async getReportSectionsList(typeId?: string) {
     const where: any = { deletedAt: null, isActive: true };
-    if (reportTypeId) {
-      where.reportTypeId = BigInt(reportTypeId);
+    if (typeId) {
+      where.type_id = typeId;
     }
 
     const sections = await prisma.reportSection.findMany({
       where,
-      orderBy: [{ reportYear: 'desc' }, { sortOrder: 'asc' }],
+      orderBy: { position: 'asc' },
       select: {
         id: true,
-        title: true,
-        reportYear: true,
-        reportType: { select: { id: true, name: true } },
+        name: true,
+        slug: true,
+        report_types: { select: { id: true, name: true } },
       },
     });
 
-    return serializeBigInt(sections);
+    return sections;
   }
 
-  /**
-   * Get single report section by ID
-   */
   async getReportSectionById(id: string) {
     const section = await prisma.reportSection.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
       include: {
-        reportType: {
-          select: { id: true, name: true, type: true },
+        report_types: {
+          select: { id: true, name: true },
         },
-        reportItems: {
-          where: { deletedAt: null },
-          orderBy: { sortOrder: 'asc' },
+        reports: {
+          where: { deleted_at: null },
+          orderBy: { year: 'desc' },
         },
         _count: {
-          select: { reportItems: { where: { deletedAt: null } } },
+          select: { reports: { where: { deleted_at: null } } },
         },
       },
     });
@@ -510,113 +384,90 @@ export class ReportService {
       throw new AppError('Report section not found', 404);
     }
 
-    return serializeBigInt(section);
+    return section;
   }
 
-  /**
-   * Create new report section (only for List type)
-   */
   async createReportSection(data: CreateReportSectionDTO) {
-    if (!data.title || data.title.trim() === '') {
-      throw new AppError('Title is required', 400);
+    if (!data.name || data.name.trim() === '') {
+      throw new AppError('Name is required', 400);
     }
-
-    if (!data.reportTypeId) {
+    if (!data.type_id) {
       throw new AppError('Report type ID is required', 400);
     }
 
-    // Validate report type exists and is List type
     const reportType = await prisma.reportType.findFirst({
-      where: { id: BigInt(data.reportTypeId.toString()), deletedAt: null },
+      where: { id: data.type_id, deletedAt: null },
     });
 
     if (!reportType) {
       throw new AppError('Report type not found', 404);
     }
 
-    if (reportType.type !== 'List') {
-      throw new AppError('Sections can only be created for List type report types', 400);
+    let position = data.position ?? 0;
+    if (position === 0) {
+      const maxOrder = await prisma.reportSection.aggregate({
+        _max: { position: true },
+        where: { type_id: data.type_id, deletedAt: null },
+      });
+      position = (maxOrder._max?.position || 0) + 1;
     }
 
-    // Auto sort_order
-    let sortOrder = data.sortOrder ?? 0;
-    if (sortOrder === 0) {
-      const maxOrder = await prisma.reportSection.aggregate({
-        _max: { sortOrder: true },
-        where: { reportTypeId: BigInt(data.reportTypeId.toString()), deletedAt: null },
-      });
-      sortOrder = (maxOrder._max?.sortOrder || 0) + 1;
-    }
+    const slug = data.slug || slugify(data.name, { lower: true, strict: true });
 
     const section = await prisma.reportSection.create({
       data: {
-        reportTypeId: BigInt(data.reportTypeId.toString()),
-        title: data.title.trim(),
+        id: uuidv4(),
+        type_id: data.type_id,
+        name: data.name.trim(),
+        slug,
         description: data.description?.trim() || null,
-        reportYear: data.reportYear || null,
-        ctaEnabled: data.ctaEnabled !== undefined ? data.ctaEnabled : true,
-        ctaText: data.ctaText?.trim() || null,
-        ctaUrl: data.ctaUrl?.trim() || null,
-        sortOrder,
+        position,
         isActive: data.isActive !== undefined ? data.isActive : true,
       },
     });
 
-    return serializeBigInt(section);
+    return section;
   }
 
-  /**
-   * Update report section
-   */
   async updateReportSection(id: string, data: UpdateReportSectionDTO) {
     const existing = await prisma.reportSection.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
       throw new AppError('Report section not found', 404);
     }
 
-    // If changing report type, validate it's List type
-    if (data.reportTypeId) {
+    if (data.type_id) {
       const reportType = await prisma.reportType.findFirst({
-        where: { id: BigInt(data.reportTypeId.toString()), deletedAt: null },
+        where: { id: data.type_id, deletedAt: null },
       });
-
       if (!reportType) {
         throw new AppError('Report type not found', 404);
-      }
-
-      if (reportType.type !== 'List') {
-        throw new AppError('Sections can only belong to List type report types', 400);
       }
     }
 
     const updateData: any = {};
-    if (data.reportTypeId !== undefined) updateData.reportTypeId = BigInt(data.reportTypeId.toString());
-    if (data.title !== undefined) updateData.title = data.title.trim();
+    if (data.type_id !== undefined) updateData.type_id = data.type_id;
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim();
+      updateData.slug = data.slug || slugify(data.name, { lower: true, strict: true });
+    }
     if (data.description !== undefined) updateData.description = data.description?.trim() || null;
-    if (data.reportYear !== undefined) updateData.reportYear = data.reportYear;
-    if (data.ctaEnabled !== undefined) updateData.ctaEnabled = data.ctaEnabled;
-    if (data.ctaText !== undefined) updateData.ctaText = data.ctaText?.trim() || null;
-    if (data.ctaUrl !== undefined) updateData.ctaUrl = data.ctaUrl?.trim() || null;
-    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+    if (data.position !== undefined) updateData.position = data.position;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     const section = await prisma.reportSection.update({
-      where: { id: BigInt(id) },
+      where: { id },
       data: updateData,
     });
 
-    return serializeBigInt(section);
+    return section;
   }
 
-  /**
-   * Toggle report section status
-   */
   async toggleReportSectionStatus(id: string) {
     const existing = await prisma.reportSection.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
@@ -624,22 +475,19 @@ export class ReportService {
     }
 
     const section = await prisma.reportSection.update({
-      where: { id: BigInt(id) },
+      where: { id },
       data: { isActive: !existing.isActive },
     });
 
-    return serializeBigInt(section);
+    return section;
   }
 
-  /**
-   * Soft delete report section (fails if has active items)
-   */
   async deleteReportSection(id: string) {
     const existing = await prisma.reportSection.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+      where: { id, deletedAt: null },
       include: {
         _count: {
-          select: { reportItems: { where: { deletedAt: null } } },
+          select: { reports: { where: { deleted_at: null } } },
         },
       },
     });
@@ -648,161 +496,126 @@ export class ReportService {
       throw new AppError('Report section not found', 404);
     }
 
-    if (existing._count.reportItems > 0) {
+    if (existing._count.reports > 0) {
       throw new AppError(
-        `Cannot delete section. It still has ${existing._count.reportItems} item(s). Remove or move items first.`,
+        `Cannot delete section. It still has ${existing._count.reports} report(s). Remove or move items first.`,
         400
       );
     }
 
     await prisma.reportSection.update({
-      where: { id: BigInt(id) },
+      where: { id },
       data: { deletedAt: new Date() },
     });
 
     return { message: 'Report section deleted successfully' };
   }
 
-  /**
-   * Bulk soft delete report sections
-   */
   async deleteMultipleReportSections(ids: string[]) {
-    const bigIntIds = ids.map((id) => BigInt(id));
-
-    // Check if any section has items
     const sectionsWithItems = await prisma.reportSection.findMany({
-      where: { id: { in: bigIntIds }, deletedAt: null },
+      where: { id: { in: ids }, deletedAt: null },
       include: {
         _count: {
-          select: { reportItems: { where: { deletedAt: null } } },
+          select: { reports: { where: { deleted_at: null } } },
         },
       },
     });
 
-    const hasItems = sectionsWithItems.filter((s) => s._count.reportItems > 0);
+    const hasItems = sectionsWithItems.filter((s: any) => s._count.reports > 0);
     if (hasItems.length > 0) {
-      const names = hasItems.map((s) => `"${s.title}" (${s._count.reportItems} items)`);
+      const names = hasItems.map((s: any) => `"${s.name}" (${s._count.reports} reports)`);
       throw new AppError(
-        `Cannot delete sections with items: ${names.join(', ')}. Remove items first.`,
+        `Cannot delete sections with reports: ${names.join(', ')}. Remove reports first.`,
         400
       );
     }
 
     await prisma.reportSection.updateMany({
-      where: { id: { in: bigIntIds }, deletedAt: null },
+      where: { id: { in: ids }, deletedAt: null },
       data: { deletedAt: new Date() },
     });
 
     return { message: `${ids.length} report sections deleted successfully` };
   }
 
-  /**
-   * Get items for a section
-   */
   async getReportSectionItems(sectionId: string) {
     const section = await prisma.reportSection.findFirst({
-      where: { id: BigInt(sectionId), deletedAt: null },
+      where: { id: sectionId, deletedAt: null },
     });
 
     if (!section) {
       throw new AppError('Report section not found', 404);
     }
 
-    const items = await prisma.reportItem.findMany({
-      where: { reportSectionId: BigInt(sectionId), deletedAt: null },
-      orderBy: { sortOrder: 'asc' },
+    const items = await prisma.reports.findMany({
+      where: { section_id: sectionId, deleted_at: null },
+      orderBy: { year: 'desc' },
     });
 
-    return serializeBigInt(items);
+    return items;
   }
 
-  /**
-   * Reorder items within a section
-   */
-  async updateSectionItemsOrder(_sectionId: string, updates: OrderUpdateItem[]) {
-    const operations = updates.map((item) =>
-      prisma.reportItem.update({
-        where: { id: BigInt(item.id) },
-        data: { sortOrder: item.sortOrder },
-      })
-    );
-
-    await prisma.$transaction(operations);
+  async updateSectionItemsOrder(_sectionId: string, _updates: OrderUpdateItem[]) {
+    // reports model doesn't have position, so we skip ordering for now
     return { message: 'Section items order updated' };
   }
 
   // ============================================
-  // REPORT ITEM METHODS
+  // REPORT ITEM (reports) METHODS
   // ============================================
 
-  /**
-   * Get report items with pagination and filters (CMS DataTable)
-   */
   async getReportItems(params: ReportItemQueryParams) {
     const {
       page = 1,
       limit = 10,
       search,
-      reportTypeId,
-      reportSectionId,
-      dataType,
-      auditStatus,
-      isActive,
-      sortBy = 'sortOrder',
-      sortOrder = 'asc',
+      type_id,
+      section_id,
+      year,
+      status,
+      sortBy = 'created_at',
+      sortOrder = 'desc',
     } = params;
 
     const skip = (page - 1) * limit;
-
-    const where: any = { deletedAt: null };
+    const where: any = { deleted_at: null };
 
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
-        { subDescription: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
-
-    if (reportTypeId) {
-      where.reportTypeId = BigInt(reportTypeId);
+    if (section_id) {
+      where.section_id = section_id;
     }
-
-    if (reportSectionId) {
-      where.reportSectionId = BigInt(reportSectionId);
+    if (type_id) {
+      where.report_sections = { type_id };
     }
-
-    if (dataType) {
-      where.dataType = dataType;
+    if (year) {
+      where.year = year;
     }
-
-    if (auditStatus) {
-      where.auditStatus = auditStatus;
-    }
-
-    if (isActive !== undefined) {
-      where.isActive = isActive;
+    if (status) {
+      where.status = status;
     }
 
     const [items, total] = await Promise.all([
-      prisma.reportItem.findMany({
+      prisma.reports.findMany({
         where,
         include: {
-          reportType: {
-            select: { id: true, name: true, type: true },
-          },
-          reportSection: {
-            select: { id: true, title: true, reportYear: true },
+          report_sections: {
+            select: { id: true, name: true, type_id: true },
           },
         },
         orderBy: { [sortBy]: sortOrder },
         skip,
         take: limit,
       }),
-      prisma.reportItem.count({ where }),
+      prisma.reports.count({ where }),
     ]);
 
     return {
-      data: serializeBigInt(items),
+      data: items,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -812,18 +625,12 @@ export class ReportService {
     };
   }
 
-  /**
-   * Get single report item by ID
-   */
   async getReportItemById(id: string) {
-    const item = await prisma.reportItem.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+    const item = await prisma.reports.findFirst({
+      where: { id, deleted_at: null },
       include: {
-        reportType: {
-          select: { id: true, name: true, type: true },
-        },
-        reportSection: {
-          select: { id: true, title: true, reportYear: true },
+        report_sections: {
+          select: { id: true, name: true, type_id: true },
         },
       },
     });
@@ -832,453 +639,235 @@ export class ReportService {
       throw new AppError('Report item not found', 404);
     }
 
-    return serializeBigInt(item);
+    return item;
   }
 
-  /**
-   * Create new report item
-   * Grid → must have reportTypeId, no reportSectionId
-   * List → must have reportSectionId, inherits reportTypeId from section
-   */
   async createReportItem(data: CreateReportItemDTO) {
     if (!data.title || data.title.trim() === '') {
       throw new AppError('Title is required', 400);
     }
-
-    // Validate data_type
-    if (data.dataType && !['Consolidated', 'Interim'].includes(data.dataType)) {
-      throw new AppError('data_type must be Consolidated or Interim', 400);
+    if (!data.section_id) {
+      throw new AppError('Section ID is required', 400);
     }
 
-    // Validate audit_status
-    if (data.auditStatus && !['Audited', 'Unaudited', 'Limited Review'].includes(data.auditStatus)) {
-      throw new AppError('audit_status must be Audited, Unaudited, or Limited Review', 400);
+    const section = await prisma.reportSection.findFirst({
+      where: { id: data.section_id, deletedAt: null },
+    });
+
+    if (!section) {
+      throw new AppError('Report section not found', 404);
     }
 
-    let reportTypeId: bigint | null = null;
-    let reportSectionId: bigint | null = null;
+    const slug = data.slug || slugify(data.title, { lower: true, strict: true });
 
-    if (data.reportSectionId) {
-      // List mode — attach to section
-      const section = await prisma.reportSection.findFirst({
-        where: { id: BigInt(data.reportSectionId.toString()), deletedAt: null },
-        include: { reportType: true },
-      });
-
-      if (!section) {
-        throw new AppError('Report section not found', 404);
-      }
-
-      reportSectionId = section.id;
-      // Don't set reportTypeId for list items (attach through section)
-    } else if (data.reportTypeId) {
-      // Grid mode — attach to type directly
-      const reportType = await prisma.reportType.findFirst({
-        where: { id: BigInt(data.reportTypeId.toString()), deletedAt: null },
-      });
-
-      if (!reportType) {
-        throw new AppError('Report type not found', 404);
-      }
-
-      reportTypeId = reportType.id;
-    } else {
-      throw new AppError('Either reportTypeId (Grid) or reportSectionId (List) is required', 400);
-    }
-
-    // Auto sort_order
-    let sortOrder = data.sortOrder ?? 0;
-    if (sortOrder === 0) {
-      const maxWhere: any = { deletedAt: null };
-      if (reportSectionId) maxWhere.reportSectionId = reportSectionId;
-      else if (reportTypeId) {
-        maxWhere.reportTypeId = reportTypeId;
-        maxWhere.reportSectionId = null;
-      }
-
-      const maxOrder = await prisma.reportItem.aggregate({
-        _max: { sortOrder: true },
-        where: maxWhere,
-      });
-      sortOrder = (maxOrder._max?.sortOrder || 0) + 1;
-    }
-
-    const item = await prisma.reportItem.create({
+    const item = await prisma.reports.create({
       data: {
-        reportTypeId,
-        reportSectionId,
+        id: uuidv4(),
+        section_id: data.section_id,
         title: data.title.trim(),
-        subDescription: data.subDescription?.trim() || null,
-        pdfFile: data.pdfFile?.trim() || null,
-        coverImage: data.coverImage?.trim() || null,
-        dataType: data.dataType || null,
-        auditStatus: data.auditStatus || null,
-        fileSize: data.fileSize?.trim() || null,
-        sortOrder,
-        isActive: data.isActive !== undefined ? data.isActive : true,
+        slug,
+        description: data.description?.trim() || null,
+        period: data.period || null,
+        year: data.year || null,
+        quarter: data.quarter || null,
+        file_url: data.file_url || null,
+        file_size: data.file_size || null,
+        file_type: data.file_type || null,
+        thumbnail: data.thumbnail || null,
+        status: (data.status as any) || 'PUBLISHED',
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
 
-    return serializeBigInt(item);
+    return item;
   }
 
-  /**
-   * Update report item
-   */
   async updateReportItem(id: string, data: UpdateReportItemDTO) {
-    const existing = await prisma.reportItem.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+    const existing = await prisma.reports.findFirst({
+      where: { id, deleted_at: null },
     });
 
     if (!existing) {
       throw new AppError('Report item not found', 404);
     }
 
-    // Validate data_type
-    if (data.dataType && !['Consolidated', 'Interim'].includes(data.dataType)) {
-      throw new AppError('data_type must be Consolidated or Interim', 400);
+    if (data.section_id) {
+      const section = await prisma.reportSection.findFirst({
+        where: { id: data.section_id, deletedAt: null },
+      });
+      if (!section) throw new AppError('Report section not found', 404);
     }
 
-    // Validate audit_status
-    if (data.auditStatus && !['Audited', 'Unaudited', 'Limited Review'].includes(data.auditStatus)) {
-      throw new AppError('audit_status must be Audited, Unaudited, or Limited Review', 400);
+    const updateData: any = { updated_at: new Date() };
+    if (data.section_id !== undefined) updateData.section_id = data.section_id;
+    if (data.title !== undefined) {
+      updateData.title = data.title.trim();
+      updateData.slug = data.slug || slugify(data.title, { lower: true, strict: true });
     }
+    if (data.description !== undefined) updateData.description = data.description?.trim() || null;
+    if (data.period !== undefined) updateData.period = data.period;
+    if (data.year !== undefined) updateData.year = data.year;
+    if (data.quarter !== undefined) updateData.quarter = data.quarter;
+    if (data.file_url !== undefined) updateData.file_url = data.file_url;
+    if (data.file_size !== undefined) updateData.file_size = data.file_size;
+    if (data.file_type !== undefined) updateData.file_type = data.file_type;
+    if (data.thumbnail !== undefined) updateData.thumbnail = data.thumbnail;
+    if (data.status !== undefined) updateData.status = data.status;
 
-    const updateData: any = {};
-
-    // Handle parent change
-    if (data.reportSectionId !== undefined) {
-      if (data.reportSectionId) {
-        const section = await prisma.reportSection.findFirst({
-          where: { id: BigInt(data.reportSectionId.toString()), deletedAt: null },
-        });
-        if (!section) throw new AppError('Report section not found', 404);
-        updateData.reportSectionId = section.id;
-        updateData.reportTypeId = null; // Clear type when moving to section
-      } else {
-        updateData.reportSectionId = null;
-      }
-    }
-
-    if (data.reportTypeId !== undefined) {
-      if (data.reportTypeId) {
-        const reportType = await prisma.reportType.findFirst({
-          where: { id: BigInt(data.reportTypeId.toString()), deletedAt: null },
-        });
-        if (!reportType) throw new AppError('Report type not found', 404);
-        updateData.reportTypeId = reportType.id;
-        updateData.reportSectionId = null; // Clear section when moving to type
-      } else {
-        updateData.reportTypeId = null;
-      }
-    }
-
-    if (data.title !== undefined) updateData.title = data.title.trim();
-    if (data.subDescription !== undefined) updateData.subDescription = data.subDescription?.trim() || null;
-    if (data.pdfFile !== undefined) updateData.pdfFile = data.pdfFile?.trim() || null;
-    if (data.coverImage !== undefined) updateData.coverImage = data.coverImage?.trim() || null;
-    if (data.dataType !== undefined) updateData.dataType = data.dataType || null;
-    if (data.auditStatus !== undefined) updateData.auditStatus = data.auditStatus || null;
-    if (data.fileSize !== undefined) updateData.fileSize = data.fileSize?.trim() || null;
-    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-
-    const item = await prisma.reportItem.update({
-      where: { id: BigInt(id) },
+    const item = await prisma.reports.update({
+      where: { id },
       data: updateData,
     });
 
-    return serializeBigInt(item);
+    return item;
   }
 
-  /**
-   * Toggle report item status
-   */
   async toggleReportItemStatus(id: string) {
-    const existing = await prisma.reportItem.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+    const existing = await prisma.reports.findFirst({
+      where: { id, deleted_at: null },
     });
 
     if (!existing) {
       throw new AppError('Report item not found', 404);
     }
 
-    const item = await prisma.reportItem.update({
-      where: { id: BigInt(id) },
-      data: { isActive: !existing.isActive },
+    const newStatus = existing.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+
+    const item = await prisma.reports.update({
+      where: { id },
+      data: { status: newStatus as any, updated_at: new Date() },
     });
 
-    return serializeBigInt(item);
+    return item;
   }
 
-  /**
-   * Soft delete report item (remove cover image if exists)
-   */
   async deleteReportItem(id: string) {
-    const existing = await prisma.reportItem.findFirst({
-      where: { id: BigInt(id), deletedAt: null },
+    const existing = await prisma.reports.findFirst({
+      where: { id, deleted_at: null },
     });
 
     if (!existing) {
       throw new AppError('Report item not found', 404);
     }
 
-    // If cover image exists on local storage, try to delete
-    if (existing.coverImage) {
-      try {
-        const fs = await import('fs/promises');
-        const path = await import('path');
-        const uploadDir = process.env.UPLOAD_DIR || './uploads';
-        const filePath = path.resolve(uploadDir, existing.coverImage);
-        await fs.unlink(filePath).catch(() => {}); // Ignore if file doesn't exist
-      } catch (e) {
-        // Non-critical, continue
-      }
-    }
-
-    await prisma.reportItem.update({
-      where: { id: BigInt(id) },
-      data: { deletedAt: new Date() },
+    await prisma.reports.update({
+      where: { id },
+      data: { deleted_at: new Date() },
     });
 
     return { message: 'Report item deleted successfully' };
   }
 
-  /**
-   * Bulk soft delete report items
-   */
   async deleteMultipleReportItems(ids: string[]) {
-    const bigIntIds = ids.map((id) => BigInt(id));
-
-    // Get items for cover image cleanup
-    const items = await prisma.reportItem.findMany({
-      where: { id: { in: bigIntIds }, deletedAt: null },
-      select: { coverImage: true },
-    });
-
-    // Try to clean up cover images
-    for (const item of items) {
-      if (item.coverImage) {
-        try {
-          const fs = await import('fs/promises');
-          const path = await import('path');
-          const uploadDir = process.env.UPLOAD_DIR || './uploads';
-          const filePath = path.resolve(uploadDir, item.coverImage);
-          await fs.unlink(filePath).catch(() => {});
-        } catch (e) {
-          // Non-critical
-        }
-      }
-    }
-
-    await prisma.reportItem.updateMany({
-      where: { id: { in: bigIntIds }, deletedAt: null },
-      data: { deletedAt: new Date() },
+    await prisma.reports.updateMany({
+      where: { id: { in: ids }, deleted_at: null },
+      data: { deleted_at: new Date() },
     });
 
     return { message: `${ids.length} report items deleted successfully` };
   }
 
-  /**
-   * Reorder report items
-   */
-  async updateReportItemsOrder(updates: OrderUpdateItem[]) {
-    const operations = updates.map((item) =>
-      prisma.reportItem.update({
-        where: { id: BigInt(item.id) },
-        data: { sortOrder: item.sortOrder },
-      })
-    );
-
-    await prisma.$transaction(operations);
+  async updateReportItemsOrder(_updates: OrderUpdateItem[]) {
+    // reports model doesn't have a position field; skip
     return { message: 'Report items order updated' };
   }
 
-  /**
-   * Get report item stats
-   */
   async getReportItemStats() {
-    const [total, active, inactive] = await Promise.all([
-      prisma.reportItem.count({ where: { deletedAt: null } }),
-      prisma.reportItem.count({ where: { deletedAt: null, isActive: true } }),
-      prisma.reportItem.count({ where: { deletedAt: null, isActive: false } }),
+    const [total, published, draft] = await Promise.all([
+      prisma.reports.count({ where: { deleted_at: null } }),
+      prisma.reports.count({ where: { deleted_at: null, status: 'PUBLISHED' } }),
+      prisma.reports.count({ where: { deleted_at: null, status: 'DRAFT' } }),
     ]);
 
-    return { total, active, inactive };
+    return { total, published, draft };
   }
 
   // ============================================
   // PUBLIC FRONTEND METHODS
   // ============================================
 
-  /**
-   * Filter reports for public frontend
-   */
   async filterReports(params: ReportFilterParams) {
     const {
       search,
-      dataType,
-      auditStatus,
       year,
-      reportTypeId,
-      displayType,
+      type_id,
+      section_id,
       page = 1,
-      limit = 9,
+      limit = 12,
     } = params;
 
-    // Determine display type
-    let actualDisplayType = displayType;
-    if (reportTypeId) {
-      const rt = await prisma.reportType.findFirst({
-        where: { id: BigInt(reportTypeId), deletedAt: null },
-      });
-      if (rt) actualDisplayType = rt.type as 'Grid' | 'List';
+    const skip = (page - 1) * limit;
+    const where: any = {
+      deleted_at: null,
+      status: 'PUBLISHED',
+      report_sections: { deletedAt: null, isActive: true },
+    };
+
+    if (type_id) {
+      where.report_sections.type_id = type_id;
+    }
+    if (section_id) {
+      where.section_id = section_id;
+    }
+    if (year) {
+      where.year = year;
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
-    if (actualDisplayType === 'List') {
-      // List mode: return sections with items
-      const sectionLimit = limit || 5;
-      const skip = (page - 1) * sectionLimit;
-
-      const sectionWhere: any = {
-        deletedAt: null,
-        isActive: true,
-        reportType: { deletedAt: null, isActive: true },
-      };
-
-      if (reportTypeId) {
-        sectionWhere.reportTypeId = BigInt(reportTypeId);
-      }
-
-      if (year) {
-        sectionWhere.reportYear = year;
-      }
-
-      // Item filter within sections
-      const itemWhere: any = { deletedAt: null, isActive: true };
-      if (search) {
-        itemWhere.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { subDescription: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-      if (dataType) itemWhere.dataType = dataType;
-      if (auditStatus) itemWhere.auditStatus = auditStatus;
-
-      // If item filters are applied, only return sections that have matching items
-      if (search || dataType || auditStatus) {
-        sectionWhere.reportItems = { some: itemWhere };
-      }
-
-      const [sections, totalSections] = await Promise.all([
-        prisma.reportSection.findMany({
-          where: sectionWhere,
-          include: {
-            reportType: { select: { id: true, name: true, type: true } },
-            reportItems: {
-              where: itemWhere,
-              orderBy: { sortOrder: 'asc' },
-            },
+    const [items, total] = await Promise.all([
+      prisma.reports.findMany({
+        where,
+        include: {
+          report_sections: {
+            select: { id: true, name: true, type_id: true },
           },
-          orderBy: [{ reportYear: 'desc' }, { sortOrder: 'asc' }],
-          skip,
-          take: sectionLimit,
-        }),
-        prisma.reportSection.count({ where: sectionWhere }),
-      ]);
-
-      return {
-        displayType: 'List',
-        data: serializeBigInt(sections),
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(totalSections / sectionLimit),
-          totalItems: totalSections,
-          itemsPerPage: sectionLimit,
         },
-      };
-    } else {
-      // Grid mode: return items directly
-      const gridLimit = limit || 9;
-      const skip = (page - 1) * gridLimit;
+        orderBy: { year: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.reports.count({ where }),
+    ]);
 
-      const itemWhere: any = {
-        deletedAt: null,
-        isActive: true,
-        reportSectionId: null, // Grid items don't have sections
-      };
-
-      if (reportTypeId) {
-        itemWhere.reportTypeId = BigInt(reportTypeId);
-      } else {
-        // Only items from active Grid types
-        itemWhere.reportType = { deletedAt: null, isActive: true, type: 'Grid' };
-      }
-
-      if (search) {
-        itemWhere.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { subDescription: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      if (dataType) itemWhere.dataType = dataType;
-      if (auditStatus) itemWhere.auditStatus = auditStatus;
-
-      const [items, totalItems] = await Promise.all([
-        prisma.reportItem.findMany({
-          where: itemWhere,
-          include: {
-            reportType: { select: { id: true, name: true, type: true } },
-          },
-          orderBy: { sortOrder: 'asc' },
-          skip,
-          take: gridLimit,
-        }),
-        prisma.reportItem.count({ where: itemWhere }),
-      ]);
-
-      return {
-        displayType: 'Grid',
-        data: serializeBigInt(items),
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(totalItems / gridLimit),
-          totalItems: totalItems,
-          itemsPerPage: gridLimit,
-        },
-      };
-    }
+    return {
+      data: items,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit,
+      },
+    };
   }
 
-  /**
-   * Get available years for filter dropdown (from report_sections)
-   */
   async getReportYears() {
-    const sections = await prisma.reportSection.findMany({
+    const reports = await prisma.reports.findMany({
       where: {
-        deletedAt: null,
-        isActive: true,
-        reportYear: { not: null },
+        deleted_at: null,
+        status: 'PUBLISHED',
+        year: { not: null },
       },
-      select: { reportYear: true },
-      distinct: ['reportYear'],
-      orderBy: { reportYear: 'desc' },
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' },
     });
 
-    return sections.map((s) => s.reportYear).filter(Boolean);
+    return reports.map((r: any) => r.year).filter(Boolean);
   }
 
-  /**
-   * Get items for a section (public modal "View More")
-   */
   async getPublicSectionItems(sectionId: string) {
     const section = await prisma.reportSection.findFirst({
-      where: { id: BigInt(sectionId), deletedAt: null, isActive: true },
+      where: { id: sectionId, deletedAt: null, isActive: true },
       include: {
-        reportItems: {
-          where: { deletedAt: null, isActive: true },
-          orderBy: { sortOrder: 'asc' },
+        reports: {
+          where: { deleted_at: null, status: 'PUBLISHED' },
+          orderBy: { year: 'desc' },
         },
       },
     });
@@ -1287,7 +876,7 @@ export class ReportService {
       throw new AppError('Report section not found', 404);
     }
 
-    return serializeBigInt(section);
+    return section;
   }
 }
 

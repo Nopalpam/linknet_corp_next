@@ -14,35 +14,36 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
       case 'news_highlight': {
         const featuredCount = config.featured_count || 1;
         const gridCount = config.grid_count || 4;
-        const highlights = await prisma.newsHighlight.findMany({
-          include: { news: { include: { category: true } } },
-          orderBy: { dataOrder: 'asc' },
+        const highlights = await prisma.news_highlights.findMany({
+          include: { news: { include: { news_categories: true } } },
+          orderBy: { position: 'asc' },
           take: featuredCount,
         });
-        const latest = await prisma.newsContent.findMany({
-          where: { dataStatus: 1 },
-          include: { category: true },
-          orderBy: { newsDate: 'desc' },
+        const latest = await prisma.news.findMany({
+          where: { status: 'PUBLISHED', deleted_at: null },
+          include: { news_categories: true },
+          orderBy: { news_date: 'desc' },
           take: gridCount,
         });
-        return { featured: highlights.map(h => h.news), grid: latest };
+        return { featured: highlights.map((h: any) => h.news), grid: latest };
       }
       case 'news_list': {
         const maxData = config.max_data || 12;
-        const news = await prisma.newsContent.findMany({
+        const newsItems = await prisma.news.findMany({
           where: {
-            dataStatus: 1,
-            ...(config.category_id ? { idCategory: BigInt(config.category_id) } : {}),
+            status: 'PUBLISHED',
+            deleted_at: null,
+            ...(config.category_id ? { category_id: config.category_id } : {}),
           },
-          include: { category: true },
-          orderBy: { newsDate: 'desc' },
+          include: { news_categories: true },
+          orderBy: { news_date: 'desc' },
           take: maxData,
         });
-        const categories = await prisma.newsCategory.findMany({
-          where: { dataStatus: 1 },
-          orderBy: { dataOrder: 'asc' },
+        const categories = await prisma.news_categories.findMany({
+          where: { is_active: true, deleted_at: null },
+          orderBy: { position: 'asc' },
         });
-        return { news, categories, total: news.length };
+        return { news: newsItems, categories, total: newsItems.length };
       }
       case 'career_highlight': {
         const maxDisplay = config.max_display || 6;
@@ -64,13 +65,13 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
       }
       case 'management_list': {
         const managements = await prisma.management.findMany({
-          where: { dataStatus: 1 },
+          where: { is_active: true, deleted_at: null },
           include: { managementCategory: true },
-          orderBy: { dataOrder: 'asc' },
+          orderBy: { order: 'asc' },
         });
         const categories = await prisma.managementCategory.findMany({
-          where: { status: 1 },
-          orderBy: { order: 'asc' },
+          where: { is_active: true, deleted_at: null },
+          orderBy: { position: 'asc' },
         });
         return { managements, categories };
       }
@@ -91,22 +92,18 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         const reportTypes = await prisma.reportType.findMany({
           where: { isActive: true, deletedAt: null },
           include: {
-            reportSections: {
+            report_sections: {
               where: { isActive: true, deletedAt: null },
               include: {
-                reportItems: {
-                  where: { isActive: true, deletedAt: null },
-                  orderBy: { sortOrder: 'asc' },
+                reports: {
+                  where: { status: 'PUBLISHED', deleted_at: null },
+                  orderBy: { year: 'desc' },
                 },
               },
-              orderBy: { sortOrder: 'asc' },
-            },
-            reportItems: {
-              where: { isActive: true, deletedAt: null, reportSectionId: null },
-              orderBy: { sortOrder: 'asc' },
+              orderBy: { position: 'asc' },
             },
           },
-          orderBy: { sortOrder: 'asc' },
+          orderBy: { position: 'asc' },
         });
         return { reportTypes };
       }
