@@ -1,0 +1,85 @@
+.sectionProduct {
+  padding: 56px 0;
+}
+.sectionProduct .device-image {
+  position: relative;
+  width: -webkit-fill-available;
+}
+@media screen and (min-width: 920px) {
+  .sectionProduct .device-image {
+    height: 520px;
+  }
+}
+.sectionProduct .device-image img {
+  position: relative;
+}
+.sectionProduct .device-image img.img-downup {
+  animation: MoveDownUp 2s linear infinite;
+}
+.sectionProduct .device-image img.img-full {
+  width: 100%;
+  transform: scale(1.25);
+  top: 10%;
+}
+.sectionProduct .device-image img.img-stb {
+  width: 100%;
+  top: 4%;
+  transform: scale(1.1);
+}
+.sectionProduct .device-image img.img-remote {
+  width: 164px;
+  transform: scale(1.2);
+  right: -12%;
+  bottom: -14%;
+  position: absolute;
+}
+@media screen and (max-width: 768px) {
+  .sectionProduct .device-image img.img-remote {
+    width: 100px;
+    right: -16%;
+  }
+}
+.sectionProduct .device-image img.img-1 {
+  width: 100%;
+}
+.sectionProduct .device-image__right {
+  right: -12%;
+}
+.sectionProduct .device-image__left {
+  left: -12%;
+}
+.sectionProduct .image-ornament {
+  position: absolute;
+  right: 0;
+  top: 360px;
+  opacity: 0.25;
+}
+@media screen and (max-width: 768px) {
+  .sectionProduct .image-ornament img {
+    transform: scale(3);
+  }
+}
+.sectionProduct .sectionHead {
+  position: relative;
+  z-index: 1;
+}
+
+.swiperUSP {
+  margin-top: -28px;
+}
+.swiperUSP .swiper {
+  overflow: visible;
+}
+.swiperUSP .swiper-pagination-usp {
+  width: auto !important;
+}
+.swiperUSP .swiper-pagination-usp .swiper-pagination-bullet {
+  width: 32px;
+  height: 4px;
+  opacity: 0.2;
+  background: #FFFFFF;
+  border-radius: 48px;
+}
+.swiperUSP .swiper-pagination-usp .swiper-pagination-bullet.swiper-pagination-bullet-active {
+  opacity: 1;
+}/*# sourceMappingURL=section.css.map */

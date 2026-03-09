@@ -1,0 +1,76 @@
+@layer components {
+  .navbar {
+    @apply fixed top-0 left-0 right-0 h-20 flex items-center transition-all duration-300;
+    z-index: var(--z-sticky);
+    background: var(--dark-glass-bg);
+    backdrop-filter: blur(var(--blur-amount)) saturate(var(--saturation));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .navbar__container {
+    @apply container mx-auto px-6 flex justify-between items-center w-full;
+    max-width: 1400px;
+  }
+  .navbar__menu {
+    @apply hidden xl:flex items-center gap-8 list-none p-0 m-0 h-full;
+  }
+  .navbar__link {
+    @apply flex items-center gap-1 font-medium no-underline transition-all duration-200;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .navbar__link:hover {
+    color: var(--color-yellow-500);
+  }
+  .navbar__chevron {
+    @apply transition-transform duration-300 opacity-50;
+    --icon-size: 12px;
+  }
+  .group:hover .navbar__chevron {
+    transform: rotate(180deg);
+  }
+  .navbar__idx {
+    @apply hidden md:flex flex-col items-end leading-tight pr-6;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .navbar {
+    /* 2. MEGA MENU (Hostinger Style) */
+  }
+  .navbar .mega-menu {
+    @apply absolute top-full left-0 w-full py-12 opacity-0 invisible transition-all duration-300;
+    background-color: #161616;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    transform: translateY(-8px);
+  }
+  .group:hover .navbar .mega-menu {
+    @apply opacity-100 visible;
+    transform: translateY(0);
+  }
+  .navbar .mega-menu__grid {
+    @apply grid grid-cols-3 gap-12 container mx-auto px-6;
+    max-width: 1200px;
+  }
+  .navbar .mega-menu__item {
+    @apply flex items-start gap-5 p-4 rounded-2xl transition-all duration-200 no-underline;
+  }
+  .navbar .mega-menu__item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+  .navbar .mega-menu__icon-box {
+    @apply flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300;
+    background-color: rgba(255, 255, 255, 0.05);
+    --icon-size: 24px;
+  }
+  .group\/sub:hover .navbar .mega-menu__icon-box {
+    transform: scale(1.1);
+  }
+  .navbar .mega-menu__title {
+    @apply text-white font-bold mb-1;
+    font-size: 16px;
+  }
+  .navbar .mega-menu__desc {
+    @apply leading-relaxed;
+    font-size: 14px;
+    color: var(--color-neutral-400);
+  }
+}/*# sourceMappingURL=navbar.css.map */

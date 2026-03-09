@@ -1,0 +1,56 @@
+.lnCardUSP
+  &__item
+    display: flex
+    flex-direction: column
+    gap: var(--space-16)
+    width: 100%
+    transition: all 0.3s ease
+    
+    // VARIANT 1: Card (Kiri di gambar)
+    &--background
+      padding: 32px
+      background: white
+      border-radius: var(--radius-24)
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.04)
+      height: 100%
+      border: 1px solid var(--color-neutral-100)
+      &:hover
+        transform: translateY(-5px)
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08)
+
+    // VARIANT 3: Border (Kanan di gambar)
+    &--border
+      padding-left: var(--space-20)
+      border-left: 3px solid var(--color-yellow-500)
+
+    .lnCardUSP__icon
+      width: 100%
+      height: auto
+      display: flex
+      justify-content: flex-start
+      margin-bottom: var(--space-8)
+      
+      img
+        width: 44px
+        height: 44px
+        object-fit: contain
+
+    .lnCardUSP__title
+      margin-bottom: var(--space-8)
+      line-height: 1.4
+
+    .lnCardUSP__desc
+      line-height: 1.6
+      max-width: 95%
+
+  // Responsive: Horizontal layout untuk variant default di mobile
+  @media (max-width: 560px)
+    &__item:not(&--card):not(&--border)
+      flex-direction: row
+      align-items: flex-start
+      gap: var(--space-16)
+      
+      .lnCardUSP__icon
+        width: 32px
+        height: 32px
+        margin-bottom: 0
