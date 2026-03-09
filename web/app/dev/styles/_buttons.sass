@@ -1,0 +1,207 @@
+/* =======================================================
+   BUTTON SYSTEM
+   ======================================================= */
+
+.btn
+    display: inline-flex
+    align-items: center
+    text-align: center
+    text-decoration: none
+    vertical-align: middle
+    cursor: pointer
+    -webkit-user-select: none
+    -moz-user-select: none
+    user-select: none
+    border: none
+    background: none
+    border-radius: var(--radius-full)
+    color: var(--text-primary)
+    justify-content: center
+    gap: var(--space-8)
+    padding: var(--space-10) var(--space-20)
+    transition: gap 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease
+    font-size: 14px
+    line-height: 20px
+    font-weight: var(--font-weight-medium)
+    height: 44px
+
+    &:focus-visible
+      outline: none
+
+    @media (max-width: 560px)
+      font-size: 16px
+      line-height: 24px
+
+
+.btn-sm
+    gap: var(--space-4)
+    padding: var(--space-6) var(--space-12)
+    height: 32px
+    min-width: 32px
+    transition: gap 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease
+    font-size: 12px
+    line-height: 16px
+
+.btn-lg
+    gap: var(--space-4)
+    padding: var(--space-12) var(--space-32)
+    height: 48px
+    min-width: 48px
+    transition: gap 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease
+    font-size: 16px
+    line-height: 24px
+    @media (max-width: 560px)
+      height: 44px
+      min-width: 44px
+      font-size: 16px
+      line-height: 24px
+      padding: var(--space-12) var(--space-24)
+
+/* ==========================
+   Buttons Variants
+    ========================== */
+
+// Primary
+.btn-primary
+  background: var(--btn-primary-fill)
+  color: var(--text-black)
+  &:hover
+    background: var(--btn-primary-fill-hover)
+
+// Secondary
+.btn-secondary
+  background: var(--btn-secondary-fill)
+  color: var(--text-black)
+  &:hover
+      background: var(--btn-secondary-fill-hover)
+
+.btn-secondary-outline
+  border: 1px solid var(--btn-secondary-outline)
+  color: var(--text-black)
+  background: transparent
+  &:hover
+    border-color: var(--btn-secondary-outline-hover)
+    color: var(--text-black)
+    background: white
+
+  &--black
+    border: 1px solid var(--stroke-black)
+    color: var(--text-black)
+    background: transparent
+    &:hover
+      border-color: white
+      color: var(--text-black)
+      background: white
+
+  &--white
+    border: 1px solid var(--btn-secondary-outline)
+    color: white
+    background: transparent
+    &:hover
+      border-color: white
+      color: var(--text-black)
+      background: white
+
+.btn-secondary-outline-reverse
+  border: 1px solid var(--btn-secondary-outline)
+  color: white
+  background: transparent
+  &:hover
+    border-color: var(--btn-secondary-outline-hover)
+    color: var(--text-black)
+    background: white
+
+.btn-secondary-plain
+  color: var(--btn-secondary-fill)
+  color: var(--text-black)
+  background: transparent
+  padding-left: 0
+  padding-right: 0
+
+// Warning
+.btn-warning
+  background: var(--btn-warning-fill)
+  color: var(--text-black)
+  &:hover
+    background: var(--btn-warning-fill-hover)
+
+.btn-warning-outline
+  border: 1px solid var(--btn-warning-outline)
+  color: var(--btn-warning-outline)
+  background: transparent
+  &:hover
+    border-color: var(--btn-warning-outline-hover)
+    color: var(--btn-warning-outline-hover)
+
+.btn-warning-plain
+  color: var(--btn-warning-fill)
+  background: transparent
+  &:hover
+    color: var(--btn-warning-fill-hover)
+
+// Info
+.btn-info
+  background: var(--btn-info-fill)
+  color: var(--text-white)
+  &:hover
+    background: var(--btn-info-fill-hover)
+
+.btn-info-outline
+  border: 1px solid var(--btn-info-outline)
+  color: var(--btn-info-outline)
+  background: transparent
+  &:hover
+    border-color: var(--btn-info-outline-hover)
+    color: var(--btn-info-outline-hover)
+
+.btn-info-plain
+  color: var(--btn-info-fill)
+  background: transparent
+  &:hover
+    color: var(--btn-info-fill-hover)
+
+// Danger
+.btn-danger
+  background: var(--btn-danger-fill)
+  color: var(--text-white)
+  &:hover
+    background: var(--btn-danger-fill-hover)
+
+.btn-danger-outline
+  border: 1px solid var(--btn-danger-outline)
+  color: var(--btn-danger-outline)
+  background: transparent
+  &:hover
+    border-color: var(--btn-danger-outline-hover)
+    color: var(--btn-danger-outline-hover)
+
+.btn-danger-plain
+  color: var(--btn-danger-fill)
+  background: transparent
+  &:hover
+    color: var(--btn-danger-fill-hover)
+
+.btn-link
+    padding: 0
+    background: transparent
+    color: var(--btn-info-fill)
+    text-decoration: none
+    &:hover
+        text-decoration: underline
+    &:active
+        text-decoration: underline
+
+.btn-disabled
+    background: var(--btn-disabled-fill)
+    color: var(--text-white)
+    cursor: not-allowed
+    opacity: var(--opacity-50)
+    pointer-events: none
+
+.btn-disabled-outline
+    border: 1px solid var(--btn-disabled-outline)
+    color: var(--text-white)
+    background: transparent
+    cursor: not-allowed
+    opacity: var(--opacity-50)
+    pointer-events: none

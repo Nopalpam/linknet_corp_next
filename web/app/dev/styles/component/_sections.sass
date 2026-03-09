@@ -1,0 +1,981 @@
+/* Intro (reusable) */
+.lnIntro
+    &__content
+        margin-bottom: var(--space-32)
+        display: block
+        > .lnIntro__label,
+        > .lnIntro__title,
+        > .lnIntro__desc
+            margin-bottom: var(--space-12)
+        > :last-child
+            margin-bottom: 0
+
+        @media (min-width: 950px)
+            width: 56%
+
+    &__label
+        color: var(--color-yellow-500)
+
+    &__title
+        color: var(--text-black)
+
+    &__desc
+        color: var(--text-secondary)
+        width: 85%
+
+    &__actions
+        margin-top: var(--space-16)
+
+/* Centered variant */
+.lnIntro--center
+    text-align: center
+    text-align: -webkit-center
+    margin-left: auto
+    margin-right: auto
+    @media (min-width: 991.98px)
+        width: 64%
+    .lnIntro__content
+        width: 100%
+    .lnIntro__actions
+        display: flex
+        justify-content: center
+.lnSection__aboutWithUSP
+    position: relative
+    padding: clamp(32px, 6vw, 80px) 0
+    background-repeat: no-repeat
+    background-position: right 10% top 18%
+    background-size: 360px auto
+
+.bgPosition
+    &__left
+        object-position: left !important
+    &__center 
+        object-position: center !important
+    &__right
+        object-position: right !important
+    &__leftTop
+        object-position: left top !important
+    &__leftBottom
+        object-position: left bottom !important
+    &__rightTop
+        object-position: right top !important
+    &__rightBottom
+        object-position: right bottom !important
+    &__top
+        object-position: top !important
+    &__bottom
+        object-position: bottom !important
+
+/* Media */
+.lnAboutMedia
+    > img
+        display: block
+        width: 100%
+        height: auto
+        border-radius: var(--radius-12)
+        box-shadow: var(--shadow-lg)
+
+/* USP (DIV + Bootstrap grid) */
+.lnUSP
+    /* it's a .row; keep reset only */
+    margin-top: clamp(28px, 6vw, 64px)
+
+.lnUSP__item
+    margin-bottom: var(--space-12)
+    align-items: start
+    @media (min-width: 320px) and (max-width: 480px)
+        display: inline-flex
+        gap: 14px
+
+    .lnUSP__icon
+        margin-bottom: var(--space-16)
+        width: 36px
+        height: 36px
+        border-radius: var(--radius-8)
+        display: grid
+        place-items: center
+        box-shadow: var(--shadow-sm)
+        img
+            width: 100%
+            height: 100%
+        
+        @media (min-width: 320px) and (max-width: 480px)
+            width: 32px
+            height: 32px
+
+    .lnUSP__title
+        color: var(--text-black)
+        margin: 0 0 6px
+
+    .lnUSP__desc
+        color: var(--text-secondary)
+        margin: 0
+
+@media (min-width: 800px)
+    .lnUSPSwiper
+        .swiper-slide:nth-child(even)
+            margin-top: 24px
+
+.lnUSP__item-slide
+    margin-bottom: var(--space-12)
+    align-items: start
+    padding: 20px
+    border-radius: var(--radius-16)
+    background: white
+    height: 200px
+    display: flex
+    flex-direction: column
+    justify-content: space-between
+    box-shadow: var(--shadow-md)
+    .lnUSP__icon
+        margin-bottom: var(--space-16)
+        border-radius: var(--radius-8)
+        display: grid
+        place-items: center
+        box-shadow: var(--shadow-sm)
+        img
+            width: auto
+            height: 32px
+            @media (min-width: 320px) and (max-width: 480px)
+                height: 28px
+
+    .lnUSP__title
+        color: var(--text-black)
+        margin: 0 0 6px
+
+    .lnUSP__desc
+        color: var(--text-secondary)
+        margin: 0
+
+/* Responsive */
+@media (max-width: 992px)
+    .lnSection__aboutWithUSP
+        background-size: 260px auto
+        background-position: right -20px top 10%
+
+@media (max-width: 560px)
+    .lnSection__aboutWithUSP
+        background: var(--bg-white)
+
+// 
+// Section Business Tab
+// 
+/* Section & Intro */
+// .lnSection__businessTab
+// .lnSection__businessTab
+//     border-radius: var(--radius-32) var(--radius-32) 0 0
+
+
+
+/* Tabs (Swiper) */
+.lnTabs
+    margin: 8px auto 18px
+    width: 100%
+    overflow: visible
+    .swiper-wrapper
+        align-items: center
+    .swiper-slide
+        width: auto
+
+.lnTabs.lnTabs--center
+    justify-items: center
+    .swiper-wrapper
+        justify-content: center
+
+.lnTab
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    gap: 8px
+    padding: 6px 16px
+    border-radius: var(--radius-full)
+    background: transparent
+    border: 0
+    cursor: pointer
+    color: var(--color-neutral-600)
+    transition: background .2s ease, color .2s ease
+    white-space: nowrap
+    &.is-active
+        background: var(--color-yellow-500)
+        color: var(--color-black)
+
+.lnSwiperBusinessTabs
+    overflow: visible
+
+.lnSwiperBusinessTabs
+    .swiper-slide
+        opacity: .15
+        transition: opacity .35s ease
+        &.swiper-slide-active
+            opacity: 1
+
+.lnTab
+    &.swiper-slide-thumb-active
+        background: var(--color-yellow-500)
+        color: var(--color-black)
+
+/* Panels (fade swap) */
+.lnTabPanels
+    position: relative
+    width: 100%
+
+.lnTabPanel
+    display: none
+    visibility: hidden
+    transition: opacity .35s ease, visibility .35s
+    pointer-events: none
+    &.is-active
+        display: block
+        visibility: visible
+        pointer-events: auto
+
+/* bizHero card */
+.bizHero
+    position: relative
+    height: 520px
+    border-radius: var(--radius-24)
+    overflow: hidden
+    background: #0a0f1a
+    box-shadow: var(--shadow-xl)
+    @media (min-width: 320px) and (max-width: 480px)
+        height: 540px
+
+    &__media
+        position: absolute
+        inset: 0
+        img
+            position: absolute
+            inset: 0
+            width: 100%
+            height: 100%
+            object-fit: cover
+            object-position: center
+            display: block
+
+    &__gradient
+        position: absolute
+        inset: 0
+        pointer-events: none
+        background: linear-gradient(90deg, rgba(7, 10, 20, .78) 0%, rgba(7, 10, 20, .55) 40%, rgba(7, 10, 20, .15) 65%, rgba(7, 10, 20, .12) 100%), linear-gradient(0deg, rgba(0, 0, 0, .35) 0%, rgba(0, 0, 0, .10) 100%)
+        @media (max-width: 768px)
+            background: linear-gradient(360deg, rgba(7, 10, 20, .72) 0%, rgba(7, 10, 20, .55) 38%, rgba(7, 10, 20, .20) 58%, rgba(7, 10, 20, .15) 100%), linear-gradient(0deg, rgba(0, 0, 0, .45) 0%, rgba(0, 0, 0, .15) 100%)
+
+    /* Overlay grid container: tempat row/col bootstrap */
+    &__overlay
+        position: relative
+        height: 100%
+        padding: clamp(16px, 3vw, 32px)
+        z-index: 2
+        pointer-events: none // why: konten di bawahnya yang interaktif diberi kembali pointer
+        * // re-enable pointer untuk anak
+            pointer-events: auto
+       
+
+    &__brand img
+        height: clamp(40px, 4vw, 52px)
+        width: auto
+        display: block
+        filter: drop-shadow(0 1px 6px rgba(0,0,0,.3)) // why: kontras di atas bg
+
+    &__col--content
+        color: var(--color-white)
+        height: 100%
+        @media (max-width: 768px)
+            height: auto
+            margin-top: 0
+            
+
+    &__content
+        display: flex
+        gap: 8px
+        height: 100%
+        flex-direction: column
+        margin-bottom: 20px
+
+    &__cta
+        margin-top: 8px
+
+/* Responsive padding & stacking tweaks */
+@media (max-width: 768px)
+    .lnTab
+        padding: 8px 14px
+    .bizHero__overlay
+        padding: 24px
+        display: flex
+        align-content: space-around
+        .bizHero__content
+            justify-content: flex-end
+
+
+// 
+// Section:
+// Report Tabs
+// 
+.lnSection__reports
+    padding: 24px 0
+
+    .lnSection--body
+        margin-top: 8px
+
+.lnReportCard
+    position: relative
+    display: block
+    height: 100%
+    padding: clamp(16px, 2.4vw, 20px)
+    border-radius: var(--radius-24)
+    background: var(--bg-light)
+    // box-shadow: var(--shadow-md)
+    transition: transform .2s ease, box-shadow .2s ease
+    &:hover
+        transform: translateY(-2px) // why: feedback hover
+        box-shadow: var(--shadow-lg)
+
+    /* Body: text kiri, icon kanan */
+    &__content
+        display: flex
+        align-items: flex-start
+        justify-content: space-between
+        gap: 16px
+        min-height: 124px
+
+    &__text
+        flex: 1 1 auto
+        min-width: 0
+        display: grid
+        gap: 4px
+
+    &__title
+        margin: 0
+        color: var(--text-black)
+
+    &__desc
+        margin: 0
+        color: var(--color-neutral-400)
+
+    &__icon
+        flex: 0 0 auto
+        display: grid
+        place-items: center
+        img
+            width: 48px
+            height: 48px
+            display: block
+
+    /* CTA wrapper terpisah */
+    &__actions
+        margin-top: 16px
+
+@media (max-width: 768px)
+    .lnReportCard
+        padding: 16px
+        &__icon img
+            width: 44px
+            height: 44px
+
+
+// <!-- ================================
+//      /src/styles/lnSection__infoList.sass
+//      ================================ -->
+.lnSection__infoList
+    > .container
+        /* Default vars (override via inline style bila perlu) */
+        --infoList-gap-y: 16px
+        --infoList-divider-color: var(--stroke-default)
+
+        /* Divider otomatis antar blok, last-child tanpa divider */
+        > [class^="infoList-"]
+            // padding: var(--infoList-gap-y) 0
+
+            &:not(:last-child)
+                border-bottom: 1px solid var(--infoList-divider-color)
+                margin-bottom: var(--infoList-gap-y)
+                padding-bottom: calc(var(--infoList-gap-y) + 8px)
+
+    /* Layout util (opsional style tambahan aside/content bisa ditaruh di sini) */
+    .infoList__eyebrow
+        color: var(--color-neutral-400)
+
+    /* ===== Related (bar sederhana) ===== */
+    .infoList__body
+        display: grid
+        gap: 16px
+
+        .infoList__related
+            display: flex
+            align-items: center
+            justify-content: space-between
+            gap: 12px
+            width: 100%
+            padding: 18px 20px
+            border: 1px solid var(--stroke-default)
+            border-radius: var(--radius-32)
+            background: #000
+            text-decoration: none
+            transition: border-color .2s ease, background-color .2s ease, opacity .2s ease
+
+            .infoList__relatedLabel
+                color: var(--color-neutral-300)
+
+            .infoList__relatedIcon
+                opacity: .6
+                display: block
+
+            &:hover
+                border-color: var(--color-neutral-300)
+                background: #0a0a0a
+                .infoList__relatedIcon
+                    opacity: .9
+
+    /* ===== Related (card daftar) ===== */
+    .infoList__relatedCard
+        width: 100%
+        border: 1px solid var(--stroke-default)
+        border-radius: var(--radius-16)
+        background: var(--bg-white)
+        padding: clamp(12px, 1.6vw, 16px) clamp(14px, 2vw, 20px)
+        display: grid
+        gap: clamp(8px, 1vw, 10px)
+
+    .infoList__relatedLabel
+        color: var(--color-neutral-400)
+
+    .infoList__relatedList
+        display: grid
+        gap: 2px
+
+    .infoList__relatedItem
+        display: flex
+        align-items: center
+        justify-content: space-between
+        gap: 12px
+        text-decoration: none
+        padding: clamp(6px, .8vw, 8px) 0
+        border-radius: var(--radius-12)
+        transition: background-color .2s ease, opacity .2s ease
+        &:hover
+            background: var(--bg-light)
+        &:active
+            opacity: .88
+        img
+            flex: 0 0 auto
+            opacity: .7
+        &:hover img
+            opacity: 1
+        .infoList__relatedText
+            color: var(--text-black)
+            display: -webkit-box
+            -webkit-line-clamp: 2
+            -webkit-box-orient: vertical
+            overflow: hidden
+
+    /* ===== Doc List (compact) ===== */
+    .lnDocList
+        display: grid
+        gap: 16px 0
+
+    .lnDocList__item
+        padding: 0
+
+    .docItem
+        display: grid
+        grid-template-columns: auto 1fr
+        align-items: center
+        column-gap: 16px
+        padding: 6px 0
+        text-decoration: none
+        border-radius: var(--radius-12)
+        transition: background-color .2s ease, opacity .2s ease
+        &:hover
+            background: rgba(0,0,0,.02)
+        &:active
+            opacity: .9
+
+    .docItem__icon
+        width: 44px
+        height: 44px
+        display: block
+        flex: 0 0 auto
+
+    .docItem__body
+        display: grid
+        gap: 4px
+        min-width: 0
+
+    .docItem__title
+        margin: 0
+        color: var(--text-black)
+        word-break: break-word
+
+    .docItem__meta
+        color: var(--color-neutral-400)
+
+@media (max-width: 768px)
+    .lnSection__infoList
+        .docItem
+            column-gap: 12px
+        .docItem__icon
+            width: 40px
+            height: 40px
+
+
+
+// Section Services
+.lnSection__services
+    --head-min-desktop: 240px
+    --head-min-tablet:  210px
+    --head-min-mobile:  190px
+    padding: clamp(24px, 4vw, 56px) 0
+    .lnIntro
+        margin-bottom: clamp(12px, 2vw, 24px)
+
+/* Reusable Swiper container hook */
+.lnSwiper
+    position: relative
+
+/* Reusable custom nav */
+.lnSwiperNav
+    pointer-events: none
+    .lnSwiperNav__btn
+        z-index: 1
+        pointer-events: auto
+        position: absolute
+        top: 50%
+        transform: translateY(-50%)
+        width: 48px
+        height: 48px
+        border: 0
+        border-radius: 9999px
+        background: #fff
+        box-shadow:  0 8px 24px -2px rgba(19, 19, 19, 0.08)
+        cursor: pointer
+        transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease
+        &:hover
+            transform: translateY(-50%) scale(1.03)
+        &:active
+            opacity: .9
+        &.swiper-button-disabled
+            opacity: 0
+    .lnSwiperNav__prev
+        left: -32px
+    .lnSwiperNav__next
+        right: -32px
+        &::before
+            transform: rotate(180deg)
+
+/* Hide nav on mobile via CSS safeguard */
+@media (max-width: 767.98px)
+    .lnSwiperNav
+        display: none !important
+
+/* Swiper minor theming */
+.lnServiceSwiper
+    .swiper-slide
+        height: auto
+    .swiper-pagination
+        --swiper-pagination-color: var(--bg-warning)
+
+
+
+
+// 
+    // 
+        // 
+
+
+.infoContact__grid
+    display: inline-flex
+    justify-content: center
+    width: 100%
+    gap: 16px
+    margin: 0 auto
+    flex-wrap: wrap
+
+.infoContact__item
+    display: inline-flex
+    align-items: center
+    gap: 10px
+    width: max-content
+    padding: 10px 20px
+    border-radius: var(--radius-32)
+    background: var(--bg-light)
+    border: 1px solid var(--stroke-default)
+    text-decoration: none
+    transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease
+    &:hover
+        background: var(--bg-white)
+        border-color: rgba(0,0,0,.08)
+        box-shadow: var(--shadow-md)
+        transform: translateY(-1px)
+
+.infoContact__lead
+    display: grid
+    place-items: center
+
+.infoContact__icon
+    width: 24px
+    height: 24px
+    display: block
+    opacity: .9
+
+.infoContact__text
+    display: grid
+    gap: 2px
+    margin-right: 8px
+    min-width: 0
+    span:last-child
+        color: var(--text-black)
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
+
+.infoContact__item > img:last-child
+    opacity: .75
+    transition: opacity .2s ease
+    &:hover
+        opacity: 1
+
+@media (max-width: 767.98px)
+    .infoContact__icon
+        width: 24px
+        height: 24px
+
+.lnSection__polaroidMarquee
+    /* Marquee shell */
+    .polaroidMarquee
+        position: relative
+        overflow: hidden
+        &:hover .polaroidTrack
+            animation-play-state: paused
+
+    /* Track bergerak; --speed dapat di-inline pada style */
+    .polaroidTrack
+        --speed: 16s
+        display: inline-block
+        white-space: nowrap
+        animation: polaroid-scroll-single var(--speed) linear infinite
+
+    /* Satu grup item (sesuai permintaan) */
+    .polaroidGroup
+        display: inline-flex
+        gap: 32px
+        padding-inline: 16px
+        .polaroidCard:nth-child(2n)
+            --tilt: 1.2deg
+        .polaroidCard:nth-child(3n)
+            --tilt: -0.6deg
+        .polaroidCard:nth-child(5n)
+            --tilt: 0.8deg
+    
+
+    /* Keyframes: geser dari 0 ke -100% (akan ‘wrap’ saat restart) */
+
+@keyframes polaroid-scroll-single
+    from
+        transform: translateX(0)
+    to
+        transform: translateX(-50%)
+
+
+.joinSquadSwiper
+    position: relative
+    overflow: visible
+    @media (min-width: 991.98px)
+        width: 90%
+    .swiper-wrapper
+        align-items: stretch
+    .swiper-slide
+        width: min(420px, 80vw)
+        transition: transform .35s ease, opacity .35s ease, filter .35s ease
+        opacity: .35
+        transform: scale(.92)
+        filter: grayscale(.15)
+        display: flex
+    .swiper-slide-active
+        transform: scale(1)
+        opacity: 1
+        filter: none
+        .firstSquadCard
+            box-shadow: var(--shadow-xl)
+    .swiper-slide-prev,
+    .swiper-slide-next
+        opacity: .55
+    .lnSwiperNav
+        @media (max-width: 575.98px)
+            display: none
+        .lnSwiperNav__prev
+            left: 24%
+        .lnSwiperNav__next
+            right: 24%
+
+/* Nav (general) */
+.joinNav
+    position: absolute
+    top: 50%
+    transform: translateY(-50%)
+    z-index: 3
+    width: 44px
+    height: 44px
+    border: 0
+    border-radius: 9999px
+    background: var(--color-white)
+    box-shadow: 0 8px 24px -2px rgba(19,19,19,.08)
+    display: grid
+    place-items: center
+    cursor: pointer
+    &.swiper-button-prev
+        left: -16px
+    &.swiper-button-next
+        right: -16px
+    @media (max-width: 575.98px)
+        display: none
+
+.joinCopy__desc
+    max-width: 820px
+
+
+.lnSection__contactUs
+    .lnIntro__title
+        letter-spacing: var(--tracking-tight)
+
+    .lnContactInfos
+        display: grid
+        gap: 20px
+        margin-top: 16px
+
+    .lnContactInfo
+        display: grid
+        grid-template-columns: 48px 1fr
+        align-items: start
+        gap: 12px
+
+        &__icon
+            width: 48px
+            height: 48px
+            border-radius: var(--radius-round)
+            background: var(--bg-white)
+            border: 1px solid var(--stroke-default)
+            display: grid
+            place-items: center
+            box-shadow: var(--shadow-sm)
+
+        &__text
+            gap: 2px
+            display: grid
+
+    .contactCard
+        background: var(--bg-white)
+        border-radius: 16px
+        padding: clamp(16px, 3vw, 24px)
+        box-shadow: 0 8px 24px -2px rgba(19, 19, 19, 0.08)
+
+        &--success
+            padding: clamp(16px, 3vw, 24px)
+            box-shadow: var(--shadow-md)
+            background: var(--bg-white)
+
+            .successHero
+                display: grid
+                place-items: center
+                margin-bottom: clamp(12px, 2vw, 18px)
+
+                img
+                    width: 100%
+                    max-width: 360px
+                    border-radius: 24px
+                    background: var(--bg-light)
+                    display: block
+                    object-fit: cover
+                    box-shadow: var(--shadow-sm)
+
+
+.lnFeaturedArticleSwiper
+    overflow: visible
+
+/* SASS: rename khCard -> keyHighlightCard */
+.lnSection__keyHighlightWithImage
+
+  .lnKHSliderWrap
+    position: relative
+    margin-top: var(--space-24)
+
+  .lnKHSlider
+    overflow: visible
+
+  .keyHighlightCard
+    position: relative
+    height: 520px
+    border-radius: var(--radius-24)
+    overflow: hidden
+    box-shadow: var(--shadow-md)
+    background: #000
+    @media (max-width: 575.98px)
+        height: 400px
+
+    &__media 
+        height: 100%
+        img
+            width: 100%
+            height: 100%
+            object-fit: cover
+            display: block
+
+    &__overlay
+      position: absolute
+      inset: 0
+      background: linear-gradient(0deg, rgba(7,10,20,.75) 0%, rgba(7,10,20,.45) 45%, rgba(7,10,20,.15) 70%, rgba(7,10,20,0) 100%)
+
+    &__content
+      position: absolute
+      left: 28px
+      right: 28px
+      bottom: 28px
+      color: var(--color-white)
+      z-index: 2
+      display: grid
+      gap: 8px
+
+    &__value
+      display: inline-flex
+      align-items: baseline
+      gap: 8px
+      line-height: 1.1
+
+    &__delta
+      color: var(--color-green-400)
+      font-weight: var(--font-weight-bold)
+
+    &__caption
+      opacity: .95
+
+  .lnSwiperNav
+    position: relative
+    display: inline-flex
+    gap: 12px
+    margin-top: 24px
+    width: 100%
+    justify-content: flex-end
+    .lnSwiperNav__btn
+        position: relative
+        left: 0
+        right: 0
+        transform: none
+        opacity: 1
+        &.swiper-button-disabled
+            opacity: .4
+    @media (max-width: 575.98px)
+      bottom: -16px
+
+// Detail Article
+.point
+    width: 3px
+    height: 3px
+    background: var(--color-neutral-400)
+    border-radius: var(--radius-full)
+
+.post
+    img
+        &.thumbnail
+        width: 100%
+        height: auto
+        object-fit: cover
+        object-position: center
+        border-radius: var(--radius-32)
+        @media (min-width: 320px) and (max-width: 480px)
+            border-radius: var(--radius-16)
+
+
+.detail-post
+    p
+        font-size: 16px !important
+        line-height: 24px !important
+        color: var(--text-black)
+        font-weight: var(--font-weight-regular)
+
+.yearList
+    .yearItem
+        position: relative
+        padding: var(--space-24) 0  // sesuaikan jarak atas/bawah
+
+        // tampilkan divider kecuali pada item terakhir
+        &:not(:last-child)::after
+            content: ''
+            position: absolute
+            left: 12%
+            right: 12%
+            bottom: 0
+            height: 1px
+            background: var(--stroke-default)
+            opacity: .6       // opsional, buat halus
+
+
+.lnSection__careerDetail
+  overflow: visible
+
+  .container, .row
+    overflow: visible
+
+  /* Widget sticky (desktop) */
+  .careerDetail__widget
+    position: -webkit-sticky   // Safari
+    position: sticky
+    top: 0
+    margin-bottom: 20px
+    // top: clamp(72px, 10vh, 104px)  // offset dari header
+    align-self: start           // pastikan ikut tinggi kolom
+    height: fit-content
+    background: var(--bg-white)
+    border: 1px solid var(--stroke-default)
+    border-radius: 16px
+    box-shadow: var(--shadow-md)
+    padding: var(--space-16)
+    display: grid
+    gap: var(--space-12)
+    z-index: var(--z-content)   // di atas bg tapi di bawah header
+
+  .careerDetail__shareList
+    display: inline-flex
+    align-items: center
+    gap: 12px
+    a
+      width: 36px
+      height: 36px
+      display: grid
+      place-items: center
+      border-radius: 9999px
+      border: 1px solid var(--stroke-default)
+      background: var(--bg-white)
+      transition: transform .15s ease, border-color .15s ease
+      &:hover
+        transform: translateY(-1px)
+        border-color: var(--color-neutral-300)
+
+  /* Mobile: non-sticky widget + sticky bottom bar aktif */
+  @media (max-width: 991.98px)
+    .careerDetail__widget
+      position: static
+      top: auto
+      margin-top: var(--space-8)
+
+    .careerDetail__mobileBar
+      position: sticky
+      bottom: 0
+      left: 0
+      right: 0
+      z-index: var(--z-sticky)
+      background: rgba(255,255,255,.85)
+      backdrop-filter: blur(6px)
+      box-shadow: 0 -6px 24px rgba(0,0,0,.08)
+      padding: 10px 12px
+      display: block
+
+      .careerDetail__mobileBarInner
+        max-width: 1200px
+        margin: 0 auto
+        display: grid
+        grid-template-columns: 1fr 1fr
+        gap: 12px
+
+.lnSection-postDetail
+    .post-icon img
+        width: 24px
+        height: 24px

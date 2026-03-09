@@ -110,6 +110,39 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
     type: 'tradingview_symbol_overview', name: 'TradingView Chart', description: 'Stock chart widget', icon: 'FaChartLine', category: 'basic',
     defaultData: withCommon({ symbol: 'IDX:LINK', interval: 'D', theme: 'light', chart_type: 'area', width: '100%', height: '400', show_toolbar: true, show_volume: true, locale: 'en' }),
   },
+  // New components (from web design)
+  {
+    type: 'vision_mission', name: 'Vision & Mission', description: 'Vision and mission grid', icon: 'FaEye', category: 'basic',
+    defaultData: withCommon({ vision: { title: { en: 'Our Vision', id: 'Visi Kami' }, description: { en: 'Leading provider.', id: 'Penyedia terkemuka.' }, image: '' }, missions: [{ title: { en: 'Mission 1', id: 'Misi 1' }, description: { en: 'Connecting Indonesia.', id: 'Menghubungkan Indonesia.' }, image: '' }], layout: 'grid', columns: 5 }),
+  },
+  {
+    type: 'maps_coverage', name: 'Coverage Map', description: 'Interactive Indonesia map', icon: 'FaMapMarkedAlt', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Our Coverage', id: 'Jangkauan Kami' }, description: { en: 'Coverage across Indonesia.', id: 'Jangkauan di Indonesia.' }, show_search: true, show_legend: true, default_province: '' }),
+  },
+  {
+    type: 'milestone', name: 'Milestone Timeline', description: 'Company timeline', icon: 'FaStream', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Our Journey', id: 'Perjalanan Kami' }, milestones: [{ year: '2000', title: { en: 'Founded', id: 'Didirikan' }, description: { en: 'Established.', id: 'Didirikan.' }, image: '' }] }),
+  },
+  {
+    type: 'awards_marquee', name: 'Awards Marquee', description: 'Scrolling awards', icon: 'FaMedal', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Awards', id: 'Penghargaan' }, cta_text: { en: 'View All', id: 'Lihat Semua' }, cta_link: '/awards', marquee_speed: 30, marquee_direction: 'left' }),
+  },
+  {
+    type: 'product_showcase', name: 'Product Showcase', description: 'Product with specs', icon: 'FaBox', category: 'basic',
+    defaultData: withCommon({ product_name: { en: 'Product', id: 'Produk' }, product_description: { en: 'Description.', id: 'Deskripsi.' }, product_image: '', logo_image: '', usp_items: [{ icon: '', title: { en: 'Feature', id: 'Fitur' }, description: { en: 'Desc', id: 'Desk' } }], cta_text: { en: 'Order Now', id: 'Pesan' }, cta_link: '#', show_specs: true }),
+  },
+  {
+    type: 'usp_strip', name: 'USP Strip', description: 'Horizontal USP taglines', icon: 'FaGripLines', category: 'basic',
+    defaultData: withCommon({ items: [{ text: { en: 'Fast', id: 'Cepat' } }, { text: { en: 'Reliable', id: 'Andal' } }, { text: { en: 'Secure', id: 'Aman' } }] }),
+  },
+  {
+    type: 'closing_cta', name: 'Closing CTA', description: 'Full-screen video CTA', icon: 'FaBullseye', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Ready?', id: 'Siap?' }, description: { en: 'Contact us.', id: 'Hubungi kami.' }, cta_text: { en: 'Get Started', id: 'Mulai' }, cta_link: '#', video_url: '', bg_image: '' }),
+  },
+  {
+    type: 'video_section', name: 'Video Section', description: 'Expanding video section', icon: 'FaPlayCircle', category: 'basic',
+    defaultData: withCommon({ video_url: '', poster_image: '', autoplay: false }),
+  },
   // MAIN (DB-driven)
   {
     type: 'news_highlight', name: 'News Highlights', description: 'Featured news from DB', icon: 'FaNewspaper', category: 'main',

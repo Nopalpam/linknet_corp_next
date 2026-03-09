@@ -1,0 +1,144 @@
+/* Base */
+.icon
+    display: inline-block
+    // Menggunakan var --icon-size dari typography.sass jika tersedia, default 18px
+    width: var(--icon-size, 24px)
+    height: var(--icon-size, 24px)
+    background-color: currentColor
+    vertical-align: middle
+
+    -webkit-mask-image: var(--icon-src, none)
+    -webkit-mask-repeat: no-repeat
+    -webkit-mask-position: center
+    -webkit-mask-size: contain
+
+    mask-image: var(--icon-src, none)
+    mask-repeat: no-repeat
+    mask-position: center
+    mask-size: contain
+
+/* Palette presets */
+.icon--green-500
+    color: var(--color-green-500)
+.icon--blue-500
+    color: var(--color-blue-500)
+.icon--white
+    color: var(--color-white)
+.icon--neutral-900
+    color: var(--color-neutral-900)
+
+.icon-hover-bright:hover
+    filter: brightness(1.1)
+
+.icon
+    /* Navigation & Direction - Path updated to /assets/icons/ for public folder */
+    &__arrow-top-right
+        --icon-src: url('/assets/icons/arrow-top-right.svg')
+    &__arrow-right
+        --icon-src: url('/assets/icons/arrow-right.svg')
+    &__chevron-up
+        --icon-src: url('/assets/icons/chevron-up.svg')
+    &__chevron-down
+        --icon-src: url('/assets/icons/chevron-down.svg')
+    &__chevron-left
+        --icon-src: url('/assets/icons/chevron-left.svg')
+    &__chevron-right
+        --icon-src: url('/assets/icons/chevron-right.svg')
+    &__close
+        --icon-src: url('/assets/icons/close.svg')
+    &__menu-hamburger
+        --icon-src: url('/assets/icons/menu-hamburger.svg')
+    &__check
+        --icon-src: url('/assets/icons/check.svg')
+    &__view-more
+        --icon-src: url('/assets/icons/view-more.svg')
+    &__copy
+        --icon-src: url('/assets/icons/copy.svg')
+    &__checklist
+        --icon-src: url('/assets/icons/checklist.svg')
+
+    /* Communication & Contact */
+    &__mail
+        --icon-src: url('/assets/icons/mail.svg')
+    &__phone
+        --icon-src: url('/assets/icons/phone.svg')
+    &__world
+        --icon-src: url('/assets/icons/world.svg')
+    &__play
+        --icon-src: url('/assets/icons/play.svg')
+    &__download
+        --icon-src: url('/assets/icons/download.svg')
+
+    /* Information & Feedback */
+    &__info
+        --icon-src: url('/assets/icons/info.svg')
+    &__search
+        --icon-src: url('/assets/icons/search.svg')
+    &__share
+        --icon-src: url('/assets/icons/send.svg')
+
+    /* Business & Content */
+    &__book
+        --icon-src: url('/assets/icons/book.svg')
+    &__business
+        --icon-src: url('/assets/icons/business.svg')
+    &__pricing-tag
+        --icon-src: url('/assets/icons/pricing-tag.svg')
+    &__flash
+        --icon-src: url('/assets/icons/flash.svg')
+
+    /* Calendar & Location */
+    &__calendar
+        --icon-src: url('/assets/icons/calendar.svg')
+    &__pin-location
+        --icon-src: url('/assets/icons/pin-location.svg')
+    &__pin-map
+        --icon-src: url('/assets/icons/pin-map.svg')
+
+    /* Security & Access */
+    &__key
+        --icon-src: url('/assets/icons/key.svg')
+    &__home
+        --icon-src: url('/assets/icons/home.svg')
+        
+
+    // USP
+    &__shield
+        --icon-src: url('/assets/icons/shield.svg')
+    &__diamond
+        --icon-src: url('/assets/icons/jewel.svg')
+    &__full-screen
+        --icon-src: url('/assets/icons/full-screen.svg')
+    &__plug-and-play
+        --icon-src: url('/assets/icons/plug-and-play.svg')
+    &__building
+        --icon-src: url('/assets/icons/building.svg')
+    &__globe
+        --icon-src: url('/assets/icons/globe.svg')
+
+    // Social Media
+    &__instagram
+        --icon-src: url('/assets/icons/social-instagram.svg')
+    &__facebook
+        --icon-src: url('/assets/icons/social-facebook.svg')
+    &__twitter-x
+        --icon-src: url('/assets/icons/social-x.svg')
+    &__linkedin
+        --icon-src: url('/assets/icons/social-linkedin.svg')
+    &__youtube
+        --icon-src: url('/assets/icons/social-youtube.svg')
+    &__tiktok
+        --icon-src: url('/assets/icons/social-tiktok.svg')  
+    &__whatsapp
+        --icon-src: url('/assets/icons/social-whatsapp.svg') 
+    &__email
+        --icon-src: url('/assets/icons/social-email.svg')  
+    &__threads
+        --icon-src: url('/assets/icons/social-threads.svg') 
+
+    // Filled
+    &__briefcase-filled
+        --icon-src: url('/assets/icons/briefcase-filled.svg') 
+    &__pin-filled
+        --icon-src: url('/assets/icons/pin-filled.svg')     
+    

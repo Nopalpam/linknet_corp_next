@@ -1,0 +1,70 @@
+.sectionProduct
+    padding: 56px 0
+
+    // device
+    .device-image 
+        position: relative
+        width: -webkit-fill-available
+        @media screen and (min-width: 920px)
+            height: 520px
+        img
+            position: relative
+            &.img-updown
+                // animation: MoveUpDown 2s linear infinite
+            &.img-downup
+                animation: MoveDownUp 2s linear infinite
+            // Size
+            &.img-full
+                width: 100%
+                transform: scale(1.25)
+                top: 10%
+            &.img-stb
+                width: 100%
+                top: 4%
+                transform: scale(1.1)
+            &.img-remote
+                width: 164px
+                transform: scale(1.2)
+                right: -12%
+                bottom: -14%
+                position: absolute
+                @media screen and (max-width: 768px)
+                    width: 100px
+                    right: -16%
+            &.img-1
+                width: 100%
+
+        &__right
+            right: -12%
+        &__left
+            left: -12%
+        
+        
+    .image-ornament
+        position: absolute
+        right: 0
+        top: 360px
+        opacity: 0.25
+        img
+            @media screen and (max-width: 768px)
+                transform: scale(3)
+
+
+    .sectionHead
+        position: relative
+        z-index: 1
+
+.swiperUSP
+    margin-top: -28px 
+    .swiper
+        overflow: visible
+    .swiper-pagination-usp
+        width: auto !important
+        .swiper-pagination-bullet
+            width: 32px
+            height: 4px
+            opacity: 0.2
+            background: #FFFFFF
+            border-radius: 48px
+            &.swiper-pagination-bullet-active
+                opacity: 1

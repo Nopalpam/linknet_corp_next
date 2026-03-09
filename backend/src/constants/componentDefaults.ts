@@ -629,6 +629,140 @@ const AWARDS_LIST: ComponentTypeDefinition = {
 };
 
 // ============================================================================
+// NEW COMPONENTS (from web_static_reference design)
+// ============================================================================
+
+const VISION_MISSION: ComponentTypeDefinition = {
+  type: 'vision_mission',
+  name: 'Vision & Mission',
+  description: 'Vision and mission grid with alternating image/text blocks',
+  icon: 'FaEye',
+  category: 'basic',
+  defaultData: withCommon({
+    vision: {
+      title: { en: 'Our Vision', id: 'Visi Kami' },
+      description: { en: 'To be the leading network provider.', id: 'Menjadi penyedia jaringan terkemuka.' },
+      image: '',
+    },
+    missions: [
+      { title: { en: 'Mission 1', id: 'Misi 1' }, description: { en: 'Connecting Indonesia.', id: 'Menghubungkan Indonesia.' }, image: '' },
+      { title: { en: 'Mission 2', id: 'Misi 2' }, description: { en: 'Innovation & excellence.', id: 'Inovasi & keunggulan.' }, image: '' },
+    ],
+    layout: 'grid',
+    columns: 5,
+  }),
+};
+
+const MAPS_COVERAGE: ComponentTypeDefinition = {
+  type: 'maps_coverage',
+  name: 'Coverage Map',
+  description: 'Interactive Indonesia coverage map with province selection and city search',
+  icon: 'FaMapMarkedAlt',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Our Coverage', id: 'Jangkauan Kami' },
+    description: { en: 'We cover major cities across Indonesia.', id: 'Kami menjangkau kota-kota besar di Indonesia.' },
+    show_search: true,
+    show_legend: true,
+    default_province: '',
+  }),
+};
+
+const MILESTONE: ComponentTypeDefinition = {
+  type: 'milestone',
+  name: 'Milestone Timeline',
+  description: 'Company timeline with year-based milestones',
+  icon: 'FaStream',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Our Journey', id: 'Perjalanan Kami' },
+    milestones: [
+      { year: '2000', title: { en: 'Founded', id: 'Didirikan' }, description: { en: 'Company was established.', id: 'Perusahaan didirikan.' }, image: '' },
+      { year: '2010', title: { en: 'Expansion', id: 'Ekspansi' }, description: { en: 'Nationwide expansion.', id: 'Ekspansi nasional.' }, image: '' },
+    ],
+  }),
+};
+
+const AWARDS_MARQUEE: ComponentTypeDefinition = {
+  type: 'awards_marquee',
+  name: 'Awards Marquee',
+  description: 'Scrolling marquee of awards and achievements',
+  icon: 'FaMedal',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Awards & Recognition', id: 'Penghargaan & Pengakuan' },
+    cta_text: { en: 'View All', id: 'Lihat Semua' },
+    cta_link: '/awards',
+    marquee_speed: 30,
+    marquee_direction: 'left',
+  }),
+};
+
+const PRODUCT_SHOWCASE: ComponentTypeDefinition = {
+  type: 'product_showcase',
+  name: 'Product Showcase',
+  description: 'Product section with device images, USP cards, and specs/order modals',
+  icon: 'FaBox',
+  category: 'basic',
+  defaultData: withCommon({
+    product_name: { en: 'Product Name', id: 'Nama Produk' },
+    product_description: { en: 'Product description.', id: 'Deskripsi produk.' },
+    product_image: '',
+    logo_image: '',
+    usp_items: [
+      { icon: '', title: { en: 'Feature 1', id: 'Fitur 1' }, description: { en: 'Description', id: 'Deskripsi' } },
+    ],
+    cta_text: { en: 'Order Now', id: 'Pesan Sekarang' },
+    cta_link: '#',
+    show_specs: true,
+  }),
+};
+
+const USP_STRIP: ComponentTypeDefinition = {
+  type: 'usp_strip',
+  name: 'USP Strip',
+  description: 'Horizontal strip of USP taglines with dividers',
+  icon: 'FaGripLines',
+  category: 'basic',
+  defaultData: withCommon({
+    items: [
+      { text: { en: 'Fast', id: 'Cepat' } },
+      { text: { en: 'Reliable', id: 'Andal' } },
+      { text: { en: 'Secure', id: 'Aman' } },
+    ],
+  }),
+};
+
+const CLOSING_CTA: ComponentTypeDefinition = {
+  type: 'closing_cta',
+  name: 'Closing CTA',
+  description: 'Full-screen video background CTA section',
+  icon: 'FaBullseye',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Ready to Get Started?', id: 'Siap Untuk Memulai?' },
+    description: { en: 'Contact us today.', id: 'Hubungi kami hari ini.' },
+    cta_text: { en: 'Get Started', id: 'Mulai Sekarang' },
+    cta_link: '#',
+    video_url: '',
+    bg_image: '',
+  }),
+};
+
+const VIDEO_SECTION: ComponentTypeDefinition = {
+  type: 'video_section',
+  name: 'Video Section',
+  description: 'Scroll-expanding video/image section with play button',
+  icon: 'FaPlayCircle',
+  category: 'basic',
+  defaultData: withCommon({
+    video_url: '',
+    poster_image: '',
+    autoplay: false,
+  }),
+};
+
+// ============================================================================
 // COMPONENT REGISTRY
 // ============================================================================
 
@@ -655,6 +789,14 @@ export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
   DOCUMENT_LIST,
   ACCORDION,
   TRADINGVIEW_SYMBOL_OVERVIEW,
+  VISION_MISSION,
+  MAPS_COVERAGE,
+  MILESTONE,
+  AWARDS_MARQUEE,
+  PRODUCT_SHOWCASE,
+  USP_STRIP,
+  CLOSING_CTA,
+  VIDEO_SECTION,
   // Main (DB-driven)
   NEWS_HIGHLIGHT,
   NEWS_LIST,

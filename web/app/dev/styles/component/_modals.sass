@@ -1,0 +1,278 @@
+.lnManagementModal
+    .lnManagementModal__shell
+        border: 0
+        border-radius: 32px
+        overflow: hidden
+        box-shadow: var(--shadow-xl)
+        background: var(--bg-white)
+        max-height: 88vh
+        display: flex
+        flex-direction: column
+        @media (min-width: 320px) and (max-width: 480px)
+            border-radius: var(--radius-16)
+
+    &__close
+        position: absolute
+        top: 12px
+        right: 12px
+        z-index: 3
+        width: 32px
+        height: 32px
+        border-radius: 9999px
+        background-color: rgba(0,0,0,.06)
+        background-image: url('src/assets/icons/close.svg')
+        background-position: center
+        background-repeat: no-repeat
+        background-size: 18px 18px
+        opacity: 1
+        @media (min-width: 320px) and (max-width: 480px)
+            width: 28px
+            height: 28px
+        &:hover
+            background-color: rgba(0,0,0,.12)
+
+    /* Grid area: mobile stack (media then content) */
+    &__grid
+        display: grid
+        grid-template-columns: 1fr
+        grid-template-areas: "media" "content"
+        gap: 0
+        height: 100%
+        overflow: hidden
+
+    /* Large photo (hidden on mobile via media query below) */
+    &__media
+        grid-area: media
+        overflow: hidden
+        background: var(--bg-light)
+        min-height: 220px
+        img
+            width: 100%
+            height: 100%
+            display: block
+            object-fit: cover
+
+    /* Content column */
+    &__content
+        grid-area: content
+        min-width: 0
+        min-height: 0
+        display: flex
+        flex-direction: column
+        gap: 4px
+
+    &__header
+        display: grid
+        grid-template-columns: 1fr
+        gap: 6px
+        padding: var(--space-20)
+        padding-bottom: var(--space-12)
+        h3
+            color: var(--text-black)
+
+    /* Mobile avatar (hidden by default on desktop) */
+    &__avatar
+        display: none
+        width: 64px
+        height: 64px
+        border-radius: 12px
+        object-fit: cover
+        @media (max-width: 575.98px)
+            width: 80px
+            height: 100px
+
+    &__titleWrap
+        min-width: 0
+        margin-right: 16%
+
+    &__body
+        flex: 1 1 auto
+        min-height: 0
+        overflow: auto
+        -webkit-overflow-scrolling: touch
+        padding-right: 2px
+        padding: 0 var(--space-20) 
+        #mgmtModalBio
+            max-width: 72ch
+
+    &__footer
+        display: flex
+        align-items: center
+        gap: 12px
+        padding-top: 0
+        padding: var(--space-12) var(--space-20) var(--space-20) var(--space-20)
+        position: sticky
+        bottom: 0
+        background: #fff
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08)
+
+/* Desktop/tablet: 2 columns */
+@media (min-width: 992px)
+    .lnManagementModal
+        &__grid
+            grid-template-columns: minmax(360px, 520px) 1fr
+            grid-template-areas: "media content"
+        &__media img
+            height: 100%
+            object-fit: cover
+
+/* Mobile: photo on top hidden, header shows avatar, limit photo height */
+@media (max-width: 575.98px)
+    .lnManagementModal
+        &__media
+            display: none
+        &__header
+            grid-template-columns: auto 1fr
+            align-items: start
+            gap: 12px
+
+        &__avatar
+            display: block
+        &__titleWrap > h3
+            margin: 0
+        &__titleWrap > p
+            margin: 0
+
+/* Prev / Next buttons (both fill width, sit side-by-side) */
+.lnMgmtNav
+    width: 100%
+    min-width: 0
+    flex: 1 1 0
+    display: inline-flex
+    align-items: center
+    gap: 10px
+    padding: 12px 14px
+    border-radius: 16px
+    border: 1px solid var(--stroke-default)
+    background: white
+    cursor: pointer
+    transition: background-color .2s ease, border-color .2s ease, transform .15s ease
+    &.is-disabled
+        display: none
+
+    &:hover
+        background: var(--bg-white)
+        @media (min-width: 575.98px)
+            border-color: var(--color-neutral-200)
+
+    &:active
+        transform: translateY(1px)
+
+    &__icon img
+        width: 24px
+        height: 24px
+
+    /* Meta vertical: small label above name */
+    &__meta
+        display: inline-flex
+        flex-direction: column
+        gap: 2px
+        line-height: 1.2
+        width: 100%
+        min-width: 0
+        strong
+            max-width: 100%
+            overflow: hidden
+            text-overflow: ellipsis
+            white-space: nowrap
+            width: 200px
+            color: var(--text-black)
+
+    /* Alignment per side */
+    &.lnMgmtNav--prev
+        justify-content: flex-start
+        .lnMgmtNav__meta
+            align-items: flex-end
+            text-align: right
+
+    &.lnMgmtNav--next
+        justify-content: flex-end
+        .lnMgmtNav__meta
+            align-items: flex-start
+            text-align: left
+
+@media (max-width: 575.98px)
+    .lnMgmtNav
+        padding: 10px 12px
+
+.lnCookieBanner
+    position: fixed
+    left: 20px
+    right: 20px
+    bottom: 20px
+    z-index: var(--z-toast, 1100)
+    display: none
+    &.is-visible
+        display: block
+
+    &__inner
+        max-width: 720px
+        margin: 0 auto
+        background: var(--bg-white)
+        border-radius: var(--radius-24)
+        box-shadow: 0 8px 24px -2px rgba(19, 19, 19, 0.08)
+        padding: 16px
+        display: grid
+        grid-template-columns: auto 1fr auto
+        align-items: start
+        gap: 12px
+
+    &__icon
+        width: 46px
+        height: 36px
+        display: grid
+        place-items: center
+
+    &__text
+        display: grid
+        gap: 2px
+        min-width: 0
+    &__title
+        letter-spacing: var(--tracking-normal)
+    &__desc
+        color: var(--color-neutral-500)
+
+    &__actions
+        display: inline-flex
+        align-items: center
+        gap: 16px
+        white-space: nowrap
+    &__link
+        color: var(--color-neutral-800)
+        text-decoration: none
+        &:hover
+            text-decoration: underline
+
+/* Responsive */
+@media (max-width: 768px)
+    .lnCookieBanner__inner
+        grid-template-columns: 1fr
+        gap: 14px
+        padding: 14px
+    .lnCookieBanner__actions
+        justify-content: flex-end
+
+
+.modal
+  .modal-dialog
+    &.modal-md
+      max-width: 640px !important
+    .modal-content
+      border-radius: var(--radius-20)
+      background: var(--bg-white)
+      .modal-header
+        border-bottom: 0
+        display: flex
+        justify-content: space-between
+        align-items: flex-start
+        padding: var(--space-24) var(--space-24) var(--space-12) var(--space-24)
+        .btn-close
+          &:focus
+            box-shadow: var(--shadow-0)
+      .category
+        display: flex
+        align-items: center
+        padding: 6px var(--space-12)
+        gap: var(--space-8)
+        background: var(--bg-light-1)
+        border-radius: var(--radius-full)

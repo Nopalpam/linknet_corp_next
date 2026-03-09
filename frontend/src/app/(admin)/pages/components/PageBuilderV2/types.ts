@@ -42,6 +42,15 @@ export type ComponentType =
   | 'document_list'
   | 'accordion'
   | 'tradingview_symbol_overview'
+  // New components (from web design)
+  | 'vision_mission'
+  | 'maps_coverage'
+  | 'milestone'
+  | 'awards_marquee'
+  | 'product_showcase'
+  | 'usp_strip'
+  | 'closing_cta'
+  | 'video_section'
   // Main (DB-driven)
   | 'news_highlight'
   | 'news_list'
