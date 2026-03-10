@@ -9,8 +9,8 @@
 
 import React, { useState } from 'react';
 import { getComponentsByCategory } from './registry';
-import { DRAG_TYPE, DragItem } from './types';
 import { usePageBuilder } from './context';
+import { useDraggable } from '@dnd-kit/core';
 
 // =============================================================================
 // ICON MAP (FontAwesome-style icon names → inline SVG)
@@ -54,25 +54,24 @@ interface ComponentCardProps {
 function ComponentCard({ type, name, description, icon }: ComponentCardProps) {
   const { addComponent } = usePageBuilder();
 
-  const handleDragStart = (e: React.DragEvent) => {
-    const dragData: DragItem = {
-      type: 'NEW_COMPONENT',
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `sidebar-${type}`,
+    data: {
+      isNewComponent: true,
       componentType: type,
-    };
-    e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(dragData));
-    e.dataTransfer.effectAllowed = 'copy';
-  };
-
-  const handleClick = () => {
-    addComponent(type);
-  };
+      label: name,
+    },
+  });
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onClick={handleClick}
-      className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-grab active:cursor-grabbing hover:border-brand-500 hover:shadow-md transition-all group"
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={() => addComponent(type)}
+      className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-grab active:cursor-grabbing hover:border-brand-500 hover:shadow-md transition-all group ${
+        isDragging ? 'opacity-50 shadow-lg ring-2 ring-brand-500' : ''
+      }`}
       title={description}
     >
       <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">

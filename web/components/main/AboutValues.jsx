@@ -21,12 +21,13 @@ gsap.registerPlugin(ScrollTrigger);
 export default function AboutValues({ 
   name = 'default', 
   className = '',
+  cmsData = null,
   // Props baru untuk Customize jumlah card
   slidesPerViewMobile = 1.1,
   slidesPerViewDesktop = 3 
 }) {
   const containerRef = useRef(null); // Ref untuk scope GSAP
-  const sectionData = ABOUT_VALUES_DATA[name];
+  const sectionData = cmsData || ABOUT_VALUES_DATA[name];
 
   // =========================================
   // SETUP ANIMASI GSAP

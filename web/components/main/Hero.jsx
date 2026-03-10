@@ -14,14 +14,20 @@ import { HERO_DATA } from '../../data/components/hero';
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
+/**
+ * Hero component - supports both:
+ * 1. Static mode: pass `name` to look up from HERO_DATA (legacy)
+ * 2. CMS mode: pass `data` object directly from CMS / HeroSliders
+ */
 export default function Hero({
   name, // Prop untuk mengambil key dari file data
+  data: directData = null, // CMS data passed directly
   className = "" 
 }) {
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
   
-  // Ambil data berdasarkan nama
-  const data = HERO_DATA[name];
+  // CMS mode uses directData, static mode uses name lookup
+  const data = directData || HERO_DATA[name];
 
   // =========================================
   // SETUP ANIMASI GSAP

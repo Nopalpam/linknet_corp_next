@@ -12,7 +12,7 @@ import Button from '../base/Button';
 // Register Plugin
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Faq() {
+export default function Faq({ cmsData = null }) {
   const containerRef = useRef(null);
   const headerRef = useRef(null);
   const listRef = useRef(null);
@@ -23,7 +23,8 @@ export default function Faq() {
   const [isAnimating, setIsAnimating] = useState(false); 
 
   const t = useTranslations('faq');
-  const faqList = t.raw('faqList');
+  const faqListRaw = t.raw('faqList');
+  const faqList = cmsData?.items || faqListRaw;
 
   const toggleAccordion = (index) => {
     setActiveIndex(activeIndex === index ? null : index);
@@ -142,10 +143,10 @@ export default function Faq() {
         {/* --- HEADER --- */}
         <div ref={headerRef} className="text-center mb-12 invisible"> 
           <p className="text-sm font-bold tracking-widest text-neutral-400 uppercase mb-3">
-            {t('label')}
+            {cmsData?.label || t('label')}
           </p>
           <h2 className="text-headline-h3 md:text-headline-h2 font-bold whitespace-pre-line leading-tight">
-            {t('title')}
+            {cmsData?.title || t('title')}
           </h2>
         </div>
 

@@ -18,12 +18,13 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function KeyHighlightWithImage({ 
   name = 'impact', 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
 
-  const sectionData = KEY_HIGHLIGHT_IMAGE_DATA[name];
+  const sectionData = cmsData || KEY_HIGHLIGHT_IMAGE_DATA[name];
   
   // =========================================
   // SETUP ANIMASI GSAP

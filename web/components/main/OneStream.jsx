@@ -26,7 +26,7 @@ import SplitText from '../base/text/SplitText';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function OneStream() {
+export default function OneStream({ cmsData = null }) {
    
     const [prevEl, setPrevEl] = useState(null);
     const [nextEl, setNextEl] = useState(null);
@@ -35,7 +35,7 @@ export default function OneStream() {
     const { activeModalId, closeModal, openModal, isModalOpen } = useModalRegistry();
 
     const t = useTranslations('OneStream');
-    const uspList = t.raw('usp');
+    const uspList = cmsData?.usp_items || t.raw('usp');
     const specifications = t.raw('specifications');
     const order = t.raw('order');
     

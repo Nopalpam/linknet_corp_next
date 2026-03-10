@@ -125,26 +125,91 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   sliders_hero: {
     component: HeroSliders,
-    mapProps: ({ styleProps }) => ({ name: 'home', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsSlides: Array.isArray(data.slides) 
+        ? data.slides.map((slide: any) => ({
+            image: slide.image || '',
+            image_mobile: slide.image_mobile || '',
+            title: t(slide.title),
+            description: t(slide.description),
+            button_text: t(slide.button_text),
+            button_link: slide.button_link || '#',
+            pill_text: t(slide.pill_text),
+            indicator_label: t(slide.indicator_label),
+            theme: slide.theme || data.theme || 'dark',
+          }))
+        : null,
+      autoplay: data.autoplay !== false,
+      autoplaySpeed: data.autoplay_speed || null,
+      theme: data.theme || 'dark',
+      ...styleProps,
+    }),
   },
 
   // ── About / USP ─────────────────────────────────────────────────
 
   usp_grid: {
     component: AboutWithUSP,
-    mapProps: ({ styleProps }) => ({
-      name: 'home',
-      gridColsDesktop: 4,
-      gridColsMobile: 1,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        uspVariant: data.usp_variant || 'card',
+        bgColor: data.bg_color || '',
+        isSlider: data.is_slider !== undefined ? data.is_slider : false,
+        bgImage: data.bg_image || '',
+        bgImageMobile: data.bg_image_mobile || '',
+        bgPositionClasses: 'bg-right-top md:bg-right',
+        bgSizeClass: 'bg-cover',
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        uspList: Array.isArray(data.items)
+          ? data.items.map((item: any) => ({
+              iconURL: item.icon || '',
+              title: t(item.title),
+              description: t(item.description),
+            }))
+          : [],
+        ctaList: Array.isArray(data.cta_list)
+          ? data.cta_list.map((cta: any) => ({
+              text: t(cta.text),
+              variant: cta.variant || 'primary',
+              size: cta.size || 'lg',
+              href: cta.href || '#',
+            }))
+          : [],
+      },
       ...styleProps,
     }),
   },
 
   usp_grid_slider: {
     component: AboutValues,
-    mapProps: ({ styleProps }) => ({
-      name: 'corporate-values',
-      slidesPerViewDesktop: 4,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        valuesList: Array.isArray(data.items)
+          ? data.items.map((item: any, idx: number) => ({
+              id: `value-${idx}`,
+              logo: item.icon || '',
+              title: t(item.title),
+              bodyTitle: t(item.description),
+              list: Array.isArray(item.list)
+                ? item.list.map((li: any) => ({ icon: li.icon || '', text: t(li.text) }))
+                : [],
+            }))
+          : [],
+      },
+      slidesPerViewDesktop: data.slides_per_view || 4,
       slidesPerViewMobile: 1.4,
       ...styleProps,
     }),
@@ -152,43 +217,219 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   about_with_marquee: {
     component: AboutWithRunningPhotos,
-    mapProps: ({ styleProps }) => ({ name: 'career', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          label: t(data.intro?.label),
+          title: t(data.intro?.title),
+          description: t(data.intro?.description),
+          align: data.intro?.align || 'left',
+        },
+        photos: Array.isArray(data.photos)
+          ? data.photos.map((p: any) => (typeof p === 'string' ? p : p.url || ''))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   // ── Business / Tabs ─────────────────────────────────────────────
 
   business_tab: {
     component: TabBusiness,
-    mapProps: ({ styleProps }) => ({ name: 'home', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        items: Array.isArray(data.tabs)
+          ? data.tabs.map((tab: any, idx: number) => ({
+              id: `tab-${idx}`,
+              label: t(tab.name),
+              tagline: '',
+              title: t(tab.title),
+              desc: t(tab.description),
+              image: tab.background_image || '',
+              logoSrc: tab.logo_image || '',
+              textCTA: t(tab.cta_text),
+              href: tab.cta_link || '#',
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   tabs_with_card: {
     component: BusinessTab,
-    mapProps: ({ styleProps }) => ({ name: 'services', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      introData: data.intro ? {
+        as: 'h2',
+        label: t(data.intro.label),
+        title: t(data.intro.title),
+        description: t(data.intro.description),
+        align: data.intro.align || 'left',
+      } : { as: 'h2', title: t(data.title), align: 'left' },
+      items: Array.isArray(data.tabs)
+        ? data.tabs.map((tab: any) => {
+            const panelData = data.tab_panels?.[tab.key];
+            return {
+              id: tab.key,
+              label: t(tab.label),
+              tagline: '',
+              title: t(tab.label),
+              desc: '',
+              image: panelData?.cards?.[0]?.image || '',
+              logoSrc: '',
+              textCTA: '',
+              href: '#',
+              cards: Array.isArray(panelData?.cards)
+                ? panelData.cards.map((card: any) => ({
+                    title: t(card.title),
+                    description: t(card.description),
+                    image: card.image || '',
+                    link: card.link || '#',
+                  }))
+                : [],
+            };
+          })
+        : [],
+      ...styleProps,
+    }),
   },
 
   // ── Highlights / Features ───────────────────────────────────────
 
   key_highlight: {
     component: KeyHighlightWithImage,
-    mapProps: ({ styleProps }) => ({ name: 'impact', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        items: Array.isArray(data.slides)
+          ? data.slides.map((slide: any, idx: number) => ({
+              id: `highlight-${idx}`,
+              image: slide.image || '',
+              value: slide.value || '',
+              delta: slide.delta || '',
+              caption: t(slide.caption),
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   highlighting_real_initiatives: {
     component: HighlightingRealInitiatives,
-    mapProps: ({ styleProps }) => ({ name: 'csr-programs', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          label: '',
+          title: t(data.title),
+          description: t(data.description),
+          align: 'left',
+        },
+        items: Array.isArray(data.initiatives)
+          ? data.initiatives.map((ini: any, idx: number) => ({
+              id: `initiative-${idx}`,
+              topLogo: '',
+              image: ini.image || '',
+              title: t(ini.title),
+              desc: t(ini.description),
+              date: '',
+              url: ini.link || '#',
+            }))
+          : [],
+        partnerText: t(data.partner_text),
+        partnerLogos: Array.isArray(data.community_logos)
+          ? data.community_logos.map((logo: any) => (typeof logo === 'string' ? logo : logo.url || ''))
+          : [],
+        ctaList: Array.isArray(data.cta_list)
+          ? data.cta_list.map((cta: any) => ({
+              text: t(cta.text),
+              href: cta.href || '#',
+              variant: cta.variant || 'primary',
+              size: cta.size || 'lg',
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   // ── Contact / Info ──────────────────────────────────────────────
 
   info_contacts: {
     component: InfoContact,
-    mapProps: ({ styleProps }) => ({ name: 'esg', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          title: t(data.title),
+          description: t(data.description),
+          align: 'left',
+        },
+        items: Array.isArray(data.contact_items)
+          ? data.contact_items.map((item: any) => ({
+              icon: item.icon || '',
+              label: t(item.label),
+              value: item.value || '',
+              href: item.url || '',
+              target: item.target || '_blank',
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   information_list: {
     component: InformationList,
-    mapProps: ({ styleProps }) => ({ name: 'media', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        items: Array.isArray(data.info_sections)
+          ? data.info_sections.map((section: any, idx: number) => ({
+              id: `info-${idx}`,
+              title: t(section.title),
+              contents: t(section.content),
+              relatedArticles: Array.isArray(section.related_articles)
+                ? section.related_articles.map((art: any) => ({
+                    text: t(art.title),
+                    url: art.url || '#',
+                  }))
+                : [],
+              documents: Array.isArray(section.documents)
+                ? section.documents.map((doc: any) => ({
+                    title: t(doc.title),
+                    date: doc.date || '',
+                    icon: doc.file_type || 'pdf',
+                    url: doc.url || '#',
+                  }))
+                : [],
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   contact_us: {
@@ -199,7 +440,29 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   join_first_squad: {
     component: JoinFirstSquad,
-    mapProps: ({ styleProps }) => ({ name: 'career', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          label: '',
+          title: t(data.title),
+          align: 'left',
+        },
+        items: Array.isArray(data.slides)
+          ? data.slides.map((slide: any, idx: number) => ({
+              id: `squad-${idx}`,
+              image: slide.image || '',
+              roleLabel: '',
+              roleTitle: t(slide.title),
+              headline: '',
+              desc: t(slide.description),
+              ctaText: t(slide.cta_text),
+              ctaUrl: slide.cta_link || '#',
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   career_highlight: {
@@ -218,7 +481,29 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   news_list: {
     component: NewsTeaser,
-    mapProps: ({ styleProps }) => ({ name: 'press-release', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        category: data.category_id || null,
+        categorySlug: data.category_slug || null,
+        limit: data.max_data || 6,
+        introData: {
+          as: 'h2',
+          label: '',
+          title: t(data.title),
+          description: '',
+          align: 'left',
+        },
+        ctaList: data.cta_text
+          ? [{
+              text: t(data.cta_text),
+              href: data.cta_link || '#',
+              variant: 'primary',
+              size: 'lg',
+            }]
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   // ── Management ──────────────────────────────────────────────────
@@ -249,43 +534,202 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   awards_marquee: {
     component: AwardSneakPeek,
-    mapProps: ({ styleProps }) => ({ name: 'default', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          label: '',
+          title: t(data.title),
+          description: '',
+          align: 'left',
+        },
+        ctaList: data.cta_text
+          ? [{
+              text: t(data.cta_text),
+              href: data.cta_link || '#',
+              variant: 'primary',
+              size: 'lg',
+            }]
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   // ── Other sections ──────────────────────────────────────────────
 
   accordion: {
     component: FAQ,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: data.items ? {
+        label: t(data.label),
+        title: t(data.title),
+        items: Array.isArray(data.items)
+          ? data.items.map((item: any, idx: number) => ({
+              id: `faq-${idx}`,
+              question: t(item.title),
+              answer: t(item.content),
+            }))
+          : [],
+      } : null,
+      ...styleProps,
+    }),
   },
 
   vision_mission: {
     component: VisionMission,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        items: [
+          ...(data.vision
+            ? [{
+                id: 'vision',
+                label: 'VISION',
+                title: t(data.vision.title),
+                description: t(data.vision.description),
+                image: data.vision.image || '',
+                align: 'left' as const,
+              }]
+            : []),
+          ...(Array.isArray(data.missions)
+            ? data.missions.map((m: any, idx: number) => ({
+                id: `mission-${idx}`,
+                label: 'MISSION',
+                title: t(m.title),
+                description: t(m.description),
+                image: m.image || '',
+                align: idx % 2 === 0 ? 'right' : 'left',
+              }))
+            : []),
+        ],
+      },
+      className: data.custom_class || '',
+      ...styleProps,
+    }),
   },
 
   maps_coverage: {
     component: MapsCoverage,
-    mapProps: ({ styleProps }) => ({ name: 'home', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          label: '',
+          title: t(data.title),
+          description: t(data.description),
+          align: 'left',
+        },
+        widgetData: data.widget ? {
+          instructionText: t(data.widget.instruction_text),
+          statusCovered: t(data.widget.status_covered),
+          statusNotCovered: t(data.widget.status_not_covered),
+          title: t(data.widget.title),
+          regionLabel: t(data.widget.region_label),
+          searchPlaceholder: t(data.widget.search_placeholder),
+          noCityFound: t(data.widget.no_city_found),
+          ctaText: t(data.widget.cta_text),
+          notCoveredMessage: t(data.widget.not_covered_message),
+        } : undefined,
+      },
+      ...styleProps,
+    }),
   },
 
   milestone: {
     component: Milestone,
-    mapProps: ({ styleProps }) => ({ name: 'history', ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: {
+          as: 'h2',
+          label: '',
+          title: t(data.title),
+          description: '',
+          align: 'left',
+        },
+        items: Array.isArray(data.milestones)
+          ? data.milestones.map((ms: any, idx: number) => ({
+              id: `milestone-${idx}`,
+              year: ms.year || '',
+              image: ms.image || '',
+              description: t(ms.description),
+              list: Array.isArray(ms.list) ? ms.list.map((item: any) => t(item)) : [],
+            }))
+          : [],
+      },
+      ...styleProps,
+    }),
   },
 
   product_showcase: {
     component: OneStream,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        product_name: t(data.product_name),
+        product_description: t(data.product_description),
+        product_image: data.product_image || '',
+        logo_image: data.logo_image || '',
+        usp_items: Array.isArray(data.usp_items)
+          ? data.usp_items.map((item: any) => ({
+              icon: item.icon || '',
+              title: t(item.title),
+              desc: t(item.description),
+            }))
+          : null,
+        cta_text: t(data.cta_text),
+        cta_link: data.cta_link || '#',
+      },
+      ...styleProps,
+    }),
   },
 
   usp_strip: {
     component: USP,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        items: Array.isArray(data.items)
+          ? data.items.map((item: any) => ({
+              title: t(item.text),
+              desc: '',
+            }))
+          : null,
+      },
+      ...styleProps,
+    }),
   },
 
   closing_cta: {
     component: ClosingSentence,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        text: t(data.title),
+        description: t(data.description),
+        cta_text: t(data.cta_text),
+        cta_link: data.cta_link || '#',
+        video_url: data.video_url || '',
+        bg_image: data.bg_image || '',
+      },
+      ...styleProps,
+    }),
   },
 
   video_section: {
     component: Tvc,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        video_url: data.video_url || '',
+        poster_image: data.poster_image || '',
+        title: t(data.title),
+        autoplay: data.autoplay || false,
+      },
+      ...styleProps,
+    }),
   },
 
   // ── Built-in generic sections ───────────────────────────────────

@@ -3,9 +3,13 @@
  * 
  * Registry loads component types from the backend API.
  * Also maintains a static fallback list of all known types.
+ * 
+ * Default templates are sourced from web/data/components/*.js to ensure
+ * CMS data structure is consistent with the public website.
  */
 
 import { ComponentRegistryEntry } from './types';
+import { COMPONENT_DEFAULT_TEMPLATES } from './componentDefaultTemplates';
 
 // =============================================================================
 // STATIC COMPONENT TYPE LIST (fallback when API is unavailable)
@@ -40,23 +44,23 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
   },
   {
     type: 'hero_section', name: 'Hero Section', description: 'Full-width hero banner', icon: 'FaStar', category: 'basic',
-    defaultData: withCommon({ background_image: '', title: { en: 'Welcome to LinkNet', id: 'Selamat Datang di LinkNet' }, description: { en: 'Connecting Indonesia.', id: 'Menghubungkan Indonesia.' }, pill_text: { en: '', id: '' }, button_text: { en: 'Get Started', id: 'Mulai' }, button_link: '#', theme: 'dark', gradient_visible: true }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['hero_section'],
   },
   {
     type: 'sliders_hero', name: 'Hero Slider', description: 'Hero carousel with slides', icon: 'FaSlidersH', category: 'basic',
-    defaultData: withCommon({ slides: [{ image: '', title: { en: 'Slide 1', id: 'Slide 1' }, description: { en: 'Description', id: 'Deskripsi' }, button_text: { en: 'More', id: 'Lainnya' }, button_link: '#', pill_text: { en: '', id: '' }, indicator_label: { en: 'Slide 1', id: 'Slide 1' } }], autoplay: true, autoplay_speed: 5000, theme: 'dark' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['sliders_hero'],
   },
   {
     type: 'usp_grid', name: 'USP Grid', description: 'Grid of unique selling points', icon: 'FaTh', category: 'basic',
-    defaultData: withCommon({ items: [{ icon: 'FaWifi', title: { en: 'Fast', id: 'Cepat' }, description: { en: 'High-speed', id: 'Kecepatan tinggi' } }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['usp_grid'],
   },
   {
     type: 'usp_grid_slider', name: 'USP Grid Slider', description: 'USP as slider/carousel', icon: 'FaThList', category: 'basic',
-    defaultData: withCommon({ items: [{ icon: 'FaWifi', title: { en: 'Fast', id: 'Cepat' }, description: { en: 'High-speed', id: 'Kecepatan tinggi' } }], autoplay: true, slides_per_view: 3 }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['usp_grid_slider'],
   },
   {
     type: 'business_tab', name: 'Business Tab', description: 'Tabbed business segments', icon: 'FaBriefcase', category: 'basic',
-    defaultData: withCommon({ tabs: [{ name: { en: 'Enterprise', id: 'Perusahaan' }, title: { en: 'Enterprise Solutions', id: 'Solusi Perusahaan' }, description: { en: 'Solutions for businesses.', id: 'Solusi untuk bisnis.' }, background_image: '', logo_image: '', cta_text: { en: 'More', id: 'Lainnya' }, cta_link: '#' }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['business_tab'],
   },
   {
     type: 'tabs_with_card', name: 'Tabs with Cards', description: 'Tabs with card grids', icon: 'FaFolder', category: 'basic',
@@ -64,15 +68,15 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
   },
   {
     type: 'key_highlight', name: 'Key Highlights', description: 'Key metrics slider', icon: 'FaChartBar', category: 'basic',
-    defaultData: withCommon({ slides: [{ image: '', value: '1M+', delta: '+15%', caption: { en: 'Subscribers', id: 'Pelanggan' } }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['key_highlight'],
   },
   {
     type: 'about_with_marquee', name: 'About with Marquee', description: 'About section with photo marquee', icon: 'FaInfoCircle', category: 'basic',
-    defaultData: withCommon({ intro: { title: { en: 'About Us', id: 'Tentang Kami' }, description: { en: 'Leading provider.', id: 'Penyedia terkemuka.' }, cta_text: { en: 'More', id: 'Lainnya' }, cta_link: '/about' }, photos: [{ url: '', alt: 'Photo 1' }], marquee_speed: 30, marquee_direction: 'left' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['about_with_marquee'],
   },
   {
     type: 'join_first_squad', name: 'Join First Squad', description: 'Career recruitment carousel', icon: 'FaUserPlus', category: 'basic',
-    defaultData: withCommon({ title: { en: 'Join Our Team', id: 'Bergabung dengan Tim Kami' }, slides: [{ title: { en: 'First Squad', id: 'First Squad' }, description: { en: 'Be part of our team.', id: 'Jadilah bagian tim kami.' }, image: '', cta_text: { en: 'Apply', id: 'Lamar' }, cta_link: '/careers' }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['join_first_squad'],
   },
   {
     type: 'list_services', name: 'List Services', description: 'Service listing with products', icon: 'FaConciergeBell', category: 'basic',
@@ -84,15 +88,15 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
   },
   {
     type: 'highlighting_real_initiatives', name: 'Real Initiatives', description: 'CSR/community initiatives', icon: 'FaHandHoldingHeart', category: 'basic',
-    defaultData: withCommon({ title: { en: 'Initiatives', id: 'Inisiatif' }, description: { en: 'Making a difference.', id: 'Memberikan dampak.' }, initiatives: [{ title: { en: 'Digital Literacy', id: 'Literasi Digital' }, description: { en: 'Education', id: 'Pendidikan' }, image: '' }], community_logos: [{ url: '', alt: 'Partner' }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['highlighting_real_initiatives'],
   },
   {
     type: 'info_contacts', name: 'Contact Info', description: 'Contact details with icons', icon: 'FaAddressBook', category: 'basic',
-    defaultData: withCommon({ title: { en: 'Contact', id: 'Kontak' }, contact_items: [{ type: 'phone', icon: 'FaPhone', label: { en: 'Phone', id: 'Telepon' }, value: '+62 21 2996 0808', url: 'tel:+622129960808' }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['info_contacts'],
   },
   {
     type: 'information_list', name: 'Information List', description: 'HTML + articles + docs', icon: 'FaListUl', category: 'basic',
-    defaultData: withCommon({ info_sections: [{ title: { en: 'Info', id: 'Info' }, content: { en: '<p>Content</p>', id: '<p>Konten</p>' }, related_articles: [], documents: [] }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['information_list'],
   },
   {
     type: 'contact_us', name: 'Contact Us', description: 'Contact form section', icon: 'FaEnvelopeOpen', category: 'basic',
@@ -113,19 +117,19 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
   // New components (from web design)
   {
     type: 'vision_mission', name: 'Vision & Mission', description: 'Vision and mission grid', icon: 'FaEye', category: 'basic',
-    defaultData: withCommon({ vision: { title: { en: 'Our Vision', id: 'Visi Kami' }, description: { en: 'Leading provider.', id: 'Penyedia terkemuka.' }, image: '' }, missions: [{ title: { en: 'Mission 1', id: 'Misi 1' }, description: { en: 'Connecting Indonesia.', id: 'Menghubungkan Indonesia.' }, image: '' }], layout: 'grid', columns: 5 }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['vision_mission'],
   },
   {
     type: 'maps_coverage', name: 'Coverage Map', description: 'Interactive Indonesia map', icon: 'FaMapMarkedAlt', category: 'basic',
-    defaultData: withCommon({ title: { en: 'Our Coverage', id: 'Jangkauan Kami' }, description: { en: 'Coverage across Indonesia.', id: 'Jangkauan di Indonesia.' }, show_search: true, show_legend: true, default_province: '' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['maps_coverage'],
   },
   {
     type: 'milestone', name: 'Milestone Timeline', description: 'Company timeline', icon: 'FaStream', category: 'basic',
-    defaultData: withCommon({ title: { en: 'Our Journey', id: 'Perjalanan Kami' }, milestones: [{ year: '2000', title: { en: 'Founded', id: 'Didirikan' }, description: { en: 'Established.', id: 'Didirikan.' }, image: '' }] }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['milestone'],
   },
   {
     type: 'awards_marquee', name: 'Awards Marquee', description: 'Scrolling awards', icon: 'FaMedal', category: 'basic',
-    defaultData: withCommon({ title: { en: 'Awards', id: 'Penghargaan' }, cta_text: { en: 'View All', id: 'Lihat Semua' }, cta_link: '/awards', marquee_speed: 30, marquee_direction: 'left' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['awards_marquee'],
   },
   {
     type: 'product_showcase', name: 'Product Showcase', description: 'Product with specs', icon: 'FaBox', category: 'basic',
@@ -146,35 +150,35 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
   // MAIN (DB-driven)
   {
     type: 'news_highlight', name: 'News Highlights', description: 'Featured news from DB', icon: 'FaNewspaper', category: 'main',
-    defaultData: withCommon({ title: { en: 'Latest News', id: 'Berita Terbaru' }, featured_count: 1, grid_count: 4, order: 'latest', show_category: true, show_date: true, cta_text: { en: 'View All', id: 'Lihat Semua' }, cta_link: '/news' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['news_highlight'],
   },
   {
     type: 'news_list', name: 'News List', description: 'Paginated news listing', icon: 'FaList', category: 'main',
-    defaultData: withCommon({ title: { en: 'News', id: 'Berita' }, source: 'all', category_id: null, max_data: 12, order: 'latest', show_pagination: true, show_search: true, show_category_filter: true, layout: 'grid' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['news_list'],
   },
   {
     type: 'career_highlight', name: 'Career Highlights', description: 'Featured careers', icon: 'FaUserTie', category: 'main',
-    defaultData: withCommon({ title: { en: 'Careers', id: 'Karir' }, description: { en: 'Join us.', id: 'Bergabunglah.' }, max_display: 6, show_department: true, show_location: true, cta_text: { en: 'All Careers', id: 'Semua Karir' }, cta_link: '/careers' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['career_highlight'],
   },
   {
     type: 'career_list', name: 'Career List', description: 'Full career listing', icon: 'FaBriefcase', category: 'main',
-    defaultData: withCommon({ title: { en: 'Open Positions', id: 'Posisi Terbuka' }, show_search: true, show_department_filter: true, show_location_filter: true, show_type_filter: true, show_pagination: true, per_page: 10 }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['career_list'],
   },
   {
     type: 'management_list', name: 'Management', description: 'Board/management listing', icon: 'FaUsers', category: 'main',
-    defaultData: withCommon({ title: { en: 'Management', id: 'Manajemen' }, show_bio: true, show_photo: true, layout: 'grid', columns: 4, group_by_category: true }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['management_list'],
   },
   {
     type: 'announcement_list', name: 'Announcements', description: 'Announcements listing', icon: 'FaBullhorn', category: 'main',
-    defaultData: withCommon({ title: { en: 'Announcements', id: 'Pengumuman' }, show_type_filter: true, show_section_filter: true, show_search: true, show_pagination: true, per_page: 10, order: 'latest' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['announcement_list'],
   },
   {
     type: 'report_list', name: 'Reports', description: 'Financial/corporate reports', icon: 'FaFileInvoice', category: 'main',
-    defaultData: withCommon({ title: { en: 'Reports', id: 'Laporan' }, report_type: null, show_year_filter: true, show_type_filter: true, show_search: true, layout: 'grid', per_page: 12 }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['report_list'],
   },
   {
     type: 'awards_list', name: 'Awards', description: 'Awards and achievements', icon: 'FaTrophy', category: 'main',
-    defaultData: withCommon({ title: { en: 'Awards', id: 'Penghargaan' }, show_year_filter: true, show_image: true, layout: 'grid', columns: 3, order: 'latest' }),
+    defaultData: COMPONENT_DEFAULT_TEMPLATES['awards_list'],
   },
 ];
 

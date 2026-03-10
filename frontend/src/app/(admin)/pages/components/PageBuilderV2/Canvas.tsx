@@ -12,10 +12,17 @@
 
 'use client';
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
-import { DRAG_TYPE, DragItem, getLocalizedValue } from './types';
+import { getLocalizedValue } from './types';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useDroppable } from '@dnd-kit/core';
 
 // =============================================================================
 // GENERIC COMPONENT PREVIEW
@@ -91,61 +98,37 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
     selectComponent,
     removeComponent,
     toggleVisibility,
-    moveComponent,
   } = usePageBuilder();
 
   const component = state.components.find((c) => c.id === componentId);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: componentId });
+
   if (!component) return null;
 
   const isSelected = selectedComponentId === componentId;
   const registryEntry = getRegistryEntry(component.type);
   const displayName = registryEntry?.name || component.type.replace(/_/g, ' ');
 
-  // Drag handlers
-  const handleDragStart = (e: React.DragEvent) => {
-    const dragData: DragItem = {
-      type: 'EXISTING_COMPONENT',
-      componentId: componentId,
-    };
-    e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(dragData));
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    
-    try {
-      const data = e.dataTransfer.getData(DRAG_TYPE);
-      if (!data) return;
-      
-      const dragItem: DragItem = JSON.parse(data);
-      
-      if (dragItem.type === 'EXISTING_COMPONENT' && dragItem.componentId) {
-        // Reorder existing component
-        if (dragItem.componentId !== componentId) {
-          moveComponent(dragItem.componentId, index);
-        }
-      }
-      // New components are handled by the drop zone, not here
-    } catch (error) {
-      console.error('[Canvas] Drop error:', error);
-    }
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : (!component.isVisible ? 0.5 : 1),
+    zIndex: isDragging ? 50 : undefined,
   };
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className={`relative group transition-all duration-200 ${
-        !component.isVisible ? 'opacity-50' : ''
-      }`}
+      ref={setNodeRef}
+      style={style}
+      className={`relative group transition-colors duration-200`}
     >
       {/* Component Toolbar */}
       <div
@@ -162,6 +145,7 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
         
         {/* Visibility toggle */}
         <button
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             toggleVisibility(componentId);
@@ -183,6 +167,7 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
 
         {/* Delete button */}
         <button
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             removeComponent(componentId);
@@ -196,14 +181,16 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
         </button>
 
         {/* Drag handle */}
-        <div
-          className="p-1.5 text-gray-400 cursor-grab active:cursor-grabbing"
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-1.5 text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-600 dark:hover:text-gray-300"
           title="Drag to reorder"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
           </svg>
-        </div>
+        </button>
       </div>
 
       {/* Component Selection Wrapper */}
@@ -226,83 +213,17 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
 }
 
 // =============================================================================
-// DROP ZONE
-// =============================================================================
-
-interface DropZoneProps {
-  index: number;
-  isLast?: boolean;
-}
-
-function DropZone({ index, isLast }: DropZoneProps) {
-  const { addComponent, moveComponent } = usePageBuilder();
-  const [isDragOver, setIsDragOver] = React.useState(false);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-
-    try {
-      const data = e.dataTransfer.getData(DRAG_TYPE);
-      if (!data) return;
-
-      const dragItem: DragItem = JSON.parse(data);
-
-      if (dragItem.type === 'NEW_COMPONENT' && dragItem.componentType) {
-        // Add new component at this index
-        addComponent(dragItem.componentType, index);
-      } else if (dragItem.type === 'EXISTING_COMPONENT' && dragItem.componentId) {
-        // Move existing component to this index
-        moveComponent(dragItem.componentId, index);
-      }
-    } catch (error) {
-      console.error('[DropZone] Drop error:', error);
-    }
-  };
-
-  return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className={`relative transition-all duration-200 ${
-        isDragOver ? 'py-8' : 'py-2'
-      }`}
-    >
-      <div
-        className={`border-2 border-dashed rounded-lg transition-all ${
-          isDragOver
-            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 py-6'
-            : 'border-transparent py-0'
-        }`}
-      >
-        {isDragOver && (
-          <p className="text-center text-sm font-medium text-brand-600 dark:text-brand-400">
-            Drop component here
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
 // CANVAS
 // =============================================================================
 
 export function Canvas() {
   const { state, selectComponent, addComponent } = usePageBuilder();
   const { components, isLoading, error } = state;
+
+  // Make the canvas a droppable area for new components from sidebar
+  const { setNodeRef: setDropRef, isOver: isCanvasOver } = useDroppable({
+    id: 'canvas-droppable',
+  });
 
   // Handle clicking on empty canvas
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -342,31 +263,40 @@ export function Canvas() {
 
   return (
     <div
+      ref={setDropRef}
       onClick={handleCanvasClick}
-      className="h-full overflow-y-auto p-6 bg-gray-100 dark:bg-gray-950"
+      className={`h-full overflow-y-auto p-6 bg-gray-100 dark:bg-gray-950 transition-colors ${
+        isCanvasOver ? 'bg-brand-50 dark:bg-brand-950' : ''
+      }`}
     >
-      <div className="max-w-4xl mx-auto space-y-0">
-        {/* Initial drop zone */}
-        <DropZone index={0} />
-
-        {/* Components with drop zones between them */}
-        {components.map((component, index) => (
-          <React.Fragment key={component.id}>
-            <CanvasComponent componentId={component.id} index={index} />
-            <DropZone index={index + 1} />
-          </React.Fragment>
-        ))}
+      <div className="max-w-4xl mx-auto space-y-3">
+        <SortableContext
+          items={components.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {components.map((component, index) => (
+            <CanvasComponent
+              key={component.id}
+              componentId={component.id}
+              index={index}
+            />
+          ))}
+        </SortableContext>
 
         {/* Empty state */}
         {components.length === 0 && (
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-12 text-center">
+          <div className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+            isCanvasOver
+              ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+              : 'border-gray-300 dark:border-gray-700'
+          }`}>
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No Components Yet
+              {isCanvasOver ? 'Drop Here!' : 'No Components Yet'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Drag components from the sidebar or click below to get started.

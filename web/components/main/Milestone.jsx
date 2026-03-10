@@ -19,13 +19,14 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function Milestone({ 
   name = 'history', 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const containerRef = useRef(null); // Ref untuk scope GSAP
 
-  // Mengambil data berdasarkan prop name
-  const sectionData = MILESTONE_DATA[name];
+  // Mengambil data berdasarkan prop name, atau dari CMS
+  const sectionData = cmsData || MILESTONE_DATA[name];
   
   // =========================================
   // SETUP ANIMASI GSAP

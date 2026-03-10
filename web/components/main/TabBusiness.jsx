@@ -21,14 +21,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function TabBusiness({ 
   name, 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const sectionRef = useRef(null);
   const cardRef = useRef(null); 
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const sectionData = TAB_BUSINESS_DATA[name];
+  const sectionData = cmsData || TAB_BUSINESS_DATA[name];
 
   useEffect(() => {
     if (!sectionData || !sectionData.items || sectionData.items.length === 0) return;

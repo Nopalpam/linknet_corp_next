@@ -11,11 +11,11 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Register plugin
 gsap.registerPlugin(ScrollTrigger);
 
-export default function VisionMission() {
+export default function VisionMission({ cmsData = null, className = '' }) {
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
 
-  // 1. Gunakan optional chaining (?.) untuk mencegah error jika 'about' tidak ada
-  const data = VISION_MISSION_DATA?.about;
+  // CMS mode uses cmsData, static mode uses hardcoded 'about' key
+  const data = cmsData || VISION_MISSION_DATA?.about;
 
   // Setup Animasi GSAP
   useEffect(() => {

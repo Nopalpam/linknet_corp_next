@@ -13,15 +13,16 @@ import { NEWS_TEASER_DATA } from '../../data/components/newsTeaser';
 
 export default function NewsTeaser({ 
   name = 'home', // Menerima prop name
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
 
 
   const params = useParams();
 const locale = params.locale || 'en';
   
-  /// Ambil konfigurasi berdasarkan name
-  const sectionData = NEWS_TEASER_DATA[name];
+  /// Ambil konfigurasi berdasarkan name atau CMS data
+  const sectionData = cmsData || NEWS_TEASER_DATA[name];
 
   // 1. Filter dan Urutkan Data
   const displayNews = useMemo(() => {

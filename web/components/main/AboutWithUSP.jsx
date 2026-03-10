@@ -42,6 +42,7 @@ const gridColsDesktopMap = {
 export default function AboutWithUSP({ 
   name = 'default', 
   className = "",
+  cmsData = null,
   
   // Props kustomisasi untuk Mode Slider (Swiper)
   slidesPerViewMobile = 1.2,
@@ -53,7 +54,7 @@ export default function AboutWithUSP({
 }) {
   const containerRef = useRef(null); // Ref untuk scope GSAP
   
-  const sectionData = ABOUT_WITH_USP_DATA[name];
+  const sectionData = cmsData || ABOUT_WITH_USP_DATA[name];
 
   // =========================================
   // SETUP ANIMASI GSAP

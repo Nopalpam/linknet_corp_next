@@ -24,17 +24,18 @@ gsap.registerPlugin(ScrollTrigger);
 export default function AwardSneakPeek({ 
   name = 'default', // Key untuk intro & CTA
   feedName = 'awards-list', // Key untuk mengambil data items dari feed
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const containerRef = useRef(null);
   const params = useParams();
   const locale = params?.locale || 'en';
 
-  // 1. Ambil data Intro & CTA
-  const sneakPeekData = AWARDS_SNEAK_PEEK_DATA[name];
+  // 1. Ambil data Intro & CTA (CMS atau static)
+  const sneakPeekData = cmsData || AWARDS_SNEAK_PEEK_DATA[name];
   
-  // 2. Ambil data Items (Daftar Penghargaan)
-  const feedData = AWARDS_FEED_DATA[feedName];
+  // 2. Ambil data Items (Daftar Penghargaan) - dari CMS items atau static feed
+  const feedData = cmsData ? { items: cmsData.items || [] } : AWARDS_FEED_DATA[feedName];
 
   // =========================================
   // SETUP ANIMASI GSAP

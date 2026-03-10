@@ -12,11 +12,23 @@
 
 'use client';
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { PageBuilderProvider, usePageBuilder } from './context';
 import { Sidebar } from './Sidebar';
 import { Canvas } from './Canvas';
 import { ComponentEditor } from './ComponentEditor';
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 // =============================================================================
 // MODAL CONTENT (Inside Provider)
@@ -28,8 +40,54 @@ interface PageBuilderContentProps {
 }
 
 function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps) {
-  const { state, saveComponents, clearError } = usePageBuilder();
+  const { state, saveComponents, clearError, addComponent, moveComponent } = usePageBuilder();
   const { isDirty, isSaving, error } = state;
+
+  // DnD state
+  const [activeDragLabel, setActiveDragLabel] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = event.active.data.current;
+    setActiveDragLabel(data?.label || data?.componentType || String(event.active.id));
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragLabel(null);
+
+    if (!over) return;
+
+    const activeData = active.data.current;
+
+    // Case 1: New component from sidebar
+    if (activeData?.isNewComponent) {
+      const componentType = activeData.componentType as string;
+      if (!componentType) return;
+
+      if (String(over.id) === 'canvas-droppable') {
+        // Dropped on the canvas area itself → append
+        addComponent(componentType);
+      } else {
+        // Dropped on/near an existing sortable item → insert at that index
+        const overIndex = state.components.findIndex((c) => c.id === String(over.id));
+        addComponent(componentType, overIndex >= 0 ? overIndex : undefined);
+      }
+      return;
+    }
+
+    // Case 2: Reorder existing component
+    if (active.id !== over.id && String(over.id) !== 'canvas-droppable') {
+      const overIndex = state.components.findIndex((c) => c.id === String(over.id));
+      if (overIndex !== -1) {
+        moveComponent(String(active.id), overIndex);
+      }
+    }
+  }, [addComponent, moveComponent, state.components]);
 
   // Handle close with unsaved changes check
   const handleClose = useCallback(() => {
@@ -72,6 +130,12 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
   }, [handleClose, handleSave]);
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
     <div className="h-full flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
@@ -159,11 +223,23 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
         </main>
 
         {/* Right Panel - Component Editor */}
-        <aside className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <aside className="w-[420px] border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <ComponentEditor />
         </aside>
       </div>
     </div>
+
+    {/* Drag overlay - visual feedback during drag */}
+    <DragOverlay dropAnimation={null}>
+      {activeDragLabel ? (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-brand-500 px-4 py-3 opacity-90 pointer-events-none">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {activeDragLabel}
+          </p>
+        </div>
+      ) : null}
+    </DragOverlay>
+    </DndContext>
   );
 }
 

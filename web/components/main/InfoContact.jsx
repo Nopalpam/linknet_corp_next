@@ -8,9 +8,10 @@ import { INFO_CONTACT_DATA } from '@/data/components/infoContact';
 
 export default function InfoContact({ 
   name = 'enterprise', // Default mengambil data enterprise
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
-  const sectionData = INFO_CONTACT_DATA[name];
+  const sectionData = cmsData || INFO_CONTACT_DATA[name];
 
   if (!sectionData) return null;
 

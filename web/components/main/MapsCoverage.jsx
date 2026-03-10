@@ -16,7 +16,8 @@ import INDO_TOPOLOGY from '../../data/constants/id-all.topo.json';
 
 export default function MapsCoverage({ 
   name, 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const mapContainerRef = useRef(null);
   const chartInstanceRef = useRef(null);
@@ -27,7 +28,7 @@ export default function MapsCoverage({
   const [selectedArea, setSelectedArea] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const sectionData = MAPS_COVERAGE_DATA[name];
+  const sectionData = cmsData || MAPS_COVERAGE_DATA[name];
   const { colors, businessUnits, provinceMap } = MAP_REGIONS_DATA;
 
   const filteredCities = useMemo(() => {

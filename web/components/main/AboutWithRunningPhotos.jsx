@@ -6,9 +6,10 @@ import { ABOUT_RUNNING_PHOTOS_DATA } from '@/data/components/aboutRunningPhotos'
 
 export default function AboutWithRunningPhotos({ 
   name = 'default', 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
-  const sectionData = ABOUT_RUNNING_PHOTOS_DATA[name];
+  const sectionData = cmsData || ABOUT_RUNNING_PHOTOS_DATA[name];
 
   if (!sectionData) return null;
 

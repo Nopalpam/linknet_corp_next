@@ -7,7 +7,7 @@ import Icon from '../base/Icon';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function TvcSection() {
+export default function TvcSection({ cmsData = null }) {
   const sectionRef = useRef(null);
   const cardRef = useRef(null);
 
@@ -56,7 +56,7 @@ export default function TvcSection() {
         
         {/* IMAGE ASSET */}
         <img 
-          src="https://d2fsl11s4twg7t.cloudfront.net/assets/bg/family-in-livingroom.png" 
+          src={cmsData?.poster_image || "https://d2fsl11s4twg7t.cloudfront.net/assets/bg/family-in-livingroom.png"} 
           alt="Family in living room" 
           className="w-full h-full object-cover"
         />
@@ -73,7 +73,7 @@ export default function TvcSection() {
           </button>
 
           <h3 className="mt-8 text-headline-h4 md:text-headline-h2 text-white font-bold drop-shadow-lg text-center px-4">
-            Entertainment for everyone.
+            {cmsData?.title || 'Entertainment for everyone.'}
           </h3>
           
         </div>

@@ -15,7 +15,22 @@ import 'swiper/css/thumbs';
 
 const AUTOPLAY_DELAY = 6000;
 
-export default function HeroSliders({ name = 'home', className = "" }) {
+/**
+ * HeroSliders - supports both:
+ * 1. Static mode: pass `name` to look up from HERO_SLIDERS_DATA (legacy)
+ * 2. CMS mode: pass `cmsSlides` array directly from Page Builder data
+ * 
+ * CMS slide shape:
+ * { image, title, description, button_text, button_link, pill_text, indicator_label, theme }
+ */
+export default function HeroSliders({ 
+  name = 'home', 
+  className = "",
+  cmsSlides = null,
+  autoplay = true,
+  autoplaySpeed = null,
+  theme = 'light',
+}) {
   // Store Swiper instances
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [mainSwiper, setMainSwiper] = useState(null); 
@@ -30,7 +45,27 @@ export default function HeroSliders({ name = 'home', className = "" }) {
     setMounted(true);
   }, []);
 
-  const slides = HERO_SLIDERS_DATA[name];
+  const delay = autoplaySpeed || AUTOPLAY_DELAY;
+
+  // CMS mode: convert CMS slides to the format this component expects
+  const slides = cmsSlides 
+    ? cmsSlides.map((slide, idx) => ({
+        id: idx + 1,
+        tabTitle: slide.indicator_label || slide.title || `Slide ${idx + 1}`,
+        // CMS data passed directly to Hero via heroData prop
+        heroData: {
+          heroSize: 'md',
+          labelText: slide.pill_text || '',
+          title: slide.title || '',
+          description: slide.description || '',
+          ctaText: slide.button_text || '',
+          ctaLink: slide.button_link || '#',
+          bgImageDesktop: slide.image || '',
+          bgImageMobile: slide.image_mobile || slide.image || '',
+          theme: slide.theme || theme || 'light',
+        },
+      }))
+    : HERO_SLIDERS_DATA[name];
 
   if (!mounted) return null;
   if (!slides || slides.length === 0) return null;
@@ -51,10 +86,10 @@ export default function HeroSliders({ name = 'home', className = "" }) {
             slidesPerView={1}
             loop={true}
             thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-            autoplay={{
-                delay: AUTOPLAY_DELAY,
+            autoplay={autoplay ? {
+                delay: delay,
                 disableOnInteraction: false, 
-            }}
+            } : false}
             navigation={{
                 prevEl: prevEl,
                 nextEl: nextEl,
@@ -64,8 +99,11 @@ export default function HeroSliders({ name = 'home', className = "" }) {
         >
           {slides.map((slide) => (
             <SwiperSlide key={slide.id}>
-              {/* FIX: Memanggil Hero dengan prop 'name' agar mengambil data dari HERO_DATA */}
-              <Hero name={slide.heroName} />
+              {/* CMS mode uses heroData prop, static mode uses name prop */}
+              {slide.heroData 
+                ? <Hero data={slide.heroData} />
+                : <Hero name={slide.heroName} />
+              }
             </SwiperSlide>
           ))}
         </Swiper>
@@ -145,7 +183,7 @@ export default function HeroSliders({ name = 'home', className = "" }) {
                         key={index}
                         className="absolute top-0 left-0 h-full bg-primary"
                         style={{
-                            animation: `progress-loading ${AUTOPLAY_DELAY}ms linear forwards`
+                        animation: `progress-loading ${delay}ms linear forwards`
                         }}
                         />
                     ) : (

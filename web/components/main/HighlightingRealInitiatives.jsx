@@ -18,10 +18,11 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function HighlightingRealInitiatives({ 
   name = 'csr-programs', 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
-  const sectionData = HIGHLIGHTING_INITIATIVES_DATA[name];
+  const sectionData = cmsData || HIGHLIGHTING_INITIATIVES_DATA[name];
 
   // =========================================
   // SETUP ANIMASI GSAP

@@ -13,14 +13,14 @@ import { useModalRegistry } from '../hooks/useModalRegistry';
 // Register GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-export default function ClosingSentence() {
+export default function ClosingSentence({ cmsData = null }) {
   const sectionRef = useRef(null);
   const contentRef = useRef(null);
 
   const { activeModalId, closeModal, openModal, isModalOpen } = useModalRegistry();
 
   const t = useTranslations('global');
-  const closingSentence = t.raw('closingSentence');
+  const closingSentence = cmsData || t.raw('closingSentence');
 
   useLayoutEffect(() => {
     let ctx = gsap.context(() => {
@@ -67,7 +67,7 @@ export default function ClosingSentence() {
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0 opacity-[0.56] scale-[1.25] md:scale-[1]"
       >
-        <source src="https://d2fsl11s4twg7t.cloudfront.net/assets/video/GettyImages-1314927774.mp4" type="video/mp4" />
+        <source src={closingSentence.video_url || "https://d2fsl11s4twg7t.cloudfront.net/assets/video/GettyImages-1314927774.mp4"} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 

@@ -9,9 +9,10 @@ import { INFO_LIST_DATA } from '@/data/components/informationList';
 
 export default function InformationList({ 
   name = 'media',
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
-  const sectionData = INFO_LIST_DATA[name];
+  const sectionData = cmsData || INFO_LIST_DATA[name];
 
   if (!sectionData) return null;
 

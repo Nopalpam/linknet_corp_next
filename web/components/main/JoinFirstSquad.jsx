@@ -13,12 +13,13 @@ import { JOIN_FIRST_SQUAD_DATA } from '@/data/components/joinFirstSquad';
 
 export default function JoinFirstSquad({ 
   name = 'default', 
-  className = "" 
+  className = "",
+  cmsData = null,
 }) {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const sectionData = JOIN_FIRST_SQUAD_DATA[name];
+  const sectionData = cmsData || JOIN_FIRST_SQUAD_DATA[name];
   if (!sectionData) return null;
 
   const { introData, items } = sectionData;

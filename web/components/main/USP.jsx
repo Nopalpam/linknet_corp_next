@@ -13,7 +13,7 @@ import { globalData } from '../../messages/globalData-en';
 // Register GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-export default function UspSection() {
+export default function UspSection({ cmsData = null }) {
   const sectionRef = useRef(null);
 
   const { usp } = globalData;
@@ -39,7 +39,8 @@ export default function UspSection() {
   }, []);
 
   const t = useTranslations('global.usp');
-  const uspList = t.raw('list');
+  const uspListRaw = t.raw('list');
+  const uspList = cmsData?.items || uspListRaw;
 
   return (
     <section 
