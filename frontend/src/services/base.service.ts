@@ -54,13 +54,24 @@ const forceLogout = () => {
     localStorage.removeItem('auth_last_refresh');
     deleteCookie(AUTH_TOKEN_KEY);
 
-    // Redirect to login immediately
-    window.location.href = '/login';
+    // Dispatch custom event so AuthContext handles the redirect via Next.js router
+    // This avoids window.location.href which aborts in-flight fetches
+    window.dispatchEvent(new CustomEvent('auth:forceLogout'));
+
+    // Reset flag after a short delay to allow re-triggering if needed
+    setTimeout(() => {
+      isForceLogoutInProgress = false;
+    }, 2000);
   }
 };
 
 export class BaseService {
   protected async fetchWithAuth(url: string, options: RequestInit = {}) {
+    // If force logout is already in progress, don't make any more API calls
+    if (isForceLogoutInProgress) {
+      throw new Error('Session expired. Please login again.');
+    }
+
     // Get token from localStorage or cookie (fallback)
     let token = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
     if (!token) {
@@ -73,10 +84,23 @@ export class BaseService {
       ...options.headers,
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (networkError) {
+      // Handle network errors (Failed to fetch, AbortError, etc.)
+      console.error('🔴 Network error in fetchWithAuth:', networkError);
+
+      // If force logout is in progress, the fetch was likely aborted due to navigation
+      if (isForceLogoutInProgress) {
+        throw new Error('Session expired. Please login again.');
+      }
+
+      throw new Error('Tidak dapat terhubung ke server. Periksa koneksi Anda.');
+    }
 
     // ✅ CRITICAL: Check for TOKEN_EXPIRED code first
     if (!response.ok) {
@@ -104,10 +128,17 @@ export class BaseService {
             ...options.headers,
           };
 
-          const retryResponse = await fetch(url, {
-            ...options,
-            headers: retryHeaders,
-          });
+          let retryResponse: Response;
+          try {
+            retryResponse = await fetch(url, {
+              ...options,
+              headers: retryHeaders,
+            });
+          } catch (retryNetworkError) {
+            console.error('🔴 Network error on retry:', retryNetworkError);
+            forceLogout();
+            throw new Error('Session expired. Please login again.');
+          }
 
           if (!retryResponse.ok) {
             const retryError = await retryResponse.json().catch(() => ({ message: 'An error occurred' }));

@@ -191,6 +191,10 @@ app.use(`${API_PREFIX}/cms/managements`, managementRoutes);
 import logActivityRoutes from '@routes/logActivity.routes';
 app.use(`${API_PREFIX}/cms/log-activity`, logActivityRoutes);
 
+// Dashboard routes (Public visitor tracking + CMS dashboard)
+import dashboardRoutes from '@routes/dashboard.routes';
+app.use(`${API_PREFIX}`, dashboardRoutes);
+
 // URL Redirect routes (CMS + Public)
 import urlRedirectRoutes from '@routes/urlRedirect.routes';
 app.use(`${API_PREFIX}`, urlRedirectRoutes);
@@ -218,6 +222,10 @@ app.use(`${API_PREFIX}`, careerRoutes);
 // Report routes (Public + CMS)
 import reportRoutes from '@routes/report.routes';
 app.use(`${API_PREFIX}`, reportRoutes);
+
+// Announcement routes (Public + CMS)
+import announcementRoutes from '@routes/announcement.routes';
+app.use(`${API_PREFIX}`, announcementRoutes);
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);

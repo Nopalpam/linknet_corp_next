@@ -161,9 +161,16 @@ class AuthService extends BaseService {
       const response = await this.fetchWithAuth(url, { method: 'GET' });
       return response;
     } catch (error: any) {
-      // Enhanced error handling for auth failures
-      if (error?.message?.includes('401') || error?.code === 'TOKEN_EXPIRED' || error?.code === 'TOKEN_INVALID') {
-        const authError = new Error('Session expired. Please login again.');
+      // Enhanced error handling for auth failures and network errors
+      if (
+        error?.message?.includes('401') || 
+        error?.code === 'TOKEN_EXPIRED' || 
+        error?.code === 'TOKEN_INVALID' ||
+        error?.message?.includes('Session expired') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('terhubung ke server')
+      ) {
+        const authError = new Error(error?.message || 'Session expired. Please login again.');
         (authError as any).code = 'TOKEN_EXPIRED';
         throw authError;
       }

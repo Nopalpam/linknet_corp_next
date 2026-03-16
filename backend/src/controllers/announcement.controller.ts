@@ -1,25 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
-import reportService from '../services/report.service';
+import announcementService from '../services/announcement.service';
 import { AppError } from '../types/error.types';
 import {
-  ReportTypeQueryParams,
-  ReportSectionQueryParams,
-  ReportItemQueryParams,
-  ReportFilterParams,
-} from '../types/report.types';
+  AnnouncementTypeQueryParams,
+  AnnouncementSectionQueryParams,
+  AnnouncementItemQueryParams,
+  AnnouncementFilterParams,
+} from '../types/announcement.types';
 
 /**
- * Report Controller
- * Handles HTTP requests for ReportType, ReportSection, reports CRUD operations
- * Matches current Prisma schema with String IDs
+ * Announcement Controller
+ * Handles HTTP requests for AnnouncementType, AnnouncementSection, announcements CRUD operations
  */
-export class ReportController {
+export class AnnouncementController {
   // ============================================
-  // REPORT TYPE ENDPOINTS
+  // FIELD MAPPING HELPERS
   // ============================================
 
-  // Map frontend sortBy field names to valid Prisma field names
-  private mapReportTypeSortBy(sortBy: string): string {
+  private mapAnnouncementTypeSortBy(sortBy: string): string {
     const mapping: Record<string, string> = {
       sortOrder: 'position',
       sort_order: 'position',
@@ -30,7 +28,7 @@ export class ReportController {
     return validFields.includes(mapped) ? mapped : 'position';
   }
 
-  private mapReportSectionSortBy(sortBy: string): string {
+  private mapAnnouncementSectionSortBy(sortBy: string): string {
     const mapping: Record<string, string> = {
       sortOrder: 'position',
       sort_order: 'position',
@@ -42,29 +40,34 @@ export class ReportController {
     return validFields.includes(mapped) ? mapped : 'position';
   }
 
-  private mapReportItemSortBy(sortBy: string): string {
+  private mapAnnouncementItemSortBy(sortBy: string): string {
     const mapping: Record<string, string> = {
       sortOrder: 'created_at',
       sort_order: 'created_at',
       order: 'created_at',
     };
-    const validFields = ['created_at', 'updated_at', 'title', 'slug', 'year', 'quarter', 'status', 'published_at', 'downloads'];
+    const validFields = ['created_at', 'updated_at', 'title', 'slug', 'status', 'sort_order'];
     const mapped = mapping[sortBy] || sortBy;
     return validFields.includes(mapped) ? mapped : 'created_at';
   }
 
-  async getReportTypes(req: Request, res: Response, next: NextFunction) {
+  // ============================================
+  // ANNOUNCEMENT TYPE ENDPOINTS
+  // ============================================
+
+  async getAnnouncementTypes(req: Request, res: Response, next: NextFunction) {
     try {
-      const params: ReportTypeQueryParams = {
+      const params: AnnouncementTypeQueryParams = {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
         search: req.query.search as string,
+        type: req.query.type as string,
         isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined,
-        sortBy: this.mapReportTypeSortBy((req.query.sortBy as string) || 'position'),
+        sortBy: this.mapAnnouncementTypeSortBy((req.query.sortBy as string) || 'position'),
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc',
       };
 
-      const result = await reportService.getReportTypes(params);
+      const result = await announcementService.getAnnouncementTypes(params);
 
       res.json({
         success: true,
@@ -75,9 +78,9 @@ export class ReportController {
     }
   }
 
-  async getReportTypesList(_req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementTypesList(_req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await reportService.getReportTypesList();
+      const data = await announcementService.getAnnouncementTypesList();
 
       res.json({
         success: true,
@@ -88,17 +91,18 @@ export class ReportController {
     }
   }
 
-  async createReportType(req: Request, res: Response, next: NextFunction) {
+  async createAnnouncementType(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, slug, description, icon, color, position, sortOrder, isActive } = req.body;
+      const { name, slug, type, description, icon, color, position, sortOrder, isActive } = req.body;
 
       if (!name || name.trim() === '') {
         throw new AppError('Name is required', 400);
       }
 
-      const reportType = await reportService.createReportType({
+      const announcementType = await announcementService.createAnnouncementType({
         name,
         slug,
+        type,
         description,
         icon,
         color,
@@ -108,40 +112,41 @@ export class ReportController {
 
       res.status(201).json({
         success: true,
-        message: 'Report type created successfully',
-        data: reportType,
+        message: 'Announcement type created successfully',
+        data: announcementType,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async getReportTypeById(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementTypeById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report type ID is required', 400);
+      if (!id) throw new AppError('Announcement type ID is required', 400);
 
-      const reportType = await reportService.getReportTypeById(id);
+      const announcementType = await announcementService.getAnnouncementTypeById(id);
 
       res.json({
         success: true,
-        data: reportType,
+        data: announcementType,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async updateReportType(req: Request, res: Response, next: NextFunction) {
+  async updateAnnouncementType(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report type ID is required', 400);
+      if (!id) throw new AppError('Announcement type ID is required', 400);
 
-      const { name, slug, description, icon, color, position, sortOrder, isActive } = req.body;
+      const { name, slug, type, description, icon, color, position, sortOrder, isActive } = req.body;
 
-      const reportType = await reportService.updateReportType(id, {
+      const announcementType = await announcementService.updateAnnouncementType(id, {
         name,
         slug,
+        type,
         description,
         icon,
         color,
@@ -151,37 +156,37 @@ export class ReportController {
 
       res.json({
         success: true,
-        message: 'Report type updated successfully',
-        data: reportType,
+        message: 'Announcement type updated successfully',
+        data: announcementType,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async toggleReportTypeStatus(req: Request, res: Response, next: NextFunction) {
+  async toggleAnnouncementTypeStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.body;
-      if (!id) throw new AppError('Report type ID is required', 400);
+      if (!id) throw new AppError('Announcement type ID is required', 400);
 
-      const reportType = await reportService.toggleReportTypeStatus(id.toString());
+      const announcementType = await announcementService.toggleAnnouncementTypeStatus(id.toString());
 
       res.json({
         success: true,
-        message: `Report type ${reportType.isActive ? 'activated' : 'deactivated'} successfully`,
-        data: reportType,
+        message: `Announcement type ${announcementType.isActive ? 'activated' : 'deactivated'} successfully`,
+        data: announcementType,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async deleteReportType(req: Request, res: Response, next: NextFunction) {
+  async deleteAnnouncementType(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report type ID is required', 400);
+      if (!id) throw new AppError('Announcement type ID is required', 400);
 
-      const result = await reportService.deleteReportType(id);
+      const result = await announcementService.deleteAnnouncementType(id);
 
       res.json({
         success: true,
@@ -192,14 +197,14 @@ export class ReportController {
     }
   }
 
-  async deleteMultipleReportTypes(req: Request, res: Response, next: NextFunction) {
+  async deleteMultipleAnnouncementTypes(req: Request, res: Response, next: NextFunction) {
     try {
       const { ids } = req.body;
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         throw new AppError('IDs array is required', 400);
       }
 
-      const result = await reportService.deleteMultipleReportTypes(ids.map(String));
+      const result = await announcementService.deleteMultipleAnnouncementTypes(ids.map(String));
 
       res.json({
         success: true,
@@ -210,12 +215,12 @@ export class ReportController {
     }
   }
 
-  async getReportTypeSections(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementTypeSections(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report type ID is required', 400);
+      if (!id) throw new AppError('Announcement type ID is required', 400);
 
-      const data = await reportService.getReportTypeSections(id);
+      const data = await announcementService.getAnnouncementTypeSections(id);
 
       res.json({
         success: true,
@@ -231,12 +236,12 @@ export class ReportController {
       const { id } = req.params;
       const { updates } = req.body;
 
-      if (!id) throw new AppError('Report type ID is required', 400);
+      if (!id) throw new AppError('Announcement type ID is required', 400);
       if (!updates || !Array.isArray(updates)) {
         throw new AppError('Updates array is required', 400);
       }
 
-      const result = await reportService.updateSectionsOrder(id, updates);
+      const result = await announcementService.updateSectionsOrder(id, updates);
 
       res.json({
         success: true,
@@ -248,22 +253,22 @@ export class ReportController {
   }
 
   // ============================================
-  // REPORT SECTION ENDPOINTS
+  // ANNOUNCEMENT SECTION ENDPOINTS
   // ============================================
 
-  async getReportSections(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementSections(req: Request, res: Response, next: NextFunction) {
     try {
-      const params: ReportSectionQueryParams = {
+      const params: AnnouncementSectionQueryParams = {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
         search: req.query.search as string,
-        type_id: (req.query.type_id || req.query.reportTypeId) as string,
+        type_id: (req.query.type_id || req.query.announcementTypeId) as string,
         isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined,
-        sortBy: this.mapReportSectionSortBy((req.query.sortBy as string) || 'position'),
+        sortBy: this.mapAnnouncementSectionSortBy((req.query.sortBy as string) || 'position'),
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc',
       };
 
-      const result = await reportService.getReportSections(params);
+      const result = await announcementService.getAnnouncementSections(params);
 
       res.json({
         success: true,
@@ -274,10 +279,10 @@ export class ReportController {
     }
   }
 
-  async getReportSectionsList(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementSectionsList(req: Request, res: Response, next: NextFunction) {
     try {
-      const typeId = (req.query.type_id || req.query.reportTypeId) as string | undefined;
-      const data = await reportService.getReportSectionsList(typeId);
+      const typeId = (req.query.type_id || req.query.announcementTypeId) as string | undefined;
+      const data = await announcementService.getAnnouncementSectionsList(typeId);
 
       res.json({
         success: true,
@@ -288,11 +293,20 @@ export class ReportController {
     }
   }
 
-  async createReportSection(req: Request, res: Response, next: NextFunction) {
+  async createAnnouncementSection(req: Request, res: Response, next: NextFunction) {
     try {
-      const { type_id, reportTypeId, name, title, slug, description, position, sortOrder, isActive } = req.body;
+      const {
+        type_id, announcementTypeId,
+        name, title,
+        slug, description,
+        announcement_year,
+        cta_enabled, cta_text, cta_url,
+        position, sortOrder,
+        isActive,
+      } = req.body;
+
       const sectionName = name || title;
-      const sectionTypeId = type_id || reportTypeId;
+      const sectionTypeId = type_id || announcementTypeId;
       const sectionPosition = position ?? sortOrder;
 
       if (!sectionName || sectionName.trim() === '') {
@@ -300,21 +314,25 @@ export class ReportController {
       }
 
       if (!sectionTypeId) {
-        throw new AppError('Report type ID is required', 400);
+        throw new AppError('Announcement type ID is required', 400);
       }
 
-      const section = await reportService.createReportSection({
+      const section = await announcementService.createAnnouncementSection({
         type_id: sectionTypeId,
         name: sectionName,
         slug,
         description,
+        announcement_year: announcement_year || null,
+        cta_enabled: cta_enabled || false,
+        cta_text: cta_text || null,
+        cta_url: cta_url || null,
         position: sectionPosition ? parseInt(sectionPosition) : undefined,
         isActive,
       });
 
       res.status(201).json({
         success: true,
-        message: 'Report section created successfully',
+        message: 'Announcement section created successfully',
         data: section,
       });
     } catch (error) {
@@ -322,12 +340,12 @@ export class ReportController {
     }
   }
 
-  async getReportSectionById(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementSectionById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report section ID is required', 400);
+      if (!id) throw new AppError('Announcement section ID is required', 400);
 
-      const section = await reportService.getReportSectionById(id);
+      const section = await announcementService.getAnnouncementSectionById(id);
 
       res.json({
         success: true,
@@ -338,25 +356,37 @@ export class ReportController {
     }
   }
 
-  async updateReportSection(req: Request, res: Response, next: NextFunction) {
+  async updateAnnouncementSection(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report section ID is required', 400);
+      if (!id) throw new AppError('Announcement section ID is required', 400);
 
-      const { type_id, reportTypeId, name, title, slug, description, position, sortOrder, isActive } = req.body;
+      const {
+        type_id, announcementTypeId,
+        name, title,
+        slug, description,
+        announcement_year,
+        cta_enabled, cta_text, cta_url,
+        position, sortOrder,
+        isActive,
+      } = req.body;
 
-      const section = await reportService.updateReportSection(id, {
-        type_id: type_id || reportTypeId,
+      const section = await announcementService.updateAnnouncementSection(id, {
+        type_id: type_id || announcementTypeId,
         name: name || title,
         slug,
         description,
+        announcement_year,
+        cta_enabled,
+        cta_text,
+        cta_url,
         position: (position ?? sortOrder) !== undefined ? parseInt(position ?? sortOrder) : undefined,
         isActive,
       });
 
       res.json({
         success: true,
-        message: 'Report section updated successfully',
+        message: 'Announcement section updated successfully',
         data: section,
       });
     } catch (error) {
@@ -364,16 +394,16 @@ export class ReportController {
     }
   }
 
-  async toggleReportSectionStatus(req: Request, res: Response, next: NextFunction) {
+  async toggleAnnouncementSectionStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.body;
-      if (!id) throw new AppError('Report section ID is required', 400);
+      if (!id) throw new AppError('Announcement section ID is required', 400);
 
-      const section = await reportService.toggleReportSectionStatus(id.toString());
+      const section = await announcementService.toggleAnnouncementSectionStatus(id.toString());
 
       res.json({
         success: true,
-        message: `Report section ${section.isActive ? 'activated' : 'deactivated'} successfully`,
+        message: `Announcement section ${section.isActive ? 'activated' : 'deactivated'} successfully`,
         data: section,
       });
     } catch (error) {
@@ -381,12 +411,12 @@ export class ReportController {
     }
   }
 
-  async deleteReportSection(req: Request, res: Response, next: NextFunction) {
+  async deleteAnnouncementSection(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report section ID is required', 400);
+      if (!id) throw new AppError('Announcement section ID is required', 400);
 
-      const result = await reportService.deleteReportSection(id);
+      const result = await announcementService.deleteAnnouncementSection(id);
 
       res.json({
         success: true,
@@ -397,14 +427,14 @@ export class ReportController {
     }
   }
 
-  async deleteMultipleReportSections(req: Request, res: Response, next: NextFunction) {
+  async deleteMultipleAnnouncementSections(req: Request, res: Response, next: NextFunction) {
     try {
       const { ids } = req.body;
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         throw new AppError('IDs array is required', 400);
       }
 
-      const result = await reportService.deleteMultipleReportSections(ids.map(String));
+      const result = await announcementService.deleteMultipleAnnouncementSections(ids.map(String));
 
       res.json({
         success: true,
@@ -415,12 +445,12 @@ export class ReportController {
     }
   }
 
-  async getReportSectionItems(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementSectionItems(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report section ID is required', 400);
+      if (!id) throw new AppError('Announcement section ID is required', 400);
 
-      const data = await reportService.getReportSectionItems(id);
+      const data = await announcementService.getAnnouncementSectionItems(id);
 
       res.json({
         success: true,
@@ -436,12 +466,12 @@ export class ReportController {
       const { id } = req.params;
       const { updates } = req.body;
 
-      if (!id) throw new AppError('Report section ID is required', 400);
+      if (!id) throw new AppError('Announcement section ID is required', 400);
       if (!updates || !Array.isArray(updates)) {
         throw new AppError('Updates array is required', 400);
       }
 
-      const result = await reportService.updateSectionItemsOrder(id, updates);
+      const result = await announcementService.updateSectionItemsOrder(id, updates);
 
       res.json({
         success: true,
@@ -453,24 +483,23 @@ export class ReportController {
   }
 
   // ============================================
-  // REPORT ITEM ENDPOINTS
+  // ANNOUNCEMENT ITEM ENDPOINTS
   // ============================================
 
-  async getReportItems(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementItems(req: Request, res: Response, next: NextFunction) {
     try {
-      const params: ReportItemQueryParams = {
+      const params: AnnouncementItemQueryParams = {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
         search: req.query.search as string,
-        type_id: (req.query.type_id || req.query.reportTypeId) as string,
-        section_id: (req.query.section_id || req.query.reportSectionId) as string,
-        year: req.query.year ? parseInt(req.query.year as string) : undefined,
+        type_id: (req.query.type_id || req.query.announcementTypeId) as string,
+        section_id: (req.query.section_id || req.query.announcementSectionId) as string,
         status: req.query.status as string,
-        sortBy: this.mapReportItemSortBy((req.query.sortBy as string) || 'created_at'),
+        sortBy: this.mapAnnouncementItemSortBy((req.query.sortBy as string) || 'created_at'),
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
       };
 
-      const result = await reportService.getReportItems(params);
+      const result = await announcementService.getAnnouncementItems(params);
 
       res.json({
         success: true,
@@ -481,13 +510,13 @@ export class ReportController {
     }
   }
 
-  async createReportItem(req: Request, res: Response, next: NextFunction) {
+  async createAnnouncementItem(req: Request, res: Response, next: NextFunction) {
     try {
       const {
         type_id,
-        reportTypeId,
+        announcementTypeId,
         section_id,
-        reportSectionId,
+        announcementSectionId,
         title,
         slug,
         description,
@@ -514,9 +543,9 @@ export class ReportController {
         throw new AppError('Title is required', 400);
       }
 
-      const item = await reportService.createReportItem({
-        type_id: type_id || reportTypeId || undefined,
-        section_id: section_id || reportSectionId || undefined,
+      const item = await announcementService.createAnnouncementItem({
+        type_id: type_id || announcementTypeId || undefined,
+        section_id: section_id || announcementSectionId || undefined,
         title: itemTitle,
         slug,
         description: description || subDescription,
@@ -532,7 +561,7 @@ export class ReportController {
 
       res.status(201).json({
         success: true,
-        message: 'Report item created successfully',
+        message: 'Announcement item created successfully',
         data: item,
       });
     } catch (error) {
@@ -540,12 +569,12 @@ export class ReportController {
     }
   }
 
-  async getReportItemById(req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementItemById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report item ID is required', 400);
+      if (!id) throw new AppError('Announcement item ID is required', 400);
 
-      const item = await reportService.getReportItemById(id);
+      const item = await announcementService.getAnnouncementItemById(id);
 
       res.json({
         success: true,
@@ -556,16 +585,16 @@ export class ReportController {
     }
   }
 
-  async updateReportItem(req: Request, res: Response, next: NextFunction) {
+  async updateAnnouncementItem(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report item ID is required', 400);
+      if (!id) throw new AppError('Announcement item ID is required', 400);
 
       const {
         type_id,
-        reportTypeId,
+        announcementTypeId,
         section_id,
-        reportSectionId,
+        announcementSectionId,
         title,
         slug,
         description,
@@ -587,9 +616,9 @@ export class ReportController {
         status,
       } = req.body;
 
-      const item = await reportService.updateReportItem(id, {
-        type_id: type_id || reportTypeId || undefined,
-        section_id: section_id || reportSectionId || undefined,
+      const item = await announcementService.updateAnnouncementItem(id, {
+        type_id: type_id || announcementTypeId || undefined,
+        section_id: section_id || announcementSectionId || undefined,
         title,
         slug,
         description: description !== undefined ? description : subDescription,
@@ -605,7 +634,7 @@ export class ReportController {
 
       res.json({
         success: true,
-        message: 'Report item updated successfully',
+        message: 'Announcement item updated successfully',
         data: item,
       });
     } catch (error) {
@@ -613,16 +642,16 @@ export class ReportController {
     }
   }
 
-  async toggleReportItemStatus(req: Request, res: Response, next: NextFunction) {
+  async toggleAnnouncementItemStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.body;
-      if (!id) throw new AppError('Report item ID is required', 400);
+      if (!id) throw new AppError('Announcement item ID is required', 400);
 
-      const item = await reportService.toggleReportItemStatus(id.toString());
+      const item = await announcementService.toggleAnnouncementItemStatus(id.toString());
 
       res.json({
         success: true,
-        message: `Report item status toggled successfully`,
+        message: 'Announcement item status toggled successfully',
         data: item,
       });
     } catch (error) {
@@ -630,12 +659,12 @@ export class ReportController {
     }
   }
 
-  async deleteReportItem(req: Request, res: Response, next: NextFunction) {
+  async deleteAnnouncementItem(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id) throw new AppError('Report item ID is required', 400);
+      if (!id) throw new AppError('Announcement item ID is required', 400);
 
-      const result = await reportService.deleteReportItem(id);
+      const result = await announcementService.deleteAnnouncementItem(id);
 
       res.json({
         success: true,
@@ -646,14 +675,14 @@ export class ReportController {
     }
   }
 
-  async deleteMultipleReportItems(req: Request, res: Response, next: NextFunction) {
+  async deleteMultipleAnnouncementItems(req: Request, res: Response, next: NextFunction) {
     try {
       const { ids } = req.body;
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         throw new AppError('IDs array is required', 400);
       }
 
-      const result = await reportService.deleteMultipleReportItems(ids.map(String));
+      const result = await announcementService.deleteMultipleAnnouncementItems(ids.map(String));
 
       res.json({
         success: true,
@@ -664,14 +693,14 @@ export class ReportController {
     }
   }
 
-  async updateReportItemsOrder(req: Request, res: Response, next: NextFunction) {
+  async updateAnnouncementItemsOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const { updates } = req.body;
       if (!updates || !Array.isArray(updates)) {
         throw new AppError('Updates array is required', 400);
       }
 
-      const result = await reportService.updateReportItemsOrder(updates);
+      const result = await announcementService.updateAnnouncementItemsOrder(updates);
 
       res.json({
         success: true,
@@ -682,9 +711,9 @@ export class ReportController {
     }
   }
 
-  async getReportItemStats(_req: Request, res: Response, next: NextFunction) {
+  async getAnnouncementItemStats(_req: Request, res: Response, next: NextFunction) {
     try {
-      const stats = await reportService.getReportItemStats();
+      const stats = await announcementService.getAnnouncementItemStats();
 
       res.json({
         success: true,
@@ -699,35 +728,21 @@ export class ReportController {
   // PUBLIC FRONTEND ENDPOINTS
   // ============================================
 
-  async filterReports(req: Request, res: Response, next: NextFunction) {
+  async filterAnnouncements(req: Request, res: Response, next: NextFunction) {
     try {
-      const params: ReportFilterParams = {
+      const params: AnnouncementFilterParams = {
         search: req.query.search as string,
-        year: req.query.year ? parseInt(req.query.year as string) : undefined,
         type_id: req.query.type_id as string,
         section_id: req.query.section_id as string,
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
 
-      const result = await reportService.filterReports(params);
+      const result = await announcementService.filterAnnouncements(params);
 
       res.json({
         success: true,
         ...result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getReportYears(_req: Request, res: Response, next: NextFunction) {
-    try {
-      const years = await reportService.getReportYears();
-
-      res.json({
-        success: true,
-        data: years,
       });
     } catch (error) {
       next(error);
@@ -739,7 +754,7 @@ export class ReportController {
       const { id } = req.params;
       if (!id) throw new AppError('Section ID is required', 400);
 
-      const data = await reportService.getPublicSectionItems(id);
+      const data = await announcementService.getPublicSectionItems(id);
 
       res.json({
         success: true,
@@ -751,5 +766,5 @@ export class ReportController {
   }
 }
 
-const reportController = new ReportController();
-export default reportController;
+const announcementController = new AnnouncementController();
+export default announcementController;

@@ -20,6 +20,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:pages": "ts-node prisma/seeds/pages.seed.ts",
+    "db:migrate:pages-sql": "ts-node scripts/migrate-pages-from-sql.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "db:setup": "ts-node prisma/migration-helper.ts",

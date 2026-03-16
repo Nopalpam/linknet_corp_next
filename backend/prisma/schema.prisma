@@ -243,79 +243,6 @@ model PageComponent {
   @@map("page_components")
 }
 
-model AnnouncementType {
-  id          String                @id @default(uuid())
-  name        String
-  slug        String                @unique
-  description String?
-  icon        String?
-  color       String?
-  position    Int                   @default(0)
-  isActive    Boolean               @default(true) @map("is_active")
-  createdAt   DateTime              @default(now()) @map("created_at")
-  updatedAt   DateTime              @updatedAt @map("updated_at")
-  deletedAt   DateTime?             @map("deleted_at")
-  sections    AnnouncementSection[]
-
-  @@index([slug])
-  @@index([position])
-  @@index([isActive])
-  @@index([deletedAt])
-  @@map("announcement_types")
-}
-
-model AnnouncementSection {
-  id          String           @id @default(uuid())
-  typeId      String           @map("type_id")
-  name        String
-  slug        String
-  description String?
-  position    Int              @default(0)
-  isActive    Boolean          @default(true) @map("is_active")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  deletedAt   DateTime?        @map("deleted_at")
-  type        AnnouncementType @relation(fields: [typeId], references: [id], onDelete: Cascade)
-  items       Announcement[]
-
-  @@unique([typeId, slug])
-  @@index([typeId])
-  @@index([slug])
-  @@index([position])
-  @@index([isActive])
-  @@index([deletedAt])
-  @@map("announcement_sections")
-}
-
-model Announcement {
-  id          String              @id @default(uuid())
-  sectionId   String              @map("section_id")
-  title       String
-  slug        String
-  description String?
-  content     String?
-  fileUrl     String?             @map("file_url")
-  fileSize    Int?                @map("file_size")
-  fileType    String?             @map("file_type")
-  thumbnail   String?
-  downloads   Int                 @default(0)
-  status      ContentStatus       @default(DRAFT)
-  publishedAt DateTime?           @map("published_at")
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
-  deletedAt   DateTime?           @map("deleted_at")
-  section     AnnouncementSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-
-  @@unique([sectionId, slug])
-  @@index([sectionId])
-  @@index([slug])
-  @@index([status])
-  @@index([publishedAt])
-  @@index([createdAt])
-  @@index([deletedAt])
-  @@map("announcements")
-}
-
 model Career {
   id               String         @id @default(uuid())
   title            String
@@ -469,6 +396,21 @@ model LogActivity {
   @@map("log_activities")
 }
 
+model VisitorLog {
+  id         String   @id @default(uuid())
+  page       String
+  referrer   String?
+  userAgent  String?  @map("user_agent")
+  ipAddress  String?  @map("ip_address")
+  sessionId  String?  @map("session_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([page])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("visitor_logs")
+}
+
 model UrlRedirect {
   id         String    @id @default(uuid())
   fromUrl    String    @unique @map("from_url")
@@ -610,6 +552,7 @@ model ReportType {
   updatedAt       DateTime        @updatedAt @map("updated_at")
   deletedAt       DateTime?       @map("deleted_at")
   report_sections ReportSection[]
+  reports         reports[]
 
   @@index([isActive])
   @@index([deletedAt])
@@ -757,35 +700,128 @@ model news_views {
 }
 
 model reports {
-  id              String        @id
-  section_id      String
+  id              String         @id
+  type_id         String?
+  section_id      String?
   title           String
   slug            String
   description     String?
+  pdf_file        String?
+  cover_image     String?
+  data_type       String?
+  audit_status    String?
+  file_size       String?
+  sort_order      Int            @default(0)
+  is_active       Boolean        @default(true)
   period          String?
   year            Int?
   quarter         Int?
   file_url        String?
-  file_size       Int?
   file_type       String?
   thumbnail       String?
-  downloads       Int           @default(0)
-  status          ContentStatus @default(DRAFT)
+  downloads       Int            @default(0)
+  status          ContentStatus  @default(DRAFT)
   published_at    DateTime?
-  created_at      DateTime      @default(now())
+  created_at      DateTime       @default(now())
   updated_at      DateTime
   deleted_at      DateTime?
-  report_sections ReportSection @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  report_types    ReportType?    @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  report_sections ReportSection? @relation(fields: [section_id], references: [id], onDelete: Cascade)
 
-  @@unique([section_id, slug])
   @@index([created_at])
   @@index([deleted_at])
   @@index([published_at])
   @@index([quarter])
   @@index([section_id])
   @@index([slug])
+  @@index([sort_order])
   @@index([status])
+  @@index([type_id])
   @@index([year])
+}
+
+// ============================================
+// ANNOUNCEMENT MODULE
+// ============================================
+
+model AnnouncementType {
+  id                     String                @id
+  name                   String
+  slug                   String                @unique
+  type                   String                @default("List")
+  description            String?
+  icon                   String?
+  color                  String?
+  position               Int                   @default(0)
+  isActive               Boolean               @default(true) @map("is_active")
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  deletedAt              DateTime?             @map("deleted_at")
+  announcement_sections  AnnouncementSection[]
+  announcements          announcements[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([position])
+  @@index([slug])
+  @@map("announcement_types")
+}
+
+model AnnouncementSection {
+  id                    String             @id
+  type_id               String
+  name                  String
+  slug                  String
+  description           String?
+  announcement_year     String?
+  cta_enabled           Boolean            @default(false)
+  cta_text              String?
+  cta_url               String?
+  position              Int                @default(0)
+  isActive              Boolean            @default(true) @map("is_active")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+  deletedAt             DateTime?          @map("deleted_at")
+  announcement_types    AnnouncementType   @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  announcements         announcements[]
+
+  @@unique([type_id, slug])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([position])
+  @@index([slug])
+  @@index([type_id])
+  @@map("announcement_sections")
+}
+
+model announcements {
+  id                      String              @id
+  type_id                 String?
+  section_id              String?
+  title                   String
+  slug                    String
+  description             String?
+  pdf_file                String?
+  cover_image             String?
+  data_type               String?
+  audit_status            String?
+  file_size               String?
+  sort_order              Int                 @default(0)
+  is_active               Boolean             @default(true)
+  status                  ContentStatus       @default(PUBLISHED)
+  created_at              DateTime            @default(now())
+  updated_at              DateTime
+  deleted_at              DateTime?
+  announcement_types      AnnouncementType?   @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  announcement_sections   AnnouncementSection? @relation(fields: [section_id], references: [id], onDelete: Cascade)
+
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([section_id])
+  @@index([slug])
+  @@index([sort_order])
+  @@index([status])
+  @@index([type_id])
 }
 
 enum UserStatus {

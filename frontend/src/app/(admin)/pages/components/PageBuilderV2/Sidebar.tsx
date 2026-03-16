@@ -69,22 +69,17 @@ function ComponentCard({ type, name, description, icon }: ComponentCardProps) {
       {...listeners}
       {...attributes}
       onClick={() => addComponent(type)}
-      className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-grab active:cursor-grabbing hover:border-brand-500 hover:shadow-md transition-all group ${
+      className={`flex flex-col items-center gap-1.5 p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-grab active:cursor-grabbing hover:border-brand-500 hover:shadow-md transition-all group ${
         isDragging ? 'opacity-50 shadow-lg ring-2 ring-brand-500' : ''
       }`}
       title={description}
     >
-      <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
         <ComponentIcon icon={icon} />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-          {name}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-          {description}
-        </p>
-      </div>
+      <p className="text-xs font-medium text-gray-900 dark:text-white text-center leading-tight line-clamp-2">
+        {name}
+      </p>
     </div>
   );
 }
@@ -126,22 +121,22 @@ export function Sidebar() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="p-4">
+      <div className="p-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
           Components
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-          Drag onto canvas or click to add
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+          Drag or click to add
         </p>
 
         {/* Search */}
-        <div className="relative mb-4">
+        <div className="relative mb-3">
           <input
             type="text"
-            placeholder="Search components..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 pl-8 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            className="w-full px-3 py-1.5 pl-8 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
           />
           <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -149,12 +144,12 @@ export function Sidebar() {
         </div>
 
         {filteredCategories.map(([category, components]) => (
-          <div key={category} className="mb-6">
-            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          <div key={category} className="mb-4">
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               {CATEGORY_CONFIG[category]?.label || category}
               <span className="ml-1 text-gray-400">({components.length})</span>
             </h4>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {components.map((comp) => (
                 <ComponentCard
                   key={comp.type}
@@ -175,15 +170,11 @@ export function Sidebar() {
         )}
 
         {/* Help text */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
-            Tips
-          </h4>
-          <ul className="text-xs text-blue-800 dark:text-blue-300 space-y-1">
-            <li>• Drag components to reorder them</li>
-            <li>• Click a component to edit its settings</li>
-            <li>• Use the eye icon to show/hide components</li>
-            <li>• <strong>Main</strong> components fetch live data from DB</li>
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <ul className="text-xs text-blue-800 dark:text-blue-300 space-y-0.5">
+            <li>• Drag to reorder, click to edit</li>
+            <li>• Eye icon to show/hide</li>
+            <li>• <strong>Main</strong> = live data from DB</li>
           </ul>
         </div>
       </div>

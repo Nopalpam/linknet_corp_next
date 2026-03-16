@@ -10,6 +10,7 @@ import { GoogleTagManager, GoogleAnalytics } from '@next/third-parties/google';
 
 
 import Navbar from "@/components/main/Navbar";
+import VisitorTracker from "@/components/VisitorTracker";
 import { getHeaderMenus } from "@/lib/cmsApi";
 
 
@@ -151,6 +152,7 @@ export default async function RootLayout({ children, params }) {
       <body>
         {/* 5. Bungkus semua komponen dengan Provider */}
         <NextIntlClientProvider messages={messages} locale={locale}>
+          <VisitorTracker />
           <Navbar menuData={menuData} />
           {children}
           

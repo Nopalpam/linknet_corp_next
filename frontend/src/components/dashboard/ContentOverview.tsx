@@ -1,34 +1,52 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FiFileText, FiMenu, FiBookOpen, FiImage } from "react-icons/fi";
+import { dashboardService, ContentOverviewData } from "@/services/dashboard.service";
 
 const ContentOverview = () => {
+  const [data, setData] = useState<ContentOverviewData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const content = await dashboardService.getContentOverview();
+        setData(content);
+      } catch {
+        // Keep loading state
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const contentStats = [
     {
       title: "Total Pages",
-      value: "28",
+      value: data ? data.pages.total.toString() : "...",
       icon: FiFileText,
       color: "blue",
-      status: "24 Published, 4 Draft",
+      status: data ? `${data.pages.published} Published, ${data.pages.draft} Draft` : "Loading...",
     },
     {
       title: "Active Menus",
-      value: "12",
+      value: data ? data.menus.total.toString() : "...",
       icon: FiMenu,
       color: "green",
-      status: "All menus active",
+      status: "Active menus",
     },
     {
       title: "News & Articles",
-      value: "156",
+      value: data ? data.news.total.toString() : "...",
       icon: FiBookOpen,
       color: "purple",
-      status: "145 Published, 11 Draft",
+      status: data ? `${data.news.published} Published, ${data.news.draft} Draft` : "Loading...",
     },
     {
       title: "Media Files",
-      value: "842",
+      value: data ? data.files.total.toString() : "...",
       icon: FiImage,
       color: "orange",
       status: "Images, Videos, Documents",

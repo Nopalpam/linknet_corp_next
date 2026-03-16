@@ -1,29 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
+import { dashboardService, ChartDataPoint } from "@/services/dashboard.service";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
 const VisitorChart = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState<"day" | "week">("week");
+  const [selectedPeriod, setSelectedPeriod] = useState<"daily" | "monthly">("daily");
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const dailyData = {
-    categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    visitors: [890, 1050, 980, 1200, 1100, 950, 870],
-    pageViews: [2340, 2890, 2670, 3120, 2980, 2450, 2180],
-  };
-
-  const weeklyData = {
-    categories: ["Week 1", "Week 2", "Week 3", "Week 4"],
-    visitors: [6200, 7100, 6800, 8456],
-    pageViews: [18500, 20400, 19800, 23200],
-  };
-
-  const currentData = selectedPeriod === "day" ? dailyData : weeklyData;
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await dashboardService.getVisitorChartData({ period: selectedPeriod });
+        setChartData(data.data);
+      } catch {
+        setChartData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [selectedPeriod]);
 
   const options: ApexOptions = {
     chart: {
@@ -32,6 +36,9 @@ const VisitorChart = () => {
       height: 350,
       toolbar: {
         show: false,
+      },
+      zoom: {
+        enabled: false,
       },
     },
     colors: ["#3C50E0", "#80CAEE"],
@@ -43,15 +50,35 @@ const VisitorChart = () => {
       width: 2,
     },
     xaxis: {
-      categories: currentData.categories,
+      categories: chartData.map((d) => d.label),
       axisBorder: {
         show: false,
       },
       axisTicks: {
         show: false,
       },
+      labels: {
+        rotate: -45,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true,
+        maxHeight: 60,
+        style: {
+          fontSize: "12px",
+          fontFamily: "Satoshi, sans-serif",
+        },
+      },
     },
     yaxis: {
+      labels: {
+        style: {
+          fontSize: "12px",
+          fontFamily: "Satoshi, sans-serif",
+        },
+        formatter: function (val) {
+          return val >= 1000 ? (val / 1000).toFixed(1) + "k" : val.toString();
+        },
+      },
       title: {
         style: {
           fontSize: "0px",
@@ -78,7 +105,7 @@ const VisitorChart = () => {
       fontFamily: "Satoshi, sans-serif",
       fontWeight: 500,
       markers: {
-        radius: 99,
+        size: 5,
       },
     },
     fill: {
@@ -101,16 +128,40 @@ const VisitorChart = () => {
         },
       },
     },
+    responsive: [
+      {
+        breakpoint: 640,
+        options: {
+          chart: {
+            height: 280,
+          },
+          legend: {
+            position: "bottom",
+            horizontalAlign: "center",
+            fontSize: "12px",
+          },
+          xaxis: {
+            labels: {
+              rotate: -45,
+              rotateAlways: true,
+              style: {
+                fontSize: "10px",
+              },
+            },
+          },
+        },
+      },
+    ],
   };
 
   const series = [
     {
       name: "Visitors",
-      data: currentData.visitors,
+      data: chartData.map((d) => d.visitors),
     },
     {
       name: "Page Views",
-      data: currentData.pageViews,
+      data: chartData.map((d) => d.pageViews),
     },
   ];
 
@@ -126,35 +177,44 @@ const VisitorChart = () => {
 
         <div className="flex gap-2">
           <button
-            onClick={() => setSelectedPeriod("day")}
+            onClick={() => setSelectedPeriod("daily")}
             className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
-              selectedPeriod === "day"
-                ? "bg-gray-50 text-blue-600"
-                : "bg-primary text-black dark:bg-meta-4 dark:text-white"
+              selectedPeriod === "daily"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 dark:bg-meta-4 dark:text-white"
             }`}
           >
             Daily
           </button>
           <button
-            onClick={() => setSelectedPeriod("week")}
+            onClick={() => setSelectedPeriod("monthly")}
             className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
-              selectedPeriod === "week"
-                ? "bg-gray-50 text-blue-600"
-                : "bg-primary text-black dark:bg-meta-4 dark:text-white"
+              selectedPeriod === "monthly"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 dark:bg-meta-4 dark:text-white"
             }`}
           >
-            Weekly
+            Monthly
           </button>
         </div>
       </div>
 
-      <div>
-        <ReactApexChart
-          options={options}
-          series={series}
-          type="area"
-          height={350}
-        />
+      <div className="w-full overflow-hidden">
+        {loading ? (
+          <div className="flex h-[350px] items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          </div>
+        ) : (
+          <div className="-ml-2 -mr-2">
+            <ReactApexChart
+              options={options}
+              series={series}
+              type="area"
+              height={350}
+              width="100%"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

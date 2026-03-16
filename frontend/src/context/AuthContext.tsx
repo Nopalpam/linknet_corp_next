@@ -104,6 +104,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     forceLogoutRef.current = true;
     
     console.error('🔴 FORCE LOGOUT: Clearing auth state');
+    
+    // Save current path for redirect after re-login
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const isProtectedPath = currentPath && !currentPath.startsWith('/login') && !currentPath.startsWith('/forgot-password') && !currentPath.startsWith('/reset-password');
+    
     clearAuthData();
     setUser(null);
     setIsAuthValidated(true); // Mark as validated (but not authenticated)
@@ -113,7 +118,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       forceLogoutRef.current = false;
     }, 1000);
     
-    router.replace('/login');
+    // Redirect to login with return URL
+    const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
+    router.replace(loginUrl);
   }, [router, clearAuthData]);
 
   // ✅ CRITICAL: Refresh user profile from backend
@@ -128,9 +135,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!token) {
         console.warn('🔴 No token found during refresh - logging out');
         if (!forceLogoutRef.current) {
+          const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+          const isProtectedPath = currentPath && !currentPath.startsWith('/login');
           clearAuthData();
           setUser(null);
-          router.replace('/login');
+          const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
+          router.replace(loginUrl);
         }
         return;
       }
@@ -162,9 +172,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           console.error('🔴 Profile fetch failed - logging out');
           if (!forceLogoutRef.current) {
+            const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+            const isProtectedPath = currentPath && !currentPath.startsWith('/login');
             clearAuthData();
             setUser(null);
-            router.replace('/login');
+            const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
+            router.replace(loginUrl);
           }
         }
       } else {
@@ -177,25 +190,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("🔴 Failed to refresh user:", error);
       
-      // ✅ CRITICAL: If error contains TOKEN_EXPIRED or is auth-related, force logout
-      if (
+      // ✅ CRITICAL: If error is auth-related or network failure, force logout
+      const isAuthError = 
         error?.message?.includes('expired') || 
         error?.message?.includes('Session') ||
         error?.message?.includes('TOKEN_EXPIRED') ||
         error?.message?.includes('TOKEN_INVALID') ||
-        error?.response?.status === 401
-      ) {
-        console.error('🔴 Auth error detected - forcing logout');
+        error?.response?.status === 401;
+      
+      const isNetworkError = 
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('terhubung ke server') ||
+        error?.message?.includes('NetworkError');
+
+      if (isAuthError || isNetworkError) {
+        console.error('🔴 Auth/network error detected - forcing logout');
         if (!forceLogoutRef.current) {
+          const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+          const isProtectedPath = currentPath && !currentPath.startsWith('/login');
           clearAuthData();
           setUser(null);
-          router.replace('/login');
+          const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
+          router.replace(loginUrl);
         }
       }
-      // Don't clear auth on other errors - token might still be valid
     } finally {
       isRefreshingRef.current = false;
     }
+  }, [router, clearAuthData]);
+
+  // ✅ Listen for force logout events dispatched from base.service.ts
+  useEffect(() => {
+    const handleForceLogout = () => {
+      console.error('🔴 AuthContext: Received auth:forceLogout event');
+      if (forceLogoutRef.current) return;
+      forceLogoutRef.current = true;
+
+      clearAuthData();
+      setUser(null);
+      setIsAuthValidated(true);
+
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+      const isProtectedPath = currentPath && !currentPath.startsWith('/login') && !currentPath.startsWith('/forgot-password') && !currentPath.startsWith('/reset-password');
+      const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
+      router.replace(loginUrl);
+
+      setTimeout(() => {
+        forceLogoutRef.current = false;
+      }, 1000);
+    };
+
+    window.addEventListener('auth:forceLogout', handleForceLogout);
+    return () => window.removeEventListener('auth:forceLogout', handleForceLogout);
   }, [router, clearAuthData]);
 
   // ✅ Initialize auth state on mount with BLOCKING validation
@@ -250,15 +296,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (error: any) {
             console.error('🔴 Token validation error:', error);
-            
-            // If error is auth-related, clear auth
-            if (error?.message?.includes('expired') || error?.message?.includes('Session')) {
-              clearAuthData();
-              setUser(null);
-            } else {
-              // For other errors, still mark as validated but clear user
-              setUser(null);
-            }
+            // Clear auth data for ALL errors (expired, network, etc.)
+            // If we can't validate the token, user should re-login
+            clearAuthData();
+            setUser(null);
           }
         } else {
           // Mock mode: restore from localStorage
@@ -270,6 +311,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Failed to initialize auth:", error);
+        clearAuthData();
         setUser(null);
       } finally {
         setIsAuthValidated(true);
@@ -369,8 +411,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setUser(userForStorage);
 
-        // Redirect to dashboard
-        router.replace("/");
+        // Redirect to return URL (from query param) or dashboard
+        const params = new URLSearchParams(window.location.search);
+        const returnUrl = params.get('from');
+        const safeReturnUrl = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('/login') ? returnUrl : '/';
+        router.replace(safeReturnUrl);
       } else {
         // Mock login for development (bypass auth)
         const mockUser: User = {
@@ -393,8 +438,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(mockUser));
         setUser(mockUser);
 
-        // Redirect to dashboard
-        router.replace("/");
+        // Redirect to return URL (from query param) or dashboard
+        const params = new URLSearchParams(window.location.search);
+        const returnUrl = params.get('from');
+        const safeReturnUrl = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('/login') ? returnUrl : '/';
+        router.replace(safeReturnUrl);
       }
     } catch (error) {
       console.error("Login error:", error);

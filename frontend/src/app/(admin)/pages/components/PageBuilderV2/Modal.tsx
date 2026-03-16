@@ -213,17 +213,17 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
       {/* Main Content - 3 Panel Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Component Library */}
-        <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <aside className="w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <Sidebar />
         </aside>
 
         {/* Center Panel - Canvas */}
-        <main className="flex-1">
+        <main className="flex-1 min-w-[280px]">
           <Canvas />
         </main>
 
         {/* Right Panel - Component Editor */}
-        <aside className="w-[420px] border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <aside className="w-[560px] flex-shrink-0 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <ComponentEditor />
         </aside>
       </div>

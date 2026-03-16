@@ -1,16 +1,16 @@
 /**
- * Report Module DTOs and Types
- * 3-level hierarchy: ReportType → ReportSection → reports (items)
- * Matches current Prisma schema with String IDs
+ * Announcement Module DTOs and Types
+ * 3-level hierarchy: AnnouncementType → AnnouncementSection → announcements (items)
  */
 
 // ============================================
-// REPORT TYPE TYPES
+// ANNOUNCEMENT TYPE TYPES
 // ============================================
 
-export interface CreateReportTypeDTO {
+export interface CreateAnnouncementTypeDTO {
   name: string;
   slug?: string;
+  type?: string;
   description?: string;
   icon?: string;
   color?: string;
@@ -18,9 +18,10 @@ export interface CreateReportTypeDTO {
   isActive?: boolean;
 }
 
-export interface UpdateReportTypeDTO {
+export interface UpdateAnnouncementTypeDTO {
   name?: string;
   slug?: string;
+  type?: string;
   description?: string;
   icon?: string;
   color?: string;
@@ -28,38 +29,47 @@ export interface UpdateReportTypeDTO {
   isActive?: boolean;
 }
 
-export interface ReportTypeQueryParams {
+export interface AnnouncementTypeQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  type?: string;
   isActive?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
 
 // ============================================
-// REPORT SECTION TYPES
+// ANNOUNCEMENT SECTION TYPES
 // ============================================
 
-export interface CreateReportSectionDTO {
+export interface CreateAnnouncementSectionDTO {
   type_id: string;
   name: string;
   slug?: string;
   description?: string;
+  announcement_year?: string;
+  cta_enabled?: boolean;
+  cta_text?: string;
+  cta_url?: string;
   position?: number;
   isActive?: boolean;
 }
 
-export interface UpdateReportSectionDTO {
+export interface UpdateAnnouncementSectionDTO {
   type_id?: string;
   name?: string;
   slug?: string;
   description?: string;
+  announcement_year?: string;
+  cta_enabled?: boolean;
+  cta_text?: string;
+  cta_url?: string;
   position?: number;
   isActive?: boolean;
 }
 
-export interface ReportSectionQueryParams {
+export interface AnnouncementSectionQueryParams {
   page?: number;
   limit?: number;
   search?: string;
@@ -70,10 +80,10 @@ export interface ReportSectionQueryParams {
 }
 
 // ============================================
-// REPORT ITEM (reports model) TYPES
+// ANNOUNCEMENT ITEM TYPES
 // ============================================
 
-export interface CreateReportItemDTO {
+export interface CreateAnnouncementItemDTO {
   type_id?: string;
   section_id?: string;
   title: string;
@@ -86,16 +96,10 @@ export interface CreateReportItemDTO {
   file_size?: string;
   sort_order?: number;
   is_active?: boolean;
-  period?: string;
-  year?: number;
-  quarter?: number;
-  file_url?: string;
-  file_type?: string;
-  thumbnail?: string;
   status?: string;
 }
 
-export interface UpdateReportItemDTO {
+export interface UpdateAnnouncementItemDTO {
   type_id?: string;
   section_id?: string;
   title?: string;
@@ -108,22 +112,15 @@ export interface UpdateReportItemDTO {
   file_size?: string;
   sort_order?: number;
   is_active?: boolean;
-  period?: string;
-  year?: number;
-  quarter?: number;
-  file_url?: string;
-  file_type?: string;
-  thumbnail?: string;
   status?: string;
 }
 
-export interface ReportItemQueryParams {
+export interface AnnouncementItemQueryParams {
   page?: number;
   limit?: number;
   search?: string;
   type_id?: string;
   section_id?: string;
-  year?: number;
   status?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -133,9 +130,8 @@ export interface ReportItemQueryParams {
 // PUBLIC FILTER TYPES
 // ============================================
 
-export interface ReportFilterParams {
+export interface AnnouncementFilterParams {
   search?: string;
-  year?: number;
   type_id?: string;
   section_id?: string;
   page?: number;

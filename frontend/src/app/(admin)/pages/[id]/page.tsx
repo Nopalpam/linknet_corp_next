@@ -112,6 +112,18 @@ export default function EditPagePage() {
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
                   Page Content
                 </h2>
+                <div className="flex gap-3">
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'}/${formData.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    View Page
+                  </a>
                 <button
                   onClick={() => setIsBuilderOpen(true)}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700"
@@ -131,6 +143,7 @@ export default function EditPagePage() {
                   </svg>
                   Open Page Builder
                 </button>
+                </div>
               </div>
 
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">

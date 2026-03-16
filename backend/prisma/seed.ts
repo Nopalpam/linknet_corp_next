@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { seedPages } from './seeds/pages.seed';
 
 const prisma = new PrismaClient();
@@ -880,15 +881,15 @@ async function main() {
   console.log('📰 Creating news categories...');
 
   const newsCategories = [
-    { nameEn: 'Company News', nameId: 'Berita Perusahaan', slug: 'company-news', description: 'Company announcements and updates', position: 1, isActive: true },
-    { nameEn: 'Press Release', nameId: 'Siaran Pers', slug: 'press-release', description: 'Official press releases', position: 2, isActive: true },
-    { nameEn: 'Events', nameId: 'Acara', slug: 'events', description: 'Company events and activities', position: 3, isActive: true },
-    { nameEn: 'Technology', nameId: 'Teknologi', slug: 'technology', description: 'Technology news and innovations', position: 4, isActive: true },
+    { id: crypto.randomUUID(), name_en: 'Company News', name_id: 'Berita Perusahaan', slug: 'company-news', description: 'Company announcements and updates', position: 1, is_active: true, updated_at: new Date() },
+    { id: crypto.randomUUID(), name_en: 'Press Release', name_id: 'Siaran Pers', slug: 'press-release', description: 'Official press releases', position: 2, is_active: true, updated_at: new Date() },
+    { id: crypto.randomUUID(), name_en: 'Events', name_id: 'Acara', slug: 'events', description: 'Company events and activities', position: 3, is_active: true, updated_at: new Date() },
+    { id: crypto.randomUUID(), name_en: 'Technology', name_id: 'Teknologi', slug: 'technology', description: 'Technology news and innovations', position: 4, is_active: true, updated_at: new Date() },
   ];
 
   const createdCategories = await Promise.all(
     newsCategories.map((category) =>
-      prisma.newsCategory.create({ data: category })
+      prisma.news_categories.create({ data: category })
     )
   );
 
@@ -901,39 +902,43 @@ async function main() {
 
   await prisma.news.create({
     data: {
-      titleEn: 'LinkNet Expands Network Infrastructure in Jakarta',
-      titleId: 'LinkNet Memperluas Infrastruktur Jaringan di Jakarta',
+      id: crypto.randomUUID(),
+      title_en: 'LinkNet Expands Network Infrastructure in Jakarta',
+      title_id: 'LinkNet Memperluas Infrastruktur Jaringan di Jakarta',
       slug: 'linknet-expands-network-infrastructure-jakarta',
-      newsDate: new Date(),
-      excerptEn: 'LinkNet announces major network expansion project to enhance connectivity across Jakarta metropolitan area.',
-      excerptId: 'LinkNet mengumumkan proyek ekspansi jaringan besar untuk meningkatkan konektivitas di wilayah Jakarta.',
-      contentEn: '<p>LinkNet Corp is pleased to announce a significant expansion of our network infrastructure across the Jakarta metropolitan area. This expansion will enhance connectivity and provide better service to our customers.</p><p>The project includes installation of new fiber optic cables, upgrade of existing infrastructure, and deployment of advanced networking equipment.</p>',
-      contentId: '<p>LinkNet Corp dengan bangga mengumumkan ekspansi signifikan infrastruktur jaringan kami di wilayah Jakarta. Ekspansi ini akan meningkatkan konektivitas dan memberikan layanan yang lebih baik kepada pelanggan kami.</p><p>Proyek ini mencakup instalasi kabel fiber optik baru, upgrade infrastruktur yang ada, dan penerapan peralatan jaringan canggih.</p>',
-      categoryId: createdCategories[0]!.id,
+      news_date: new Date(),
+      excerpt_en: 'LinkNet announces major network expansion project to enhance connectivity across Jakarta metropolitan area.',
+      excerpt_id: 'LinkNet mengumumkan proyek ekspansi jaringan besar untuk meningkatkan konektivitas di wilayah Jakarta.',
+      content_en: '<p>LinkNet Corp is pleased to announce a significant expansion of our network infrastructure across the Jakarta metropolitan area. This expansion will enhance connectivity and provide better service to our customers.</p><p>The project includes installation of new fiber optic cables, upgrade of existing infrastructure, and deployment of advanced networking equipment.</p>',
+      content_id: '<p>LinkNet Corp dengan bangga mengumumkan ekspansi signifikan infrastruktur jaringan kami di wilayah Jakarta. Ekspansi ini akan meningkatkan konektivitas dan memberikan layanan yang lebih baik kepada pelanggan kami.</p><p>Proyek ini mencakup instalasi kabel fiber optik baru, upgrade infrastruktur yang ada, dan penerapan peralatan jaringan canggih.</p>',
+      category_id: createdCategories[0]!.id,
       status: 'PUBLISHED',
-      publishedAt: new Date(),
-      createdById: superAdmin.id,
-      viewCount: 150,
-      viewCountUnique: 120,
+      published_at: new Date(),
+      created_by_id: superAdmin.id,
+      updated_at: new Date(),
+      view_count: 150,
+      view_count_unique: 120,
     },
   });
 
   await prisma.news.create({
     data: {
-      titleEn: 'LinkNet Achieves ISO 27001 Certification',
-      titleId: 'LinkNet Meraih Sertifikasi ISO 27001',
+      id: crypto.randomUUID(),
+      title_en: 'LinkNet Achieves ISO 27001 Certification',
+      title_id: 'LinkNet Meraih Sertifikasi ISO 27001',
       slug: 'linknet-achieves-iso-27001-certification',
-      newsDate: new Date(Date.now() - 86400000),
-      excerptEn: 'LinkNet receives ISO 27001 certification for information security management systems.',
-      excerptId: 'LinkNet menerima sertifikasi ISO 27001 untuk sistem manajemen keamanan informasi.',
-      contentEn: '<p>We are proud to announce that LinkNet has achieved ISO 27001 certification, demonstrating our commitment to information security and data protection.</p><p>This certification validates our comprehensive approach to managing sensitive company and customer information.</p>',
-      contentId: '<p>Kami dengan bangga mengumumkan bahwa LinkNet telah meraih sertifikasi ISO 27001, menunjukkan komitmen kami terhadap keamanan informasi dan perlindungan data.</p><p>Sertifikasi ini memvalidasi pendekatan komprehensif kami dalam mengelola informasi sensitif perusahaan dan pelanggan.</p>',
-      categoryId: createdCategories[1]!.id,
+      news_date: new Date(Date.now() - 86400000),
+      excerpt_en: 'LinkNet receives ISO 27001 certification for information security management systems.',
+      excerpt_id: 'LinkNet menerima sertifikasi ISO 27001 untuk sistem manajemen keamanan informasi.',
+      content_en: '<p>We are proud to announce that LinkNet has achieved ISO 27001 certification, demonstrating our commitment to information security and data protection.</p><p>This certification validates our comprehensive approach to managing sensitive company and customer information.</p>',
+      content_id: '<p>Kami dengan bangga mengumumkan bahwa LinkNet telah meraih sertifikasi ISO 27001, menunjukkan komitmen kami terhadap keamanan informasi dan perlindungan data.</p><p>Sertifikasi ini memvalidasi pendekatan komprehensif kami dalam mengelola informasi sensitif perusahaan dan pelanggan.</p>',
+      category_id: createdCategories[1]!.id,
       status: 'PUBLISHED',
-      publishedAt: new Date(Date.now() - 86400000),
-      createdById: superAdmin.id,
-      viewCount: 89,
-      viewCountUnique: 75,
+      published_at: new Date(Date.now() - 86400000),
+      created_by_id: superAdmin.id,
+      updated_at: new Date(),
+      view_count: 89,
+      view_count_unique: 75,
     },
   });
 
@@ -974,6 +979,7 @@ async function main() {
 
   const reportType = await prisma.reportType.create({
     data: {
+      id: crypto.randomUUID(),
       name: 'Financial Reports',
       slug: 'financial',
       description: 'Annual and quarterly financial reports',
@@ -985,7 +991,8 @@ async function main() {
 
   await prisma.reportSection.create({
     data: {
-      typeId: reportType.id,
+      id: crypto.randomUUID(),
+      type_id: reportType.id,
       name: 'Annual Reports',
       slug: 'annual',
       description: 'Annual financial reports',
@@ -995,7 +1002,8 @@ async function main() {
 
   await prisma.reportSection.create({
     data: {
-      typeId: reportType.id,
+      id: crypto.randomUUID(),
+      type_id: reportType.id,
       name: 'Quarterly Reports',
       slug: 'quarterly',
       description: 'Quarterly financial reports',
@@ -1011,9 +1019,9 @@ async function main() {
   console.log('👔 Creating management categories...');
 
   const managementCategories = [
-    { name: 'Board of Directors', slug: 'board-of-directors', description: 'Company board of directors', order: 1, status: 1 },
-    { name: 'Executive Management', slug: 'executive-management', description: 'Executive management team', order: 2, status: 1 },
-    { name: 'Department Heads', slug: 'department-heads', description: 'Department heads and managers', order: 3, status: 1 },
+    { id: crypto.randomUUID(), name: 'Board of Directors', slug: 'board-of-directors', description: 'Company board of directors', position: 1, is_active: true },
+    { id: crypto.randomUUID(), name: 'Executive Management', slug: 'executive-management', description: 'Executive management team', position: 2, is_active: true },
+    { id: crypto.randomUUID(), name: 'Department Heads', slug: 'department-heads', description: 'Department heads and managers', position: 3, is_active: true },
   ];
 
   const createdManagementCategories = await Promise.all(
@@ -1031,14 +1039,14 @@ async function main() {
 
   await prisma.management.create({
     data: {
+      id: crypto.randomUUID(),
       categoryId: createdManagementCategories[0]!.id,
       name: 'John Doe',
-      positionEn: 'Chief Executive Officer',
-      positionId: 'Direktur Utama',
-      bioEn: 'John has over 20 years of experience in telecommunications industry.',
-      bioId: 'John memiliki pengalaman lebih dari 20 tahun di industri telekomunikasi.',
-      dataOrder: 1,
-      dataStatus: 1,
+      slug: 'john-doe',
+      position: 'Chief Executive Officer',
+      description: 'John has over 20 years of experience in telecommunications industry.',
+      order: 1,
+      is_active: true,
     },
   });
 
