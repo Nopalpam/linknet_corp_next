@@ -7,10 +7,15 @@ type AwardStatus = 'ACTIVE' | 'INACTIVE';
 
 interface AwardData {
   title: string;
+  titleId?: string;
+  titleEn?: string;
   year: number;
   issuer: string;
   description?: string;
+  descriptionId?: string;
+  descriptionEn?: string;
   image?: string;
+  link?: string;
   order?: number;
   status?: AwardStatus;
 }
@@ -96,11 +101,16 @@ export class AwardService {
       const award = await prisma.award.create({
         data: {
           title: data.title,
+          titleId: data.titleId,
+          titleEn: data.titleEn,
           slug,
           year: data.year,
           issuer: data.issuer,
           description: data.description,
+          descriptionId: data.descriptionId,
+          descriptionEn: data.descriptionEn,
           image: data.image,
+          link: data.link,
           position,
           issueDate: new Date(data.year, 0, 1), // January 1st of the year
           status: data.status || 'ACTIVE',
@@ -113,11 +123,16 @@ export class AwardService {
       const award = await prisma.award.create({
         data: {
           title: data.title,
+          titleId: data.titleId,
+          titleEn: data.titleEn,
           slug,
           year: data.year,
           issuer: data.issuer,
           description: data.description,
+          descriptionId: data.descriptionId,
+          descriptionEn: data.descriptionEn,
           image: data.image,
+          link: data.link,
           position: order,
           issueDate: new Date(data.year, 0, 1),
           status: data.status || 'ACTIVE',
@@ -168,13 +183,18 @@ export class AwardService {
       where: { id },
       data: {
         ...(data.title !== undefined && { title: data.title, slug }),
+        ...(data.titleId !== undefined && { titleId: data.titleId }),
+        ...(data.titleEn !== undefined && { titleEn: data.titleEn }),
         ...(data.year !== undefined && { 
           year: data.year,
           issueDate: new Date(data.year, 0, 1)
         }),
         ...(data.issuer !== undefined && { issuer: data.issuer }),
         ...(data.description !== undefined && { description: data.description }),
+        ...(data.descriptionId !== undefined && { descriptionId: data.descriptionId }),
+        ...(data.descriptionEn !== undefined && { descriptionEn: data.descriptionEn }),
         ...(data.image !== undefined && { image: data.image }),
+        ...(data.link !== undefined && { link: data.link }),
         ...(data.order !== undefined && { position: data.order }),
         ...(data.status !== undefined && { 
           status: data.status,

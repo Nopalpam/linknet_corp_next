@@ -951,6 +951,7 @@ async function main() {
 
   const announcementType = await prisma.announcementType.create({
     data: {
+      id: crypto.randomUUID(),
       name: 'Corporate Announcements',
       slug: 'corporate',
       description: 'Official corporate announcements and notices',
@@ -962,7 +963,8 @@ async function main() {
 
   await prisma.announcementSection.create({
     data: {
-      typeId: announcementType.id,
+      id: crypto.randomUUID(),
+      type_id: announcementType.id,
       name: 'General Announcements',
       slug: 'general',
       description: 'General company announcements',
@@ -1043,7 +1045,7 @@ async function main() {
       categoryId: createdManagementCategories[0]!.id,
       name: 'John Doe',
       slug: 'john-doe',
-      position: 'Chief Executive Officer',
+      positionEn: 'Chief Executive Officer',
       description: 'John has over 20 years of experience in telecommunications industry.',
       order: 1,
       is_active: true,

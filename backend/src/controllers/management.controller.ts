@@ -109,10 +109,13 @@ export class ManagementController {
       const {
         name,
         slug,
-        position,
+        positionEn,
+        positionId,
         categoryId,
         photo,
         description,
+        bioEn,
+        bioId,
         email,
         phone,
         linkedin,
@@ -130,10 +133,13 @@ export class ManagementController {
       const management = await managementService.createManagement({
         name: name.trim(),
         slug: slug?.trim(),
-        position: position?.trim(),
+        positionEn: positionEn?.trim(),
+        positionId: positionId?.trim(),
         categoryId,
         photo,
         description: description?.trim(),
+        bioEn: bioEn?.trim(),
+        bioId: bioId?.trim(),
         email: email?.trim(),
         phone: phone?.trim(),
         linkedin: linkedin?.trim(),
@@ -161,10 +167,13 @@ export class ManagementController {
       const {
         name,
         slug,
-        position,
+        positionEn,
+        positionId,
         categoryId,
         photo,
         description,
+        bioEn,
+        bioId,
         email,
         phone,
         linkedin,
@@ -179,10 +188,13 @@ export class ManagementController {
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
       if (slug !== undefined) updateData.slug = slug?.trim();
-      if (position !== undefined) updateData.position = position?.trim();
+      if (positionEn !== undefined) updateData.positionEn = positionEn?.trim();
+      if (positionId !== undefined) updateData.positionId = positionId?.trim();
       if (categoryId !== undefined) updateData.categoryId = categoryId;
       if (photo !== undefined) updateData.photo = photo;
       if (description !== undefined) updateData.description = description?.trim();
+      if (bioEn !== undefined) updateData.bioEn = bioEn?.trim();
+      if (bioId !== undefined) updateData.bioId = bioId?.trim();
       if (email !== undefined) updateData.email = email?.trim();
       if (phone !== undefined) updateData.phone = phone?.trim();
       if (linkedin !== undefined) updateData.linkedin = linkedin?.trim();

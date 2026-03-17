@@ -148,8 +148,8 @@ function parseMySQLValues(valuesStr: string): string[] {
 /**
  * Clean a MySQL string value: remove surrounding quotes and unescape.
  */
-function cleanString(val: string): string | null {
-  if (val === 'NULL' || val === 'null') return null;
+function cleanString(val: string | undefined): string | null {
+  if (!val || val === 'NULL' || val === 'null') return null;
   // Remove surrounding quotes
   if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
     val = val.slice(1, -1);
@@ -164,8 +164,8 @@ function cleanString(val: string): string | null {
   return val;
 }
 
-function cleanInt(val: string): number {
-  return parseInt(val.trim(), 10);
+function cleanInt(val: string | undefined): number {
+  return parseInt((val || '0').trim(), 10);
 }
 
 /**

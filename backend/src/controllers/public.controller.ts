@@ -76,14 +76,14 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         return { managements, categories };
       }
       case 'announcement_list': {
-        const announcements = await prisma.announcement.findMany({
-          where: { status: 'PUBLISHED' },
-          include: { section: { include: { type: true } } },
-          orderBy: { publishedAt: 'desc' },
+        const announcements = await prisma.announcements.findMany({
+          where: { status: 'PUBLISHED', deleted_at: null },
+          include: { announcement_sections: { include: { announcement_types: true } } },
+          orderBy: { created_at: 'desc' },
           take: config.per_page || 10,
         });
         const types = await prisma.announcementType.findMany({
-          where: { isActive: true },
+          where: { isActive: true, deletedAt: null },
           orderBy: { position: 'asc' },
         });
         return { announcements, types };

@@ -273,20 +273,27 @@ model Career {
 }
 
 model Award {
-  id          String    @id @default(uuid())
-  title       String
-  slug        String    @unique
-  description String?
-  image       String?
-  issuer      String
-  year        Int
-  issueDate   DateTime  @map("issue_date")
-  position    Int       @default(0)
-  isActive    Boolean   @default(true) @map("is_active")
-  status      String    @default("ACTIVE")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id              String    @id @default(uuid())
+  title           String
+  titleId         String?   @map("title_id")
+  titleEn         String?   @map("title_en")
+  slug            String    @unique
+  description     String?
+  descriptionId   String?   @map("description_id")
+  descriptionEn   String?   @map("description_en")
+  image           String?
+  link            String?
+  issuer          String
+  year            Int
+  issueDate       DateTime  @map("issue_date")
+  position        Int       @default(0)
+  isActive        Boolean   @default(true) @map("is_active")
+  status          String    @default("ACTIVE")
+  createdBy       String?   @map("created_by")
+  updatedBy       String?   @map("updated_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
   @@index([slug])
   @@index([year])
@@ -305,6 +312,8 @@ model ManagementCategory {
   description String?
   position    Int          @default(0)
   is_active   Boolean      @default(true)
+  createdBy   String?      @map("created_by")
+  updatedBy   String?      @map("updated_by")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   deleted_at  DateTime?
@@ -322,14 +331,19 @@ model Management {
   categoryId         String             @map("category_id")
   name               String
   slug               String             @unique
-  position           String
+  positionEn         String?            @map("position_en")
+  positionId         String?            @map("position_id")
   description        String?
   photo              String?
+  bioEn              String?            @map("bio_en")
+  bioId              String?            @map("bio_id")
   email              String?
   phone              String?
   linkedin           String?
   order              Int                @default(0)
   is_active          Boolean            @default(true)
+  createdBy          String?            @map("created_by")
+  updatedBy          String?            @map("updated_by")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   deleted_at         DateTime?
@@ -596,6 +610,8 @@ model news {
   content_en                      String
   content_id                      String?
   news_link                       String?
+  author                          String?
+  meta_desc                       String?
   category_id                     String
   meta_keywords                   String?
   custom_css                      String?

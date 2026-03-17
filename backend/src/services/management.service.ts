@@ -52,7 +52,8 @@ export class ManagementService {
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { position: { contains: search, mode: 'insensitive' } },
+        { positionEn: { contains: search, mode: 'insensitive' } },
+        { positionId: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }
@@ -155,9 +156,12 @@ export class ManagementService {
         categoryId: data.categoryId,
         name: data.name,
         slug,
-        position: data.position || '',
+        positionEn: data.positionEn || null,
+        positionId: data.positionId || null,
         description: data.description || null,
         photo: data.photo || null,
+        bioEn: data.bioEn || null,
+        bioId: data.bioId || null,
         email: data.email || null,
         phone: data.phone || null,
         linkedin: data.linkedin || null,
@@ -195,9 +199,12 @@ export class ManagementService {
       data: {
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.name !== undefined && { name: data.name, slug }),
-        ...(data.position !== undefined && { position: data.position }),
+        ...(data.positionEn !== undefined && { positionEn: data.positionEn }),
+        ...(data.positionId !== undefined && { positionId: data.positionId }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.photo !== undefined && { photo: data.photo }),
+        ...(data.bioEn !== undefined && { bioEn: data.bioEn }),
+        ...(data.bioId !== undefined && { bioId: data.bioId }),
         ...(data.email !== undefined && { email: data.email }),
         ...(data.phone !== undefined && { phone: data.phone }),
         ...(data.linkedin !== undefined && { linkedin: data.linkedin }),
