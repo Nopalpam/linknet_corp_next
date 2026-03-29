@@ -82,6 +82,9 @@ const OneStream = dynamic(() => import('@/components/main/OneStream'));
 const ClosingSentence = dynamic(() => import('@/components/main/ClosingSentence'));
 const Tvc = dynamic(() => import('@/components/main/Tvc'));
 const USP = dynamic(() => import('@/components/main/USP'));
+const ExtendableArticle = dynamic(() => import('@/components/main/ExtendableArticle'));
+const StockInformation = dynamic(() => import('@/components/main/StockInformation'));
+const Testimonials = dynamic(() => import('@/components/main/Testimonials'));
 
 // Built-in generic section components (no separate file needed per type)
 import {
@@ -727,6 +730,67 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         poster_image: data.poster_image || '',
         title: t(data.title),
         autoplay: data.autoplay || false,
+      },
+      ...styleProps,
+    }),
+  },
+
+  extendable_article: {
+    component: ExtendableArticle,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        id: data.custom_id || 'extendable-article',
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          align: data.intro.align || 'center',
+        } : undefined,
+        content: t(data.content),
+        buttonLabels: {
+          expand: t(data.button_expand) || 'Read More',
+          collapse: t(data.button_collapse) || 'Show Less',
+        },
+      },
+      ...styleProps,
+    }),
+  },
+
+  stock_information: {
+    component: StockInformation,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        title: t(data.title),
+        symbol: data.symbol || 'LINK.JK',
+      },
+      ...styleProps,
+    }),
+  },
+
+  testimonials: {
+    component: Testimonials,
+    mapProps: ({ data, t, styleProps }) => ({
+      cmsData: {
+        introData: data.intro ? {
+          as: 'h2',
+          label: t(data.intro.label),
+          title: t(data.intro.title),
+          description: t(data.intro.description),
+          align: data.intro.align || 'left',
+        } : undefined,
+        testimonialList: Array.isArray(data.testimonials)
+          ? data.testimonials.map((item, idx) => ({
+              id: `testimonial-${idx}`,
+              image: item.image || '',
+              companyLogo: item.companyLogo || item.company_logo || '',
+              companyName: item.companyName || item.company_name || '',
+              quote: t(item.quote),
+              tags: Array.isArray(item.tags) ? item.tags : [],
+              readMoreUrl: item.readMoreUrl || item.read_more_url || '#',
+              name: item.name || '',
+              role: item.role || '',
+            }))
+          : [],
       },
       ...styleProps,
     }),

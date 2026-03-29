@@ -106,6 +106,11 @@ const menuSections: MenuSection[] = [
         name: "Contact Us Data Bank",
         path: "/contact-data-bank",
       },
+      {
+        icon: <BoxCubeIcon />,
+        name: "File Manager",
+        path: "/file-manager",
+      },
     ],
   },
   {
@@ -144,6 +149,11 @@ const menuSections: MenuSection[] = [
       { icon: <GridIcon />, 
         name: "Menu Management", 
         path: "/menu-management" 
+      },
+      {
+        icon: <PlugInIcon />,
+        name: "MFA Setup",
+        path: "/mfa-setup",
       },
     ],
   },

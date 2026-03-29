@@ -41,7 +41,7 @@ const SystemActivity = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await dashboardService.getRecentActivity(10);
+        const data = await dashboardService.getRecentActivity(5);
         setActivities(data);
       } catch {
         setActivities([]);

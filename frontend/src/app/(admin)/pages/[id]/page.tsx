@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { pagesService, Page, UpdatePageData } from "@/services/pages.service";
+import { settingsService } from "@/services";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { PageBuilderModal } from "../components/PageBuilderV2";
@@ -30,6 +31,34 @@ export default function EditPagePage() {
 
   // Track component count from loaded page
   const [componentCount, setComponentCount] = useState(0);
+
+  // Page preview URL settings (from CMS Settings)
+  const [previewBaseUrl, setPreviewBaseUrl] = useState<string>("");
+  const [previewPathTemplate, setPreviewPathTemplate] = useState<string>("/pages/{slug}");
+
+  // Fetch page preview settings
+  useEffect(() => {
+    const fetchPreviewSettings = async () => {
+      try {
+        const response = await settingsService.getAllSettings("pages");
+        const settings = response.data || [];
+        const baseUrlSetting = settings.find((s) => s.key === "page_preview_base_url");
+        const pathTemplateSetting = settings.find((s) => s.key === "page_preview_path_template");
+        if (baseUrlSetting?.value) setPreviewBaseUrl(baseUrlSetting.value);
+        if (pathTemplateSetting?.value) setPreviewPathTemplate(pathTemplateSetting.value);
+      } catch {
+        setPreviewBaseUrl(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
+      }
+    };
+    fetchPreviewSettings();
+  }, []);
+
+  const getPagePreviewUrl = (slug: string): string => {
+    const base = previewBaseUrl || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const pathTemplate = previewPathTemplate || "/pages/{slug}";
+    const path = pathTemplate.replace("{slug}", slug);
+    return `${base.replace(/\/+$/, "")}${path}`;
+  };
 
   // Fetch page data
   useEffect(() => {
@@ -114,7 +143,7 @@ export default function EditPagePage() {
                 </h2>
                 <div className="flex gap-3">
                   <a
-                    href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'}/${formData.slug}`}
+                    href={getPagePreviewUrl(formData.slug || "")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"

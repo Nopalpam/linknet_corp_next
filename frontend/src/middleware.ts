@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   '/login',
   '/forgot-password',
   '/reset-password',
+  '/mfa-verify',
 ];
 
 // Define routes that should redirect to dashboard if authenticated

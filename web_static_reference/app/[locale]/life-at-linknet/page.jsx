@@ -9,6 +9,7 @@ import VisionMission from '@/components/main/VisionMission';
 import Milestone from '@/components/main/Milestone';
 import AwardsFeed from '@/components/main/AwardsFeed';
 import AwardSneakPeek from '@/components/main/AwardSneakPeek';
+import ExtendableArticle from '@/components/main/ExtendableArticle';
 
 
 // Anda bisa menambahkan metadata untuk SEO di sini
@@ -37,6 +38,8 @@ export default function CareerPage() {
       <AwardsFeed name='awards-list' />
 
       <AwardSneakPeek name='default' />
+
+      <ExtendableArticle name="business-highlights" />
       
     </main>
   );

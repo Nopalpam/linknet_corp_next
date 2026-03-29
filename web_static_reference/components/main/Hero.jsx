@@ -80,8 +80,8 @@ export default function Hero({
 
   // Menentukan class ukuran hero berdasarkan heroSize
   const heightClass = heroSize === 'sm' 
-    ? 'h-[56vh] md:h-[64vh]' 
-    : 'h-[68vh] md:h-[70vh]';
+    ? 'h-[560px] md:h-[64vh]' 
+    : 'h-[600px] md:h-[70vh]';
 
   // Kondisi untuk warna text berdasarkan theme
   const isDark = theme === 'dark';

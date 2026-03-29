@@ -10,6 +10,13 @@ import {
   getCurrentUser
 } from '../controllers/auth.controller';
 import {
+  mfaSetup,
+  mfaEnable,
+  mfaDisable,
+  mfaVerify,
+  mfaStatus
+} from '../controllers/mfa.controller';
+import {
   registerValidation,
   loginValidation,
   forgotPasswordValidation,
@@ -45,6 +52,25 @@ router.post('/forgot-password', forgotPasswordValidation, validateRequest, forgo
 
 // Reset password (uses general auth rate limiter from server.ts)
 router.post('/reset-password', resetPasswordValidation, validateRequest, resetPassword);
+
+/**
+ * MFA routes
+ */
+
+// Verify MFA token during login (public - uses tempToken)
+router.post('/mfa/verify', mfaVerify);
+
+// Setup MFA (authenticated)
+router.post('/mfa/setup', authMiddleware, mfaSetup);
+
+// Enable MFA after verification (authenticated)
+router.post('/mfa/enable', authMiddleware, mfaEnable);
+
+// Disable MFA (authenticated)
+router.post('/mfa/disable', authMiddleware, mfaDisable);
+
+// Get MFA status (authenticated)
+router.get('/mfa/status', authMiddleware, mfaStatus);
 
 /**
  * Protected routes

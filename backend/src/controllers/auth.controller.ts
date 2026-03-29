@@ -203,6 +203,53 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // MBSS2.0-010: Check if first-time login (must change password)
     const requiresPasswordChange = user.mustChangePassword || isPasswordExpired;
 
+    // ==========================================
+    // MFA CHECK: If MFA is globally enabled AND user has MFA enabled
+    // ==========================================
+    const mfaGlobalValue = (process.env.MFA_ENABLED || '').toLowerCase().trim();
+    const MFA_ENABLED = ['true', 'enable', 'enabled', '1', 'yes'].includes(mfaGlobalValue);
+    const userMfaEnabled = (user as any).mfaEnabled === true;
+
+    if (MFA_ENABLED && userMfaEnabled) {
+      // Generate a short-lived temp token for MFA verification
+      const tempToken = generateAccessToken({
+        id: user.id,
+        email: user.email,
+        roles: [],
+        permissions: [],
+      });
+
+      // Log MFA challenge
+      await prisma.logActivity.create({
+        data: {
+          userId: user.id,
+          action: 'mfa_challenge',
+          module: 'auth',
+          description: 'MFA verification required',
+          ipAddress: req.ip || '',
+          userAgent: req.get('user-agent') || '',
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'MFA verification required',
+        data: {
+          requiresMfa: true,
+          tempToken,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`.trim(),
+          },
+        },
+      });
+      return;
+    }
+    // ==========================================
+    // END MFA CHECK
+    // ==========================================
+
     // Get user roles and permissions
     const userWithRoles = await prisma.user.findUnique({
       where: { id: user.id },
@@ -297,7 +344,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           // MBSS2.0-009 & 010: Signal frontend to force password change
           mustChangePassword: requiresPasswordChange,
           passwordExpired: isPasswordExpired,
-          passwordAgeDays: passwordAge
+          passwordAgeDays: passwordAge,
+          mfaEnabled: userMfaEnabled,
         },
         accessToken,
         refreshToken

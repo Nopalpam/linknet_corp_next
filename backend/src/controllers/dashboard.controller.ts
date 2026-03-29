@@ -243,11 +243,11 @@ export async function getContentOverview(_req: Request, res: Response, next: Nex
 /**
  * Get recent activities for dashboard
  * GET /api/v1/cms/dashboard/recent-activity
- * Query: limit (default 10)
+ * Query: limit (default 5)
  */
 export async function getRecentActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 5, 50);
 
     const activities = await prisma.logActivity.findMany({
       where: { deletedAt: null },

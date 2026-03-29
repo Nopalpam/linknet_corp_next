@@ -18,12 +18,19 @@ import AboutWithRunningPhotos from '@/components/main/AboutWithRunningPhotos';
 import JoinFirstSquad from '@/components/main/JoinFirstSquad';
 import ReportGrid from '@/components/main/ReportGrid';
 import ReportList from '@/components/main/ReportList';
+import StockInformation from '@/components/main/StockInformation';
+import OmniChannelWidget from '@/components/main/OmniChannelWidget';
+import Testimonials from '@/components/main/Testimonials';
+import ModalCookies from '@/components/base/modals/ModalCookies';
 
 
 export default function Section() {
   return (
     <div>
-      
+        <OmniChannelWidget />
+
+        <ModalCookies />
+
         <Hero name="mission" />
 
         <HeroSliders 
@@ -38,7 +45,7 @@ export default function Section() {
           gridColsMobile={1}
         />
 
-        <TabBusiness name="home" className="mt-20"/>
+        <TabBusiness name='default' />
         
         <ListReportHome name="home" />
 
@@ -65,7 +72,7 @@ export default function Section() {
 
         <JoinFirstSquad name='career' />
 
-        <ReportGrid name='sustainability-reports' />
+        
 
         <ReportList
           name="financial-statement" 
@@ -73,6 +80,12 @@ export default function Section() {
           showStatusFilter 
           showYearFilter 
         />
+
+        <ReportGrid name='sustainability-reports' />
+
+        <StockInformation />
+
+        <Testimonials name='default'/>
 
     </div>
   );

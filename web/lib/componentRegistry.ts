@@ -63,6 +63,9 @@ export const CMS_COMPONENT_TYPES = {
   USP_STRIP: 'usp_strip',
   CLOSING_CTA: 'closing_cta',
   VIDEO_SECTION: 'video_section',
+  EXTENDABLE_ARTICLE: 'extendable_article',
+  STOCK_INFORMATION: 'stock_information',
+  TESTIMONIALS: 'testimonials',
 } as const;
 
 export type CMSComponentType = typeof CMS_COMPONENT_TYPES[keyof typeof CMS_COMPONENT_TYPES];

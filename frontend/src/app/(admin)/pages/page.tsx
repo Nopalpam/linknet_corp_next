@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pagesService, Page } from "@/services/pages.service";
+import { settingsService } from "@/services";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { DataTable, TableColumn } from "@/components/DataTable/DataTable";
@@ -29,6 +30,38 @@ export default function PagesListPage() {
   // Delete modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState<Page | null>(null);
+
+  // Page preview URL settings (from CMS Settings)
+  const [previewBaseUrl, setPreviewBaseUrl] = useState<string>("");
+  const [previewPathTemplate, setPreviewPathTemplate] = useState<string>("/pages/{slug}");
+
+  // Fetch page preview settings
+  useEffect(() => {
+    const fetchPreviewSettings = async () => {
+      try {
+        const response = await settingsService.getAllSettings("pages");
+        const settings = response.data || [];
+        const baseUrlSetting = settings.find((s) => s.key === "page_preview_base_url");
+        const pathTemplateSetting = settings.find((s) => s.key === "page_preview_path_template");
+        if (baseUrlSetting?.value) setPreviewBaseUrl(baseUrlSetting.value);
+        if (pathTemplateSetting?.value) setPreviewPathTemplate(pathTemplateSetting.value);
+      } catch {
+        // Fallback to env or defaults
+        setPreviewBaseUrl(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
+      }
+    };
+    fetchPreviewSettings();
+  }, []);
+
+  /**
+   * Build preview URL from settings
+   */
+  const getPagePreviewUrl = (slug: string): string => {
+    const base = previewBaseUrl || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const pathTemplate = previewPathTemplate || "/pages/{slug}";
+    const path = pathTemplate.replace("{slug}", slug);
+    return `${base.replace(/\/+$/, "")}${path}`;
+  };
 
   // Fetch pages with debounce
   const fetchPages = useCallback(async () => {
@@ -191,7 +224,7 @@ export default function PagesListPage() {
       render: (page) => (
         <div className="flex gap-2">
           <a
-            href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'}/${page.slug}`}
+            href={getPagePreviewUrl(page.slug)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center px-3 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700"

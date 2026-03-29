@@ -10,8 +10,11 @@ import { GoogleTagManager, GoogleAnalytics } from '@next/third-parties/google';
 
 
 import Navbar from "@/components/main/Navbar";
+import Footer from "@/components/main/Footer";
+import ModalCookies from "@/components/base/modals/ModalCookies";
+import OmniChannelWidget from "@/components/main/OmniChannelWidget";
 import VisitorTracker from "@/components/VisitorTracker";
-import { getHeaderMenus } from "@/lib/cmsApi";
+import { getHeaderMenus, getFooterMenus, getPublicSettings } from "@/lib/cmsApi";
 
 
 export const metadata = {
@@ -143,19 +146,77 @@ export default async function RootLayout({ children, params }) {
   const messages = await getMessages();
 
   // 4. Fetch menu data dari CMS API (server-side)
-  const menuData = await getHeaderMenus();
+  const [menuData, footerMenus, publicSettings] = await Promise.all([
+    getHeaderMenus(),
+    getFooterMenus(),
+    getPublicSettings(),
+  ]);
+
+  // 5. Assemble footer data dari settings + menu
+  const cmsFooterData = {
+    logo: publicSettings.footer_logo || '/assets/logos/logo-linknet-white.svg',
+    slogan: publicSettings.footer_slogan || '',
+    address: publicSettings.footer_address || '',
+    contact: {
+      email: publicSettings.footer_email || publicSettings.contact_email || '',
+      phone: publicSettings.footer_phone || publicSettings.contact_phone || '',
+    },
+    menus: footerMenus || [],
+    socials: (() => {
+      try {
+        const raw = publicSettings.footer_socials;
+        return typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
+      } catch { return []; }
+    })(),
+    copyright: publicSettings.footer_copyright || `© ${new Date().getFullYear()} PT Link Net Tbk. All rights reserved.`,
+  };
+
+  // 6. Assemble closing sentence data
+  const cmsClosingData = {
+    introData: {
+      overline: publicSettings.closing_overline || '',
+      title: publicSettings.closing_title || '',
+      description: publicSettings.closing_description || '',
+    },
+    videoSrc: publicSettings.closing_video_src || '',
+    ctaButtons: (() => {
+      try {
+        const raw = publicSettings.closing_cta_buttons;
+        return typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
+      } catch { return []; }
+    })(),
+  };
+
+  // 7. Assemble cookies modal data
+  const cookiesData = {
+    enabled: publicSettings.cookies_enabled === true || publicSettings.cookies_enabled === 'true',
+    title: publicSettings.cookies_title || 'We use cookies',
+    description: publicSettings.cookies_description || 'This website uses cookies to ensure you get the best experience.',
+    acceptLabel: publicSettings.cookies_accept_label || 'Accept',
+    moreInfoLabel: publicSettings.cookies_more_info_label || 'More Info',
+    moreInfoUrl: publicSettings.cookies_more_info_url || '/privacy-policy',
+    iconUrl: publicSettings.cookies_icon_url || '',
+  };
 
   return (
     <html lang={locale}>
       <GoogleTagManager gtmId="GTM-5BND42TQ" />
       <GoogleAnalytics gaId="G-Q51QMD6Y10" />
       <body>
-        {/* 5. Bungkus semua komponen dengan Provider */}
+        {/* 8. Bungkus semua komponen dengan Provider */}
         <NextIntlClientProvider messages={messages} locale={locale}>
           <VisitorTracker />
           <Navbar menuData={menuData} />
           {children}
-          
+          <Footer cmsClosingData={cmsClosingData} cmsFooterData={cmsFooterData} />
+          <ModalCookies cmsData={cookiesData} />
+          <OmniChannelWidget cmsData={{
+            enabled: publicSettings.omnichannel_enabled === true || publicSettings.omnichannel_enabled === 'true',
+            title: publicSettings.omnichannel_title || undefined,
+            subtitle: publicSettings.omnichannel_subtitle || undefined,
+            whatsappUrl: publicSettings.omnichannel_whatsapp_url || undefined,
+            submitEndpoint: publicSettings.omnichannel_submit_endpoint || undefined,
+          }} />
         </NextIntlClientProvider>
       </body>
     </html>

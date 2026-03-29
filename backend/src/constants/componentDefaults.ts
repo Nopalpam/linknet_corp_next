@@ -762,6 +762,64 @@ const VIDEO_SECTION: ComponentTypeDefinition = {
   }),
 };
 
+const EXTENDABLE_ARTICLE: ComponentTypeDefinition = {
+  type: 'extendable_article',
+  name: 'Extendable Article',
+  description: 'Expandable/collapsible rich text article section with Read More/Show Less toggle',
+  icon: 'FaFileAlt',
+  category: 'basic',
+  defaultData: withCommon({
+    intro: {
+      label: '',
+      title: { en: 'More About Us', id: 'Tentang Kami' },
+      align: 'center',
+    },
+    content: { en: '<p>Enter your article content here...</p>', id: '<p>Masukkan konten artikel di sini...</p>' },
+    button_expand: { en: 'Read More', id: 'Baca Selengkapnya' },
+    button_collapse: { en: 'Show Less', id: 'Lebih Sedikit' },
+  }),
+};
+
+const STOCK_INFORMATION: ComponentTypeDefinition = {
+  type: 'stock_information',
+  name: 'Stock Information',
+  description: 'Live stock price widget with TradingView chart, information panel, and historical data table',
+  icon: 'FaChartLine',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Get the latest information about LINK stock price today', id: 'Dapatkan informasi terkini mengenai harga saham LINK hari ini' },
+    symbol: 'LINK.JK',
+  }),
+};
+
+const TESTIMONIALS: ComponentTypeDefinition = {
+  type: 'testimonials',
+  name: 'Testimonials',
+  description: 'Client testimonial carousel with company logos, quotes, tags, and auto-advance progress tabs',
+  icon: 'FaQuoteRight',
+  category: 'basic',
+  defaultData: withCommon({
+    intro: {
+      label: { en: 'TESTIMONIAL', id: 'TESTIMONIAL' },
+      title: { en: 'Empowering Businesses Through Real Success Stories', id: 'Mendorong Bisnis Melalui Kisah Sukses Nyata' },
+      description: '',
+      align: 'left',
+    },
+    testimonials: [
+      {
+        image: '',
+        companyLogo: '',
+        companyName: 'Company Name',
+        quote: { en: 'Testimonial text here.', id: 'Teks testimoni di sini.' },
+        tags: ['Service 1', 'Service 2'],
+        readMoreUrl: '#',
+        name: 'Person Name',
+        role: 'Job Title, Company',
+      },
+    ],
+  }),
+};
+
 // ============================================================================
 // COMPONENT REGISTRY
 // ============================================================================
@@ -797,6 +855,9 @@ export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
   USP_STRIP,
   CLOSING_CTA,
   VIDEO_SECTION,
+  EXTENDABLE_ARTICLE,
+  STOCK_INFORMATION,
+  TESTIMONIALS,
   // Main (DB-driven)
   NEWS_HIGHLIGHT,
   NEWS_LIST,

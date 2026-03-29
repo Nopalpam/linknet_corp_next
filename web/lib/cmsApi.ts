@@ -105,3 +105,57 @@ export async function getHeaderMenus(): Promise<CMSMenuItem[]> {
     return [];
   }
 }
+
+/**
+ * Fetch footer menus from CMS API
+ * Transforms the CMS menu tree into footer-friendly format:
+ * Each top-level menu becomes a section with title and links
+ */
+export async function getFooterMenus(): Promise<{ title: string; links: { label: string; href: string }[] }[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/menu?position=FOOTER`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return [];
+
+    const json = await res.json();
+    const menuTree: CMSMenuItem[] = json.data || [];
+
+    // Transform tree: each top-level item = a menu group
+    return menuTree
+      .filter((item) => item.isActive)
+      .sort((a, b) => a.order - b.order)
+      .map((menu) => ({
+        title: menu.sectionTitle || menu.title,
+        links: (menu.children || [])
+          .filter((child) => child.isActive)
+          .sort((a, b) => a.order - b.order)
+          .map((child) => ({
+            label: child.title,
+            href: child.url || `/${child.slug || ''}`,
+          })),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch public settings from CMS API
+ * Returns a key-value map of all public settings
+ */
+export async function getPublicSettings(): Promise<Record<string, any>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/settings/public`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return {};
+
+    const json = await res.json();
+    return json.data || {};
+  } catch {
+    return {};
+  }
+}

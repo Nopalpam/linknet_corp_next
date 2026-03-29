@@ -163,6 +163,10 @@ app.use(`${API_PREFIX}`, menuRoutes);
 import filemanagerRoutes from '@routes/filemanager.routes';
 app.use(`${API_PREFIX}/filemanager`, filemanagerRoutes);
 
+// File Manager V2 routes (Storage Abstraction - Local/S3-ready)
+import filemanagerV2Routes from '@routes/filemanagerV2.routes';
+app.use(`${API_PREFIX}/fm`, filemanagerV2Routes);
+
 // Upload routes (unified S3/Azure/Local upload + presigned URLs)
 import uploadRoutes from '@routes/upload.routes';
 app.use(`${API_PREFIX}/upload`, uploadRoutes);
@@ -194,6 +198,10 @@ app.use(`${API_PREFIX}/cms/log-activity`, logActivityRoutes);
 // Dashboard routes (Public visitor tracking + CMS dashboard)
 import dashboardRoutes from '@routes/dashboard.routes';
 app.use(`${API_PREFIX}`, dashboardRoutes);
+
+// Analytics routes (Google Analytics + Internal CMS Analytics)
+import analyticsRoutes from '@routes/analytics.routes';
+app.use(`${API_PREFIX}`, analyticsRoutes);
 
 // URL Redirect routes (CMS + Public)
 import urlRedirectRoutes from '@routes/urlRedirect.routes';

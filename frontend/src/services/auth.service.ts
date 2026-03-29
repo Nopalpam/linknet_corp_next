@@ -10,6 +10,8 @@ export type LoginResponse = {
   success: boolean;
   message: string;
   data: {
+    requiresMfa?: boolean;
+    tempToken?: string;
     user: {
       id: string;
       email: string;
@@ -24,9 +26,10 @@ export type LoginResponse = {
         slug: string;
       }>;
       permissions: string[];
+      mfaEnabled?: boolean;
     };
-    accessToken: string;
-    refreshToken: string;
+    accessToken?: string;
+    refreshToken?: string;
   };
 };
 
@@ -207,6 +210,84 @@ class AuthService extends BaseService {
   async logoutAll(): Promise<LogoutResponse> {
     const url = this.getApiUrl('/auth/logout-all');
     return this.fetchWithAuth(url, { method: 'POST' });
+  }
+
+  // ===========================================
+  // MFA Methods
+  // ===========================================
+
+  /**
+   * Verify MFA OTP during login
+   */
+  async mfaVerify(token: string, tempToken: string): Promise<LoginResponse> {
+    const url = this.getApiUrl('/auth/mfa/verify');
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, tempToken }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'MFA verification failed');
+    }
+
+    return data;
+  }
+
+  /**
+   * Setup MFA for current user (returns QR code)
+   */
+  async mfaSetup(): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      qrCode: string;
+      secret: string;
+      otpauthUrl: string;
+    };
+  }> {
+    const url = this.getApiUrl('/auth/mfa/setup');
+    return this.fetchWithAuth(url, { method: 'POST' });
+  }
+
+  /**
+   * Enable MFA after verifying OTP
+   */
+  async mfaEnable(token: string): Promise<{ success: boolean; message: string }> {
+    const url = this.getApiUrl('/auth/mfa/enable');
+    return this.fetchWithAuth(url, {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  /**
+   * Disable MFA
+   */
+  async mfaDisable(token: string): Promise<{ success: boolean; message: string }> {
+    const url = this.getApiUrl('/auth/mfa/disable');
+    return this.fetchWithAuth(url, {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  /**
+   * Get MFA status
+   */
+  async mfaStatus(): Promise<{
+    success: boolean;
+    data: {
+      mfaEnabled: boolean;
+      mfaGloballyEnabled: boolean;
+      hasMfaSecret: boolean;
+    };
+  }> {
+    const url = this.getApiUrl('/auth/mfa/status');
+    return this.fetchWithAuth(url, { method: 'GET' });
   }
 }
 

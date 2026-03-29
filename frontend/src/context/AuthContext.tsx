@@ -28,6 +28,11 @@ type AuthContextType = {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   forceLogout: () => void; // ✅ NEW: Force logout handler
+  // MFA
+  mfaPending: boolean;
+  mfaTempToken: string | null;
+  mfaUserEmail: string | null;
+  verifyMfa: (otpToken: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,6 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthValidated, setIsAuthValidated] = useState(false); // ✅ NEW: Track validation state
+  const [mfaPending, setMfaPending] = useState(false);
+  const [mfaTempToken, setMfaTempToken] = useState<string | null>(null);
+  const [mfaUserEmail, setMfaUserEmail] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isRefreshingRef = useRef(false);
@@ -388,25 +396,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           throw new Error(response.message || "Login failed");
         }
 
+        // Check if MFA is required
+        if (response.data.requiresMfa && response.data.tempToken) {
+          setMfaPending(true);
+          setMfaTempToken(response.data.tempToken);
+          setMfaUserEmail(response.data.user?.email || email);
+          // Don't set user or tokens yet - redirect to MFA verify
+          router.replace('/mfa-verify');
+          return;
+        }
+
         const userData = response.data.user;
         const userForStorage: User = {
           id: userData.id,
           email: userData.email,
-          name: `${userData.firstName} ${userData.lastName}`.trim(),
+          name: userData.name || `${userData.firstName} ${userData.lastName}`.trim(),
           firstName: userData.firstName,
           lastName: userData.lastName,
           avatar: userData.avatar,
           status: userData.status,
-          roles: userData.roles,
-          permissions: userData.permissions,
+          roles: userData.roles || [],
+          permissions: userData.permissions || [],
         };
 
         // Store tokens in both cookie and localStorage
         // Cookie: for middleware access
         // localStorage: for API calls & refresh token
-        setCookie(AUTH_TOKEN_KEY, response.data.accessToken, 7);
-        localStorage.setItem(AUTH_TOKEN_KEY, response.data.accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refreshToken);
+        const accessToken = response.data.accessToken!;
+        const refreshToken = response.data.refreshToken!;
+        setCookie(AUTH_TOKEN_KEY, accessToken, 7);
+        localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userForStorage));
         
         setUser(userForStorage);
@@ -467,7 +487,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       clearAuthData();
       setUser(null);
+      setMfaPending(false);
+      setMfaTempToken(null);
+      setMfaUserEmail(null);
       router.replace("/login");
+    }
+  };
+
+  // ✅ MFA: Verify OTP after login
+  const verifyMfa = async (otpToken: string) => {
+    if (!mfaTempToken) {
+      throw new Error('No MFA session. Please login again.');
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await authService.mfaVerify(otpToken, mfaTempToken);
+
+      if (!response.success) {
+        throw new Error(response.message || 'MFA verification failed');
+      }
+
+      const userData = response.data.user;
+      const userForStorage: User = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name || `${userData.firstName} ${userData.lastName}`.trim(),
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        avatar: userData.avatar,
+        status: userData.status,
+        roles: userData.roles || [],
+        permissions: userData.permissions || [],
+      };
+
+      const accessToken = response.data.accessToken!;
+      const refreshToken = response.data.refreshToken!;
+      setCookie(AUTH_TOKEN_KEY, accessToken, 7);
+      localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userForStorage));
+
+      setUser(userForStorage);
+      setMfaPending(false);
+      setMfaTempToken(null);
+      setMfaUserEmail(null);
+
+      // Redirect to dashboard
+      router.replace('/');
+    } catch (error) {
+      console.error('MFA verify error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -480,6 +552,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     refreshUser,
     forceLogout,
+    // MFA
+    mfaPending,
+    mfaTempToken,
+    mfaUserEmail,
+    verifyMfa,
   };
 
   // ✅ CRITICAL: Show loading screen while validating auth

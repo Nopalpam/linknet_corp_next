@@ -553,6 +553,30 @@ async function main() {
     },
 
     // ============================================
+    // GROUP: PAGES
+    // ============================================
+    {
+      key: 'page_preview_base_url',
+      value: 'http://localhost:3000',
+      type: 'STRING',
+      group: 'pages',
+      label: 'Page Preview Base URL',
+      description: 'Base URL for previewing public pages (e.g., https://example.com). The page slug will be appended automatically.',
+      isPublic: false,
+      isSystem: true,
+    },
+    {
+      key: 'page_preview_path_template',
+      value: '/pages/{slug}',
+      type: 'STRING',
+      group: 'pages',
+      label: 'Page Preview Path Template',
+      description: 'URL path template for page preview. Use {slug} as placeholder. Example: /pages/{slug} or /{slug}',
+      isPublic: false,
+      isSystem: true,
+    },
+
+    // ============================================
     // GROUP: CONTACT
     // ============================================
     {

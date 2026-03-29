@@ -10,6 +10,7 @@ import { GoogleTagManager, GoogleAnalytics } from '@next/third-parties/google';
 
 
 import Navbar from "@/components/main/Navbar";
+import Footer from "@/components/main/Footer";
 
 
 export const metadata = {
@@ -149,6 +150,7 @@ export default async function RootLayout({ children, params }) {
         <NextIntlClientProvider messages={messages} locale={locale}>
           <Navbar />
           {children}
+          <Footer />
           
         </NextIntlClientProvider>
       </body>
