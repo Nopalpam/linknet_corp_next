@@ -926,3 +926,22 @@ enum ContactStatus {
   NEW
   READ
 }
+
+// ============================================
+// COOKIE CONSENT TRACKING
+// ============================================
+
+model CookieConsent {
+  id          String   @id @default(uuid())
+  ipAddress   String   @map("ip_address")
+  os          String?
+  browser     String?
+  device      String?
+  userAgent   String?  @map("user_agent")
+  fingerprint String?
+  consentedAt DateTime @default(now()) @map("consented_at")
+
+  @@index([ipAddress])
+  @@index([consentedAt])
+  @@map("cookie_consents")
+}

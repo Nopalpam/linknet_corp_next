@@ -107,6 +107,11 @@ const menuSections: MenuSection[] = [
         path: "/contact-data-bank",
       },
       {
+        icon: <PieChartIcon />,
+        name: "Cookie Consents",
+        path: "/cookie-consents",
+      },
+      {
         icon: <BoxCubeIcon />,
         name: "File Manager",
         path: "/file-manager",

@@ -46,13 +46,9 @@ export default function VisionMission({ cmsData = null, className = '' }) {
     return () => ctx.revert();
   }, [data]);
 
-  // 2. PROTEKSI: Jika data tidak ada, atau items tidak ada, jangan render isi grid
+  // 2. PROTEKSI: Jika data tidak ada, atau items tidak ada, jangan render apapun
   if (!data || !data.items || data.items.length < 2) {
-    return (
-      <section className="py-16 px-4 md:px-8 bg-white text-center">
-        <p className="text-red-500">Data Vision & Mission tidak ditemukan atau belum lengkap.</p>
-      </section>
-    );
+    return null;
   }
 
   // Jika aman, baru ambil array-nya

@@ -43,7 +43,7 @@ export const config: Config = {
     version: process.env.API_VERSION || '1.0.0',
   },
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001',
     credentials: process.env.CORS_CREDENTIALS === 'true',
   },
   jwt: {

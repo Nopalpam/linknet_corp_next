@@ -711,12 +711,21 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: ClosingSentence,
     mapProps: ({ data, t, styleProps }) => ({
       cmsData: {
-        text: t(data.title),
-        description: t(data.description),
-        cta_text: t(data.cta_text),
-        cta_link: data.cta_link || '#',
-        video_url: data.video_url || '',
-        bg_image: data.bg_image || '',
+        introData: {
+          overline: t(data.overline) || '',
+          title: t(data.title),
+          description: t(data.description),
+        },
+        ctaButtons: Array.isArray(data.cta_buttons)
+          ? data.cta_buttons.map((cta: any) => ({
+              text: t(cta.text),
+              variant: cta.variant || 'secondary-outline',
+              size: cta.size || 'lg',
+              href: cta.href || data.cta_link || '#',
+            }))
+          : data.cta_text
+            ? [{ text: t(data.cta_text), variant: 'secondary-outline', size: 'lg', href: data.cta_link || '#' }]
+            : [],
       },
       ...styleProps,
     }),

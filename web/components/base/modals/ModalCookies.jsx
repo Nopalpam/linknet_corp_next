@@ -12,6 +12,7 @@ const STORAGE_KEY      = 'ln_cookie_accepted';
 const EXPIRY_MONTHS    = 6;
 const ANIM_DURATION    = 0.5;
 const ANIM_EASE        = 'power3.out';
+const API_BASE_URL     = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 // =========================================
 // HELPERS
@@ -42,6 +43,35 @@ function saveConsent() {
     );
   } catch {
     // localStorage not available (private mode, etc) — ignore
+  }
+}
+
+/** Generate a simple browser fingerprint (UUID-based) */
+function getOrCreateFingerprint() {
+  try {
+    const FP_KEY = 'ln_device_fp';
+    let fp = localStorage.getItem(FP_KEY);
+    if (!fp) {
+      fp = 'fp_' + crypto.randomUUID();
+      localStorage.setItem(FP_KEY, fp);
+    }
+    return fp;
+  } catch {
+    return null;
+  }
+}
+
+/** Send consent data to backend API */
+async function sendConsentToAPI(fingerprint) {
+  try {
+    await fetch(`${API_BASE_URL}/cookies/consent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fingerprint }),
+    });
+  } catch {
+    // Silently fail — consent is already saved locally
+    // API logging is best-effort, should not block UX
   }
 }
 
@@ -98,8 +128,14 @@ export default function ModalCookies({ cmsData = null, className = '' }) {
   const handleAccept = () => {
     if (!popupRef.current) return;
 
+    // 1. Save consent locally
     saveConsent();
 
+    // 2. Send consent to backend API (best-effort, non-blocking)
+    const fingerprint = getOrCreateFingerprint();
+    sendConsentToAPI(fingerprint);
+
+    // 3. Animate out
     gsap.to(popupRef.current, {
       y: 40,
       opacity: 0,
@@ -118,8 +154,11 @@ export default function ModalCookies({ cmsData = null, className = '' }) {
     moreInfoLabel = 'More Info', 
     moreInfoUrl = '/privacy-policy', 
     acceptLabel = 'Accept',
-    iconUrl = '/assets/icons/cookie.svg',
+    iconUrl = '',
   } = cmsData;
+
+  // Resolve icon: use CMS value, fallback to default, or null to avoid empty src
+  const resolvedIconUrl = iconUrl || '/assets/icons/cookie.svg';
 
   return (
     <div
@@ -144,7 +183,7 @@ export default function ModalCookies({ cmsData = null, className = '' }) {
       <div className="flex items-start gap-4 flex-1 min-w-0">
         {/* Cookie icon */}
         <div className="flex-shrink-0 mt-0.5">
-          <img src={iconUrl} className='w-8 h-8' alt="Cookie Icon" />
+          {resolvedIconUrl && <img src={resolvedIconUrl} className='w-8 h-8' alt="Cookie Icon" />}
         </div>
 
         {/* Text */}

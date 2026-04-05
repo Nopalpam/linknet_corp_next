@@ -10,8 +10,8 @@ const router = Router();
  * Public routes (no authentication required)
  */
 
-// GET /api/settings/public - Get public settings
-router.get('/public', SettingsController.getPublicSettings);
+// GET /api/v1/settings/public - Get public settings
+router.get('/settings/public', SettingsController.getPublicSettings);
 
 /**
  * CMS routes (authentication + permission required)

@@ -54,9 +54,26 @@ app.use(requestIdMiddleware);
 app.use(httpLoggerMiddleware);
 
 // CORS configuration
+// Supports multiple origins separated by comma (e.g. "http://localhost:3000,http://localhost:3001")
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      // In development, allow any localhost origin
+      if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS policy: origin ${origin} not allowed`));
+    },
     credentials: process.env.CORS_CREDENTIALS === 'true',
   })
 );
@@ -234,6 +251,10 @@ app.use(`${API_PREFIX}`, reportRoutes);
 // Announcement routes (Public + CMS)
 import announcementRoutes from '@routes/announcement.routes';
 app.use(`${API_PREFIX}`, announcementRoutes);
+
+// Cookie Consent routes (Public + CMS)
+import cookieConsentRoutes from '@routes/cookieConsent.routes';
+app.use(`${API_PREFIX}`, cookieConsentRoutes);
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);

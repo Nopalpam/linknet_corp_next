@@ -17,6 +17,8 @@
 
 import NodeCache from 'node-cache';
 import { logInfo } from '../utils/logger';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Cache analytics data for 10 minutes to reduce API calls
 const analyticsCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
@@ -61,7 +63,24 @@ function isGA4Configured(): boolean {
   const clientEmail = process.env.GA4_CLIENT_EMAIL;
   const privateKey = process.env.GA4_PRIVATE_KEY;
 
-  return !!(credentialsPath || (clientEmail && privateKey));
+  // If credentials path is set, verify the file actually exists
+  if (credentialsPath) {
+    const resolvedPath = path.isAbsolute(credentialsPath)
+      ? credentialsPath
+      : path.resolve(process.cwd(), credentialsPath);
+    if (!fs.existsSync(resolvedPath)) {
+      logInfo(`GA4 credentials file not found at: ${resolvedPath}. GA4 will be disabled.`);
+      return false;
+    }
+    return true;
+  }
+
+  // Check inline credentials
+  if (clientEmail && privateKey) {
+    return true;
+  }
+
+  return false;
 }
 
 // ============ HELPER: Get GA4 Client ============
@@ -75,9 +94,22 @@ async function getGA4Client() {
   const privateKey = process.env.GA4_PRIVATE_KEY;
 
   if (credentialsPath) {
+    // Resolve and verify the file exists before passing to SDK
+    const resolvedPath = path.isAbsolute(credentialsPath)
+      ? credentialsPath
+      : path.resolve(process.cwd(), credentialsPath);
+    
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(
+        `GA4 credentials file not found at: ${resolvedPath}. ` +
+        `Please place the service account JSON file there, or use inline credentials (GA4_CLIENT_EMAIL + GA4_PRIVATE_KEY), ` +
+        `or remove GA4_CREDENTIALS_PATH from .env to disable GA4.`
+      );
+    }
+
     // Use JSON key file
     return new BetaAnalyticsDataClient({
-      keyFilename: credentialsPath,
+      keyFilename: resolvedPath,
     });
   }
 
@@ -216,12 +248,13 @@ export class GoogleAnalyticsService {
 
       return result;
     } catch (error: any) {
-      console.error('Failed to fetch GA4 analytics data:', error.message);
+      // Log warning instead of error - GA4 not working should not break the app
+      logInfo(`GA4 analytics unavailable: ${error.message}`);
 
       // Return graceful fallback instead of throwing
       return {
         connected: false,
-        message: `Gagal mengambil data dari Google Analytics: ${error.message}`,
+        message: `Google Analytics tidak tersedia: ${error.message}`,
         overview: null,
         topPages: [],
         period: { startDate, endDate },

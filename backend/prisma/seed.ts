@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { seedPages } from './seeds/pages.seed';
+import { seedFooter } from './seeds/footer.seed';
 
 const prisma = new PrismaClient();
 
@@ -1102,6 +1103,200 @@ async function main() {
   console.log('✅ Created sample career');
 
   // ============================================
+  // COOKIE CONSENTS - Sample Data
+  // ============================================
+  console.log('🍪 Creating cookie consent records...');
+
+  const cookieConsentData = [
+    {
+      ipAddress: '103.76.129.42',
+      os: 'Windows 10',
+      browser: 'Chrome 120.0.6099.130',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.130 Safari/537.36',
+      fingerprint: 'fp_a1b2c3d4e5f6',
+      consentedAt: new Date('2026-03-15T08:30:00Z'),
+    },
+    {
+      ipAddress: '182.253.194.18',
+      os: 'macOS 14.2',
+      browser: 'Safari 17.2',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+      fingerprint: 'fp_g7h8i9j0k1l2',
+      consentedAt: new Date('2026-03-16T10:15:00Z'),
+    },
+    {
+      ipAddress: '36.68.45.112',
+      os: 'Android 14',
+      browser: 'Chrome Mobile 120.0',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36',
+      fingerprint: 'fp_m3n4o5p6q7r8',
+      consentedAt: new Date('2026-03-17T14:45:00Z'),
+    },
+    {
+      ipAddress: '114.124.200.55',
+      os: 'iOS 17.2',
+      browser: 'Safari Mobile 17.2',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1',
+      fingerprint: 'fp_s9t0u1v2w3x4',
+      consentedAt: new Date('2026-03-18T09:00:00Z'),
+    },
+    {
+      ipAddress: '103.76.129.42',
+      os: 'Windows 10',
+      browser: 'Firefox 121.0',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+      fingerprint: 'fp_y5z6a7b8c9d0',
+      consentedAt: new Date('2026-03-19T11:30:00Z'),
+    },
+    {
+      ipAddress: '180.244.131.88',
+      os: 'Windows 11',
+      browser: 'Edge 120.0.2210.91',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91',
+      fingerprint: 'fp_e1f2g3h4i5j6',
+      consentedAt: new Date('2026-03-20T16:20:00Z'),
+    },
+    {
+      ipAddress: '202.152.240.34',
+      os: 'Linux Ubuntu',
+      browser: 'Chrome 120.0.6099.130',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.130 Safari/537.36',
+      fingerprint: 'fp_k7l8m9n0o1p2',
+      consentedAt: new Date('2026-03-21T07:10:00Z'),
+    },
+    {
+      ipAddress: '110.136.87.201',
+      os: 'Android 13',
+      browser: 'Samsung Internet 23.0',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (Linux; Android 13; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36',
+      fingerprint: 'fp_q3r4s5t6u7v8',
+      consentedAt: new Date('2026-03-22T13:55:00Z'),
+    },
+    {
+      ipAddress: '125.164.12.77',
+      os: 'iPadOS 17.2',
+      browser: 'Safari 17.2',
+      device: 'Tablet',
+      userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1',
+      fingerprint: 'fp_w9x0y1z2a3b4',
+      consentedAt: new Date('2026-03-23T19:40:00Z'),
+    },
+    {
+      ipAddress: '36.80.155.63',
+      os: 'macOS 14.1',
+      browser: 'Chrome 120.0.6099.130',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.130 Safari/537.36',
+      fingerprint: 'fp_c5d6e7f8g9h0',
+      consentedAt: new Date('2026-03-24T12:05:00Z'),
+    },
+    {
+      ipAddress: '182.253.194.18',
+      os: 'Windows 10',
+      browser: 'Opera 105.0',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 OPR/105.0.0.0',
+      fingerprint: 'fp_i1j2k3l4m5n6',
+      consentedAt: new Date('2026-03-25T15:30:00Z'),
+    },
+    {
+      ipAddress: '103.28.12.95',
+      os: 'Android 14',
+      browser: 'Chrome Mobile 120.0',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36',
+      fingerprint: 'fp_o7p8q9r0s1t2',
+      consentedAt: new Date('2026-03-26T06:45:00Z'),
+    },
+    {
+      ipAddress: '114.124.200.55',
+      os: 'Windows 11',
+      browser: 'Brave 1.61',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Brave/1.61',
+      fingerprint: 'fp_u3v4w5x6y7z8',
+      consentedAt: new Date('2026-03-27T20:15:00Z'),
+    },
+    {
+      ipAddress: '180.244.131.88',
+      os: 'macOS 14.2',
+      browser: 'Firefox 121.0',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.2; rv:121.0) Gecko/20100101 Firefox/121.0',
+      fingerprint: 'fp_a9b0c1d2e3f4',
+      consentedAt: new Date('2026-03-28T10:50:00Z'),
+    },
+    {
+      ipAddress: '202.152.240.34',
+      os: 'iOS 17.3',
+      browser: 'Safari Mobile 17.3',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1',
+      fingerprint: 'fp_g5h6i7j8k9l0',
+      consentedAt: new Date('2026-03-29T17:25:00Z'),
+    },
+    {
+      ipAddress: '36.68.45.112',
+      os: 'Windows 10',
+      browser: 'Chrome 121.0.6167.85',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36',
+      fingerprint: 'fp_m1n2o3p4q5r6',
+      consentedAt: new Date('2026-03-30T08:00:00Z'),
+    },
+    {
+      ipAddress: '125.164.12.77',
+      os: 'Android 14',
+      browser: 'Chrome Mobile 121.0',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.101 Mobile Safari/537.36',
+      fingerprint: 'fp_s7t8u9v0w1x2',
+      consentedAt: new Date('2026-03-31T22:10:00Z'),
+    },
+    {
+      ipAddress: '103.76.129.42',
+      os: 'macOS 14.3',
+      browser: 'Safari 17.3',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
+      fingerprint: 'fp_y3z4a5b6c7d8',
+      consentedAt: new Date('2026-04-01T09:35:00Z'),
+    },
+    {
+      ipAddress: '110.136.87.201',
+      os: 'Windows 11',
+      browser: 'Edge 121.0.2277.83',
+      device: 'Desktop',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.2277.83',
+      fingerprint: 'fp_e9f0g1h2i3j4',
+      consentedAt: new Date('2026-04-01T14:50:00Z'),
+    },
+    {
+      ipAddress: '36.80.155.63',
+      os: 'Android 13',
+      browser: 'Firefox Mobile 121.0',
+      device: 'Mobile',
+      userAgent: 'Mozilla/5.0 (Android 13; Mobile; rv:121.0) Gecko/121.0 Firefox/121.0',
+      fingerprint: 'fp_k5l6m7n8o9p0',
+      consentedAt: new Date('2026-04-02T06:20:00Z'),
+    },
+  ];
+
+  for (const consent of cookieConsentData) {
+    await prisma.cookieConsent.create({ data: consent });
+  }
+
+  console.log(`✅ Created ${cookieConsentData.length} cookie consent records`);
+
+  // ============================================
   // FILES - Sample Folder Structure
   // ============================================
   console.log('📁 Creating folder structure...');
@@ -1141,6 +1336,11 @@ async function main() {
   // ============================================
   await seedPages();
 
+  // ============================================
+  // FOOTER - Settings + Menus
+  // ============================================
+  await seedFooter();
+
   console.log('');
   console.log('🎉 Database seeding completed successfully!');
   console.log('');
@@ -1150,6 +1350,7 @@ async function main() {
   console.log('   - Roles: Super Admin, Admin, Editor, User');
   console.log(`   - Permissions: ${permissions.length} permissions created`);
   console.log(`   - Settings: ${settingsData.length} settings created`);
+  console.log(`   - Cookie Consents: ${cookieConsentData.length} records created`);
   console.log('');
 }
 
