@@ -61,9 +61,13 @@ const GAAnalyticsWidget = () => {
               Website Analytics
             </h4>
           </div>
-          <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-            Source: Google Analytics
-          </span>
+          <button
+            onClick={fetchData}
+            className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+          >
+            <FiRefreshCw className="h-3 w-3" />
+            Coba Lagi
+          </button>
         </div>
 
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-10 text-center dark:border-gray-600">
@@ -82,6 +86,13 @@ const GAAnalyticsWidget = () => {
               <li>GA4_CREDENTIALS_PATH atau GA4_CLIENT_EMAIL + GA4_PRIVATE_KEY</li>
             </ul>
           </div>
+          <button
+            onClick={fetchData}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          >
+            <FiRefreshCw className="h-4 w-4" />
+            Refresh Data Analytics
+          </button>
         </div>
       </div>
     );

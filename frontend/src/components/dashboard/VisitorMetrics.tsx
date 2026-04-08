@@ -118,7 +118,7 @@ const VisitorMetrics = () => {
               onClick={() => setFilterMode(mode)}
               className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
                 filterMode === mode
-                  ? "bg-primary text-white"
+                  ? "bg-blue-500 text-white"
                   : "text-bodydark hover:bg-gray-2 dark:hover:bg-meta-4"
               } ${mode === "all" ? "rounded-l-lg" : ""} ${mode === "month" ? "rounded-r-lg" : ""}`}
             >
