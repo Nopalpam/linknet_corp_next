@@ -106,16 +106,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem(AUTH_LAST_REFRESH);
   }, []);
 
+  // Helper: build login redirect URL with session_expired reason
+  const buildLoginUrl = useCallback((reason?: string) => {
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const isProtectedPath = currentPath && !currentPath.startsWith('/login') && !currentPath.startsWith('/forgot-password') && !currentPath.startsWith('/reset-password');
+    const params = new URLSearchParams();
+    if (isProtectedPath) params.set('from', currentPath);
+    if (reason) params.set('reason', reason);
+    const qs = params.toString();
+    return qs ? `/login?${qs}` : '/login';
+  }, []);
+
   // ✅ CRITICAL: Force logout - clear everything and redirect
   const forceLogout = useCallback(() => {
     if (forceLogoutRef.current) return; // Prevent duplicate calls
     forceLogoutRef.current = true;
     
     console.error('🔴 FORCE LOGOUT: Clearing auth state');
-    
-    // Save current path for redirect after re-login
-    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-    const isProtectedPath = currentPath && !currentPath.startsWith('/login') && !currentPath.startsWith('/forgot-password') && !currentPath.startsWith('/reset-password');
     
     clearAuthData();
     setUser(null);
@@ -126,10 +133,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       forceLogoutRef.current = false;
     }, 1000);
     
-    // Redirect to login with return URL
-    const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
-    router.replace(loginUrl);
-  }, [router, clearAuthData]);
+    // Redirect to login with session_expired reason
+    router.replace(buildLoginUrl('session_expired'));
+  }, [router, clearAuthData, buildLoginUrl]);
 
   // ✅ CRITICAL: Refresh user profile from backend
   const refreshUser = useCallback(async () => {
@@ -143,12 +149,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!token) {
         console.warn('🔴 No token found during refresh - logging out');
         if (!forceLogoutRef.current) {
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-          const isProtectedPath = currentPath && !currentPath.startsWith('/login');
           clearAuthData();
           setUser(null);
-          const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
-          router.replace(loginUrl);
+          router.replace(buildLoginUrl('session_expired'));
         }
         return;
       }
@@ -180,12 +183,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           console.error('🔴 Profile fetch failed - logging out');
           if (!forceLogoutRef.current) {
-            const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-            const isProtectedPath = currentPath && !currentPath.startsWith('/login');
             clearAuthData();
             setUser(null);
-            const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
-            router.replace(loginUrl);
+            router.replace(buildLoginUrl('session_expired'));
           }
         }
       } else {
@@ -214,18 +214,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (isAuthError || isNetworkError) {
         console.error('🔴 Auth/network error detected - forcing logout');
         if (!forceLogoutRef.current) {
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-          const isProtectedPath = currentPath && !currentPath.startsWith('/login');
           clearAuthData();
           setUser(null);
-          const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
-          router.replace(loginUrl);
+          router.replace(buildLoginUrl('session_expired'));
         }
       }
     } finally {
       isRefreshingRef.current = false;
     }
-  }, [router, clearAuthData]);
+  }, [router, clearAuthData, buildLoginUrl]);
 
   // ✅ Listen for force logout events dispatched from base.service.ts
   useEffect(() => {
@@ -238,10 +235,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setIsAuthValidated(true);
 
-      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-      const isProtectedPath = currentPath && !currentPath.startsWith('/login') && !currentPath.startsWith('/forgot-password') && !currentPath.startsWith('/reset-password');
-      const loginUrl = isProtectedPath ? `/login?from=${encodeURIComponent(currentPath)}` : '/login';
-      router.replace(loginUrl);
+      router.replace(buildLoginUrl('session_expired'));
 
       setTimeout(() => {
         forceLogoutRef.current = false;
@@ -250,7 +244,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     window.addEventListener('auth:forceLogout', handleForceLogout);
     return () => window.removeEventListener('auth:forceLogout', handleForceLogout);
-  }, [router, clearAuthData]);
+  }, [router, clearAuthData, buildLoginUrl]);
 
   // ✅ Initialize auth state on mount with BLOCKING validation
   useEffect(() => {

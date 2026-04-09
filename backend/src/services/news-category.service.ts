@@ -43,6 +43,24 @@ function serializeCategories(cats: any[]) {
 
 // ================== NEWS CATEGORY SERVICE ==================
 
+// Map frontend camelCase field names to actual Prisma column names
+const CATEGORY_SORT_FIELD_MAP: Record<string, string> = {
+  dataOrder: 'position',
+  position: 'position',
+  name: 'name_en',
+  nameEn: 'name_en',
+  name_en: 'name_en',
+  nameId: 'name_id',
+  name_id: 'name_id',
+  slug: 'slug',
+  isActive: 'is_active',
+  is_active: 'is_active',
+  createdAt: 'created_at',
+  created_at: 'created_at',
+  updatedAt: 'updated_at',
+  updated_at: 'updated_at',
+};
+
 export class NewsCategoryService {
   // Get categories with pagination
   async getCategories(params: CategoryQueryParams) {
@@ -51,10 +69,11 @@ export class NewsCategoryService {
       limit = 10,
       search,
       is_active,
-      sortBy = 'position',
+      sortBy: rawSortBy = 'position',
       sortOrder = 'asc',
     } = params;
 
+    const sortBy = CATEGORY_SORT_FIELD_MAP[rawSortBy] || 'position';
     const skip = (page - 1) * limit;
 
     const where: Prisma.news_categoriesWhereInput = {};

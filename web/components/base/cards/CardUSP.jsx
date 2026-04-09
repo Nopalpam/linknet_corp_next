@@ -15,13 +15,15 @@ export default function CardUSP({
 
   return (
     <div className={`lnCardUSP__item ${variantClass} ${className}`}>
-      <div className="lnCardUSP__icon">
-        <img 
-          src={`${iconURL}`} 
-          alt={title} 
-          loading="lazy" 
-        />
-      </div>
+      {iconURL && (
+        <div className="lnCardUSP__icon">
+          <img 
+            src={iconURL} 
+            alt={title} 
+            loading="lazy" 
+          />
+        </div>
+      )}
       <div className="lnCardUSP__content">
         <h4 className="lnCardUSP__title text-body-b3 font-bold text-black">
           {title}

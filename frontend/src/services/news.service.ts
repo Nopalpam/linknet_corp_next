@@ -1,6 +1,6 @@
 /**
- * News Service (Migrated)
- * MySQL-compatible schema: BigInt IDs, integer data_status, new field names
+ * News Service
+ * PostgreSQL schema: UUID IDs, snake_case fields, Prisma conventions
  */
 
 import { BaseCrudService, PaginatedResponse } from './baseCrud.service';
@@ -10,86 +10,90 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 // ================== INTERFACES ==================
 
 export interface NewsCategory {
-  id: number;
-  categoryName: string;
+  id: string;
+  name_en: string;
+  name_id?: string;
   slug: string;
-  dataOrder: number | null;
-  dataStatus: number; // 0=inactive, 1=active, 2=reserved
-  createdBy?: string;
-  updatedBy?: string;
-  createdAt: string;
-  updatedAt: string;
+  description?: string;
+  position: number;
+  is_active: boolean;
+  created_by?: string;
+  updated_by?: string;
+  created_at: string;
+  updated_at: string;
   _count?: {
     news: number;
   };
 }
 
 export interface News {
-  id: number;
-  idCategory: number | null;
-  titleEn: string;
-  titleId?: string;
+  id: string;
+  category_id: string;
+  title_en: string;
+  title_id?: string;
   slug: string;
-  newsDate: string;
-  newsThumbnail?: string;
-  excerptEn?: string;
-  excerptId?: string;
-  contentEn: string;
-  contentId?: string;
-  newsLink?: string;
-  viewCount: number;
-  viewCountUnique: number;
-  metaKeyword?: string;
-  customCss?: string;
-  customJs?: string;
-  dataStatus: number; // 0=inactive, 1=active
-  createdBy?: string;
-  updatedBy?: string;
-  createdAt: string;
-  updatedAt: string;
-  category?: Pick<NewsCategory, 'id' | 'categoryName' | 'slug'>;
+  news_date: string;
+  news_thumbnail?: string;
+  excerpt_en?: string;
+  excerpt_id?: string;
+  content_en: string;
+  content_id?: string;
+  news_link?: string;
+  view_count: number;
+  view_count_unique: number;
+  meta_keywords?: string;
+  custom_css?: string;
+  custom_js?: string;
+  status: string; // 'DRAFT' | 'PUBLISHED'
+  created_by_id?: string;
+  updated_by_id?: string;
+  created_at: string;
+  updated_at: string;
+  category?: { id: string; name_en: string; slug: string };
   readingTime?: number;
 }
 
 export interface NewsHighlight {
-  id: number;
-  idNews: number;
-  dataOrder: number;
-  createdBy?: string;
-  updatedBy?: string;
-  createdAt: string;
-  updatedAt: string;
+  id: string;
+  news_id: string;
+  position: number;
+  created_by?: string;
+  updated_by?: string;
+  created_at: string;
+  updated_at: string;
   news?: News;
 }
 
 export interface CreateNewsCategoryData {
-  categoryName: string;
+  name_en: string;
+  name_id?: string;
   slug?: string;
-  dataOrder?: number;
-  dataStatus?: number;
+  description?: string;
+  position?: number;
+  is_active?: boolean;
 }
 
 export interface UpdateNewsCategoryData extends Partial<CreateNewsCategoryData> {}
 
 export interface CreateNewsData {
-  titleEn: string;
-  titleId?: string;
-  newsDate: string;
-  newsThumbnail?: string;
-  excerptEn?: string;
-  excerptId?: string;
-  contentEn: string;
-  contentId?: string;
-  newsLink?: string;
-  idCategory?: number;
-  metaKeyword?: string;
-  customCss?: string;
-  customJs?: string;
-  dataStatus?: number;
+  title_en: string;
+  title_id?: string;
+  news_date: string;
+  news_thumbnail?: string;
+  excerpt_en?: string;
+  excerpt_id?: string;
+  content_en: string;
+  content_id?: string;
+  news_link?: string;
+  category_id?: string;
+  meta_keywords?: string;
+  custom_css?: string;
+  custom_js?: string;
+  status?: string;
 }
 
-export interface UpdateNewsData extends Omit<Partial<CreateNewsData>, 'idCategory'> {
-  idCategory?: number | null;
+export interface UpdateNewsData extends Omit<Partial<CreateNewsData>, 'category_id'> {
+  category_id?: string | null;
 }
 
 // ================== NEWS CATEGORY SERVICE ==================
@@ -105,14 +109,14 @@ class NewsCategoryService extends BaseCrudService<NewsCategory> {
   }
 
   /** Toggle category active status */
-  async toggleStatus(id: number): Promise<{ data: NewsCategory; message: string }> {
+  async toggleStatus(id: string): Promise<{ data: NewsCategory; message: string }> {
     return this.fetchWithAuth(`${API_URL}/api/v1/cms/news-categories/${id}/status`, {
       method: 'PATCH',
     });
   }
 
   /** Update category order (drag & drop) */
-  async updateOrder(updates: { id: number; order: number }[]): Promise<{ message: string }> {
+  async updateOrder(updates: { id: string; order: number }[]): Promise<{ message: string }> {
     return this.fetchWithAuth(`${API_URL}/api/v1/cms/news-categories/reorder`, {
       method: 'PUT',
       body: JSON.stringify({ updates }),
@@ -120,28 +124,28 @@ class NewsCategoryService extends BaseCrudService<NewsCategory> {
   }
 
   /** Bulk delete categories */
-  async bulkDeleteCategories(ids: number[]): Promise<{ message: string }> {
+  async bulkDeleteCategories(ids: string[]): Promise<{ message: string }> {
     return this.fetchWithAuth(`${API_URL}/api/v1/cms/news-categories/bulk`, {
       method: 'DELETE',
       body: JSON.stringify({ ids }),
     });
   }
 
-  /** Override getById to use number */
-  async getById(id: number | string): Promise<{ data: NewsCategory }> {
+  /** Override getById */
+  async getById(id: string): Promise<{ data: NewsCategory }> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`);
   }
 
-  /** Override update to use number */
-  async update(id: number | string, data: Partial<NewsCategory>): Promise<{ data: NewsCategory; message: string }> {
+  /** Override update */
+  async update(id: string, data: Partial<NewsCategory>): Promise<{ data: NewsCategory; message: string }> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  /** Override delete to use number */
-  async delete(id: number | string): Promise<any> {
+  /** Override delete */
+  async delete(id: string): Promise<any> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
       method: 'DELETE',
     });
@@ -159,7 +163,7 @@ class NewsContentService extends BaseCrudService<News> {
   async getActiveNews(params?: {
     page?: number;
     limit?: number;
-    idCategory?: number;
+    category_id?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<PaginatedResponse<News>> {
@@ -191,8 +195,8 @@ class NewsContentService extends BaseCrudService<News> {
     );
   }
 
-  /** Override getById to use number */
-  async getById(id: number | string): Promise<{ data: News }> {
+  /** Override getById */
+  async getById(id: string): Promise<{ data: News }> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`);
   }
 
@@ -205,15 +209,15 @@ class NewsContentService extends BaseCrudService<News> {
   }
 
   /** Update news */
-  async updateNews(id: number, data: UpdateNewsData): Promise<{ data: News; message: string }> {
+  async updateNews(id: string, data: UpdateNewsData): Promise<{ data: News; message: string }> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  /** Override delete to use number */
-  async delete(id: number | string): Promise<any> {
+  /** Override delete */
+  async delete(id: string): Promise<any> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
       method: 'DELETE',
     });
@@ -254,27 +258,27 @@ class NewsHighlightService {
   }
 
   /** Get available news for highlight */
-  async getAvailable(): Promise<{ data: Pick<News, 'id' | 'titleEn' | 'titleId' | 'slug' | 'newsThumbnail' | 'newsDate'>[] }> {
+  async getAvailable(): Promise<{ data: Pick<News, 'id' | 'title_en' | 'title_id' | 'slug' | 'news_thumbnail' | 'news_date'>[] }> {
     return this.fetchWithAuth(`${this.baseUrl}/cms/news-highlights/available`);
   }
 
   /** Create highlight */
-  async createHighlight(idNews: number): Promise<{ data: NewsHighlight; message: string }> {
+  async createHighlight(news_id: string): Promise<{ data: NewsHighlight; message: string }> {
     return this.fetchWithAuth(`${this.baseUrl}/cms/news-highlights`, {
       method: 'POST',
-      body: JSON.stringify({ idNews }),
+      body: JSON.stringify({ news_id }),
     });
   }
 
   /** Remove highlight */
-  async removeHighlight(id: number): Promise<{ message: string }> {
+  async removeHighlight(id: string): Promise<{ message: string }> {
     return this.fetchWithAuth(`${this.baseUrl}/cms/news-highlights/${id}`, {
       method: 'DELETE',
     });
   }
 
   /** Bulk remove highlights */
-  async bulkRemoveHighlights(ids: number[]): Promise<{ message: string }> {
+  async bulkRemoveHighlights(ids: string[]): Promise<{ message: string }> {
     return this.fetchWithAuth(`${this.baseUrl}/cms/news-highlights/bulk`, {
       method: 'DELETE',
       body: JSON.stringify({ ids }),
@@ -282,7 +286,7 @@ class NewsHighlightService {
   }
 
   /** Reorder highlights */
-  async reorderHighlights(updates: { id: number; order: number }[]): Promise<{ message: string }> {
+  async reorderHighlights(updates: { id: string; order: number }[]): Promise<{ message: string }> {
     return this.fetchWithAuth(`${this.baseUrl}/cms/news-highlights/reorder`, {
       method: 'PUT',
       body: JSON.stringify({ updates }),

@@ -19,10 +19,10 @@ export default function NewsCategoryFormModal({
   category,
 }: NewsCategoryFormModalProps) {
   const [formData, setFormData] = useState<CreateNewsCategoryData>({
-    categoryName: "",
+    name_en: "",
     slug: "",
-    dataOrder: 0,
-    dataStatus: 1,
+    position: 0,
+    is_active: true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,17 +31,17 @@ export default function NewsCategoryFormModal({
     if (isOpen) {
       if (mode === "edit" && category) {
         setFormData({
-          categoryName: category.categoryName,
+          name_en: category.name_en,
           slug: category.slug || "",
-          dataOrder: category.dataOrder || 0,
-          dataStatus: category.dataStatus,
+          position: category.position || 0,
+          is_active: category.is_active,
         });
       } else {
         setFormData({
-          categoryName: "",
+          name_en: "",
           slug: "",
-          dataOrder: 0,
-          dataStatus: 1,
+          position: 0,
+          is_active: true,
         });
       }
       setError(null);
@@ -51,7 +51,7 @@ export default function NewsCategoryFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.categoryName.trim()) {
+    if (!formData.name_en.trim()) {
       setError("Category name is required");
       return;
     }
@@ -106,8 +106,8 @@ export default function NewsCategoryFormModal({
             </label>
             <input
               type="text"
-              value={formData.categoryName}
-              onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
+              value={formData.name_en}
+              onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               placeholder="Enter category name"
               autoFocus
@@ -134,8 +134,8 @@ export default function NewsCategoryFormModal({
               </label>
               <input
                 type="number"
-                value={formData.dataOrder || 0}
-                onChange={(e) => setFormData({ ...formData, dataOrder: parseInt(e.target.value, 10) || 0 })}
+                value={formData.position || 0}
+                onChange={(e) => setFormData({ ...formData, position: parseInt(e.target.value, 10) || 0 })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 min={0}
               />
@@ -145,12 +145,12 @@ export default function NewsCategoryFormModal({
                 Status
               </label>
               <select
-                value={formData.dataStatus ?? 1}
-                onChange={(e) => setFormData({ ...formData, dataStatus: parseInt(e.target.value, 10) })}
+                value={formData.is_active ? "true" : "false"}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.value === "true" })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
-                <option value={1}>Active</option>
-                <option value={0}>Inactive</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
               </select>
             </div>
           </div>

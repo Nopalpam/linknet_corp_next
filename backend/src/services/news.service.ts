@@ -70,6 +70,24 @@ function serializeHighlights(items: any[]) {
 
 // ================== NEWS SERVICE ==================
 
+// Map frontend camelCase field names to actual Prisma column names
+const NEWS_SORT_FIELD_MAP: Record<string, string> = {
+  newsDate: 'news_date',
+  news_date: 'news_date',
+  createdAt: 'created_at',
+  created_at: 'created_at',
+  updatedAt: 'updated_at',
+  updated_at: 'updated_at',
+  titleEn: 'title_en',
+  title_en: 'title_en',
+  titleId: 'title_id',
+  title_id: 'title_id',
+  viewCount: 'view_count',
+  view_count: 'view_count',
+  slug: 'slug',
+  status: 'status',
+};
+
 export class NewsService {
   // Get news with pagination (CMS)
   async getNews(params: NewsQueryParams) {
@@ -79,10 +97,11 @@ export class NewsService {
       search,
       status,
       category_id,
-      sortBy = 'news_date',
+      sortBy: rawSortBy = 'news_date',
       sortOrder = 'desc',
     } = params;
 
+    const sortBy = NEWS_SORT_FIELD_MAP[rawSortBy] || 'news_date';
     const skip = (page - 1) * limit;
 
     const where: Prisma.newsWhereInput = {};
@@ -135,10 +154,11 @@ export class NewsService {
       page = 1,
       limit = 12,
       category_id,
-      sortBy = 'news_date',
+      sortBy: rawSortBy = 'news_date',
       sortOrder = 'desc',
     } = params;
 
+    const sortBy = NEWS_SORT_FIELD_MAP[rawSortBy] || 'news_date';
     const skip = (page - 1) * limit;
 
     const where: Prisma.newsWhereInput = {

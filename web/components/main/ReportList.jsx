@@ -7,20 +7,65 @@ import SearchFilterBar from '@/components/base/SearchFilterBar';
 import ReportListPart from '@/components/main/ReportListPart';
 import { REPORT_LIST_DATA } from '@/data/components/reportList';
 
+/**
+ * Transform backend mainData (reportTypes with report_sections and reports)
+ * into the group format expected by this component: [{ id, header, items }]
+ */
+function transformMainData(mainData) {
+  if (!mainData?.reportTypes) return null;
+
+  const groups = [];
+
+  mainData.reportTypes.forEach((type) => {
+    if (!type.report_sections) return;
+
+    type.report_sections.forEach((section) => {
+      if (!section.reports || section.reports.length === 0) return;
+
+      groups.push({
+        id: section.id || `${type.id}-${section.name}`,
+        header: {
+          title: `${type.name} - ${section.name}`,
+          desc: section.description || '',
+          date: section.reports[0]?.created_at || '',
+        },
+        items: section.reports.map((report) => ({
+          id: report.id,
+          title: report.title,
+          reportType: type.name,
+          auditStatus: report.audit_status || report.auditStatus || '',
+          category: type.name,
+          date: report.created_at || report.year?.toString() || '',
+          downloadUrl: report.pdf_file || report.file_url || '#',
+        })),
+      });
+    });
+  });
+
+  return groups;
+}
+
 export default function ReportListPage({
   // Konfigurasi Filter
   showTypeFilter = true,
   showStatusFilter = true,
   showYearFilter = true,
   
-  // Kategori data yang ingin diambil
-  name = "financial-statement" 
+  // Kategori data yang ingin diambil (fallback untuk static data)
+  name = "financial-statement",
+
+  // CMS mainData from backend
+  mainData = null,
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const rawData = REPORT_LIST_DATA[name] || [];
+  // Use mainData from CMS if available, otherwise fall back to static data
+  const rawData = useMemo(() => {
+    const transformed = transformMainData(mainData);
+    return transformed && transformed.length > 0 ? transformed : (REPORT_LIST_DATA[name] || []);
+  }, [mainData, name]);
 
   // 1. Ambil state currentPage dari URL Parameter (?page=x)
   const pageParam = searchParams.get('page');

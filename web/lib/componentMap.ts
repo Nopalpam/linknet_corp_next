@@ -46,8 +46,70 @@ export function createLocalizer(locale: string) {
   return (field: any): string => {
     if (!field) return '';
     if (typeof field === 'string') return field;
-    return field[lang] || field['id'] || field['en'] || '';
+    if (typeof field === 'object') {
+      return field[lang] || field['id'] || field['en'] || '';
+    }
+    return String(field);
   };
+}
+
+/**
+ * Extract localized text from item-level fields.
+ * Handles both formats:
+ *   Format A (flat): title="English", title_id="Indonesian"
+ *   Format B (object): title={en:"English", id:"Indonesian"}
+ */
+function localizeField(
+  item: Record<string, any>,
+  field: string,
+  t: (f: any) => string,
+  locale: string
+): string {
+  const value = item[field];
+  // If it's a multilingual object {en, id}, use t()
+  if (value && typeof value === 'object') return t(value);
+  // If it's a string, check for _id suffix field for Indonesian
+  if (typeof value === 'string') {
+    if (locale === 'id') {
+      const idValue = item[`${field}_id`];
+      if (idValue && typeof idValue === 'string') return idValue;
+    }
+    return value;
+  }
+  return t(value);
+}
+
+/**
+ * Extract intro data from CMS component data.
+ * Handles both nested (data.intro.title) and flat (data.intro_title) formats.
+ */
+function extractIntro(
+  data: Record<string, any>,
+  t: (f: any) => string,
+  locale: string
+): { as: string; label: string; title: string; description: string; align: string } | undefined {
+  // Format B: nested intro object
+  if (data.intro) {
+    return {
+      as: 'h2',
+      label: t(data.intro.label),
+      title: t(data.intro.title),
+      description: t(data.intro.description),
+      align: data.intro.align || 'left',
+    };
+  }
+  // Format A: flat intro_title, intro_label, intro_description
+  const hasIntro = data.intro_title || data.intro_label || data.intro_description;
+  if (hasIntro) {
+    return {
+      as: 'h2',
+      label: localizeField(data, 'intro_label', t, locale),
+      title: localizeField(data, 'intro_title', t, locale),
+      description: localizeField(data, 'intro_description', t, locale),
+      align: data.intro_align || 'left',
+    };
+  }
+  return undefined;
 }
 
 // ─── Dynamic Imports (code-split per component) ─────────────────────
@@ -86,6 +148,8 @@ const ExtendableArticle = dynamic(() => import('@/components/main/ExtendableArti
 const StockInformation = dynamic(() => import('@/components/main/StockInformation'));
 const Testimonials = dynamic(() => import('@/components/main/Testimonials'));
 
+const AnnouncementListCMS = dynamic(() => import('@/components/main/AnnouncementList'));
+
 // Built-in generic section components (no separate file needed per type)
 import {
   TextBlock,
@@ -93,7 +157,6 @@ import {
   ImageBlock,
   DocumentList,
   GenericSection,
-  AnnouncementList,
   TradingViewWidget,
 } from '@/components/cms/BuiltinSections';
 
@@ -111,16 +174,20 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   hero_section: {
     component: HeroStatic,
-    mapProps: ({ data, t }) => ({
-      title: t(data.title),
-      description: t(data.description),
+    mapProps: ({ data, t, locale }) => ({
+      title: localizeField(data, 'title', t, locale),
+      description: localizeField(data, 'description', t, locale),
       labelText: t(data.pill_text),
       labelWithBg: false,
-      logoSquare: false,
-      ctaText: t(data.button_text),
+      logoSquare: data.minilogo_visible === 'true' || data.minilogo_visible === true,
+      logoSrc: data.minilogo_image || undefined,
+      ctaText: localizeField(data, 'button_text', t, locale),
       ctaLink: data.button_link,
-      bgImageDesktop: data.background_image,
+      bgImageDesktop: data.background_image || undefined,
+      bgImageMobile: data.background_image_mobile || undefined,
+      heroSize: data.size_hero === 'lnHero__small' ? 'sm' : 'md',
       theme: data.theme || 'dark',
+      bgOverlay: data.gradient_visible === 'true' || data.gradient_visible === true,
       className: data.custom_class || '',
       note: null,
     }),
@@ -131,8 +198,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     mapProps: ({ data, t, styleProps }) => ({
       cmsSlides: Array.isArray(data.slides) 
         ? data.slides.map((slide: any) => ({
-            image: slide.image || '',
-            image_mobile: slide.image_mobile || '',
+            image: slide.image || undefined,
+            image_mobile: slide.image_mobile || undefined,
             title: t(slide.title),
             description: t(slide.description),
             button_text: t(slide.button_text),
@@ -153,27 +220,21 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   usp_grid: {
     component: AboutWithUSP,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
         uspVariant: data.usp_variant || 'card',
         bgColor: data.bg_color || '',
         isSlider: data.is_slider !== undefined ? data.is_slider : false,
-        bgImage: data.bg_image || '',
-        bgImageMobile: data.bg_image_mobile || '',
+        bgImage: data.bg_image || undefined,
+        bgImageMobile: data.bg_image_mobile || undefined,
         bgPositionClasses: 'bg-right-top md:bg-right',
         bgSizeClass: 'bg-cover',
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         uspList: Array.isArray(data.items)
           ? data.items.map((item: any) => ({
-              iconURL: item.icon || '',
-              title: t(item.title),
-              description: t(item.description),
+              iconURL: item.icon || undefined,
+              title: localizeField(item, 'title', t, locale),
+              description: localizeField(item, 'description', t, locale),
             }))
           : [],
         ctaList: Array.isArray(data.cta_list)
@@ -191,23 +252,17 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   usp_grid_slider: {
     component: AboutValues,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         valuesList: Array.isArray(data.items)
           ? data.items.map((item: any, idx: number) => ({
               id: `value-${idx}`,
-              logo: item.icon || '',
-              title: t(item.title),
-              bodyTitle: t(item.description),
+              logo: item.icon || undefined,
+              title: localizeField(item, 'title', t, locale),
+              bodyTitle: localizeField(item, 'description', t, locale),
               list: Array.isArray(item.list)
-                ? item.list.map((li: any) => ({ icon: li.icon || '', text: t(li.text) }))
+                ? item.list.map((li: any) => ({ icon: li.icon || undefined, text: t(li.text) }))
                 : [],
             }))
           : [],
@@ -220,9 +275,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   about_with_marquee: {
     component: AboutWithRunningPhotos,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: t(data.intro?.label),
           title: t(data.intro?.title),
@@ -230,7 +285,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           align: data.intro?.align || 'left',
         },
         photos: Array.isArray(data.photos)
-          ? data.photos.map((p: any) => (typeof p === 'string' ? p : p.url || ''))
+          ? data.photos.map((p: any) => (typeof p === 'string' ? p : p.url || undefined)).filter(Boolean)
           : [],
       },
       ...styleProps,
@@ -241,25 +296,19 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   business_tab: {
     component: TabBusiness,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         items: Array.isArray(data.tabs)
           ? data.tabs.map((tab: any, idx: number) => ({
               id: `tab-${idx}`,
-              label: t(tab.name),
+              label: localizeField(tab, 'name', t, locale) || localizeField(tab, 'label', t, locale),
               tagline: '',
-              title: t(tab.title),
-              desc: t(tab.description),
-              image: tab.background_image || '',
-              logoSrc: tab.logo_image || '',
-              textCTA: t(tab.cta_text),
+              title: localizeField(tab, 'title', t, locale),
+              desc: localizeField(tab, 'description', t, locale),
+              image: tab.background_image || undefined,
+              logoSrc: tab.logo_image || undefined,
+              textCTA: localizeField(tab, 'cta_text', t, locale),
               href: tab.cta_link || '#',
             }))
           : [],
@@ -270,24 +319,19 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   tabs_with_card: {
     component: BusinessTab,
-    mapProps: ({ data, t, styleProps }) => ({
-      introData: data.intro ? {
-        as: 'h2',
-        label: t(data.intro.label),
-        title: t(data.intro.title),
-        description: t(data.intro.description),
-        align: data.intro.align || 'left',
-      } : { as: 'h2', title: t(data.title), align: 'left' },
+    mapProps: ({ data, t, styleProps, locale }) => ({
+      introData: extractIntro(data, t, locale) || (data.title ? { as: 'h2', title: t(data.title), align: 'left' } : undefined),
       items: Array.isArray(data.tabs)
-        ? data.tabs.map((tab: any) => {
-            const panelData = data.tab_panels?.[tab.key];
+        ? data.tabs.map((tab: any, idx: number) => {
+            const tabKey = tab.key || tab.id || `tab-${idx}`;
+            const panelData = data.tab_panels?.[tabKey];
             return {
-              id: tab.key,
-              label: t(tab.label),
+              id: tabKey,
+              label: localizeField(tab, 'label', t, locale),
               tagline: '',
-              title: t(tab.label),
+              title: localizeField(tab, 'label', t, locale),
               desc: '',
-              image: panelData?.cards?.[0]?.image || '',
+              image: panelData?.cards?.[0]?.image || undefined,
               logoSrc: '',
               textCTA: '',
               href: '#',
@@ -295,7 +339,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
                 ? panelData.cards.map((card: any) => ({
                     title: t(card.title),
                     description: t(card.description),
-                    image: card.image || '',
+                    image: card.image || undefined,
                     link: card.link || '#',
                   }))
                 : [],
@@ -310,21 +354,15 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   key_highlight: {
     component: KeyHighlightWithImage,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         items: Array.isArray(data.slides)
           ? data.slides.map((slide: any, idx: number) => ({
               id: `highlight-${idx}`,
-              image: slide.image || '',
-              value: slide.value || '',
-              delta: slide.delta || '',
+              image: slide.image || undefined,
+              value: t(slide.value),
+              delta: t(slide.delta),
               caption: t(slide.caption),
             }))
           : [],
@@ -335,9 +373,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   highlighting_real_initiatives: {
     component: HighlightingRealInitiatives,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
@@ -348,7 +386,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           ? data.initiatives.map((ini: any, idx: number) => ({
               id: `initiative-${idx}`,
               topLogo: '',
-              image: ini.image || '',
+              image: ini.image || undefined,
               title: t(ini.title),
               desc: t(ini.description),
               date: '',
@@ -357,7 +395,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           : [],
         partnerText: t(data.partner_text),
         partnerLogos: Array.isArray(data.community_logos)
-          ? data.community_logos.map((logo: any) => (typeof logo === 'string' ? logo : logo.url || ''))
+          ? data.community_logos.map((logo: any) => (typeof logo === 'string' ? logo : logo.url || undefined))
           : [],
         ctaList: Array.isArray(data.cta_list)
           ? data.cta_list.map((cta: any) => ({
@@ -376,9 +414,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   info_contacts: {
     component: InfoContact,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           title: t(data.title),
           description: t(data.description),
@@ -388,7 +426,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           ? data.contact_items.map((item: any) => ({
               icon: item.icon || '',
               label: t(item.label),
-              value: item.value || '',
+              value: t(item.value),
               href: item.url || '',
               target: item.target || '_blank',
             }))
@@ -400,20 +438,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   information_list: {
     component: InformationList,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         items: Array.isArray(data.info_sections)
           ? data.info_sections.map((section: any, idx: number) => ({
               id: `info-${idx}`,
-              title: t(section.title),
-              contents: t(section.content),
+              title: localizeField(section, 'title', t, locale),
+              contents: localizeField(section, 'content', t, locale),
               relatedArticles: Array.isArray(section.related_articles)
                 ? section.related_articles.map((art: any) => ({
                     text: t(art.title),
@@ -443,9 +475,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   join_first_squad: {
     component: JoinFirstSquad,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
@@ -454,7 +486,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         items: Array.isArray(data.slides)
           ? data.slides.map((slide: any, idx: number) => ({
               id: `squad-${idx}`,
-              image: slide.image || '',
+              image: slide.image || undefined,
               roleLabel: '',
               roleTitle: t(slide.title),
               headline: '',
@@ -484,12 +516,12 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   news_list: {
     component: NewsTeaser,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
         category: data.category_id || null,
         categorySlug: data.category_slug || null,
         limit: data.max_data || 6,
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
@@ -519,11 +551,12 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   report_list: {
     component: ReportList,
-    mapProps: ({ styleProps }) => ({
+    mapProps: ({ data, styleProps }) => ({
       name: 'financial-statement',
       showTypeFilter: true,
       showStatusFilter: true,
       showYearFilter: true,
+      mainData: data.mainData || null,
       ...styleProps,
     }),
   },
@@ -537,9 +570,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   awards_marquee: {
     component: AwardSneakPeek,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
@@ -563,10 +596,11 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   accordion: {
     component: FAQ,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: data.items ? {
-        label: t(data.label),
-        title: t(data.title),
+        label: localizeField(data, 'label', t, locale) || localizeField(data, 'intro_label', t, locale),
+        title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+        description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
         items: Array.isArray(data.items)
           ? data.items.map((item: any, idx: number) => ({
               id: `faq-${idx}`,
@@ -581,15 +615,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   vision_mission: {
     component: VisionMission,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         items: [
           ...(data.vision
             ? [{
@@ -597,7 +625,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
                 label: 'VISION',
                 title: t(data.vision.title),
                 description: t(data.vision.description),
-                image: data.vision.image || '',
+                image: data.vision.image || undefined,
                 align: 'left' as const,
               }]
             : []),
@@ -607,7 +635,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
                 label: 'MISSION',
                 title: t(m.title),
                 description: t(m.description),
-                image: m.image || '',
+                image: m.image || undefined,
                 align: idx % 2 === 0 ? 'right' : 'left',
               }))
             : []),
@@ -620,9 +648,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   maps_coverage: {
     component: MapsCoverage,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
@@ -647,9 +675,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   milestone: {
     component: Milestone,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
@@ -660,7 +688,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           ? data.milestones.map((ms: any, idx: number) => ({
               id: `milestone-${idx}`,
               year: ms.year || '',
-              image: ms.image || '',
+              image: ms.image || undefined,
               description: t(ms.description),
               list: Array.isArray(ms.list) ? ms.list.map((item: any) => t(item)) : [],
             }))
@@ -676,11 +704,11 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       cmsData: {
         product_name: t(data.product_name),
         product_description: t(data.product_description),
-        product_image: data.product_image || '',
-        logo_image: data.logo_image || '',
+        product_image: data.product_image || undefined,
+        logo_image: data.logo_image || undefined,
         usp_items: Array.isArray(data.usp_items)
           ? data.usp_items.map((item: any) => ({
-              icon: item.icon || '',
+              icon: item.icon || undefined,
               title: t(item.title),
               desc: t(item.description),
             }))
@@ -709,12 +737,12 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   closing_cta: {
     component: ClosingSentence,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
         introData: {
-          overline: t(data.overline) || '',
-          title: t(data.title),
-          description: t(data.description),
+          overline: localizeField(data, 'overline', t, locale),
+          title: localizeField(data, 'title', t, locale),
+          description: localizeField(data, 'description', t, locale),
         },
         ctaButtons: Array.isArray(data.cta_buttons)
           ? data.cta_buttons.map((cta: any) => ({
@@ -736,7 +764,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     mapProps: ({ data, t, styleProps }) => ({
       cmsData: {
         video_url: data.video_url || '',
-        poster_image: data.poster_image || '',
+        poster_image: data.poster_image || undefined,
         title: t(data.title),
         autoplay: data.autoplay || false,
       },
@@ -746,15 +774,15 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   extendable_article: {
     component: ExtendableArticle,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
         id: data.custom_id || 'extendable-article',
-        introData: data.intro ? {
+        introData: extractIntro(data, t, locale) || (data.intro ? {
           as: 'h2',
           label: t(data.intro.label),
           title: t(data.intro.title),
           align: data.intro.align || 'center',
-        } : undefined,
+        } : undefined),
         content: t(data.content),
         buttonLabels: {
           expand: t(data.button_expand) || 'Read More',
@@ -778,20 +806,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   testimonials: {
     component: Testimonials,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: data.intro ? {
-          as: 'h2',
-          label: t(data.intro.label),
-          title: t(data.intro.title),
-          description: t(data.intro.description),
-          align: data.intro.align || 'left',
-        } : undefined,
+        introData: extractIntro(data, t, locale),
         testimonialList: Array.isArray(data.testimonials)
           ? data.testimonials.map((item, idx) => ({
               id: `testimonial-${idx}`,
-              image: item.image || '',
-              companyLogo: item.companyLogo || item.company_logo || '',
+              image: item.image || undefined,
+              companyLogo: item.companyLogo || item.company_logo || undefined,
               companyName: item.companyName || item.company_name || '',
               quote: t(item.quote),
               tags: Array.isArray(item.tags) ? item.tags : [],
@@ -809,18 +831,18 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   text_block: {
     component: TextBlock,
-    mapProps: ({ data, t }) => ({
-      label: t(data?.label),
-      title: t(data?.title),
-      description: t(data?.description),
+    mapProps: ({ data, t, locale }) => ({
+      label: localizeField(data, 'label', t, locale) || localizeField(data, 'intro_label', t, locale),
+      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+      description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
       className: data?.custom_class || '',
     }),
   },
 
   ckeditor: {
     component: CKEditorBlock,
-    mapProps: ({ data, t }) => ({
-      content: t(data?.content),
+    mapProps: ({ data, t, locale }) => ({
+      content: localizeField(data, 'content', t, locale),
       className: data?.custom_class || '',
     }),
   },
@@ -838,11 +860,11 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   document_list: {
     component: DocumentList,
-    mapProps: ({ data, t }) => ({
-      title: t(data?.title),
+    mapProps: ({ data, t, locale }) => ({
+      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
       documents: Array.isArray(data?.documents)
         ? data.documents.map((doc: any) => ({
-            title: t(doc.title) || doc.filename,
+            title: localizeField(doc, 'title', t, locale) || doc.filename,
             filename: doc.filename,
             url: doc.url,
           }))
@@ -853,34 +875,35 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   list_services: {
     component: GenericSection,
-    mapProps: ({ data, t }) => ({
-      title: t(data?.title),
-      description: t(data?.description),
+    mapProps: ({ data, t, locale }) => ({
+      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+      description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
       className: data?.custom_class || '',
     }),
   },
 
   card_with_highlight_summary: {
     component: GenericSection,
-    mapProps: ({ data, t }) => ({
-      title: t(data?.title),
-      description: t(data?.description),
+    mapProps: ({ data, t, locale }) => ({
+      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+      description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
       className: data?.custom_class || '',
     }),
   },
 
   announcement_list: {
-    component: AnnouncementList,
-    mapProps: ({ data, t }) => ({
-      title: t(data?.title),
+    component: AnnouncementListCMS,
+    mapProps: ({ data, t, locale }) => ({
+      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+      mainData: data.mainData || null,
       className: data?.custom_class || '',
     }),
   },
 
   tradingview_symbol_overview: {
     component: TradingViewWidget,
-    mapProps: ({ data, t }) => ({
-      title: t(data?.title),
+    mapProps: ({ data, t, locale }) => ({
+      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
       className: data?.custom_class || '',
     }),
   },

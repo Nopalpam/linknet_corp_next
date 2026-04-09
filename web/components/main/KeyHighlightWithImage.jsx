@@ -134,11 +134,13 @@ export default function KeyHighlightWithImage({
                     
                     {/* Background Image */}
                     <div className="absolute inset-0 bg-neutral-200 z-0">
-                      <img 
-                        src={item.image} 
-                        alt={item.caption}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                      />
+                      {item.image && (
+                        <img 
+                          src={item.image} 
+                          alt={item.caption}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                        />
+                      )}
                     </div>
 
                     {/* Gradient Overlay Gelap */}

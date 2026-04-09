@@ -42,8 +42,8 @@ export default function NewsCategoryPage() {
         sortOrder: "asc",
       };
 
-      if (filterStatus === "ACTIVE") params.dataStatus = 1;
-      else if (filterStatus === "INACTIVE") params.dataStatus = 0;
+      if (filterStatus === "ACTIVE") params.is_active = 'true';
+      else if (filterStatus === "INACTIVE") params.is_active = 'false';
 
       const response = await newsCategoryService.getPaginated(params);
 
@@ -218,7 +218,7 @@ export default function NewsCategoryPage() {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        title={selectedCategory?.categoryName || ""}
+        title={selectedCategory?.name_en || ""}
       />
     </div>
   );

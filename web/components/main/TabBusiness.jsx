@@ -113,11 +113,13 @@ export default function TabBusiness({
                 
                 {/* Background Image */}
                 <div className="absolute inset-0 w-full h-full">
+                    {item.image && (
                     <img 
                         src={item.image} 
                         alt={item.title} 
                         className="w-full h-full object-cover" 
                     />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent bg-black/20" />
                 </div>
 

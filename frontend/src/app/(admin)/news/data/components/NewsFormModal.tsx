@@ -21,20 +21,20 @@ export default function NewsFormModal({
   categories,
 }: NewsFormModalProps) {
   const [formData, setFormData] = useState<CreateNewsData>({
-    titleEn: "",
-    titleId: "",
-    newsDate: new Date().toISOString().split("T")[0],
-    newsThumbnail: "",
-    excerptEn: "",
-    excerptId: "",
-    contentEn: "",
-    contentId: "",
-    newsLink: "",
-    idCategory: undefined,
-    metaKeyword: "",
-    customCss: "",
-    customJs: "",
-    dataStatus: 1,
+    title_en: "",
+    title_id: "",
+    news_date: new Date().toISOString().split("T")[0],
+    news_thumbnail: "",
+    excerpt_en: "",
+    excerpt_id: "",
+    content_en: "",
+    content_id: "",
+    news_link: "",
+    category_id: undefined,
+    meta_keywords: "",
+    custom_css: "",
+    custom_js: "",
+    status: "PUBLISHED",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,37 +44,37 @@ export default function NewsFormModal({
     if (isOpen) {
       if (mode === "edit" && news) {
         setFormData({
-          titleEn: news.titleEn || "",
-          titleId: news.titleId || "",
-          newsDate: news.newsDate ? news.newsDate.split("T")[0] : new Date().toISOString().split("T")[0],
-          newsThumbnail: news.newsThumbnail || "",
-          excerptEn: news.excerptEn || "",
-          excerptId: news.excerptId || "",
-          contentEn: news.contentEn || "",
-          contentId: news.contentId || "",
-          newsLink: news.newsLink || "",
-          idCategory: news.idCategory || undefined,
-          metaKeyword: news.metaKeyword || "",
-          customCss: news.customCss || "",
-          customJs: news.customJs || "",
-          dataStatus: news.dataStatus ?? 1,
+          title_en: news.title_en || "",
+          title_id: news.title_id || "",
+          news_date: news.news_date ? news.news_date.split("T")[0] : new Date().toISOString().split("T")[0],
+          news_thumbnail: news.news_thumbnail || "",
+          excerpt_en: news.excerpt_en || "",
+          excerpt_id: news.excerpt_id || "",
+          content_en: news.content_en || "",
+          content_id: news.content_id || "",
+          news_link: news.news_link || "",
+          category_id: news.category_id || undefined,
+          meta_keywords: news.meta_keywords || "",
+          custom_css: news.custom_css || "",
+          custom_js: news.custom_js || "",
+          status: news.status ?? "PUBLISHED",
         });
       } else {
         setFormData({
-          titleEn: "",
-          titleId: "",
-          newsDate: new Date().toISOString().split("T")[0],
-          newsThumbnail: "",
-          excerptEn: "",
-          excerptId: "",
-          contentEn: "",
-          contentId: "",
-          newsLink: "",
-          idCategory: undefined,
-          metaKeyword: "",
-          customCss: "",
-          customJs: "",
-          dataStatus: 1,
+          title_en: "",
+          title_id: "",
+          news_date: new Date().toISOString().split("T")[0],
+          news_thumbnail: "",
+          excerpt_en: "",
+          excerpt_id: "",
+          content_en: "",
+          content_id: "",
+          news_link: "",
+          category_id: undefined,
+          meta_keywords: "",
+          custom_css: "",
+          custom_js: "",
+          status: "PUBLISHED",
         });
       }
       setError(null);
@@ -85,15 +85,15 @@ export default function NewsFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.titleEn.trim()) {
+    if (!formData.title_en.trim()) {
       setError("Title (English) is required");
       return;
     }
-    if (!formData.contentEn.trim()) {
+    if (!formData.content_en.trim()) {
       setError("Content (English) is required");
       return;
     }
-    if (!formData.newsDate) {
+    if (!formData.news_date) {
       setError("News date is required");
       return;
     }
@@ -151,33 +151,33 @@ export default function NewsFormModal({
               </label>
               <input
                 type="date"
-                value={formData.newsDate}
-                onChange={(e) => setFormData({ ...formData, newsDate: e.target.value })}
+              value={formData.news_date}
+              onChange={(e) => setFormData({ ...formData, news_date: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
               <select
-                value={formData.idCategory || ""}
-                onChange={(e) => setFormData({ ...formData, idCategory: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                value={formData.category_id || ""}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value || undefined })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
                 <option value="">-- No Category --</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.categoryName}</option>
+                  <option key={c.id} value={c.id}>{c.name_en}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
               <select
-                value={formData.dataStatus ?? 1}
-                onChange={(e) => setFormData({ ...formData, dataStatus: parseInt(e.target.value, 10) })}
+                value={formData.status ?? "PUBLISHED"}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
-                <option value={1}>Active</option>
-                <option value={0}>Inactive</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="DRAFT">Draft</option>
               </select>
             </div>
           </div>
@@ -217,8 +217,8 @@ export default function NewsFormModal({
                 </label>
                 <input
                   type="text"
-                  value={formData.titleEn}
-                  onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
+                  value={formData.title_en}
+                  onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Enter English title"
                 />
@@ -226,8 +226,8 @@ export default function NewsFormModal({
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Excerpt (EN)</label>
                 <textarea
-                  value={formData.excerptEn || ""}
-                  onChange={(e) => setFormData({ ...formData, excerptEn: e.target.value })}
+                  value={formData.excerpt_en || ""}
+                  onChange={(e) => setFormData({ ...formData, excerpt_en: e.target.value })}
                   rows={2}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Short summary..."
@@ -238,8 +238,8 @@ export default function NewsFormModal({
                   Content (EN) <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  value={formData.contentEn}
-                  onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
+                  value={formData.content_en}
+                  onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
                   rows={10}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Enter English content (supports HTML)"
@@ -252,8 +252,8 @@ export default function NewsFormModal({
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Title (ID)</label>
                 <input
                   type="text"
-                  value={formData.titleId || ""}
-                  onChange={(e) => setFormData({ ...formData, titleId: e.target.value })}
+                  value={formData.title_id || ""}
+                  onChange={(e) => setFormData({ ...formData, title_id: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Enter Indonesian title"
                 />
@@ -261,8 +261,8 @@ export default function NewsFormModal({
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Excerpt (ID)</label>
                 <textarea
-                  value={formData.excerptId || ""}
-                  onChange={(e) => setFormData({ ...formData, excerptId: e.target.value })}
+                  value={formData.excerpt_id || ""}
+                  onChange={(e) => setFormData({ ...formData, excerpt_id: e.target.value })}
                   rows={2}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Ringkasan singkat..."
@@ -271,8 +271,8 @@ export default function NewsFormModal({
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Content (ID)</label>
                 <textarea
-                  value={formData.contentId || ""}
-                  onChange={(e) => setFormData({ ...formData, contentId: e.target.value })}
+                  value={formData.content_id || ""}
+                  onChange={(e) => setFormData({ ...formData, content_id: e.target.value })}
                   rows={10}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Masukkan konten bahasa Indonesia (HTML)"
@@ -287,8 +287,8 @@ export default function NewsFormModal({
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Thumbnail URL</label>
               <input
                 type="text"
-                value={formData.newsThumbnail || ""}
-                onChange={(e) => setFormData({ ...formData, newsThumbnail: e.target.value })}
+                value={formData.news_thumbnail || ""}
+                onChange={(e) => setFormData({ ...formData, news_thumbnail: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 placeholder="https://..."
               />
@@ -297,8 +297,8 @@ export default function NewsFormModal({
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">News Link</label>
               <input
                 type="text"
-                value={formData.newsLink || ""}
-                onChange={(e) => setFormData({ ...formData, newsLink: e.target.value })}
+                value={formData.news_link || ""}
+                onChange={(e) => setFormData({ ...formData, news_link: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 placeholder="https://..."
               />
@@ -310,8 +310,8 @@ export default function NewsFormModal({
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Meta Keyword</label>
             <input
               type="text"
-              value={formData.metaKeyword || ""}
-              onChange={(e) => setFormData({ ...formData, metaKeyword: e.target.value })}
+              value={formData.meta_keywords || ""}
+              onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               placeholder="keyword1, keyword2"
             />

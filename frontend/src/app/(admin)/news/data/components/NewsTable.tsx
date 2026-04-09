@@ -58,16 +58,16 @@ export default function NewsTable({ news, loading, onEdit, onDelete }: NewsTable
             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
               <td className="max-w-xs px-4 py-3">
                 <div className="flex items-center gap-3">
-                  {item.newsThumbnail && (
+                  {item.news_thumbnail && (
                     <img
-                      src={item.newsThumbnail}
+                      src={item.news_thumbnail}
                       alt=""
                       className="h-10 w-10 rounded object-cover"
                     />
                   )}
                   <div className="truncate">
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                      {item.titleEn}
+                      {item.title_en}
                     </p>
                     <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                       /{item.slug}
@@ -76,23 +76,23 @@ export default function NewsTable({ news, loading, onEdit, onDelete }: NewsTable
                 </div>
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {item.category?.categoryName || "Uncategorized"}
+                {item.category?.name_en || "Uncategorized"}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {formatDate(item.newsDate)}
+                {formatDate(item.news_date)}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {item.viewCount || 0}
+                {item.view_count || 0}
               </td>
               <td className="whitespace-nowrap px-4 py-3">
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    item.dataStatus === 1
+                    item.status === 'PUBLISHED'
                       ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                       : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
                   }`}
                 >
-                  {item.dataStatus === 1 ? "Active" : "Inactive"}
+                  {item.status === 'PUBLISHED' ? "Published" : "Draft"}
                 </span>
               </td>
               <td className="whitespace-nowrap px-4 py-3">

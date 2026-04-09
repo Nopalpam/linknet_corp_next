@@ -8,7 +8,7 @@ import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 export default function NewsHighlightPage() {
   const toast = useToast();
   const [highlights, setHighlights] = useState<NewsHighlight[]>([]);
-  const [availableNews, setAvailableNews] = useState<Pick<News, "id" | "titleEn" | "titleId" | "slug" | "newsThumbnail" | "newsDate">[]>([]);
+  const [availableNews, setAvailableNews] = useState<Pick<News, "id" | "title_en" | "title_id" | "slug" | "news_thumbnail" | "news_date">[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNewsId, setSelectedNewsId] = useState<string>("");
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -36,7 +36,7 @@ export default function NewsHighlightPage() {
   const handleAddHighlight = async () => {
     if (!selectedNewsId) return;
     try {
-      await newsHighlightService.createHighlight(parseInt(selectedNewsId, 10));
+      await newsHighlightService.createHighlight(selectedNewsId);
       toast.success("Highlight added");
       setSelectedNewsId("");
       await fetchHighlights();
@@ -118,7 +118,7 @@ export default function NewsHighlightPage() {
               <option value="">-- Select News --</option>
               {availableNews.map((n) => (
                 <option key={n.id} value={n.id}>
-                  {n.titleEn} ({formatDate(n.newsDate)})
+                  {n.title_en} ({formatDate(n.news_date)})
                 </option>
               ))}
             </select>
@@ -169,9 +169,9 @@ export default function NewsHighlightPage() {
                 </div>
 
                 {/* Thumbnail */}
-                {h.news?.newsThumbnail && (
+                {h.news?.news_thumbnail && (
                   <img
-                    src={h.news.newsThumbnail}
+                    src={h.news.news_thumbnail}
                     alt=""
                     className="h-12 w-16 rounded object-cover"
                   />
@@ -180,12 +180,12 @@ export default function NewsHighlightPage() {
                 {/* Info */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {h.news?.titleEn || "Unknown News"}
+                    {h.news?.title_en || "Unknown News"}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {h.news?.newsDate ? formatDate(h.news.newsDate) : ""}
-                    {h.news?.dataStatus !== 1 && (
-                      <span className="ml-2 text-yellow-600 dark:text-yellow-400">(Inactive)</span>
+                    {h.news?.news_date ? formatDate(h.news.news_date) : ""}
+                    {h.news?.status !== 'PUBLISHED' && (
+                      <span className="ml-2 text-yellow-600 dark:text-yellow-400">(Draft)</span>
                     )}
                   </p>
                 </div>

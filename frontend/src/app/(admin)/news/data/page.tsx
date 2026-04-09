@@ -52,10 +52,10 @@ export default function NewsDataPage() {
         sortOrder: "desc",
       };
 
-      if (filterStatus === "ACTIVE") params.dataStatus = 1;
-      else if (filterStatus === "INACTIVE") params.dataStatus = 0;
+      if (filterStatus === "ACTIVE") params.status = 'PUBLISHED';
+      else if (filterStatus === "INACTIVE") params.status = 'DRAFT';
 
-      if (filterCategory !== "ALL") params.idCategory = parseInt(filterCategory, 10);
+      if (filterCategory !== "ALL") params.category_id = filterCategory;
 
       const response = await newsService.getPaginated(params);
 
@@ -159,7 +159,7 @@ export default function NewsDataPage() {
             >
               <option value="ALL">All Categories</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.categoryName}</option>
+                <option key={c.id} value={c.id}>{c.name_en}</option>
               ))}
             </select>
             <select
@@ -225,7 +225,7 @@ export default function NewsDataPage() {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        title={selectedNews?.titleEn || ""}
+        title={selectedNews?.title_en || ""}
       />
     </div>
   );
