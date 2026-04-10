@@ -47,6 +47,7 @@ export interface CMSMenuItem {
   isActive: boolean;
   openNewTab: boolean;
   cssClass: string | null;
+  translations?: Record<string, any> | null;
   children?: CMSMenuItem[];
 }
 
@@ -111,7 +112,7 @@ export async function getHeaderMenus(): Promise<CMSMenuItem[]> {
  * Transforms the CMS menu tree into footer-friendly format:
  * Each top-level menu becomes a section with title and links
  */
-export async function getFooterMenus(): Promise<{ title: string; links: { label: string; href: string }[] }[]> {
+export async function getFooterMenus(locale?: string): Promise<{ title: string; links: { label: string; href: string }[] }[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/menu?position=FOOTER`, {
       cache: 'no-store',
@@ -122,17 +123,26 @@ export async function getFooterMenus(): Promise<{ title: string; links: { label:
     const json = await res.json();
     const menuTree: CMSMenuItem[] = json.data || [];
 
+    const getLocalizedTitle = (item: CMSMenuItem) => {
+      if (locale && item.translations && item.translations[locale]) {
+        const val = item.translations[locale];
+        if (typeof val === 'string') return val;
+        if (val && typeof val === 'object' && val.title) return val.title;
+      }
+      return item.title;
+    };
+
     // Transform tree: each top-level item = a menu group
     return menuTree
       .filter((item) => item.isActive)
       .sort((a, b) => a.order - b.order)
       .map((menu) => ({
-        title: menu.sectionTitle || menu.title,
+        title: menu.sectionTitle || getLocalizedTitle(menu),
         links: (menu.children || [])
           .filter((child) => child.isActive)
           .sort((a, b) => a.order - b.order)
           .map((child) => ({
-            label: child.title,
+            label: getLocalizedTitle(child),
             href: child.url || `/${child.slug || ''}`,
           })),
       }));

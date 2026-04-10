@@ -32,7 +32,7 @@ export default function ClosingSentence({
     : [{ text: "Send Us a Message", variant: "secondary-outline", size: "lg", href: "/contact" }];
 
   return (
-    <div className='bg-gradient-to-t from-[#FAFAFA] to-transparent'>
+    <div id='footerTopMessage' className='bg-gradient-to-t from-[#FAFAFA] to-transparent'>
       <div className={`container mx-auto px-4 md:px-0 max-w-4xl text-center pb-16 md:pb-20 ${className}`}>
 
         {/* Intro Section */}

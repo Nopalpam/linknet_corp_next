@@ -72,6 +72,7 @@ const CKEDITOR: ComponentTypeDefinition = {
   category: 'basic',
   defaultData: withCommon({
     content: '<p>Enter your content here...</p>',
+    content_id: '<p>Masukkan konten Anda di sini...</p>',
   }),
 };
 
@@ -517,6 +518,9 @@ const NEWS_LIST: ComponentTypeDefinition = {
   category: 'main',
   defaultData: withCommon({
     title: { en: 'News', id: 'Berita' },
+    intro_label: { en: '', id: '' },
+    intro_text: { en: '', id: '' },
+    sub_description: { en: '', id: '' },
     source: 'all',
     category_id: null,
     max_data: 12,
@@ -524,7 +528,11 @@ const NEWS_LIST: ComponentTypeDefinition = {
     show_pagination: true,
     show_search: true,
     show_category_filter: true,
+    search_placeholder: { en: 'Search news...', id: 'Cari berita...' },
+    search_button_text: { en: 'Search', id: 'Cari' },
     layout: 'grid',
+    cta_text: { en: '', id: '' },
+    cta_link: '',
   }),
 };
 

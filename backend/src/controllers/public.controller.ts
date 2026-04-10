@@ -29,21 +29,35 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
       }
       case 'news_list': {
         const maxData = config.max_data || 12;
-        const newsItems = await prisma.news.findMany({
-          where: {
-            status: 'PUBLISHED',
-            deleted_at: null,
-            ...(config.category_id ? { category_id: config.category_id } : {}),
-          },
-          include: { news_categories: true },
-          orderBy: { news_date: 'desc' },
-          take: maxData,
-        });
+        const where: any = {
+          status: 'PUBLISHED',
+          deleted_at: null,
+          ...(config.category_id ? { category_id: config.category_id } : {}),
+        };
+        const [newsItems, total] = await Promise.all([
+          prisma.news.findMany({
+            where,
+            include: { news_categories: true },
+            orderBy: { news_date: 'desc' },
+            take: maxData,
+          }),
+          prisma.news.count({ where }),
+        ]);
         const categories = await prisma.news_categories.findMany({
           where: { is_active: true, deleted_at: null },
           orderBy: { position: 'asc' },
         });
-        return { news: newsItems, categories, total: newsItems.length };
+        return {
+          news: newsItems,
+          categories,
+          total,
+          pagination: {
+            currentPage: 1,
+            totalPages: Math.ceil(total / maxData),
+            totalItems: total,
+            itemsPerPage: maxData,
+          },
+        };
       }
       case 'career_highlight': {
         const maxDisplay = config.max_display || 6;

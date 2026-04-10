@@ -125,6 +125,7 @@ const BusinessTab = dynamic(() => import('@/components/main/BusinessTab'));
 const MapsCoverage = dynamic(() => import('@/components/main/MapsCoverage'));
 const NewsFeatured = dynamic(() => import('@/components/main/NewsFeatured'));
 const NewsTeaser = dynamic(() => import('@/components/main/NewsTeaser'));
+const NewsList = dynamic(() => import('@/components/main/NewsList'));
 const InformationList = dynamic(() => import('@/components/main/InformationList'));
 const KeyHighlightWithImage = dynamic(() => import('@/components/main/KeyHighlightWithImage'));
 const HighlightingRealInitiatives = dynamic(() => import('@/components/main/HighlightingRealInitiatives'));
@@ -515,19 +516,24 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
 
   news_list: {
-    component: NewsTeaser,
+    component: NewsList,
     mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        category: data.category_id || null,
-        categorySlug: data.category_slug || null,
-        limit: data.max_data || 6,
         introData: extractIntro(data, t, locale) || {
           as: 'h2',
-          label: '',
+          label: localizeField(data, 'intro_label', t, locale),
           title: t(data.title),
-          description: '',
-          align: 'left',
+          description: localizeField(data, 'intro_text', t, locale),
+          align: data.intro_align || 'left',
         },
+        subDescription: localizeField(data, 'sub_description', t, locale),
+        limit: data.max_data || 12,
+        showPagination: data.show_pagination !== false,
+        showSearch: data.show_search !== false,
+        showCategoryFilter: data.show_category_filter !== false,
+        searchPlaceholder: t(data.search_placeholder) || (locale === 'id' ? 'Cari berita...' : 'Search news...'),
+        searchButtonText: t(data.search_button_text) || (locale === 'id' ? 'Cari' : 'Search'),
+        category: data.category_id || null,
         ctaList: data.cta_text
           ? [{
               text: t(data.cta_text),
@@ -537,6 +543,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             }]
           : [],
       },
+      mainData: data.mainData || null,
       ...styleProps,
     }),
   },
@@ -901,9 +908,22 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
 
   tradingview_symbol_overview: {
-    component: TradingViewWidget,
+    component: StockInformation,
     mapProps: ({ data, t, locale }) => ({
-      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+      cmsData: {
+        symbol: data.symbol || 'IDX:LINK',
+        title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+        interval: data.interval || '1D',
+        widgetHeight: data.widget_height || 500,
+        theme: data.theme || 'light',
+        locale: data.locale || 'en',
+        chartType: data.chart_type || 'area',
+        lineType: data.line_type || '0',
+        lineWidth: data.line_width || 2,
+        hideDateRanges: data.hide_date_ranges || false,
+        hideMarketStatus: data.hide_market_status || false,
+        hideSymbolLogo: data.hide_symbol_logo || false,
+      },
       className: data?.custom_class || '',
     }),
   },

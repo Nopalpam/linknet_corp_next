@@ -65,7 +65,7 @@ export default function MenuFormModal({
   });
 
   // Translation state
-  const [translationsJson, setTranslationsJson] = useState('');
+  const [titleId, setTitleId] = useState('');
 
   // Reset form when menu changes
   useEffect(() => {
@@ -89,7 +89,8 @@ export default function MenuFormModal({
         openNewTab: menu.openNewTab,
         translations: menu.translations,
       });
-      setTranslationsJson(menu.translations ? JSON.stringify(menu.translations, null, 2) : '');
+      const trans = menu.translations as Record<string, string> | null;
+      setTitleId(trans?.id || '');
     } else {
       // Reset to default for new menu
       setFormData({
@@ -111,7 +112,7 @@ export default function MenuFormModal({
         openNewTab: false,
         translations: null,
       });
-      setTranslationsJson('');
+      setTitleId('');
     }
   }, [menu]);
 
@@ -120,20 +121,12 @@ export default function MenuFormModal({
     setLoading(true);
 
     try {
-      // Parse translations JSON
-      let translations = null;
-      if (translationsJson.trim()) {
-        try {
-          translations = JSON.parse(translationsJson);
-        } catch (err) {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid JSON',
-            description: 'Translations must be valid JSON format',
-          });
-          setLoading(false);
-          return;
-        }
+      // Build translations object: title = English, titleId = Indonesian
+      let translations: Record<string, string> | null = null;
+      if (formData.title.trim() || titleId.trim()) {
+        translations = {};
+        if (formData.title.trim()) translations.en = formData.title.trim();
+        if (titleId.trim()) translations.id = titleId.trim();
       }
 
       const submitData = {
@@ -222,7 +215,7 @@ export default function MenuFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             {menu ? 'Edit Menu' : 'Create New Menu'}
@@ -231,16 +224,15 @@ export default function MenuFormModal({
 
         <form onSubmit={handleSubmit} className="mt-4">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              <TabsTrigger value="translations">Translations</TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+                <div>
                   <Label htmlFor="title">
                     Title <span className="text-destructive">*</span>
                   </Label>
@@ -249,7 +241,19 @@ export default function MenuFormModal({
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
-                    placeholder="Enter menu title"
+                    placeholder="Menu title (English)"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="titleId">
+                    Title (ID)
+                  </Label>
+                  <Input
+                    id="titleId"
+                    value={titleId}
+                    onChange={(e) => setTitleId(e.target.value)}
+                    placeholder="Judul menu (Indonesia)"
                   />
                 </div>
 
@@ -438,24 +442,6 @@ export default function MenuFormModal({
                     placeholder="custom-class another-class"
                   />
                 </div>
-              </div>
-            </TabsContent>
-
-            {/* Translations Tab */}
-            <TabsContent value="translations" className="space-y-4 mt-4">
-              <div>
-                <Label htmlFor="translations">Translations (JSON)</Label>
-                <Textarea
-                  id="translations"
-                  value={translationsJson}
-                  onChange={(e) => setTranslationsJson(e.target.value)}
-                  placeholder='{\n  "en": "About Us",\n  "id": "Tentang Kami"\n}'
-                  rows={10}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter valid JSON for multi-language support
-                </p>
               </div>
             </TabsContent>
           </Tabs>

@@ -197,11 +197,12 @@ export class NewsController {
   // Get active news (Public)
   async getActiveNews(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, category_id, sortBy, sortOrder } = req.query;
+      const { page, limit, category_id, search, sortBy, sortOrder } = req.query;
 
       const params: NewsQueryParams = {
         page: page ? parseInt(page as string, 10) : 1,
         limit: limit ? parseInt(limit as string, 10) : 12,
+        search: search as string | undefined,
         category_id: category_id as string | undefined,
         sortBy: sortBy as string,
         sortOrder: sortOrder as 'asc' | 'desc',

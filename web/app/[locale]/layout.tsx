@@ -148,7 +148,7 @@ export default async function RootLayout({ children, params }) {
   // 4. Fetch menu data dari CMS API (server-side)
   const [menuData, footerMenus, publicSettings] = await Promise.all([
     getHeaderMenus(),
-    getFooterMenus(),
+    getFooterMenus(locale),
     getPublicSettings(),
   ]);
 
@@ -172,7 +172,8 @@ export default async function RootLayout({ children, params }) {
   };
 
   // 6. Assemble closing sentence data
-  const cmsClosingData = {
+  const isClosingHidden = publicSettings.closing_hidden === true || publicSettings.closing_hidden === 'true';
+  const cmsClosingData = isClosingHidden ? null : {
     introData: {
       overline: publicSettings.closing_overline || '',
       title: publicSettings.closing_title || '',

@@ -153,6 +153,7 @@ export class NewsService {
     const {
       page = 1,
       limit = 12,
+      search,
       category_id,
       sortBy: rawSortBy = 'news_date',
       sortOrder = 'desc',
@@ -168,6 +169,17 @@ export class NewsService {
 
     if (category_id !== undefined) {
       where.category_id = category_id;
+    }
+
+    if (search) {
+      where.OR = [
+        { title_en: { contains: search, mode: 'insensitive' } },
+        { title_id: { contains: search, mode: 'insensitive' } },
+        { content_en: { contains: search, mode: 'insensitive' } },
+        { content_id: { contains: search, mode: 'insensitive' } },
+        { excerpt_en: { contains: search, mode: 'insensitive' } },
+        { excerpt_id: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const [newsItems, total] = await Promise.all([

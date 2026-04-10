@@ -59,3 +59,4 @@ export { PricingRenderer } from './renders/PricingRenderer';
 // Editors (for custom editor panels)
 export { HeroEditor } from './editors/HeroEditor';
 export { PricingEditor } from './editors/PricingEditor';
+export { CkeditorEditor } from './editors/CkeditorEditor';

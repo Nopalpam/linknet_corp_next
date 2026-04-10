@@ -36,7 +36,7 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
   },
   {
     type: 'ckeditor', name: 'Rich Text Editor', description: 'WYSIWYG HTML content', icon: 'FaEdit', category: 'basic',
-    defaultData: withCommon({ content: '<p>Enter your content here...</p>' }),
+    defaultData: withCommon({ content: '<p>Enter your content here...</p>', content_id: '<p>Masukkan konten Anda di sini...</p>' }),
   },
   {
     type: 'image', name: 'Image', description: 'Single image with caption', icon: 'FaImage', category: 'basic',

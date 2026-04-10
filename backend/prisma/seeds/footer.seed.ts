@@ -96,6 +96,16 @@ async function seedFooter() {
     // CLOSING SENTENCE SETTINGS (untuk ClosingSentence component)
     // ============================================
     {
+      key: 'closing_hidden',
+      value: false,
+      type: SettingType.BOOLEAN,
+      group: 'footer',
+      label: 'Hide Footer Top Message',
+      description: 'Hide the closing sentence / CTA section above the footer',
+      isPublic: true,
+      isSystem: true,
+    },
+    {
       key: 'closing_overline',
       value: 'Discover Linknet',
       type: SettingType.STRING,

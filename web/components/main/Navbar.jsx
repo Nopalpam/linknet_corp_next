@@ -12,13 +12,22 @@ import Icon from '../base/Icon';
  * CMS structure: parent menu → children (with sectionTitle for grouping)
  * NavData structure: { id, label, url, sections: [{ title, items: [{ label, url }] }] }
  */
-function transformMenuData(cmsMenus) {
+function transformMenuData(cmsMenus, locale) {
   if (!cmsMenus || cmsMenus.length === 0) return null;
+
+  const getLocalizedTitle = (item) => {
+    if (locale && item.translations && item.translations[locale]) {
+      const val = item.translations[locale];
+      if (typeof val === 'string') return val;
+      if (val && typeof val === 'object' && val.title) return val.title;
+    }
+    return item.title;
+  };
 
   return cmsMenus.map((menu) => {
     const item = {
       id: menu.slug || `menu-${menu.id}`,
-      label: menu.title,
+      label: getLocalizedTitle(menu),
       url: menu.url || `/${menu.slug || ''}`,
     };
 
@@ -38,7 +47,7 @@ function transformMenuData(cmsMenus) {
             });
           }
           sectionMap.get(sectionKey).items.push({
-            label: child.title,
+            label: getLocalizedTitle(child),
             url: child.url || `/${child.slug || ''}`,
             openNewTab: child.openNewTab || false,
           });
@@ -56,8 +65,8 @@ function transformMenuData(cmsMenus) {
 }
 
 export default function Navbar({ menuData }) {
-  const navItems = transformMenuData(menuData) || fallbackNavItems;
   const locale = useLocale();
+  const navItems = transformMenuData(menuData, locale) || fallbackNavItems;
   const pathname = usePathname();
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);

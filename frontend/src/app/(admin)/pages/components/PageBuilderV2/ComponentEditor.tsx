@@ -22,6 +22,15 @@ import React, { useState, useMemo} from 'react';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
 import { isMultilingual, ComponentSettings } from './types';
+import { CkeditorEditor } from './editors/CkeditorEditor';
+
+// =============================================================================
+// TYPE-SPECIFIC EDITOR MAPPING
+// =============================================================================
+
+const TYPE_SPECIFIC_EDITORS: Record<string, React.ComponentType<{ settings: any; onChange: (s: any) => void }>> = {
+  ckeditor: CkeditorEditor,
+};
 
 // =============================================================================
 // FIELD HELPERS & CLASSIFICATION
@@ -724,8 +733,16 @@ export function ComponentEditor() {
         </div>
       </div>
 
-      {/* Editor Form — grouped sections */}
+      {/* Editor Form — type-specific or grouped sections */}
       <div className="flex-1 overflow-y-auto scroll-smooth">
+        {TYPE_SPECIFIC_EDITORS[selectedComponent.type] ? (
+          <div className="p-4">
+            {React.createElement(TYPE_SPECIFIC_EDITORS[selectedComponent.type], {
+              settings,
+              onChange: handleSettingsChange,
+            })}
+          </div>
+        ) : (
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {activeGroups.map(([groupKey, groupData], idx) => {
             const config = sectionConfig[groupKey];
@@ -785,6 +802,7 @@ export function ComponentEditor() {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Footer Actions */}

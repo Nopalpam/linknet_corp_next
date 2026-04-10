@@ -19,7 +19,7 @@ export const getMenusByPositionValidation = [
     .trim()
     .notEmpty()
     .withMessage('Menu position is required')
-    .isIn(['header', 'footer', 'sidebar', 'main'])
+    .isIn(['header', 'footer', 'both'])
     .withMessage('Invalid menu position')
 ];
 
@@ -28,7 +28,7 @@ export const getMenusByPositionValidation = [
  */
 export const getMenuByIdValidation = [
   param('id')
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage('Invalid menu ID format')
 ];
 
@@ -36,45 +36,43 @@ export const getMenuByIdValidation = [
  * Validation rules for creating menu
  */
 export const createMenuValidation = [
-  body('labelEn')
+  body('title')
     .trim()
     .notEmpty()
-    .withMessage('Label (English) is required')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Label must be between 1 and 100 characters')
-    .escape(),
+    .withMessage('Title is required')
+    .isLength({ min: 1, max: 191 })
+    .withMessage('Title must be between 1 and 191 characters'),
   
-  body('labelId')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Label (Indonesian) must not exceed 100 characters')
-    .escape(),
-  
-  body('url')
+  body('position')
     .trim()
     .notEmpty()
-    .withMessage('URL is required')
-    .isLength({ max: 500 })
-    .withMessage('URL must not exceed 500 characters'),
+    .withMessage('Position is required')
+    .isIn(['HEADER', 'FOOTER', 'BOTH'])
+    .withMessage('Invalid position (must be HEADER, FOOTER, or BOTH)'),
   
   body('type')
     .trim()
     .notEmpty()
-    .withMessage('Menu type is required')
-    .isIn(['INTERNAL', 'EXTERNAL', 'STATIC_PAGE'])
-    .withMessage('Invalid menu type'),
+    .withMessage('Type is required')
+    .isIn(['LINK', 'DROPDOWN', 'MEGA'])
+    .withMessage('Invalid type (must be LINK, DROPDOWN, or MEGA)'),
   
-  body('position')
-    .optional()
+  body('url')
+    .optional({ values: 'null' })
     .trim()
-    .isIn(['header', 'footer', 'sidebar', 'main'])
-    .withMessage('Invalid menu position'),
+    .isLength({ max: 191 })
+    .withMessage('URL must not exceed 191 characters'),
+  
+  body('slug')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Slug must not exceed 191 characters'),
   
   body('parentId')
-    .optional()
-    .isUUID()
-    .withMessage('Invalid parent menu ID format'),
+    .optional({ values: 'null' })
+    .isInt({ min: 1 })
+    .withMessage('Invalid parent menu ID'),
   
   body('order')
     .optional()
@@ -85,20 +83,59 @@ export const createMenuValidation = [
   body('isActive')
     .optional()
     .isBoolean()
-    .withMessage('isActive must be boolean')
-    .toBoolean(),
+    .withMessage('isActive must be boolean'),
   
-  body('openInNewTab')
+  body('openNewTab')
     .optional()
     .isBoolean()
-    .withMessage('openInNewTab must be boolean')
-    .toBoolean(),
+    .withMessage('openNewTab must be boolean'),
   
-  body('iconClass')
-    .optional()
+  body('icon')
+    .optional({ values: 'null' })
     .trim()
-    .isLength({ max: 50 })
-    .withMessage('Icon class must not exceed 50 characters')
+    .isLength({ max: 191 })
+    .withMessage('Icon must not exceed 191 characters'),
+  
+  body('image')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Image must not exceed 191 characters'),
+  
+  body('description')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Description must not exceed 191 characters'),
+  
+  body('badge')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Badge must not exceed 191 characters'),
+  
+  body('sectionTitle')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Section title must not exceed 191 characters'),
+  
+  body('sectionOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Section order must be a non-negative integer')
+    .toInt(),
+  
+  body('cssClass')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('CSS class must not exceed 191 characters'),
+  
+  body('translations')
+    .optional({ values: 'null' })
+    .isObject()
+    .withMessage('Translations must be a valid JSON object')
 ];
 
 /**
@@ -106,45 +143,43 @@ export const createMenuValidation = [
  */
 export const updateMenuValidation = [
   param('id')
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage('Invalid menu ID format'),
   
-  body('labelEn')
+  body('title')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Label must be between 1 and 100 characters')
-    .escape(),
-  
-  body('labelId')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Label (Indonesian) must not exceed 100 characters')
-    .escape(),
-  
-  body('url')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('URL must not exceed 500 characters'),
-  
-  body('type')
-    .optional()
-    .trim()
-    .isIn(['INTERNAL', 'EXTERNAL', 'STATIC_PAGE'])
-    .withMessage('Invalid menu type'),
+    .isLength({ min: 1, max: 191 })
+    .withMessage('Title must be between 1 and 191 characters'),
   
   body('position')
     .optional()
     .trim()
-    .isIn(['header', 'footer', 'sidebar', 'main'])
-    .withMessage('Invalid menu position'),
+    .isIn(['HEADER', 'FOOTER', 'BOTH'])
+    .withMessage('Invalid position (must be HEADER, FOOTER, or BOTH)'),
+  
+  body('type')
+    .optional()
+    .trim()
+    .isIn(['LINK', 'DROPDOWN', 'MEGA'])
+    .withMessage('Invalid type (must be LINK, DROPDOWN, or MEGA)'),
+  
+  body('url')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('URL must not exceed 191 characters'),
+  
+  body('slug')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Slug must not exceed 191 characters'),
   
   body('parentId')
-    .optional()
-    .isUUID()
-    .withMessage('Invalid parent menu ID format'),
+    .optional({ values: 'null' })
+    .isInt({ min: 1 })
+    .withMessage('Invalid parent menu ID'),
   
   body('order')
     .optional()
@@ -155,20 +190,59 @@ export const updateMenuValidation = [
   body('isActive')
     .optional()
     .isBoolean()
-    .withMessage('isActive must be boolean')
-    .toBoolean(),
+    .withMessage('isActive must be boolean'),
   
-  body('openInNewTab')
+  body('openNewTab')
     .optional()
     .isBoolean()
-    .withMessage('openInNewTab must be boolean')
-    .toBoolean(),
+    .withMessage('openNewTab must be boolean'),
   
-  body('iconClass')
-    .optional()
+  body('icon')
+    .optional({ values: 'null' })
     .trim()
-    .isLength({ max: 50 })
-    .withMessage('Icon class must not exceed 50 characters')
+    .isLength({ max: 191 })
+    .withMessage('Icon must not exceed 191 characters'),
+  
+  body('image')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Image must not exceed 191 characters'),
+  
+  body('description')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Description must not exceed 191 characters'),
+  
+  body('badge')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Badge must not exceed 191 characters'),
+  
+  body('sectionTitle')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('Section title must not exceed 191 characters'),
+  
+  body('sectionOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Section order must be a non-negative integer')
+    .toInt(),
+  
+  body('cssClass')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 191 })
+    .withMessage('CSS class must not exceed 191 characters'),
+  
+  body('translations')
+    .optional({ values: 'null' })
+    .isObject()
+    .withMessage('Translations must be a valid JSON object')
 ];
 
 /**
@@ -176,7 +250,7 @@ export const updateMenuValidation = [
  */
 export const deleteMenuValidation = [
   param('id')
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage('Invalid menu ID format')
 ];
 
@@ -185,7 +259,7 @@ export const deleteMenuValidation = [
  */
 export const toggleMenuStatusValidation = [
   body('id')
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage('Invalid menu ID format')
 ];
 
@@ -193,23 +267,23 @@ export const toggleMenuStatusValidation = [
  * Validation rules for updating menu order
  */
 export const updateMenuOrderValidation = [
-  body('menus')
+  body('updates')
     .isArray({ min: 1 })
-    .withMessage('Menus array is required'),
+    .withMessage('Updates array is required'),
   
-  body('menus.*.id')
-    .isUUID()
+  body('updates.*.id')
+    .isInt({ min: 1 })
     .withMessage('Invalid menu ID format'),
   
-  body('menus.*.order')
+  body('updates.*.order')
     .isInt({ min: 0 })
     .withMessage('Order must be a non-negative integer')
     .toInt(),
   
-  body('menus.*.parentId')
-    .optional()
-    .isUUID()
-    .withMessage('Invalid parent menu ID format')
+  body('updates.*.parentId')
+    .optional({ values: 'null' })
+    .isInt({ min: 1 })
+    .withMessage('Invalid parent menu ID')
 ];
 
 /**
@@ -221,6 +295,6 @@ export const deleteMultipleMenusValidation = [
     .withMessage('IDs array is required and must not be empty'),
   
   body('ids.*')
-    .isUUID()
-    .withMessage('Each ID must be a valid UUID')
+    .isInt({ min: 1 })
+    .withMessage('Each ID must be a valid integer')
 ];

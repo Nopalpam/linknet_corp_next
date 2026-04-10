@@ -255,6 +255,9 @@
 }
 
 /* ===== Utilities ===== */
+.bg-primary {
+  background: var(--bg-primary);
+}
 .font-bold {
   font-weight: var(--font-weight-bold);
 }
