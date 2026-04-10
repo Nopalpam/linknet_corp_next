@@ -61,7 +61,7 @@
     "@types/speakeasy": "^2.0.10",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "bull": "^4.16.5",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
@@ -95,7 +95,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/compression": "^1.7.5",
     "@types/cookie-parser": "^1.4.6",
     "@types/cors": "^2.8.17",
