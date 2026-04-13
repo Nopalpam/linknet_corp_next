@@ -18,7 +18,7 @@
 
 'use client';
 
-import React, { useState, useMemo} from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
 import { isMultilingual, ComponentSettings } from './types';
@@ -325,25 +325,77 @@ function SelectField({ label, value, onChange, options, fieldKey }: FieldProps &
 }
 
 // =============================================================================
-// ARRAY FIELD
+// ARRAY FIELD (with drag-to-reorder + per-item minimize toggle)
 // =============================================================================
+
+/** Get a short preview label for an item (first string or multilingual field) */
+function getItemPreview(item: any): string {
+  if (typeof item === 'string') return item.slice(0, 40) || '(empty)';
+  if (typeof item !== 'object' || item === null) return '';
+  // Try common label fields
+  for (const key of ['title', 'name', 'label', 'text', 'heading', 'caption', 'value', 'year']) {
+    const val = item[key];
+    if (typeof val === 'string' && val) return val.slice(0, 40);
+    if (val && typeof val === 'object' && (val.en || val.id)) return (val.en || val.id).slice(0, 40);
+  }
+  return '';
+}
 
 function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps) {
   const items = Array.isArray(value) ? value : [];
   const [collapsed, setCollapsed] = useState(items.length > 3);
+  const [minimizedItems, setMinimizedItems] = useState<Record<number, boolean>>(() => {
+    // Default: minimize all items if there are many
+    const initial: Record<number, boolean> = {};
+    items.forEach((_, idx) => { initial[idx] = items.length > 1; });
+    return initial;
+  });
+
+  // ── Drag state ──
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const dragCounter = useRef(0);
+
+  const toggleMinimize = (idx: number) => {
+    setMinimizedItems(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const expandAll = () => {
+    const next: Record<number, boolean> = {};
+    items.forEach((_, idx) => { next[idx] = false; });
+    setMinimizedItems(next);
+  };
+
+  const collapseAll = () => {
+    const next: Record<number, boolean> = {};
+    items.forEach((_, idx) => { next[idx] = true; });
+    setMinimizedItems(next);
+  };
 
   const addItem = () => {
     if (items.length === 0) {
       onChange([{}]);
+      setMinimizedItems({ 0: false });
       return;
     }
     const template = JSON.parse(JSON.stringify(items[0]));
     clearValues(template);
-    onChange([...items, template]);
+    const newItems = [...items, template];
+    onChange(newItems);
+    // Expand the new item, keep others as-is
+    setMinimizedItems(prev => ({ ...prev, [newItems.length - 1]: false }));
   };
 
   const removeItem = (idx: number) => {
-    onChange(items.filter((_, i) => i !== idx));
+    const newItems = items.filter((_, i) => i !== idx);
+    onChange(newItems);
+    // Re-index minimized states
+    const next: Record<number, boolean> = {};
+    newItems.forEach((_, i) => {
+      const oldIdx = i >= idx ? i + 1 : i;
+      next[i] = minimizedItems[oldIdx] ?? true;
+    });
+    setMinimizedItems(next);
   };
 
   const updateItem = (idx: number, newVal: any) => {
@@ -352,10 +404,101 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
     onChange(updated);
   };
 
+  // ── Drag handlers ──
+  const handleDragStart = useCallback((e: React.DragEvent, idx: number) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+    // Make the drag image semi-transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    setDragIdx(null);
+    setDragOverIdx(null);
+    dragCounter.current = 0;
+  }, []);
+
+  const handleDragEnter = useCallback((e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    dragCounter.current++;
+    setDragOverIdx(idx);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragOverIdx(null);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    dragCounter.current = 0;
+    const sourceIdx = dragIdx;
+    setDragIdx(null);
+    setDragOverIdx(null);
+
+    if (sourceIdx === null || sourceIdx === targetIdx) return;
+
+    const newItems = [...items];
+    const [moved] = newItems.splice(sourceIdx, 1);
+    newItems.splice(targetIdx, 0, moved);
+    onChange(newItems);
+
+    // Re-map minimized states
+    const next: Record<number, boolean> = {};
+    newItems.forEach((_, i) => {
+      // Find the original index of this item after the move
+      let origIdx: number;
+      if (sourceIdx < targetIdx) {
+        if (i < sourceIdx) origIdx = i;
+        else if (i < targetIdx) origIdx = i + 1;
+        else if (i === targetIdx) origIdx = sourceIdx;
+        else origIdx = i;
+      } else {
+        if (i < targetIdx) origIdx = i;
+        else if (i === targetIdx) origIdx = sourceIdx;
+        else if (i <= sourceIdx) origIdx = i - 1;
+        else origIdx = i;
+      }
+      next[i] = minimizedItems[origIdx] ?? true;
+    });
+    setMinimizedItems(next);
+  }, [dragIdx, items, onChange, minimizedItems]);
+
+  // ── Move up/down buttons ──
+  const moveItem = (idx: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+    const newItems = [...items];
+    [newItems[idx], newItems[targetIdx]] = [newItems[targetIdx], newItems[idx]];
+    onChange(newItems);
+    // Swap minimized states
+    setMinimizedItems(prev => ({
+      ...prev,
+      [idx]: prev[targetIdx] ?? true,
+      [targetIdx]: prev[idx] ?? true,
+    }));
+  };
+
   const displayItems = collapsed ? items.slice(0, 2) : items;
+  const allMinimized = items.length > 0 && items.every((_, idx) => minimizedItems[idx]);
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60">
         <div className="flex items-center gap-2">
           <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,14 +511,25 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
             {items.length}
           </span>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-1.5 items-center">
+          {/* Expand/Collapse all toggle */}
+          {items.length > 1 && (
+            <button
+              type="button"
+              onClick={allMinimized ? expandAll : collapseAll}
+              className="text-[11px] px-2 py-0.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title={allMinimized ? 'Expand all items' : 'Collapse all items'}
+            >
+              {allMinimized ? 'Expand All' : 'Collapse All'}
+            </button>
+          )}
           {items.length > 3 && (
             <button
               type="button"
               onClick={() => setCollapsed(!collapsed)}
               className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
             >
-              {collapsed ? 'Show all' : 'Collapse'}
+              {collapsed ? 'Show all' : 'Show less'}
             </button>
           )}
           <button
@@ -387,38 +541,135 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
           </button>
         </div>
       </div>
+
+      {/* Items list */}
       <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-        {displayItems.map((item, idx) => (
-          <div key={idx} className="p-4 relative group hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Item {idx + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeItem(idx)}
-                className="text-[11px] text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium flex items-center gap-1"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Remove
-              </button>
+        {displayItems.map((item, idx) => {
+          const isMinimized = minimizedItems[idx] ?? false;
+          const isDragOver = dragOverIdx === idx && dragIdx !== idx;
+          const preview = getItemPreview(item);
+
+          return (
+            <div
+              key={idx}
+              draggable
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragEnd={handleDragEnd}
+              onDragEnter={(e) => handleDragEnter(e, idx)}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, idx)}
+              className={`relative group transition-colors ${
+                isDragOver
+                  ? 'bg-brand-50 dark:bg-brand-900/20 border-t-2 border-brand-400'
+                  : 'hover:bg-gray-50/50 dark:hover:bg-gray-800/20'
+              } ${dragIdx === idx ? 'opacity-50' : ''}`}
+            >
+              {/* Item header (always visible) */}
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                {/* Drag handle */}
+                <button
+                  type="button"
+                  className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 transition-colors flex-shrink-0"
+                  title="Drag to reorder"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="9" cy="6" r="1.5" />
+                    <circle cx="15" cy="6" r="1.5" />
+                    <circle cx="9" cy="12" r="1.5" />
+                    <circle cx="15" cy="12" r="1.5" />
+                    <circle cx="9" cy="18" r="1.5" />
+                    <circle cx="15" cy="18" r="1.5" />
+                  </svg>
+                </button>
+
+                {/* Minimize toggle */}
+                <button
+                  type="button"
+                  onClick={() => toggleMinimize(idx)}
+                  className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors flex-shrink-0"
+                  title={isMinimized ? 'Expand item' : 'Minimize item'}
+                >
+                  <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isMinimized ? '' : 'rotate-90'}`} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+
+                {/* Item label & preview */}
+                <div className="flex-1 min-w-0 flex items-center gap-2" onClick={() => toggleMinimize(idx)} style={{ cursor: 'pointer' }}>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex-shrink-0">
+                    Item {idx + 1}
+                  </span>
+                  {isMinimized && preview && (
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                      — {preview}
+                    </span>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Move up */}
+                  <button
+                    type="button"
+                    onClick={() => moveItem(idx, 'up')}
+                    disabled={idx === 0}
+                    className="p-1 text-gray-300 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move up"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  {/* Move down */}
+                  <button
+                    type="button"
+                    onClick={() => moveItem(idx, 'down')}
+                    disabled={idx === items.length - 1}
+                    className="p-1 text-gray-300 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move down"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {/* Remove */}
+                  <button
+                    type="button"
+                    onClick={() => removeItem(idx)}
+                    className="p-1 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove item"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Item content (collapsible) */}
+              {!isMinimized && (
+                <div className="px-4 pb-4">
+                  {typeof item === 'object' && item !== null ? (
+                    <ObjectFields
+                      data={item}
+                      onChange={(newVal) => updateItem(idx, newVal)}
+                      depth={depth + 1}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                      value={item || ''}
+                      onChange={(e) => updateItem(idx, e.target.value)}
+                    />
+                  )}
+                </div>
+              )}
             </div>
-            {typeof item === 'object' && item !== null ? (
-              <ObjectFields
-                data={item}
-                onChange={(newVal) => updateItem(idx, newVal)}
-                depth={depth + 1}
-              />
-            ) : (
-              <input
-                type="text"
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                value={item || ''}
-                onChange={(e) => updateItem(idx, e.target.value)}
-              />
-            )}
-          </div>
-        ))}
+          );
+        })}
         {collapsed && items.length > 2 && (
           <div className="px-4 py-2.5 text-center text-xs text-gray-400 bg-gray-50/50 dark:bg-gray-800/30">
             + {items.length - 2} more item{items.length - 2 !== 1 ? 's' : ''} hidden
@@ -464,6 +715,9 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
   }
   if (key === 'theme') {
     return { element: <SelectField key={key} {...fieldProps} options={['light', 'dark']} />, wide: false };
+  }
+  if (key === 'size_hero') {
+    return { element: <SelectField key={key} {...fieldProps} options={['lnHero__medium', 'lnHero__small']} />, wide: false };
   }
   if (key === 'order') {
     return { element: <SelectField key={key} {...fieldProps} options={['latest', 'oldest', 'alphabetical']} />, wide: false };

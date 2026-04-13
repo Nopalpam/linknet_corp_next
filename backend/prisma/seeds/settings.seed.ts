@@ -84,6 +84,19 @@ export const settingsSeed = async () => {
         options: ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY'],
       },
     },
+    {
+      key: 'default_locale',
+      value: 'en',
+      type: SettingType.SELECT,
+      group: 'general',
+      label: 'Default Language',
+      description: 'Default website language. The default language will not show a prefix in the URL (e.g. / instead of /en). Non-default language will have a prefix (e.g. /id).',
+      isPublic: true,
+      isSystem: true,
+      options: {
+        options: ['en', 'id'],
+      },
+    },
 
     // ============================================
     // GROUP: CONTACT

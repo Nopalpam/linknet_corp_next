@@ -247,6 +247,10 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             }))
           : [],
       },
+      slidesPerViewDesktop: data.slides_per_view_desktop ?? 4,
+      slidesPerViewMobile: data.slides_per_view_mobile ?? 1.2,
+      gridColsDesktop: data.grid_cols_desktop ?? 4,
+      gridColsMobile: data.grid_cols_mobile ?? 1,
       ...styleProps,
     }),
   },
@@ -268,8 +272,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             }))
           : [],
       },
-      slidesPerViewDesktop: data.slides_per_view || 4,
-      slidesPerViewMobile: 1.4,
+      slidesPerViewDesktop: data.slides_per_view_desktop ?? data.slides_per_view ?? 4,
+      slidesPerViewMobile: data.slides_per_view_mobile ?? 1.4,
       ...styleProps,
     }),
   },

@@ -27,6 +27,7 @@ function withCommon(data: Record<string, any>): Record<string, any> {
 
 export const heroSectionDefaults = withCommon({
   background_image: '/assets/herosliders/mission-desktop.jpg',
+  background_image_mobile: '',
   title: {
     en: 'Improving Lives and Supporting Indonesia\'s Digital Growth',
     id: 'Meningkatkan Kehidupan dan Mendukung Pertumbuhan Digital Indonesia',
@@ -39,7 +40,10 @@ export const heroSectionDefaults = withCommon({
   button_text: { en: 'Get to Know Us', id: 'Kenali Kami' },
   button_link: '/about-us',
   theme: 'light',
+  size_hero: 'lnHero__medium',
   gradient_visible: false,
+  minilogo_visible: false,
+  minilogo_image: '',
 });
 
 // ─── 2. sliders_hero (from heroSliders.js + hero.js) ────────────────
@@ -140,6 +144,10 @@ export const uspGridDefaults = withCommon({
       },
     },
   ],
+  slides_per_view_desktop: 4,
+  slides_per_view_mobile: 1.2,
+  grid_cols_desktop: 4,
+  grid_cols_mobile: 1,
   cta_list: [
     {
       text: { en: 'Get to Know Us', id: 'Kenali Kami' },
@@ -209,7 +217,8 @@ export const uspGridSliderDefaults = withCommon({
       ],
     },
   ],
-  slides_per_view: 4,
+  slides_per_view_desktop: 4,
+  slides_per_view_mobile: 1.4,
   autoplay: true,
 });
 

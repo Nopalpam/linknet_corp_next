@@ -62,7 +62,7 @@ const TopNewsWidget = () => {
         <div className="flex items-center gap-2">
           <FiBookOpen className="h-5 w-5 text-purple-500" />
           <h4 className="text-xl font-semibold text-black dark:text-white">
-            Content Analytics
+            News Analytics
           </h4>
         </div>
 

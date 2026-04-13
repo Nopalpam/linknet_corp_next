@@ -7,6 +7,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { GoogleTagManager, GoogleAnalytics } from '@next/third-parties/google';
+import { locales } from '@/i18n/config';
 
 
 import Navbar from "@/components/main/Navbar";
@@ -137,8 +138,7 @@ export default async function RootLayout({ children, params }) {
   const { locale } = await params;
 
   // 2. Validasi locale agar tidak sembarang URL diterima
-  const locales = ['en', 'id'];
-  if (!locales.includes(locale)) {
+  if (!locales.includes(locale as any)) {
     notFound();
   }
 
@@ -207,7 +207,7 @@ export default async function RootLayout({ children, params }) {
         {/* 8. Bungkus semua komponen dengan Provider */}
         <NextIntlClientProvider messages={messages} locale={locale}>
           <VisitorTracker />
-          <Navbar menuData={menuData} />
+          <Navbar menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
           {children}
           <Footer cmsClosingData={cmsClosingData} cmsFooterData={cmsFooterData} />
           <ModalCookies cmsData={cookiesData} />

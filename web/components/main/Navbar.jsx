@@ -65,7 +65,7 @@ function transformMenuData(cmsMenus, locale) {
   });
 }
 
-export default function Navbar({ menuData }) {
+export default function Navbar({ menuData, defaultLocale = 'en' }) {
   const locale = useLocale();
   const navItems = transformMenuData(menuData, locale) || fallbackNavItems;
   const pathname = usePathname();
@@ -73,13 +73,27 @@ export default function Navbar({ menuData }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
 
-  // Switch locale by replacing the locale prefix in the current pathname
+  // Stock data state
+  const [stockPrice, setStockPrice] = useState(null);
+  const [stockLastUpdated, setStockLastUpdated] = useState(null);
+  const [stockChange, setStockChange] = useState(null);
+
+  // Switch locale: handles URL prefix based on defaultLocale setting from CMS
+  // - Default locale has NO prefix in URL (e.g. /about-us)
+  // - Non-default locale has prefix (e.g. /id/about-us)
   const switchLocale = (newLocale) => {
-    // pathname is like /en/about-us or /id/about-us
     const segments = pathname.split('/');
+
+    // Remove current locale prefix if present
     if (segments[1] === 'en' || segments[1] === 'id') {
-      segments[1] = newLocale;
+      segments.splice(1, 1);
     }
+
+    // Add prefix only for non-default locale
+    if (newLocale !== defaultLocale) {
+      segments.splice(1, 0, newLocale);
+    }
+
     router.push(segments.join('/') || '/');
   };
 
@@ -95,6 +109,44 @@ export default function Navbar({ menuData }) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Fetch live stock data
+  useEffect(() => {
+    const fetchStock = async () => {
+      try {
+        const res = await fetch('/api/stock/quote?symbol=LINK.JK');
+        if (!res.ok) return;
+        const json = await res.json();
+        const quote = json.data || json;
+        if (quote.regularMarketPrice) {
+          setStockPrice(quote.regularMarketPrice);
+          setStockChange(quote.regularMarketChangePercent);
+          setStockLastUpdated(quote.regularMarketTime);
+        }
+      } catch (err) {
+        console.error('Failed to fetch stock price for navbar:', err);
+      }
+    };
+    fetchStock();
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchStock, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatStockPrice = (val) => {
+    if (val === null || val === undefined) return 'Loading...';
+    return `Rp${new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val)}`;
+  };
+
+  const formatLastUpdated = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} ${h}:${m} WIB`;
+  };
 
   // Lock scroll saat drawer terbuka
   useEffect(() => {
@@ -221,7 +273,12 @@ export default function Navbar({ menuData }) {
               <div className="flex flex-col items-start leading-tight">
                 <span className="text-caption-c2 uppercase text-secondary font-medium">IDX: LINK</span>
                 <div className="flex items-center gap-1 font-medium text-body-b4 text-black relative group/tooltip cursor-help">
-                  Rp2.560,00
+                  {formatStockPrice(stockPrice)}
+                  {stockChange !== null && (
+                    <span className={`text-caption-c2 font-medium ${stockChange >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      ({stockChange >= 0 ? '+' : ''}{stockChange?.toFixed(2)}%)
+                    </span>
+                  )}
                   <Icon name="info" className="text-neutral-300 hover:text-blue-600 transition-colors" style={{ '--icon-size': '16px' }} />
                   <div className="absolute top-full right-0 mt-3 w-64 p-4 bg-neutral-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 pointer-events-none transform origin-top-right">
                     <div className="font-bold mb-1 text-sm text-yellow-400 flex items-center gap-2">
@@ -230,6 +287,11 @@ export default function Navbar({ menuData }) {
                     <p className="text-neutral-300 leading-relaxed">
                       Harga saham terkini diperbarui secara berkala (delay 15 menit).
                     </p>
+                    {stockLastUpdated && (
+                      <p className="text-neutral-400 mt-2 text-[10px]">
+                        Last updated: {formatLastUpdated(stockLastUpdated)}
+                      </p>
+                    )}
                     <div className="absolute bottom-full right-2 -mb-1 border-8 border-transparent border-b-neutral-900"></div>
                   </div>
                 </div>
@@ -277,7 +339,7 @@ export default function Navbar({ menuData }) {
                     className="flex items-center gap-1 cursor-pointer" 
                     onClick={() => setShowMobileTooltip(!showMobileTooltip)}
                   >
-                    <span className="text-body-b4 font-medium text-black">Rp2.560,00</span>
+                    <span className="text-body-b4 font-medium text-black">{formatStockPrice(stockPrice)}</span>
                     <Icon name="info" className="text-neutral-400" style={{'--icon-size': '14px'}} />
                   </div>
                   
@@ -288,6 +350,9 @@ export default function Navbar({ menuData }) {
                       <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-[30] animate-in fade-in slide-in-from-top-1">
                          <div className="font-bold mb-1 text-yellow-400">Market Info</div>
                          <p className="text-neutral-300 leading-snug">Harga saham terkini diperbarui secara berkala (delay 15 menit).</p>
+                         {stockLastUpdated && (
+                           <p className="text-neutral-400 mt-1 text-[10px]">Last updated: {formatLastUpdated(stockLastUpdated)}</p>
+                         )}
                          <div className="absolute bottom-full right-2 -mb-1 border-4 border-transparent border-b-neutral-900"></div>
                       </div>
                     </>
@@ -337,7 +402,7 @@ export default function Navbar({ menuData }) {
                     className="flex items-center gap-1 cursor-pointer" 
                     onClick={() => setShowMobileTooltip(!showMobileTooltip)}
                   >
-                    <span className="text-body-b4 font-medium text-black">Rp2.560,00</span>
+                    <span className="text-body-b4 font-medium text-black">{formatStockPrice(stockPrice)}</span>
                     <Icon name="info" className="text-neutral-400" style={{'--icon-size': '14px'}} />
                   </div>
                   
@@ -348,6 +413,9 @@ export default function Navbar({ menuData }) {
                       <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-[30] animate-in fade-in slide-in-from-top-1">
                          <div className="font-bold mb-1 text-yellow-400">Market Info</div>
                          <p className="text-neutral-300 leading-snug">Harga saham terkini diperbarui secara berkala (delay 15 menit).</p>
+                         {stockLastUpdated && (
+                           <p className="text-neutral-400 mt-1 text-[10px]">Last updated: {formatLastUpdated(stockLastUpdated)}</p>
+                         )}
                          <div className="absolute bottom-full right-2 -mb-1 border-4 border-transparent border-b-neutral-900"></div>
                       </div>
                     </>
