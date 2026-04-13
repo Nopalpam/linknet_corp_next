@@ -233,7 +233,7 @@ User Agent: ${response.data.userAgent || 'N/A'}
                     <td className="px-4 py-3">
                       <div className="text-sm">
                         <div className="font-medium text-black dark:text-white">
-                          {activity.user?.name || "System"}
+                          {activity.user?.username || "System"}
                         </div>
                         <div className="text-gray-500 text-xs">
                           {activity.user?.email}

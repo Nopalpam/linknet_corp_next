@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { navItems as fallbackNavItems } from '../../data/navData';
 import Button from '../base/Button';
 import Icon from '../base/Icon';
+import { width } from 'highcharts';
 
 /**
  * Transform CMS menu tree to the navData format used by Navbar.
@@ -188,11 +189,12 @@ export default function Navbar({ menuData }) {
                                     {section.title}
                                   </div>
                                 )}
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1" style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(8, auto)', gap: '4px 16px' }}>
                                   {section.items?.map((subItem, itemIdx) => (
                                     <a
                                       key={itemIdx}
                                       href={subItem.url}
+                                      style={{ width: '200px' }}
                                       className="block py-1.5 text-[14px] font-medium text-neutral-700 hover:text-yellow-500 hover:translate-x-1 transition-all duration-200"
                                     >
                                       {subItem.label}

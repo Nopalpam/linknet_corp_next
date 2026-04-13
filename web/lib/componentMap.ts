@@ -322,28 +322,23 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: BusinessTab,
     mapProps: ({ data, t, styleProps, locale }) => ({
       introData: extractIntro(data, t, locale) || (data.title ? { as: 'h2', title: t(data.title), align: 'left' } : undefined),
-      items: Array.isArray(data.tabs)
+      tabs: Array.isArray(data.tabs)
         ? data.tabs.map((tab: any, idx: number) => {
             const tabKey = tab.key || tab.id || `tab-${idx}`;
-            const panelData = data.tab_panels?.[tabKey];
+            // Support both formats: cards inside tab OR in tab_panels
+            const rawCards = Array.isArray(tab.cards) ? tab.cards : (data.tab_panels?.[tabKey]?.cards || []);
             return {
               id: tabKey,
               label: localizeField(tab, 'label', t, locale),
-              tagline: '',
-              title: localizeField(tab, 'label', t, locale),
-              desc: '',
-              image: panelData?.cards?.[0]?.image || undefined,
-              logoSrc: '',
-              textCTA: '',
-              href: '#',
-              cards: Array.isArray(panelData?.cards)
-                ? panelData.cards.map((card: any) => ({
-                    title: t(card.title),
-                    description: t(card.description),
-                    image: card.image || undefined,
-                    link: card.link || '#',
-                  }))
-                : [],
+              cards: rawCards.map((card: any, cIdx: number) => ({
+                id: `${tabKey}-card-${cIdx}`,
+                iconSrc: card.icon || undefined,
+                title: localizeField(card, 'title', t, locale),
+                description: localizeField(card, 'description', t, locale),
+                ctaText: localizeField(card, 'button_text', t, locale),
+                ctaLink: card.button_url || card.button_link || card.link || '#',
+                image: card.image || undefined,
+              })),
             };
           })
         : [],
