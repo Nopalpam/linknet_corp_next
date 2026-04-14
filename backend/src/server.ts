@@ -256,6 +256,10 @@ app.use(`${API_PREFIX}`, announcementRoutes);
 import cookieConsentRoutes from '@routes/cookieConsent.routes';
 app.use(`${API_PREFIX}`, cookieConsentRoutes);
 
+// Linknet Media proxy routes (Public)
+import linknetMediaRoutes from '@routes/linknetMedia.routes';
+app.use(`${API_PREFIX}`, linknetMediaRoutes);
+
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
 
