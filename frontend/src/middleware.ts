@@ -10,6 +10,8 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/mfa-verify',
+  '/linknet-media',
+  '/linknet-enterprise-coverage',
 ];
 
 // Define routes that should redirect to dashboard if authenticated
