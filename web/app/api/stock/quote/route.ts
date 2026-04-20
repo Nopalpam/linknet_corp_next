@@ -14,34 +14,36 @@ export async function GET(request: NextRequest) {
 
   try {
     const formattedSymbol = symbol.endsWith('.JK') ? symbol : `${symbol}.JK`;
-    const result = await yahooFinance.quote(formattedSymbol);
+    const quote = await yahooFinance.quote(formattedSymbol);
 
-    if (!result) {
+    if (!quote) {
       return NextResponse.json(
         { error: 'Stock data not found' },
         { status: 404 }
       );
     }
 
+    const result = quote as Record<string, unknown>;
+
     const data = {
-      symbol: result.symbol,
-      regularMarketPrice: result.regularMarketPrice || 0,
-      regularMarketChange: result.regularMarketChange || 0,
-      regularMarketChangePercent: result.regularMarketChangePercent || 0,
-      regularMarketVolume: result.regularMarketVolume || 0,
-      regularMarketOpen: result.regularMarketOpen || 0,
-      marketCap: result.marketCap || 0,
-      shortName: result.shortName || '',
-      longName: result.longName,
-      currency: result.currency || 'IDR',
-      regularMarketTime: new Date(result.regularMarketTime || Date.now()).toISOString(),
-      previousClose: result.regularMarketPreviousClose || 0,
-      dayHigh: result.regularMarketDayHigh || 0,
-      dayLow: result.regularMarketDayLow || 0,
-      fiftyTwoWeekHigh: result.fiftyTwoWeekHigh || 0,
-      fiftyTwoWeekLow: result.fiftyTwoWeekLow || 0,
-      averageDailyVolume3Month: result.averageDailyVolume3Month || 0,
-      averageDailyVolume10Day: result.averageDailyVolume10Day || 0,
+      symbol: result.symbol as string,
+      regularMarketPrice: (result.regularMarketPrice as number) || 0,
+      regularMarketChange: (result.regularMarketChange as number) || 0,
+      regularMarketChangePercent: (result.regularMarketChangePercent as number) || 0,
+      regularMarketVolume: (result.regularMarketVolume as number) || 0,
+      regularMarketOpen: (result.regularMarketOpen as number) || 0,
+      marketCap: (result.marketCap as number) || 0,
+      shortName: (result.shortName as string) || '',
+      longName: result.longName as string | undefined,
+      currency: (result.currency as string) || 'IDR',
+      regularMarketTime: new Date((result.regularMarketTime as Date) || Date.now()).toISOString(),
+      previousClose: (result.regularMarketPreviousClose as number) || 0,
+      dayHigh: (result.regularMarketDayHigh as number) || 0,
+      dayLow: (result.regularMarketDayLow as number) || 0,
+      fiftyTwoWeekHigh: (result.fiftyTwoWeekHigh as number) || 0,
+      fiftyTwoWeekLow: (result.fiftyTwoWeekLow as number) || 0,
+      averageDailyVolume3Month: (result.averageDailyVolume3Month as number) || 0,
+      averageDailyVolume10Day: (result.averageDailyVolume10Day as number) || 0,
     };
 
     return NextResponse.json({ data });

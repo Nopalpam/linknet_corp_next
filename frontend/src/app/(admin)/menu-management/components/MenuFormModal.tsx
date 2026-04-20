@@ -263,7 +263,7 @@ export default function MenuFormModal({
                   </Label>
                   <Select
                     value={formData.position}
-                    onValueChange={(value: MenuPosition) => setFormData({ ...formData, position: value })}
+                    onValueChange={(value: string) => setFormData({ ...formData, position: value as MenuPosition })}
                   >
                     <SelectTrigger id="position">
                       <SelectValue />
@@ -282,7 +282,7 @@ export default function MenuFormModal({
                   </Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: MenuType) => setFormData({ ...formData, type: value })}
+                    onValueChange={(value: string) => setFormData({ ...formData, type: value as MenuType })}
                   >
                     <SelectTrigger id="type">
                       <SelectValue />
@@ -299,7 +299,7 @@ export default function MenuFormModal({
                   <Label htmlFor="url">URL</Label>
                   <Input
                     id="url"
-                    value={formData.url}
+                    value={formData.url ?? ''}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                     placeholder="/about-us"
                   />
@@ -309,7 +309,7 @@ export default function MenuFormModal({
                   <Label htmlFor="slug">Slug</Label>
                   <Input
                     id="slug"
-                    value={formData.slug}
+                    value={formData.slug ?? ''}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                     placeholder="about-us"
                   />
@@ -347,7 +347,7 @@ export default function MenuFormModal({
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
-                    value={formData.description}
+                    value={formData.description ?? ''}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Optional description"
                     rows={2}
@@ -407,7 +407,7 @@ export default function MenuFormModal({
                   <Label htmlFor="icon">Icon</Label>
                   <Input
                     id="icon"
-                    value={formData.icon}
+                    value={formData.icon ?? ''}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="icon-name or URL"
                   />
@@ -417,7 +417,7 @@ export default function MenuFormModal({
                   <Label htmlFor="badge">Badge</Label>
                   <Input
                     id="badge"
-                    value={formData.badge}
+                    value={formData.badge ?? ''}
                     onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                     placeholder="New, Hot, etc."
                   />
@@ -427,7 +427,7 @@ export default function MenuFormModal({
                   <Label htmlFor="image">Image URL</Label>
                   <Input
                     id="image"
-                    value={formData.image}
+                    value={formData.image ?? ''}
                     onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                     placeholder="https://example.com/image.jpg"
                   />
@@ -437,7 +437,7 @@ export default function MenuFormModal({
                   <Label htmlFor="cssClass">CSS Class</Label>
                   <Input
                     id="cssClass"
-                    value={formData.cssClass}
+                    value={formData.cssClass ?? ''}
                     onChange={(e) => setFormData({ ...formData, cssClass: e.target.value })}
                     placeholder="custom-class another-class"
                   />

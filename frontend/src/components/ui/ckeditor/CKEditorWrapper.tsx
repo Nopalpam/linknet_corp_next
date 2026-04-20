@@ -81,7 +81,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
       setSourceHtml(editor.getHTML());
       setShowSourceCode(true);
     } else {
-      editor.commands.setContent(sourceHtml, false);
+      editor.commands.setContent(sourceHtml, { emitUpdate: false });
       setShowSourceCode(false);
     }
   }, [editor, showSourceCode, sourceHtml]);

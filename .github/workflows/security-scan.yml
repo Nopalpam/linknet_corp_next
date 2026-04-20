@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: [backend, frontend]
+        directory: [backend, frontend, web]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: '${{ matrix.directory }}/package-lock.json'
       
@@ -192,16 +192,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: [backend, frontend]
+        directory: [backend, frontend, web]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ matrix.directory }}/package-lock.json'
+
       - name: Install license-checker
         run: npm install -g license-checker
       

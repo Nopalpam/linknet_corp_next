@@ -45,7 +45,7 @@ export default function NewsHighlightPage() {
     }
   };
 
-  const handleRemove = async (id: number) => {
+  const handleRemove = async (id: string) => {
     try {
       await newsHighlightService.removeHighlight(id);
       toast.success("Highlight removed");

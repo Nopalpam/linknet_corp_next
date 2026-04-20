@@ -102,7 +102,7 @@ export default function ManagementDataPage() {
 
     const updates = reordered.map((item, index) => ({
       id: item.id,
-      dataOrder: index + 1,
+      order: index + 1,
     }));
 
     try {

@@ -164,8 +164,8 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
       if (typeof node === 'string') return node;
       if (typeof node === 'number') return String(node);
       if (Array.isArray(node)) return node.map(getChildText).join('');
-      if (React.isValidElement(node) && node.props.children) {
-        return getChildText(node.props.children);
+      if (React.isValidElement(node) && (node.props as Record<string, unknown>).children) {
+        return getChildText((node.props as Record<string, unknown>).children as React.ReactNode);
       }
       return '';
     };
