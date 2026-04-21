@@ -2,8 +2,8 @@
 node_modules
 npm-debug.log
 yarn-error.log
-package-lock.json
 yarn.lock
+# NOTE: package-lock.json must NOT be excluded — npm ci requires it
 
 # Development files
 *.dev.ts
@@ -48,6 +48,14 @@ __mocks__
 logs
 *.log
 npm-debug.log*
+
+# Google Cloud / Service Account credentials
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!jest.config.json
+!nodemon.json
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*

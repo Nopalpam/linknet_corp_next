@@ -30,6 +30,18 @@ interface Config {
   };
 }
 
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+if (process.env.NODE_ENV === 'production') {
+  if (!JWT_SECRET || JWT_SECRET === 'your-super-secret-jwt-key') {
+    throw new Error('FATAL: JWT_SECRET environment variable must be set to a strong secret in production');
+  }
+  if (!JWT_REFRESH_SECRET || JWT_REFRESH_SECRET === 'your-super-secret-refresh-key') {
+    throw new Error('FATAL: JWT_REFRESH_SECRET environment variable must be set to a strong secret in production');
+  }
+}
+
 export const config: Config = {
   app: {
     name: 'LinkNet Corp API',
@@ -47,9 +59,9 @@ export const config: Config = {
     credentials: process.env.CORS_CREDENTIALS === 'true',
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
+    secret: JWT_SECRET || 'your-super-secret-jwt-key',
     expiresIn: process.env.JWT_EXPIRE || '7d',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
+    refreshSecret: JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRE || '30d',
   },
   rateLimit: {

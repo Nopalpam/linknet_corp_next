@@ -48,5 +48,13 @@ uploads/
 # Keep migrations but ignore generated client
 node_modules/.prisma/
 
+# Google Cloud / Service Account credentials - NEVER commit these
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!jest.config.json
+!nodemon.json
+
 # TypeScript
 *.tsbuildinfo
