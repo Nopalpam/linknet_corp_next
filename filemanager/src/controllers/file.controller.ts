@@ -71,7 +71,46 @@ export const deleteFile = async (
   }
 };
 
-// ── Generate signed URL ───────────────────────────────────────────
+// ── Bulk delete files ─────────────────────────────────────────────
+export const bulkDeleteFiles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { keys } = req.body as { keys?: unknown };
+
+    if (!Array.isArray(keys) || keys.length === 0) {
+      sendError(res, 'Body must contain a non-empty "keys" array', 400);
+      return;
+    }
+
+    if (keys.length > 1000) {
+      sendError(res, 'Maximum 1000 keys per request', 400);
+      return;
+    }
+
+    // Validate each key: must be a non-empty string without path traversal
+    for (const k of keys) {
+      if (typeof k !== 'string' || !k.trim()) {
+        sendError(res, 'Each key must be a non-empty string', 400);
+        return;
+      }
+      if ((k as string).includes('..')) {
+        sendError(res, `Invalid key: "${k}"`, 400);
+        return;
+      }
+    }
+
+    const sanitizedKeys = (keys as string[]).map((k) => decodeURIComponent(k.trim()));
+    const result = await s3Service.bulkDeleteFiles(sanitizedKeys);
+
+    const statusCode = result.failed.length > 0 ? 207 : 200;
+    sendSuccess(res, result, 'Bulk delete completed', statusCode);
+  } catch (err) {
+    next(err);
+  }
+};
 export const getSignedUrl = async (
   req: Request,
   res: Response,

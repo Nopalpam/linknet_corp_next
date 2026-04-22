@@ -39,14 +39,6 @@ const globalLimiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 
-const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Upload limit reached, please try again later.' },
-});
-
 app.use(globalLimiter);
 
 // ── Body parsing ──────────────────────────────────────────────────
@@ -61,7 +53,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // ── API routes ────────────────────────────────────────────────────
-app.use('/api', apiKeyAuth, uploadLimiter, fileRoutes);
+app.use('/api', apiKeyAuth, fileRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

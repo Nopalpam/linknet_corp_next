@@ -1,6 +1,7 @@
 import {
   PutObjectCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   ListObjectsV2Command,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
@@ -8,7 +9,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { s3Client, AWS_BUCKET_NAME, CDN_URL } from '../config/aws.config';
-import { UploadedFile, FileListItem } from '../types';
+import { UploadedFile, FileListItem, BulkDeleteResult } from '../types';
 
 /**
  * Build the public URL for a given S3 object key.
@@ -111,4 +112,33 @@ export const generateSignedUrl = async (
   });
 
   return getSignedUrl(s3Client, command, { expiresIn });
+};
+
+/**
+ * Delete multiple S3 objects in a single API call (max 1000 per S3 spec).
+ * Returns a result object listing which keys succeeded and which failed.
+ */
+export const bulkDeleteFiles = async (keys: string[]): Promise<BulkDeleteResult> => {
+  if (keys.length === 0) return { deleted: [], failed: [] };
+
+  // S3 DeleteObjects supports max 1000 keys per request
+  const batch = keys.slice(0, 1000);
+
+  const command = new DeleteObjectsCommand({
+    Bucket: AWS_BUCKET_NAME,
+    Delete: {
+      Objects: batch.map((k) => ({ Key: k })),
+      Quiet: false,
+    },
+  });
+
+  const response = await s3Client.send(command);
+
+  const deleted = (response.Deleted ?? []).map((d) => d.Key ?? '').filter(Boolean);
+  const failed = (response.Errors ?? []).map((e) => ({
+    key: e.Key ?? '',
+    reason: e.Message ?? 'Unknown error',
+  }));
+
+  return { deleted, failed };
 };

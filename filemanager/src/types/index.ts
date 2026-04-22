@@ -14,6 +14,11 @@ export interface FileListItem {
   url: string;
 }
 
+export interface BulkDeleteResult {
+  deleted: string[];
+  failed: Array<{ key: string; reason: string }>;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;

@@ -9,25 +9,27 @@
 ```
 filemanager/
 ├── src/
-│   ├── app.ts                     # Entry point Express
+│   ├── app.ts                         # Entry point Express
 │   ├── config/
-│   │   └── aws.config.ts          # S3 client & env validation
+│   │   └── aws.config.ts              # S3 client & env validation
 │   ├── controllers/
-│   │   └── file.controller.ts     # Request handlers
+│   │   └── file.controller.ts         # Request handlers
 │   ├── middleware/
-│   │   ├── auth.middleware.ts     # API key guard (opsional)
-│   │   └── upload.middleware.ts   # Multer config & validasi
+│   │   ├── auth.middleware.ts         # API key guard (opsional)
+│   │   ├── rateLimit.middleware.ts    # Upload rate limiter (30/15 min)
+│   │   └── upload.middleware.ts       # Multer config & validasi
 │   ├── routes/
-│   │   └── file.routes.ts         # Route definitions
+│   │   └── file.routes.ts             # Route definitions
 │   ├── services/
-│   │   └── s3.service.ts          # Logika S3 (upload, delete, list, sign)
+│   │   └── s3.service.ts              # Logika S3 (upload, delete, bulk-delete, list, sign)
 │   ├── types/
-│   │   └── index.ts               # TypeScript interfaces
+│   │   └── index.ts                   # TypeScript interfaces
 │   └── utils/
-│       └── response.util.ts       # Helper response JSON
+│       └── response.util.ts           # Helper response JSON
 ├── .env.example
 ├── .gitignore
 ├── .dockerignore
+├── eslint.config.mjs
 ├── Dockerfile
 ├── package.json
 ├── tsconfig.json
@@ -111,13 +113,51 @@ curl "http://localhost:3000/api/files?prefix=images/&limit=50" \
 ---
 
 ### `DELETE /api/file`
-Hapus file dari S3.
+Hapus satu file dari S3.
 
 **Query param:** `key` — S3 object key (URL-encoded jika mengandung `/`)
 
 ```bash
 curl -X DELETE "http://localhost:3000/api/file?key=images%2Fuuid.jpg" \
   -H "x-api-key: your_key"
+```
+
+---
+
+### `DELETE /api/files`
+Hapus banyak file sekaligus (bulk delete, maks 1000 key per request).
+
+**Body:** `application/json`
+
+```bash
+curl -X DELETE "http://localhost:3000/api/files" \
+  -H "x-api-key: your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"keys": ["images/uuid1.jpg", "images/uuid2.png"]}'
+```
+
+**Response (200 — semua sukses):**
+```json
+{
+  "success": true,
+  "message": "Bulk delete completed",
+  "data": {
+    "deleted": ["images/uuid1.jpg", "images/uuid2.png"],
+    "failed": []
+  }
+}
+```
+
+**Response (207 — sebagian gagal):**
+```json
+{
+  "success": true,
+  "message": "Bulk delete completed",
+  "data": {
+    "deleted": ["images/uuid1.jpg"],
+    "failed": [{ "key": "images/uuid2.png", "reason": "NoSuchKey" }]
+  }
+}
 ```
 
 ---
@@ -162,7 +202,7 @@ docker run -p 3000:3000 --env-file .env filemanager:latest
 | Secrets | Tidak ada hardcoded — semua via `.env` |
 | Auth | API key via header `x-api-key` (opsional) |
 | Upload | Validasi MIME type + batas ukuran file |
-| Rate limiting | 200 req/15 min global, 30 uploads/15 min |
+| Rate limiting | 200 req/15 min global; 30 uploads/15 min (hanya `POST /upload`) |
 | Docker | Non-root user, multi-stage build, Alpine base |
 | HTTP | Helmet, CORS strict, x-powered-by disabled |
 | Path traversal | Sanitasi key & folder di semua endpoint |
