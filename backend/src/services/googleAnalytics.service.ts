@@ -9,7 +9,7 @@
  * 4. Grant the service account "Viewer" role on your GA4 property
  * 5. Set environment variables:
  *    - GA4_PROPERTY_ID: Your GA4 Property ID (numeric)
- *    - GA4_CREDENTIALS_PATH: Path to service account JSON key file
+ *    - GOOGLE_SERVICE_ACCOUNT_JSON: Full service account JSON (minified, Key Vault ready)
  *      OR
  *    - GA4_CLIENT_EMAIL: Service account email
  *    - GA4_PRIVATE_KEY: Service account private key (with \n for newlines)
@@ -17,8 +17,6 @@
 
 import NodeCache from 'node-cache';
 import { logInfo } from '../utils/logger';
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Cache analytics data for 10 minutes to reduce API calls
 const analyticsCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
@@ -58,27 +56,11 @@ function isGA4Configured(): boolean {
   const propertyId = process.env.GA4_PROPERTY_ID;
   if (!propertyId) return false;
 
-  // Check for credentials file path OR inline credentials
-  const credentialsPath = process.env.GA4_CREDENTIALS_PATH;
-  const clientEmail = process.env.GA4_CLIENT_EMAIL;
-  const privateKey = process.env.GA4_PRIVATE_KEY;
+  // Option A: full service account JSON (Key Vault / single-secret approach)
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) return true;
 
-  // If credentials path is set, verify the file actually exists
-  if (credentialsPath) {
-    const resolvedPath = path.isAbsolute(credentialsPath)
-      ? credentialsPath
-      : path.resolve(process.cwd(), credentialsPath);
-    if (!fs.existsSync(resolvedPath)) {
-      logInfo(`GA4 credentials file not found at: ${resolvedPath}. GA4 will be disabled.`);
-      return false;
-    }
-    return true;
-  }
-
-  // Check inline credentials
-  if (clientEmail && privateKey) {
-    return true;
-  }
+  // Option B: individual inline credentials
+  if (process.env.GA4_CLIENT_EMAIL && process.env.GA4_PRIVATE_KEY) return true;
 
   return false;
 }
@@ -89,32 +71,27 @@ async function getGA4Client() {
   // Dynamic import to avoid errors if the package isn't configured
   const { BetaAnalyticsDataClient } = await import('@google-analytics/data');
 
-  const credentialsPath = process.env.GA4_CREDENTIALS_PATH;
-  const clientEmail = process.env.GA4_CLIENT_EMAIL;
-  const privateKey = process.env.GA4_PRIVATE_KEY;
-
-  if (credentialsPath) {
-    // Resolve and verify the file exists before passing to SDK
-    const resolvedPath = path.isAbsolute(credentialsPath)
-      ? credentialsPath
-      : path.resolve(process.cwd(), credentialsPath);
-    
-    if (!fs.existsSync(resolvedPath)) {
-      throw new Error(
-        `GA4 credentials file not found at: ${resolvedPath}. ` +
-        `Please place the service account JSON file there, or use inline credentials (GA4_CLIENT_EMAIL + GA4_PRIVATE_KEY), ` +
-        `or remove GA4_CREDENTIALS_PATH from .env to disable GA4.`
-      );
+  // Option A: full service account JSON (preferred — Key Vault / single-secret approach)
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (serviceAccountJson) {
+    let parsed: { client_email: string; private_key: string };
+    try {
+      parsed = JSON.parse(serviceAccountJson);
+    } catch {
+      throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON. Check the env var value.');
     }
-
-    // Use JSON key file
     return new BetaAnalyticsDataClient({
-      keyFilename: resolvedPath,
+      credentials: {
+        client_email: parsed.client_email,
+        private_key: parsed.private_key,
+      },
     });
   }
 
+  // Option B: individual inline credentials
+  const clientEmail = process.env.GA4_CLIENT_EMAIL;
+  const privateKey = process.env.GA4_PRIVATE_KEY;
   if (clientEmail && privateKey) {
-    // Use inline credentials
     return new BetaAnalyticsDataClient({
       credentials: {
         client_email: clientEmail,
@@ -123,7 +100,7 @@ async function getGA4Client() {
     });
   }
 
-  throw new Error('GA4 credentials not configured');
+  throw new Error('GA4 credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_JSON or GA4_CLIENT_EMAIL + GA4_PRIVATE_KEY.');
 }
 
 // ============ MAIN SERVICE ============
