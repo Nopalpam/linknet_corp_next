@@ -27,6 +27,9 @@ build/
 # Testing
 coverage/
 .nyc_output/
+__tests__/
+*.test.*
+*.spec.*
 
 # OS files
 .DS_Store
@@ -41,3 +44,9 @@ logs/
 *.tmp
 *.temp
 .cache/
+
+# CI / deploy config (not needed in image)
+*.yml
+*.yaml
+Dockerfile*
+.dockerignore

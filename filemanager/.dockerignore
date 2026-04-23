@@ -19,6 +19,7 @@ README*
 coverage
 *.test.ts
 *.spec.ts
+__tests__/
 
 # OS files
 .DS_Store
@@ -30,3 +31,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# CI / deploy config (not needed in image)
+*.yml
+*.yaml
+Dockerfile*
+.dockerignore

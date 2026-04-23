@@ -10,11 +10,18 @@ const COVERAGE_URL =
 const NEAREST_URL =
   'https://dev-dte-api.linknet.co.id/linknet-api-service-service-ln-apims/api/v1/addresses/nearest';
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
 const CLIENT_ID = process.env.ENTERPRISE_CLIENT_ID || 'servco';
-const CLIENT_SECRET =
-  process.env.ENTERPRISE_CLIENT_SECRET || 'x9PmCwmSX5WzG9s7LOFzICuPfCFxRrBJ';
+const CLIENT_SECRET = requireEnv('ENTERPRISE_CLIENT_SECRET');
 const USERNAME = process.env.ENTERPRISE_USERNAME || 'lmi';
-const PASSWORD = process.env.ENTERPRISE_PASSWORD || '6XDoMIjKhKIxP4JxBWgE';
+const PASSWORD = requireEnv('ENTERPRISE_PASSWORD');
 const PARTNER_ID = process.env.ENTERPRISE_PARTNER_ID || '100';
 
 // ── Token cache ──────────────────────────────────────────────────────

@@ -49,6 +49,20 @@ logs
 *.log
 npm-debug.log*
 
+# Development config & scripts (not needed in image)
+tsconfig.dev.json
+nodemon.json
+*.ps1
+scripts/
+k8s/
+check-*.js
+seed-*.js
+migrate-*.js
+run-*.ps1
+start-*.ps1
+jest.config.js
+linknetcorp2026-*.json
+
 # Google Cloud / Service Account credentials
 *.json
 !package.json

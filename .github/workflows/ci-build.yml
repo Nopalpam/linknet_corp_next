@@ -80,3 +80,23 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
         run: npm run build
+
+  build-filemanager:
+    name: Build Filemanager
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'filemanager/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./filemanager
+        run: npm ci
+
+      - name: Build
+        working-directory: ./filemanager
+        run: npm run build

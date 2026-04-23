@@ -1,92 +1,61 @@
 # ================================
-# Stage 1: Dependencies
-# ================================
-FROM node:22-alpine AS dependencies
-
-# Set working directory
-WORKDIR /app
-
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install dependencies
-RUN npm ci --omit=dev && npm cache clean --force
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-# ================================
-# Stage 2: Build
+# Stage 1: Build
 # ================================
 FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Install OpenSSL for Prisma
+# OpenSSL required by Prisma
 RUN apk add --no-cache openssl
 
-# Copy package files
+# Install ALL dependencies (dev + prod) so Prisma CLI is available
 COPY package*.json ./
-COPY tsconfig.json ./
-
-# Install all dependencies (including dev)
+COPY prisma ./prisma/
 RUN npm ci
 
-# Copy source code
-COPY src ./src
-COPY prisma ./prisma
-
-# Generate Prisma Client
+# Generate Prisma Client (needs prisma CLI from devDependencies)
 RUN npx prisma generate
 
-# Build TypeScript
+# Compile TypeScript
+COPY tsconfig.json ./
+COPY src ./src/
 RUN npm run build
 
 # ================================
-# Stage 3: Production
+# Stage 2: Production
 # ================================
 FROM node:22-alpine AS production
 
-# Install curl for health checks
-RUN apk add --no-cache curl openssl
+RUN apk add --no-cache openssl
 
-# Create app user for security
+# Non-root user for runtime
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Set working directory
 WORKDIR /app
 
-# Copy production dependencies from dependencies stage
-COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=dependencies --chown=nodejs:nodejs /app/package*.json ./
+# Install production dependencies only (no Prisma CLI)
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+# Overwrite with the generated Prisma client from builder
+# (prod install only fetches @prisma/client stub; generated code lives in .prisma)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Switch to non-root user
+# Copy compiled application
+COPY --from=builder /app/dist ./dist
+
+# Switch to non-root user (node_modules are world-readable by default)
 USER nodejs
 
-# Expose port
 EXPOSE 5000
 
-# Environment variables
 ENV NODE_ENV=production \
     PORT=5000
 
-# Health check configuration
-# This will call the /health endpoint every 30 seconds
-# Start checking after 30 seconds
-# Timeout after 10 seconds
-# Retry 3 times before marking as unhealthy
+# wget is built into Alpine — no extra package needed
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD wget -qO- http://localhost:5000/health || exit 1
 
-# Start application
 CMD ["node", "dist/server.js"]

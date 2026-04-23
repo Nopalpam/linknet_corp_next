@@ -11,8 +11,9 @@ node_modules/
 dist/
 build/
 
-# Environment
+# Environment — NEVER commit real credentials
 .env
+.env.production
 .env.local
 .env.development.local
 .env.test.local
