@@ -19,6 +19,8 @@ build/
 .env.test.local
 .env.production.local
 
+linknetcorp2026-*.json
+
 # Logs
 logs/
 *.log
