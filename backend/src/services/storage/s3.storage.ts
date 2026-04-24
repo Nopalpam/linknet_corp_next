@@ -5,10 +5,13 @@
  * This is a placeholder that can be fully implemented when S3 is needed.
  * 
  * Required ENV variables when STORAGE_TYPE=s3:
- * - AWS_ACCESS_KEY_ID
- * - AWS_SECRET_ACCESS_KEY
- * - AWS_S3_BUCKET
  * - AWS_REGION
+ * - AWS_S3_BUCKET
+ * 
+ * Credentials: TIDAK diset secara eksplisit. SDK menggunakan default credential
+ * provider chain — IRSA (Web Identity Token) di EKS/production, atau AWS CLI
+ * profile (~/.aws/credentials) di local development. Jangan tambahkan
+ * AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY ke environment production.
  */
 
 import {
@@ -40,10 +43,8 @@ export class S3StorageProvider implements IStorageProvider {
     // Uncomment when ready to use S3:
     // this.s3Client = new S3Client({
     //   region: this.region,
-    //   credentials: process.env.AWS_ACCESS_KEY_ID ? {
-    //     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    //     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    //   } : undefined, // Use IAM role if no explicit credentials
+    //   // Tidak ada credentials block — SDK otomatis menggunakan IRSA di EKS,
+    //   // atau AWS CLI profile di local dev.
     // });
 
     logger.info(`[S3Storage] Initialized with bucket: ${this.bucket}, region: ${this.region}`);
