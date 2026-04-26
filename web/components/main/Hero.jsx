@@ -27,13 +27,13 @@ export default function Hero({
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
   
   // CMS mode uses directData, static mode uses name lookup
-  const data = directData || HERO_DATA[name];
+    const sectionData = directData || HERO_DATA[name];
 
   // =========================================
   // SETUP ANIMASI GSAP
   // =========================================
   useEffect(() => {
-    if (!data) return;
+        if (!sectionData) return;
 
     let ctx = gsap.context(() => {
       const gsapElements = gsap.utils.toArray('.gsap-hero-item');
@@ -57,13 +57,16 @@ export default function Hero({
     }, containerRef);
 
     return () => ctx.revert();
-  }, [data]);
+    }, [sectionData]);
 
   // Jika data tidak ditemukan, jangan render apapun
-  if (!data) return null;
+    if (!sectionData) return null;
 
   // Destructure data dengan default value jika diperlukan
   const {
+        config = {},
+        id,
+        sectionId: inlineSectionId,
     as: Tag = "h2",
     logoSrc = "",
     logoSquare,
@@ -74,27 +77,39 @@ export default function Hero({
     ctaText = "Get to Know Us",
     ctaLink = "https://google.com",
     ctaTarget = "_blank",
-    bgImageDesktop = "", 
-    bgImageMobile = "",
+        bgImageDesktop: flatBgImageDesktop = "", 
+        bgImageMobile: flatBgImageMobile = "",
     bgColor = "bg-[#FFB800]",
     bgOverlay = false, 
-    heroSize = "md",    
-    theme = "light" 
-  } = data;
+        heroSize = "md",
+        theme = "light",
+        className: dataClassName = "",
+    } = sectionData;
+
+    const {
+        sectionId = id || inlineSectionId,
+        className: configClassName = "",
+        bgImage = "",
+        bgImageMobile: configBgImageMobile = "",
+    } = config;
+
+    const bgImageDesktop = flatBgImageDesktop || bgImage;
+    const bgImageMobile = flatBgImageMobile || configBgImageMobile || bgImageDesktop;
+    const mergedSectionClassName = dataClassName || configClassName;
 
   const hasBgImage = bgImageDesktop || bgImageMobile;
 
   // Menentukan class ukuran hero berdasarkan heroSize
   const heightClass = heroSize === 'sm' 
-    ? 'h-[56vh] md:h-[64vh]' 
-    : 'h-[68vh] md:h-[70vh]';
+        ? 'h-[560px] md:h-[64vh]' 
+        : 'h-[600px] md:h-[70vh]';
 
   // Kondisi untuk warna text berdasarkan theme
   const isDark = theme === 'dark';
 
   return (
     // Container Luar (Padding Putih) - Tambahkan ref di sini
-    <div ref={containerRef} className={`p-2 pt-0 bg-white ${className}`}>
+        <div id={sectionId} ref={containerRef} className={`p-2 pt-0 bg-white ${mergedSectionClassName} ${className}`}>
         <div className={`relative w-full ${heightClass} flex items-center overflow-hidden rounded-[20px] md:rounded-[24px] ${!hasBgImage ? bgColor : ''}`}>
       
             {/* ======================================= */}
@@ -171,7 +186,7 @@ export default function Hero({
 
                     {/* COMPONENT 3: TITLE (Tidak diberi class GSAP karena sudah ditangani SplitText) */}
                     {title && (
-                        <Tag className={`text-headline-h3 font-medium tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-md' : 'text-black'}`}>
+                        <Tag className={`text-headline-h4 md:text-headline-h3 font-bold tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-md' : 'text-black'}`}>
                             <SplitText
                                 text={title.replace(/<br\s*\/?>/gi, '\n')} 
                                 delay={240}
@@ -190,7 +205,7 @@ export default function Hero({
                     {/* COMPONENT 4: DESCRIPTION */}
                     {description && (
                         <div className="gsap-hero-item flex items-start gap-3 max-w-[95%] md:max-w-[85%]"> {/* Class GSAP */}
-                            <p className={`text-body-b5 md:text-body-b4 font-regular ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+                            <p className={`text-body-b5 md:text-body-b5 font-regular ${isDark ? 'text-white' : 'text-neutral-900'}`}>
                                 {description}
                             </p>
                         </div>

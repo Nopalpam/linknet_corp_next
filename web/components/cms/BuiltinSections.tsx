@@ -1,5 +1,8 @@
 'use client';
 
+import Icon from '@/components/base/Icon';
+import SectionIntro from '@/components/base/section/Intro';
+
 /**
  * Built-in generic CMS section components.
  * 
@@ -93,11 +96,328 @@ export function DocumentList({ title, documents, className }: {
 
 // ─── GenericSection (reusable for list_services, card_with_highlight_summary, etc.) ─
 
-export function GenericSection({ title, description, className }: {
+type IntroData = {
+  as?: string;
+  label?: string;
+  title?: string;
+  description?: string;
+  align?: string;
+};
+
+type ServiceProduct = {
+  id?: string;
+  name?: string;
+  link?: string;
+};
+
+type ServiceItem = {
+  id?: string;
+  icon?: string;
+  title?: string;
+  description?: string;
+  link?: string;
+  ctaText?: string;
+  products?: ServiceProduct[];
+};
+
+type SummaryCard = {
+  id?: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  link?: string;
+};
+
+type SummaryMetric = {
+  id?: string;
+  label?: string;
+  value?: string;
+  change?: string;
+};
+
+type SummaryHighlight = {
+  title?: string;
+  metrics?: SummaryMetric[];
+} | null;
+
+function resolveIntroData(introData?: IntroData, title?: string, description?: string): IntroData {
+  return introData || {
+    as: 'h2',
+    label: '',
+    title: title || '',
+    description: description || '',
+    align: 'left',
+  };
+}
+
+function getInitials(value?: string) {
+  if (!value) return 'S';
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase() || '').join('') || 'S';
+}
+
+function ServicesListSection({
+  introData,
+  services,
+  className,
+}: {
+  introData: IntroData;
+  services: ServiceItem[];
+  className?: string;
+}) {
+  return (
+    <section className={`lnSection lnSection__listServices bg-light py-16 md:py-24 ${className || ''}`}>
+      <div className="container">
+        <SectionIntro
+          as={introData.as || 'h2'}
+          label={introData.label}
+          title={introData.title}
+          description={introData.description}
+          align={introData.align || 'left'}
+          className="!w-full"
+        />
+
+        <div className="mt-8 grid gap-5 md:mt-10 md:grid-cols-2 xl:grid-cols-3">
+          {services.map((service, index) => {
+            const hasPrimaryLink = Boolean(service.link);
+
+            return (
+              <article
+                key={service.id || `service-${index}`}
+                className="group flex h-full flex-col rounded-[28px] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-transform duration-300 hover:-translate-y-1"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(246,196,71,0.16)] text-sm font-semibold uppercase tracking-[0.14em] text-black">
+                    {getInitials(service.title)}
+                  </div>
+
+                  {hasPrimaryLink ? (
+                    <a
+                      href={service.link}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-black transition-colors duration-200 hover:border-black hover:bg-black hover:text-white"
+                      aria-label={service.ctaText || service.title || 'Open service'}
+                    >
+                      <Icon name="arrow-top-right" />
+                    </a>
+                  ) : null}
+                </div>
+
+                <div className="mt-6 flex-1">
+                  {service.title ? (
+                    <h3 className="text-headline-h5 font-bold text-black leading-tight">
+                      {service.title}
+                    </h3>
+                  ) : null}
+
+                  {service.description ? (
+                    <p className="mt-3 text-body-b4 leading-relaxed text-secondary">
+                      {service.description}
+                    </p>
+                  ) : null}
+                </div>
+
+                {Array.isArray(service.products) && service.products.length > 0 ? (
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {service.products.map((product, productIndex) => {
+                      const content = (
+                        <>
+                          <span>{product.name}</span>
+                          {product.link ? <Icon name="arrow-top-right" className="text-[12px]" /> : null}
+                        </>
+                      );
+
+                      return product.link ? (
+                        <a
+                          key={product.id || `service-${index}-product-${productIndex}`}
+                          href={product.link}
+                          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-2 text-body-b5 font-medium text-black transition-colors duration-200 hover:border-black hover:bg-black hover:text-white"
+                        >
+                          {content}
+                        </a>
+                      ) : (
+                        <span
+                          key={product.id || `service-${index}-product-${productIndex}`}
+                          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-2 text-body-b5 font-medium text-black"
+                        >
+                          {product.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CardsWithSummarySection({
+  introData,
+  cards,
+  highlight,
+  className,
+}: {
+  introData: IntroData;
+  cards: SummaryCard[];
+  highlight: SummaryHighlight;
+  className?: string;
+}) {
+  const hasHighlight = Boolean(highlight?.metrics && highlight.metrics.length > 0);
+
+  return (
+    <section className={`lnSection lnSection__cardsWithSummary bg-white py-16 md:py-24 ${className || ''}`}>
+      <div className="container">
+        <div className={`grid gap-8 lg:gap-10 ${hasHighlight ? 'xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start' : ''}`}>
+          <div>
+            <SectionIntro
+              as={introData.as || 'h2'}
+              label={introData.label}
+              title={introData.title}
+              description={introData.description}
+              align={introData.align || 'left'}
+              className="!w-full"
+            />
+
+            {cards.length > 0 ? (
+              <div className="mt-8 grid gap-5 md:mt-10 md:grid-cols-2">
+                {cards.map((card, index) => {
+                  const cardContent = (
+                    <>
+                      {card.image ? (
+                        <img
+                          src={card.image}
+                          alt={card.title || `Card ${index + 1}`}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(246,196,71,0.35),_transparent_45%),linear-gradient(135deg,_#1f2937,_#0f172a)]" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/85" />
+                      <div className="relative flex min-h-[320px] flex-col justify-end p-6 md:p-8">
+                        {card.title ? (
+                          <h3 className="text-headline-h4 font-bold leading-tight text-white">
+                            {card.title}
+                          </h3>
+                        ) : null}
+
+                        {card.description ? (
+                          <p className="mt-3 text-body-b4 leading-relaxed text-white/80">
+                            {card.description}
+                          </p>
+                        ) : null}
+
+                        {card.link ? (
+                          <div className="mt-6 inline-flex items-center gap-2 text-body-b4 font-semibold text-white">
+                            <span>Explore service</span>
+                            <Icon name="arrow-top-right" />
+                          </div>
+                        ) : null}
+                      </div>
+                    </>
+                  );
+
+                  return card.link ? (
+                    <a
+                      key={card.id || `summary-card-${index}`}
+                      href={card.link}
+                      className="group relative block overflow-hidden rounded-[32px]"
+                    >
+                      {cardContent}
+                    </a>
+                  ) : (
+                    <div
+                      key={card.id || `summary-card-${index}`}
+                      className="group relative overflow-hidden rounded-[32px]"
+                    >
+                      {cardContent}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+
+          {hasHighlight ? (
+            <aside className="rounded-[32px] border border-neutral-200 bg-neutral-50 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)] md:p-8">
+              {highlight?.title ? (
+                <h3 className="text-headline-h5 font-bold text-black">
+                  {highlight.title}
+                </h3>
+              ) : null}
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                {highlight?.metrics?.map((metric, index) => (
+                  <div
+                    key={metric.id || `summary-metric-${index}`}
+                    className="rounded-[24px] border border-neutral-200 bg-white p-5"
+                  >
+                    {metric.label ? (
+                      <p className="text-caption-c1 font-semibold uppercase tracking-[0.12em] text-secondary">
+                        {metric.label}
+                      </p>
+                    ) : null}
+
+                    {metric.value ? (
+                      <p className="mt-3 text-headline-h4 font-bold text-black">
+                        {metric.value}
+                      </p>
+                    ) : null}
+
+                    {metric.change ? (
+                      <p className="mt-2 text-body-b5 font-medium text-[#047857]">
+                        {metric.change}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </aside>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function GenericSection({ title, description, className, variant, introData, services, cards, highlight }: {
   title?: string;
   description?: string;
   className?: string;
+  variant?: string;
+  introData?: IntroData;
+  services?: ServiceItem[];
+  cards?: SummaryCard[];
+  highlight?: SummaryHighlight;
 }) {
+  const resolvedIntroData = resolveIntroData(introData, title, description);
+
+  if (variant === 'list-services' && Array.isArray(services) && services.length > 0) {
+    return (
+      <ServicesListSection
+        introData={resolvedIntroData}
+        services={services}
+        className={className}
+      />
+    );
+  }
+
+  if (
+    variant === 'card-with-highlight-summary' &&
+    ((Array.isArray(cards) && cards.length > 0) || (highlight?.metrics && highlight.metrics.length > 0))
+  ) {
+    return (
+      <CardsWithSummarySection
+        introData={resolvedIntroData}
+        cards={Array.isArray(cards) ? cards : []}
+        highlight={highlight || null}
+        className={className}
+      />
+    );
+  }
+
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">

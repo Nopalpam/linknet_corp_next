@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
+import path from 'path';
+
+const repoRoot = path.resolve(__dirname, '..');
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  experimental: {
+    externalDir: true,
+  },
   images: {
     remotePatterns: [
       {
@@ -23,6 +29,7 @@ const nextConfig: NextConfig = {
   },
     
     turbopack: {
+      root: repoRoot,
       rules: {
         '*.svg': {
           loaders: ['@svgr/webpack'],

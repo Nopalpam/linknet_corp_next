@@ -13,7 +13,20 @@ export default function AboutWithRunningPhotos({
 
   if (!sectionData) return null;
 
-  const { introData, photos } = sectionData;
+  const { config = {}, id, introData, photos } = sectionData;
+  const {
+    sectionId = id,
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config;
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   // Duplikasi array foto agar animasi marquee tidak pernah terputus (infinite loop)
   // Kalikan 3 atau 4 kali agar cukup panjang menutupi layar lebar
@@ -23,7 +36,11 @@ export default function AboutWithRunningPhotos({
   const rotations = ['-rotate-2', 'rotate-3', '-rotate-1', 'rotate-2', '-rotate-3'];
 
   return (
-    <section className={`py-16 md:py-24 bg-white overflow-hidden ${className}`}>
+    <section
+      id={sectionId}
+      className={`py-16 md:py-24 bg-white overflow-hidden bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       
       {/* ========================================= */}
       {/* EFEK MARQUEE CSS (Inject Style) */}

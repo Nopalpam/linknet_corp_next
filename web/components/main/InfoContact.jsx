@@ -15,10 +15,27 @@ export default function InfoContact({
 
   if (!sectionData) return null;
 
-  const { introData, items } = sectionData;
+  const { config = {}, id, introData, items } = sectionData;
+  const {
+    sectionId = id,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config;
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   return (
-    <section className={`py-16 md:py-24 bg-white ${className}`}>
+    <section
+      id={sectionId}
+      className={`lnSection__infoContact py-16 md:py-24 bg-white bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
         
         {/* ========================================= */}

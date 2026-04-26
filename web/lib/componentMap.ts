@@ -16,6 +16,19 @@
 
 import dynamic from 'next/dynamic';
 import type { ComponentType } from 'react';
+import {
+  mapDocumentListPresentation,
+  mapInfoContactsPresentation,
+  mapInformationListPresentation,
+} from '../../shared/presentation/content';
+import {
+  mapBusinessTabPresentation,
+  mapUspGridPresentation,
+} from '../../shared/presentation/sections';
+import {
+  mapCardsWithSummaryPresentation,
+  mapListServicesPresentation,
+} from '../../shared/presentation/solutions';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -221,38 +234,32 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   usp_grid: {
     component: AboutWithUSP,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        uspVariant: data.usp_variant || 'card',
-        bgColor: data.bg_color || '',
-        isSlider: data.is_slider !== undefined ? data.is_slider : false,
-        bgImage: data.bg_image || undefined,
-        bgImageMobile: data.bg_image_mobile || undefined,
-        bgPositionClasses: 'bg-right-top md:bg-right',
-        bgSizeClass: 'bg-cover',
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const presentation = mapUspGridPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
         introData: extractIntro(data, t, locale),
-        uspList: Array.isArray(data.items)
-          ? data.items.map((item: any) => ({
-              iconURL: item.icon || undefined,
-              title: localizeField(item, 'title', t, locale),
-              description: localizeField(item, 'description', t, locale),
-            }))
-          : [],
-        ctaList: Array.isArray(data.cta_list)
-          ? data.cta_list.map((cta: any) => ({
-              text: t(cta.text),
-              variant: cta.variant || 'primary',
-              size: cta.size || 'lg',
-              href: cta.href || '#',
-            }))
-          : [],
-      },
-      slidesPerViewDesktop: data.slides_per_view_desktop ?? 4,
-      slidesPerViewMobile: data.slides_per_view_mobile ?? 1.2,
-      gridColsDesktop: data.grid_cols_desktop ?? 4,
-      gridColsMobile: data.grid_cols_mobile ?? 1,
-      ...styleProps,
-    }),
+      });
+
+      return {
+        cmsData: {
+          uspVariant: presentation.uspVariant,
+          bgColor: presentation.bgColor,
+          isSlider: presentation.isSlider,
+          bgImage: presentation.bgImage,
+          bgImageMobile: presentation.bgImageMobile,
+          bgPositionClasses: presentation.bgPositionClasses,
+          bgSizeClass: presentation.bgSizeClass,
+          introData: presentation.introData,
+          uspList: presentation.uspList,
+          ctaList: presentation.ctaList,
+        },
+        slidesPerViewDesktop: presentation.slidesPerViewDesktop,
+        slidesPerViewMobile: presentation.slidesPerViewMobile,
+        gridColsDesktop: presentation.gridColsDesktop,
+        gridColsMobile: presentation.gridColsMobile,
+        ...styleProps,
+      };
+    },
   },
 
   usp_grid_slider: {
@@ -301,25 +308,20 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   business_tab: {
     component: TabBusiness,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const presentation = mapBusinessTabPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
         introData: extractIntro(data, t, locale),
-        items: Array.isArray(data.tabs)
-          ? data.tabs.map((tab: any, idx: number) => ({
-              id: `tab-${idx}`,
-              label: localizeField(tab, 'name', t, locale) || localizeField(tab, 'label', t, locale),
-              tagline: '',
-              title: localizeField(tab, 'title', t, locale),
-              desc: localizeField(tab, 'description', t, locale),
-              image: tab.background_image || undefined,
-              logoSrc: tab.logo_image || undefined,
-              textCTA: localizeField(tab, 'cta_text', t, locale),
-              href: tab.cta_link || '#',
-            }))
-          : [],
-      },
-      ...styleProps,
-    }),
+      });
+
+      return {
+        cmsData: {
+          introData: presentation.introData,
+          items: presentation.items,
+        },
+        ...styleProps,
+      };
+    },
   },
 
   tabs_with_card: {
@@ -414,57 +416,38 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   info_contacts: {
     component: InfoContact,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        introData: extractIntro(data, t, locale) || {
-          as: 'h2',
-          title: t(data.title),
-          description: t(data.description),
-          align: 'left',
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const presentation = mapInfoContactsPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
+        introData: extractIntro(data, t, locale),
+      });
+
+      return {
+        cmsData: {
+          introData: presentation.introData,
+          items: presentation.items,
         },
-        items: Array.isArray(data.contact_items)
-          ? data.contact_items.map((item: any) => ({
-              icon: item.icon || '',
-              label: t(item.label),
-              value: t(item.value),
-              href: item.url || '',
-              target: item.target || '_blank',
-            }))
-          : [],
-      },
-      ...styleProps,
-    }),
+        ...styleProps,
+      };
+    },
   },
 
   information_list: {
     component: InformationList,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const presentation = mapInformationListPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
         introData: extractIntro(data, t, locale),
-        items: Array.isArray(data.info_sections)
-          ? data.info_sections.map((section: any, idx: number) => ({
-              id: `info-${idx}`,
-              title: localizeField(section, 'title', t, locale),
-              contents: localizeField(section, 'content', t, locale),
-              relatedArticles: Array.isArray(section.related_articles)
-                ? section.related_articles.map((art: any) => ({
-                    text: t(art.title),
-                    url: art.url || '#',
-                  }))
-                : [],
-              documents: Array.isArray(section.documents)
-                ? section.documents.map((doc: any) => ({
-                    title: t(doc.title),
-                    date: doc.date || '',
-                    icon: doc.file_type || 'pdf',
-                    url: doc.url || '#',
-                  }))
-                : [],
-            }))
-          : [],
-      },
-      ...styleProps,
-    }),
+      });
+
+      return {
+        cmsData: {
+          introData: presentation.introData,
+          items: presentation.items,
+        },
+        ...styleProps,
+      };
+    },
   },
 
   contact_us: {
@@ -866,34 +849,40 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   document_list: {
     component: DocumentList,
-    mapProps: ({ data, t, locale }) => ({
-      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
-      documents: Array.isArray(data?.documents)
-        ? data.documents.map((doc: any) => ({
-            title: localizeField(doc, 'title', t, locale) || doc.filename,
-            filename: doc.filename,
-            url: doc.url,
-          }))
-        : [],
-      className: data?.custom_class || '',
-    }),
+    mapProps: ({ data, t, locale }) => {
+      const presentation = mapDocumentListPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
+      });
+
+      return {
+        title: presentation.title,
+        documents: presentation.documents,
+        className: data?.custom_class || '',
+      };
+    },
   },
 
   list_services: {
     component: GenericSection,
-    mapProps: ({ data, t, locale }) => ({
-      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
-      description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      ...mapListServicesPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
+        introData: extractIntro(data, t, locale),
+      }),
       className: data?.custom_class || '',
+      ...styleProps,
     }),
   },
 
   card_with_highlight_summary: {
     component: GenericSection,
-    mapProps: ({ data, t, locale }) => ({
-      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
-      description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      ...mapCardsWithSummaryPresentation(data, {
+        resolveField: (item, field) => localizeField(item || {}, field, t, locale),
+        introData: extractIntro(data, t, locale),
+      }),
       className: data?.custom_class || '',
+      ...styleProps,
     }),
   },
 

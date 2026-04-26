@@ -7,7 +7,7 @@
  * - Deleted
  * 
  * Renders DIRECTLY from PageBuilder state - no local state duplication.
- * Uses a generic preview card for all component types.
+ * Uses shared presentation mappers for richer preview parity where needed.
  */
 
 'use client';
@@ -16,6 +16,28 @@ import React from 'react';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
 import { getLocalizedValue } from './types';
+import {
+  mapDocumentListPresentation,
+  mapInfoContactsPresentation,
+  mapInformationListPresentation,
+  type SharedContactItem,
+  type SharedDocumentItem,
+  type SharedDocumentSection,
+  type SharedInformationSection,
+} from '../../../../../../../shared/presentation/content';
+import {
+  mapBusinessTabPresentation,
+  mapUspGridPresentation,
+  type SharedBusinessTabItem,
+  type SharedUspItem,
+} from '../../../../../../../shared/presentation/sections';
+import {
+  mapCardsWithSummaryPresentation,
+  mapListServicesPresentation,
+  type SharedServiceItem,
+  type SharedSummaryCard,
+  type SharedSummaryMetric,
+} from '../../../../../../../shared/presentation/solutions';
 import {
   SortableContext,
   useSortable,
@@ -28,7 +50,630 @@ import { useDroppable } from '@dnd-kit/core';
 // GENERIC COMPONENT PREVIEW
 // =============================================================================
 
-function ComponentPreview({ type, settings, registryName }: { type: string; settings: Record<string, any>; registryName: string }) {
+type PreviewSettings = Record<string, any>;
+
+function stripHtml(value: string): string {
+  return value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function getPreviewText(value: any, maxLength?: number): string {
+  const text = typeof value === 'string' ? value : getLocalizedValue(value);
+  const cleanText = stripHtml(text || '');
+
+  if (!maxLength || cleanText.length <= maxLength) return cleanText;
+  return `${cleanText.substring(0, maxLength).trim()}...`;
+}
+
+function resolvePreviewField(source: PreviewSettings | undefined, field: string): string {
+  const value = source?.[field];
+  const localizedValue = getLocalizedValue(value);
+
+  if (localizedValue) return localizedValue;
+
+  const suffixValue = source?.[`${field}_id`];
+  return typeof suffixValue === 'string' ? suffixValue : '';
+}
+
+function getInitials(value: string): string {
+  const words = value.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'S';
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase() || '').join('');
+}
+
+function renderPreviewCount(label: string, value: number) {
+  return (
+    <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-300">
+      {value} {label}
+    </span>
+  );
+}
+
+function TypeBadge({ type }: { type: string }) {
+  const isMain = ['news_highlight', 'news_list', 'career_highlight', 'career_list', 'management_list', 'announcement_list', 'report_list', 'awards_list'].includes(type);
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
+      isMain
+        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+    }`}>
+      {type.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function InfoContactsPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapInfoContactsPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const introTitle = getPreviewText(presentation.introData.title, 90);
+  const introDescription = getPreviewText(presentation.introData.description, 140);
+
+  if (presentation.items.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <TypeBadge type={type} />
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {introTitle || 'Contact Info'}
+            </p>
+            {introDescription && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                {introDescription}
+              </p>
+            )}
+          </div>
+          {renderPreviewCount('contact(s)', presentation.items.length)}
+        </div>
+      </div>
+
+      <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        {presentation.items.slice(0, 3).map((item: SharedContactItem, index: number) => {
+          const label = getPreviewText(item.label, 30) || `Contact ${index + 1}`;
+          const value = getPreviewText(item.value, 42) || '-';
+
+          return (
+            <div
+              key={item.id || `contact-item-${index}`}
+              className="rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold uppercase tracking-[0.12em] text-gray-900 dark:bg-amber-400/20 dark:text-amber-200">
+                  {getInitials(label)}
+                </div>
+                {item.href && (
+                  <span className="rounded-full border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 dark:border-gray-600 dark:text-gray-300">
+                    Link
+                  </span>
+                )}
+              </div>
+              <p className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                {label}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">
+                {value}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function InformationListPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapInformationListPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const introTitle = getPreviewText(presentation.introData.title, 90);
+  const introDescription = getPreviewText(presentation.introData.description, 140);
+
+  if (presentation.items.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <TypeBadge type={type} />
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {introTitle || 'Information List'}
+            </p>
+            {introDescription && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                {introDescription}
+              </p>
+            )}
+          </div>
+          {renderPreviewCount('section(s)', presentation.items.length)}
+        </div>
+      </div>
+
+      <div className="space-y-3 p-4">
+        {presentation.items.slice(0, 2).map((item: SharedInformationSection, index: number) => {
+          const title = getPreviewText(item.title, 50) || `Section ${index + 1}`;
+          const content = getPreviewText(item.contents, 140);
+
+          return (
+            <div
+              key={item.id || `information-item-${index}`}
+              className="rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{title}</p>
+                <div className="flex shrink-0 gap-2">
+                  {item.relatedArticles.length > 0 && renderPreviewCount('article(s)', item.relatedArticles.length)}
+                  {item.documents.length > 0 && renderPreviewCount('doc(s)', item.documents.length)}
+                </div>
+              </div>
+              {content && (
+                <p className="mt-3 text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
+                  {content}
+                </p>
+              )}
+              {item.ctaList.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {item.ctaList.slice(0, 2).map((cta, ctaIndex: number) => (
+                    <span
+                      key={cta.id || `information-item-${index}-cta-${ctaIndex}`}
+                      className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200"
+                    >
+                      {getPreviewText(cta.text, 24) || `CTA ${ctaIndex + 1}`}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DocumentListPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapDocumentListPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const title = getPreviewText(presentation.title, 90);
+
+  if (presentation.documents.length === 0 && presentation.sections.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <TypeBadge type={type} />
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {title || 'Document List'}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            {presentation.sections.length > 0 && renderPreviewCount('section(s)', presentation.sections.length)}
+            {renderPreviewCount('doc(s)', presentation.documents.length)}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 p-4">
+        {presentation.sections.length > 0 ? presentation.sections.slice(0, 2).map((section: SharedDocumentSection, index: number) => {
+          const sectionTitle = getPreviewText(section.title, 40) || `Section ${index + 1}`;
+          const leadDocument = section.documents[0];
+
+          return (
+            <div
+              key={section.id || `document-section-${index}`}
+              className="rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{sectionTitle}</p>
+                {renderPreviewCount('doc(s)', section.documents.length)}
+              </div>
+              {leadDocument && (
+                <p className="mt-3 text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-2">
+                  {getPreviewText(leadDocument.title || leadDocument.filename, 90)}
+                </p>
+              )}
+            </div>
+          );
+        }) : presentation.documents.slice(0, 3).map((document: SharedDocumentItem, index: number) => (
+          <div
+            key={document.id || `document-item-${index}`}
+            className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {getPreviewText(document.title || document.filename, 70) || `Document ${index + 1}`}
+              </p>
+              {document.date && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {getPreviewText(document.date, 28)}
+                </p>
+              )}
+            </div>
+            {document.url && (
+              <span className="rounded-full border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 dark:border-gray-600 dark:text-gray-300">
+                Link
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UspGridPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapUspGridPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const introTitle = getPreviewText(presentation.introData.title, 90);
+  const introDescription = getPreviewText(presentation.introData.description, 140);
+
+  if (presentation.uspList.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800/70">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <TypeBadge type={type} />
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {introTitle || 'USP Grid'}
+            </p>
+            {introDescription && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                {introDescription}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-2">
+            {renderPreviewCount('USP item(s)', presentation.uspList.length)}
+            {presentation.ctaList.length > 0 && renderPreviewCount('CTA(s)', presentation.ctaList.length)}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 p-4">
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
+            {presentation.isSlider ? 'Slider mode' : 'Grid mode'}
+          </span>
+          <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
+            Variant: {getPreviewText(presentation.uspVariant, 18) || 'card'}
+          </span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {presentation.uspList.slice(0, 3).map((item: SharedUspItem, index: number) => {
+            const title = getPreviewText(item.title, 40) || `USP ${index + 1}`;
+            const description = getPreviewText(item.description, 90);
+
+            return (
+              <div
+                key={item.id || `usp-item-${index}`}
+                className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold uppercase tracking-[0.12em] text-gray-900 dark:bg-amber-400/20 dark:text-amber-200">
+                  {getInitials(title)}
+                </div>
+                <p className="mt-4 text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{title}</p>
+                {description && (
+                  <p className="mt-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
+                    {description}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BusinessTabPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapBusinessTabPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const introTitle = getPreviewText(presentation.introData.title, 90);
+  const introDescription = getPreviewText(presentation.introData.description, 140);
+  const activeItem = presentation.items[0];
+
+  if (presentation.items.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <TypeBadge type={type} />
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {introTitle || 'Business Tab'}
+            </p>
+            {introDescription && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                {introDescription}
+              </p>
+            )}
+          </div>
+          {renderPreviewCount('tab(s)', presentation.items.length)}
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <div className="flex flex-wrap gap-2">
+          {presentation.items.slice(0, 4).map((item: SharedBusinessTabItem, index: number) => (
+            <span
+              key={item.id || `business-tab-${index}`}
+              className={`inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-medium ${index === 0 ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'border border-gray-200 text-gray-600 dark:border-gray-600 dark:text-gray-300'}`}
+            >
+              {getPreviewText(item.label, 24) || `Tab ${index + 1}`}
+            </span>
+          ))}
+        </div>
+
+        {activeItem && (
+          <div className="rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">
+                  {getPreviewText(activeItem.title, 60) || getPreviewText(activeItem.label, 40) || 'Active tab'}
+                </p>
+                {activeItem.desc && (
+                  <p className="mt-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
+                    {getPreviewText(activeItem.desc, 140)}
+                  </p>
+                )}
+              </div>
+              {activeItem.href && (
+                <span className="rounded-full border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 dark:border-gray-600 dark:text-gray-300">
+                  CTA
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ListServicesPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapListServicesPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const intro = {
+    title: getPreviewText(presentation.introData.title, 90),
+    description: getPreviewText(presentation.introData.description, 140),
+  };
+  const services = presentation.services;
+
+  if (services.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-slate-50 dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800/70">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <TypeBadge type={type} />
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {intro.title || 'List Services'}
+            </p>
+            {intro.description && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                {intro.description}
+              </p>
+            )}
+          </div>
+          <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-300">
+            {services.length} service(s)
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        {services.slice(0, 3).map((service: SharedServiceItem, index: number) => {
+          const title = getPreviewText(service?.title, 60) || `Service ${index + 1}`;
+          const description = getPreviewText(service?.description, 100);
+          const products = Array.isArray(service?.products) ? service.products : [];
+
+          return (
+            <div
+              key={service?.id || `service-${index}`}
+              className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold uppercase tracking-[0.12em] text-gray-900 dark:bg-amber-400/20 dark:text-amber-200">
+                  {getInitials(title)}
+                </div>
+                {service?.link && (
+                  <span className="rounded-full border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 dark:border-gray-600 dark:text-gray-300">
+                    Link
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4 flex-1">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">
+                  {title}
+                </p>
+                {description && (
+                  <p className="mt-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
+                    {description}
+                  </p>
+                )}
+              </div>
+
+              {products.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {products.slice(0, 3).map((product, productIndex: number) => (
+                    <span
+                      key={product?.id || `service-${index}-product-${productIndex}`}
+                      className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200"
+                    >
+                      {getPreviewText(product?.name, 24) || `Product ${productIndex + 1}`}
+                    </span>
+                  ))}
+                  {products.length > 3 && (
+                    <span className="inline-flex items-center rounded-full border border-dashed border-gray-200 px-2.5 py-1 text-[11px] font-medium text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                      +{products.length - 3} more
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CardsWithSummaryPreview({ type, settings }: { type: string; settings: PreviewSettings }) {
+  const presentation = mapCardsWithSummaryPresentation(settings, {
+    resolveField: resolvePreviewField,
+  });
+  const intro = {
+    title: getPreviewText(presentation.introData.title, 90),
+    description: getPreviewText(presentation.introData.description, 140),
+  };
+  const cards = presentation.cards;
+  const metrics = Array.isArray(presentation.highlight?.metrics) ? presentation.highlight.metrics : [];
+
+  if (cards.length === 0 && metrics.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60">
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <TypeBadge type={type} />
+        <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+          {intro.title || 'Cards with Summary'}
+        </p>
+        {intro.description && (
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+            {intro.description}
+          </p>
+        )}
+      </div>
+
+      <div className={`grid gap-4 p-4 ${metrics.length > 0 ? 'xl:grid-cols-[minmax(0,1.6fr)_260px]' : ''}`}>
+        <div className="grid gap-3 md:grid-cols-2">
+          {cards.slice(0, 2).map((card: SharedSummaryCard, index: number) => {
+            const title = getPreviewText(card?.title, 60) || `Card ${index + 1}`;
+            const description = getPreviewText(card?.description, 100);
+
+            return (
+              <div
+                key={card?.id || `card-${index}`}
+                className="relative min-h-[180px] overflow-hidden rounded-2xl bg-gray-900"
+              >
+                {card?.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={card.image} alt={title} className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(246,196,71,0.35),_transparent_42%),linear-gradient(135deg,_#1f2937,_#0f172a)]" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/45 to-black/80" />
+
+                <div className="relative flex h-full flex-col justify-end p-4">
+                  <p className="text-sm font-semibold text-white line-clamp-2">{title}</p>
+                  {description && (
+                    <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-3">{description}</p>
+                  )}
+                  {card?.link && (
+                    <span className="mt-4 inline-flex w-fit rounded-full border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white/90">
+                      Linked card
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {cards.length > 2 && (
+            <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-xs font-medium text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
+              +{cards.length - 2} additional card(s)
+            </div>
+          )}
+        </div>
+
+        {metrics.length > 0 && (
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/80">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              {getPreviewText(presentation.highlight?.title, 40) || 'Highlight Summary'}
+            </p>
+            <div className="mt-3 space-y-3">
+              {metrics.slice(0, 3).map((metric: SharedSummaryMetric, index: number) => (
+                <div
+                  key={metric?.id || `metric-${index}`}
+                  className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    {getPreviewText(metric?.label, 28) || `Metric ${index + 1}`}
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                    {getPreviewText(metric?.value, 20) || '-'}
+                  </p>
+                  {metric?.change && (
+                    <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      {getPreviewText(metric.change, 16)}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {metrics.length > 3 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  +{metrics.length - 3} additional metric(s)
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ComponentPreview({ type, settings, registryName }: { type: string; settings: PreviewSettings; registryName: string }) {
+  if (type === 'usp_grid') {
+    const preview = <UspGridPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
+  if (type === 'business_tab') {
+    const preview = <BusinessTabPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
+  if (type === 'info_contacts') {
+    const preview = <InfoContactsPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
+  if (type === 'information_list') {
+    const preview = <InformationListPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
+  if (type === 'document_list') {
+    const preview = <DocumentListPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
+  if (type === 'list_services') {
+    const preview = <ListServicesPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
+  if (type === 'card_with_highlight_summary') {
+    const preview = <CardsWithSummaryPreview type={type} settings={settings} />;
+    if (preview) return preview;
+  }
+
   // Extract a title to display from common fields
   const displayTitle =
     getLocalizedValue(settings.title) ||
@@ -38,24 +683,15 @@ function ComponentPreview({ type, settings, registryName }: { type: string; sett
     registryName;
 
   const displayDescription =
-    getLocalizedValue(settings.description) ||
-    getLocalizedValue(settings.content)?.replace(/<[^>]*>/g, '').substring(0, 120) ||
+    getPreviewText(settings.description, 120) ||
+    getPreviewText(settings.content, 120) ||
     '';
-
-  // Determine badge color for category
-  const isMain = ['news_highlight', 'news_list', 'career_highlight', 'career_list', 'management_list', 'announcement_list', 'report_list', 'awards_list'].includes(type);
 
   return (
     <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 min-h-[80px]">
       <div className="flex items-start gap-3">
         {/* Type badge */}
-        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-          isMain
-            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-        }`}>
-          {type.replace(/_/g, ' ')}
-        </span>
+        <TypeBadge type={type} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
             {displayTitle}

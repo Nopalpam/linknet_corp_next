@@ -25,13 +25,30 @@ export default function NewsFeatured({
 
   if (!sectionData || !sectionData.featuredNews) return null;
 
-  const { introData, featuredNews, ctaList } = sectionData;
+  const { config = {}, id, introData, featuredNews, ctaList } = sectionData;
+  const {
+    sectionId = id,
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config;
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   const topNews = featuredNews.slice(0, 2); 
   const bottomNews = featuredNews.slice(2);
 
   return (
-    <section className={`py-16 md:py-20 bg-white ${className}`}>
+    <section
+      id={sectionId}
+      className={`py-16 md:py-20 bg-white bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
         
         {/* Intro Section */}

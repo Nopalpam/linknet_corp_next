@@ -57,13 +57,29 @@ export default function Milestone({
   }, [sectionData]);
 
   if (!sectionData) return null;
-  const { introData, items } = sectionData;
+  const { config = {}, id, introData, items } = sectionData;
   if (!items || items.length === 0) return null;
+
+  const {
+    sectionId = id,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config;
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   return (
     <section 
+      id={sectionId}
       ref={containerRef} 
-      className={`px-2 md:px-3 py-16 bg-white rounded-[36px] overflow-hidden ${className}`}
+      className={`lnSection__milestone px-2 md:px-3 py-16 bg-white rounded-[36px] overflow-hidden bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
     >
       <div className="py-16 md:py-20 bg-light-2 rounded-[36px] overflow-hidden">
         

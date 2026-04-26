@@ -26,7 +26,20 @@ export default function ReportGrid({
 
   if (!sectionData) return null;
 
-  const { introData, items } = sectionData;
+  const { config = {}, id, introData, items } = sectionData;
+  const {
+    sectionId = id || 'report-grid-section',
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config;
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   // 2. Kalkulasi Data Pagination
   const totalItems = items ? items.length : 0;
@@ -48,7 +61,7 @@ export default function ReportGrid({
 
       // Scroll halus kembali ke atas grid saat pindah halaman
       window.scrollTo({
-        top: document.getElementById('report-grid-section')?.offsetTop - 100,
+        top: document.getElementById(sectionId)?.offsetTop - 100,
         behavior: 'smooth'
       });
     }
@@ -74,7 +87,11 @@ export default function ReportGrid({
   };
 
   return (
-    <section id="report-grid-section" className={`py-16 md:py-24 ${className}`}>
+    <section
+      id={sectionId}
+      className={`lnSection__reportGrid py-16 md:py-24 bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container">
         
         {/* ========================================= */}

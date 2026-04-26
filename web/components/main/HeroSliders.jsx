@@ -46,6 +46,8 @@ export default function HeroSliders({
   }, []);
 
   const delay = autoplaySpeed || AUTOPLAY_DELAY;
+  const sliderConfig = !cmsSlides ? (HERO_SLIDERS_DATA.config || {}) : {};
+  const sectionData = !cmsSlides ? HERO_SLIDERS_DATA[name] : null;
 
   // CMS mode: convert CMS slides to the format this component expects
   const slides = cmsSlides 
@@ -65,13 +67,35 @@ export default function HeroSliders({
           theme: slide.theme || theme || 'light',
         },
       }))
-    : HERO_SLIDERS_DATA[name];
+    : (Array.isArray(sectionData) ? sectionData : sectionData?.slides || []);
+
+  const {
+    sectionId,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    thumbsVisible: configuredThumbsVisible,
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = sliderConfig;
+
+  const thumbsVisible = cmsSlides ? true : (configuredThumbsVisible ?? true);
+  const sectionStyle = !cmsSlides
+    ? {
+        '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+        '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+      }
+    : undefined;
 
   if (!mounted) return null;
   if (!slides || slides.length === 0) return null;
 
   return (
-    <section className={`relative w-full bg-white pb-8 ${className}`}>
+    <section
+      id={!cmsSlides ? sectionId : undefined}
+      className={`relative w-full bg-white ${thumbsVisible ? 'pb-8' : 'pb-0'} ${!cmsSlides ? `bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName}` : ''} ${className}`}
+      style={sectionStyle}
+    >
       
       {/* ======================================= */}
       {/* 1. MAIN SLIDER (HERO)                   */}
@@ -85,7 +109,7 @@ export default function HeroSliders({
             speed={1000}
             slidesPerView={1}
             loop={true}
-            thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+            thumbs={{ swiper: thumbsVisible && thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
             autoplay={autoplay ? {
                 delay: delay,
                 disableOnInteraction: false, 
@@ -125,78 +149,80 @@ export default function HeroSliders({
         </div>
       </div>
 
-    {/* ======================================= */}
-    {/* 2. THUMBS / TAB INDICATOR (CLICKABLE)   */}
-    {/* ======================================= */}
-    <div className="px-2 w-full mx-auto px-6 md:px-10 mt-2 md:mt-1 overflow-hidden">
-        <Swiper
+      {!thumbsVisible && (
+        <div className="mt-5 flex justify-center">
+          <div className="flex items-center gap-3 rounded-full backdrop-blur-sm">
+            {slides.map((slide, index) => {
+              const isActive = activeIndex === index;
+
+              return (
+                <button
+                  key={slide.id}
+                  type="button"
+                  aria-label={`Go to slide ${index + 1}`}
+                  onClick={() => mainSwiper && mainSwiper.slideToLoop(index)}
+                  className={`h-[6px] rounded-full transition-all duration-300 ${isActive ? 'w-9 bg-primary' : 'w-7 bg-[#E7E7E7] hover:bg-[#D7D7D7]'}`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {thumbsVisible && (
+        <div className="px-2 w-full mx-auto px-6 md:px-10 mt-2 md:mt-1 overflow-hidden">
+          <Swiper
             onSwiper={setThumbsSwiper}
             modules={[Thumbs, Controller]}
             watchSlidesProgress={true}
             allowTouchMove={false}
-            wrapperClass="!flex !w-full" 
-            spaceBetween={4} 
+            wrapperClass="!flex !w-full"
+            spaceBetween={4}
             className="thumbs-slider !overflow-visible w-full"
-        >
+          >
             {slides.map((slide, index) => {
-            const isActive = activeIndex === index;
+              const isActive = activeIndex === index;
 
-            return (
+              return (
                 <SwiperSlide
-                    key={slide.id}
-                    onClick={() => mainSwiper && mainSwiper.slideToLoop(index)}
-                    style={{ transition: 'flex 0.25s ease' }}
-                    className={`
-                        cursor-pointer !h-auto 
-                        py-2 px-1 md:px-3
-                        hover:bg-black/5 rounded-[12px]
-                        basis-0 
-                        ${isActive ? 'grow-[1] md:grow-[1.2] opacity-100' : 'grow-[1] opacity-95 hover:opacity-100'}
-                    `}
+                  key={slide.id}
+                  onClick={() => mainSwiper && mainSwiper.slideToLoop(index)}
+                  style={{ transition: 'flex 0.25s ease' }}
+                  className={`cursor-pointer !h-auto py-2 px-1 md:px-3 hover:bg-black/5 rounded-[12px] basis-0 ${isActive ? 'grow-[1] md:grow-[1.2] opacity-100' : 'grow-[1] opacity-95 hover:opacity-100'}`}
                 >
-                <div className="flex flex-col gap-3 group h-full justify-end">
-                    
+                  <div className="flex flex-col gap-3 group h-full justify-end">
                     <div className="hidden md:flex items-center gap-2 md:gap-3 whitespace-nowrap overflow-hidden">
-                    <div
-                        className={`
-                        shrink-0 w-2 h-2 rounded-full transition-colors duration-500
-                        ${isActive ? 'bg-danger' : 'bg-secondary group-hover:bg-neutral-600'}
-                        `}
-                    />
-                    
-                    <span
-                        className={`
-                        text-body-b5 transition-colors duration-500 truncate
-                        ${isActive
-                            ? 'text-black font-medium'
-                            : 'text-secondary font-medium group-hover:text-neutral-700'
-                        }
-                        `}
-                    >
+                      <div
+                        className={`shrink-0 w-2 h-2 rounded-full transition-colors duration-500 ${isActive ? 'bg-danger' : 'bg-secondary group-hover:bg-neutral-600'}`}
+                      />
+
+                      <span
+                        className={`text-body-b5 transition-colors duration-500 truncate ${isActive ? 'text-black font-medium' : 'text-secondary font-medium group-hover:text-neutral-700'}`}
+                      >
                         {slide.tabTitle}
-                    </span>
+                      </span>
                     </div>
 
                     <div className="relative w-full h-[4px] bg-secondary rounded-full overflow-hidden">
-                    {isActive ? (
+                      {isActive ? (
                         <div
-                        key={index}
-                        className="absolute top-0 left-0 h-full bg-primary"
-                        style={{
-                        animation: `progress-loading ${delay}ms linear forwards`
-                        }}
+                          key={index}
+                          className="absolute top-0 left-0 h-full bg-primary"
+                          style={{
+                            animation: `progress-loading ${delay}ms linear forwards`,
+                          }}
                         />
-                    ) : (
+                      ) : (
                         <div className="absolute top-0 left-0 h-full w-0 bg-secondary transition-all duration-300" />
-                    )}
+                      )}
                     </div>
-
-                </div>
+                  </div>
                 </SwiperSlide>
-            );
+              );
             })}
-        </Swiper>
-    </div>
+          </Swiper>
+        </div>
+      )}
 
       <style jsx global>{`
         @keyframes progress-loading {

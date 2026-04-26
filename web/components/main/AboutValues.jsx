@@ -60,11 +60,29 @@ export default function AboutValues({
 
   if (!sectionData) return null;
 
-  const { introData, valuesList } = sectionData;
+  const { config = {}, id, introData, valuesList } = sectionData;
+  const {
+    sectionId = id,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config;
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   return (
     // Tambahkan ref={containerRef} pada bungkus terluar section
-    <section ref={containerRef} className={`py-16 md:py-24 bg-white overflow-hidden ${className}`}>
+    <section
+      id={sectionId}
+      ref={containerRef}
+      className={`py-16 md:py-24 bg-white overflow-hidden bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
         
         {/* ========================================= */}

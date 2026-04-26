@@ -16,6 +16,19 @@ export default function VisionMission({ cmsData = null, className = '' }) {
 
   // CMS mode uses cmsData, static mode uses hardcoded 'about' key
   const data = cmsData || VISION_MISSION_DATA?.about;
+  const { config = {}, id } = data || {};
+  const {
+    sectionId = id,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config;
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   // Setup Animasi GSAP
   useEffect(() => {
@@ -56,7 +69,12 @@ export default function VisionMission({ cmsData = null, className = '' }) {
   const mission = data.items[1];
 
   return (
-    <section className="py-16 bg-white" ref={containerRef}>
+    <section
+      id={sectionId}
+      className={`lnSection__visionMission py-16 bg-white bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+      ref={containerRef}
+    >
       <div className="container">
         
         {/* Intro */}

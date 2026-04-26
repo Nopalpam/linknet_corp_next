@@ -50,6 +50,8 @@ export default function ReportListPage({
   showTypeFilter = true,
   showStatusFilter = true,
   showYearFilter = true,
+
+  className = '',
   
   // Kategori data yang ingin diambil (fallback untuk static data)
   name = "financial-statement",
@@ -60,6 +62,18 @@ export default function ReportListPage({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const {
+    sectionId = 'report-list-section',
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = REPORT_LIST_DATA.config || {};
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+  };
 
   // Use mainData from CMS if available, otherwise fall back to static data
   const rawData = useMemo(() => {
@@ -193,7 +207,7 @@ export default function ReportListPage({
 
       // Scroll halus kembali ke atas list saat pindah halaman
       window.scrollTo({
-        top: document.getElementById('report-list-section')?.offsetTop - 50,
+        top: document.getElementById(sectionId)?.offsetTop - 50,
         behavior: 'smooth'
       });
     }
@@ -219,7 +233,11 @@ export default function ReportListPage({
   };
 
   return (
-    <section id="report-list-section" className="bg-light-2 pt-10 pb-24">
+    <section
+      id={sectionId}
+      className={`lnSection__reportList bg-light-2 pt-10 pb-24 bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container">
         
         {/* ========================================= */}
