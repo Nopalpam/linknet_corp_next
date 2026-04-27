@@ -11,6 +11,15 @@ import prisma from '../../config/database';
 const DISPATCH_TIMEOUT_MS = 10_000;
 const DISPATCH_CRON_SCHEDULE = '*/5 * * * *';
 
+const getMissingFormModuleTableName = (error: unknown): string | null => {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2021') {
+    return null;
+  }
+
+  const tableName = error.meta?.table;
+  return typeof tableName === 'string' && tableName.startsWith('public.form_') ? tableName : null;
+};
+
 const dispatchLogInclude = {
   integrationConfig: true,
   submission: {
@@ -602,7 +611,28 @@ export const initializeFormSubmissionDispatchJobs = () => {
 
   dispatchJobsInitialized = true;
 
+  let dispatchSweepDisabled = false;
+  let disabledTableName: string | null = null;
+  let dispatchTask: ReturnType<typeof cron.schedule> | null = null;
+
+  const disableDispatchSweep = (tableName: string) => {
+    if (dispatchSweepDisabled) {
+      return;
+    }
+
+    dispatchSweepDisabled = true;
+    disabledTableName = tableName;
+    dispatchTask?.stop();
+    console.warn(
+      `[FormDispatch] Disabled dispatch sweeps because required table ${tableName} is missing in the current database. Apply the form modules migration to enable this feature.`,
+    );
+  };
+
   const runSweep = async (source: 'startup' | 'cron') => {
+    if (dispatchSweepDisabled) {
+      return;
+    }
+
     try {
       const result = await formSubmissionDispatchService.processPendingDispatches();
 
@@ -612,11 +642,22 @@ export const initializeFormSubmissionDispatchJobs = () => {
         );
       }
     } catch (error) {
+      const tableName = getMissingFormModuleTableName(error);
+
+      if (tableName) {
+        disableDispatchSweep(tableName);
+        return;
+      }
+
+      if (disabledTableName) {
+        return;
+      }
+
       console.error(`[FormDispatch] ${source} sweep failed:`, error);
     }
   };
 
-  cron.schedule(DISPATCH_CRON_SCHEDULE, async () => {
+  dispatchTask = cron.schedule(DISPATCH_CRON_SCHEDULE, async () => {
     await runSweep('cron');
   });
 
