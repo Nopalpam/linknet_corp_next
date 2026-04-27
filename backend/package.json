@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -22,6 +22,7 @@
     "db:seed:pages": "ts-node prisma/seeds/pages.seed.ts",
     "db:seed:career": "ts-node prisma/seeds/career-content.seed.ts",
     "db:seed:footer": "ts-node -r tsconfig-paths/register prisma/seeds/footer.seed.ts",
+    "db:seed:form-modules": "ts-node prisma/seeds/form-modules.seed.ts",
     "db:migrate:pages-sql": "ts-node scripts/migrate-pages-from-sql.ts",
     "db:migrate:news-mysql": "ts-node scripts/migrate-news-from-mysql.ts",
     "db:studio": "prisma studio",
@@ -119,6 +120,7 @@
     "supertest": "^6.3.4",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
   },

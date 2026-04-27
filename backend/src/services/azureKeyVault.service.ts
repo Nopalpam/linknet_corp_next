@@ -2,6 +2,15 @@ import { SecretClient } from '@azure/keyvault-secrets';
 import { DefaultAzureCredential, ClientSecretCredential } from '@azure/identity';
 import NodeCache from 'node-cache';
 
+const isConfiguredValue = (value?: string): value is string => {
+  if (!value) {
+    return false;
+  }
+
+  const normalizedValue = value.trim();
+  return normalizedValue.length > 0 && !normalizedValue.startsWith('<FILL:');
+};
+
 /**
  * Azure Key Vault Service
  * 
@@ -34,7 +43,7 @@ class AzureKeyVaultService {
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Skip initialization if Key Vault URL is not provided (local development)
-    if (!keyVaultUrl) {
+    if (!isConfiguredValue(keyVaultUrl)) {
       console.log('[Key Vault] Azure Key Vault URL not found. Using local .env file.');
       this.isEnabled = false;
       return;
@@ -42,15 +51,20 @@ class AzureKeyVaultService {
 
     try {
       let credential;
+      const tenantId = process.env.AZURE_TENANT_ID;
+      const clientId = process.env.AZURE_CLIENT_ID;
+      const clientSecret = process.env.AZURE_CLIENT_SECRET;
 
       // For local development with service principal
-      if (process.env.AZURE_TENANT_ID && 
-          process.env.AZURE_CLIENT_ID && 
-          process.env.AZURE_CLIENT_SECRET) {
+      if (
+        isConfiguredValue(tenantId) &&
+        isConfiguredValue(clientId) &&
+        isConfiguredValue(clientSecret)
+      ) {
         credential = new ClientSecretCredential(
-          process.env.AZURE_TENANT_ID,
-          process.env.AZURE_CLIENT_ID,
-          process.env.AZURE_CLIENT_SECRET
+          tenantId,
+          clientId,
+          clientSecret
         );
         console.log('[Key Vault] Using ClientSecretCredential for authentication');
       } else {
@@ -59,7 +73,7 @@ class AzureKeyVaultService {
         console.log('[Key Vault] Using DefaultAzureCredential (Managed Identity)');
       }
 
-      this.secretClient = new SecretClient(keyVaultUrl, credential);
+  this.secretClient = new SecretClient(keyVaultUrl, credential);
       this.isEnabled = true;
       console.log(`[Key Vault] Successfully initialized with URL: ${keyVaultUrl}`);
     } catch (error) {

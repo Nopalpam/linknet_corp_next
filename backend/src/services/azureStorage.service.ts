@@ -3,6 +3,15 @@ import { Readable } from 'stream';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+const isConfiguredValue = (value?: string): value is string => {
+  if (!value) {
+    return false;
+  }
+
+  const normalizedValue = value.trim();
+  return normalizedValue.length > 0 && !normalizedValue.startsWith('<FILL:');
+};
+
 interface UploadOptions {
   folder: string;
   filename?: string;
@@ -23,10 +32,17 @@ class AzureStorageService {
   private accountName: string;
 
   constructor() {
+    const storageDriver = (process.env.STORAGE_TYPE || process.env.STORAGE_DRIVER || 'local').toLowerCase();
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+
+    if (storageDriver !== 'azure') {
+      this.accountName = 'local';
+      this.containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || 'uploads';
+      return;
+    }
     
-    if (!connectionString || !accountName) {
+    if (!isConfiguredValue(connectionString) || !isConfiguredValue(accountName)) {
       console.warn('[Azure Storage] Credentials not configured. Azure Storage features will be disabled.');
       console.warn('[Azure Storage] Set AZURE_STORAGE_CONNECTION_STRING and AZURE_STORAGE_ACCOUNT_NAME to enable.');
       // Don't throw error, just initialize with dummy values for development
@@ -35,9 +51,16 @@ class AzureStorageService {
       return;
     }
 
-    this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-    this.containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || 'uploads';
-    this.accountName = accountName;
+    try {
+      this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      this.containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || 'uploads';
+      this.accountName = accountName;
+    } catch (error) {
+      console.warn('[Azure Storage] Failed to initialize client. Azure Storage features will be disabled.');
+      console.warn('[Azure Storage] Reason:', error instanceof Error ? error.message : 'Unknown error');
+      this.accountName = 'dummy';
+      this.containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || 'uploads';
+    }
   }
 
   /**

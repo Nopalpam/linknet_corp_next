@@ -491,6 +491,7 @@ model File {
   deletedAt     DateTime? @map("deleted_at")
   createdBy     User      @relation("FileCreator", fields: [createdById], references: [id])
   folder        Folder?   @relation(fields: [folderId], references: [id])
+  formSubmissionFiles FormSubmissionFile[]
 
   @@index([folderId])
   @@index([createdById])
@@ -525,6 +526,342 @@ model ContactUs {
   @@index([submittedAt])
   @@index([createdAt])
   @@map("contact_us")
+}
+
+model FormModule {
+  id                  String                  @id @default(uuid())
+  businessUnit        BusinessUnit            @map("business_unit")
+  slug                String
+  name                String
+  description         String?
+  category            FormCategory
+  handlingMode        FormHandlingMode        @default(SUBMISSION) @map("handling_mode")
+  status              FormModuleStatus        @default(DRAFT)
+  schemaVersion       Int                     @default(1) @map("schema_version")
+  defaultLocale       String                  @default("id") @map("default_locale")
+  publicPath          String?                 @map("public_path")
+  sourceWebsite       String?                 @map("source_website")
+  promoWebsite        String?                 @map("promo_website")
+  leadSource          String?                 @map("lead_source")
+  integrationProvider FormIntegrationProvider @default(INTERNAL) @map("integration_provider")
+  integrationConfig   Json?                   @map("integration_config")
+  submissionSettings  Json?                   @map("submission_settings")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  deletedAt           DateTime?               @map("deleted_at")
+  fields              FormField[]
+  integrations        FormIntegrationConfig[]
+  responseConfigs     FormResponseConfig[]
+  rules               FormFieldRule[]
+  steps               FormStep[]
+  submissions         FormSubmission[]
+
+  @@unique([businessUnit, slug])
+  @@index([businessUnit])
+  @@index([category])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("form_modules")
+}
+
+model FormStep {
+  id           String     @id @default(uuid())
+  formModuleId String     @map("form_module_id")
+  key          String
+  title        String
+  description  String?
+  actionLabel  String?    @map("action_label")
+  stepNumber   Int        @map("step_number")
+  isReviewStep Boolean    @default(false) @map("is_review_step")
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  fields       FormField[]
+  formModule   FormModule @relation(fields: [formModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([formModuleId, key])
+  @@unique([formModuleId, stepNumber])
+  @@index([formModuleId])
+  @@index([isActive])
+  @@map("form_steps")
+}
+
+model FormField {
+  id            String            @id @default(uuid())
+  formModuleId  String            @map("form_module_id")
+  formStepId    String?           @map("form_step_id")
+  parentFieldId String?           @map("parent_field_id")
+  key           String
+  path          String
+  label         String
+  fieldType     FormFieldType     @map("field_type")
+  placeholder   String?
+  helpText      String?           @map("help_text")
+  defaultValue  Json?             @map("default_value")
+  validation    Json?
+  uiConfig      Json?             @map("ui_config")
+  payloadKey    String?           @map("payload_key")
+  sortOrder     Int               @default(0) @map("sort_order")
+  isRequired    Boolean           @default(false) @map("is_required")
+  isActive      Boolean           @default(true) @map("is_active")
+  isSystem      Boolean           @default(false) @map("is_system")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  childFields   FormField[]       @relation("FormFieldHierarchy")
+  formModule    FormModule        @relation(fields: [formModuleId], references: [id], onDelete: Cascade)
+  formStep      FormStep?         @relation(fields: [formStepId], references: [id], onDelete: SetNull)
+  options       FormFieldOption[]
+  parentField   FormField?        @relation("FormFieldHierarchy", fields: [parentFieldId], references: [id], onDelete: Cascade)
+  sourceRules   FormFieldRule[]   @relation("FormFieldRuleSource")
+  targetRules   FormFieldRule[]   @relation("FormFieldRuleTarget")
+
+  @@unique([formModuleId, path])
+  @@index([formModuleId])
+  @@index([formStepId])
+  @@index([parentFieldId])
+  @@index([fieldType])
+  @@index([isActive])
+  @@map("form_fields")
+}
+
+model FormFieldOption {
+  id          String    @id @default(uuid())
+  fieldId     String    @map("field_id")
+  value       String
+  label       String
+  description String?
+  metadata    Json?
+  sortOrder   Int       @default(0) @map("sort_order")
+  isDefault   Boolean   @default(false) @map("is_default")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  field       FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldId, value])
+  @@index([fieldId])
+  @@index([isActive])
+  @@map("form_field_options")
+}
+
+model FormFieldRule {
+  id           String        @id @default(uuid())
+  formModuleId String        @map("form_module_id")
+  sourceFieldId String?      @map("source_field_id")
+  targetFieldId String?      @map("target_field_id")
+  ruleType     FormRuleType  @map("rule_type")
+  condition    Json
+  actionConfig Json          @map("action_config")
+  sortOrder    Int           @default(0) @map("sort_order")
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  formModule   FormModule    @relation(fields: [formModuleId], references: [id], onDelete: Cascade)
+  sourceField  FormField?    @relation("FormFieldRuleSource", fields: [sourceFieldId], references: [id], onDelete: Cascade)
+  targetField  FormField?    @relation("FormFieldRuleTarget", fields: [targetFieldId], references: [id], onDelete: Cascade)
+
+  @@index([formModuleId])
+  @@index([sourceFieldId])
+  @@index([targetFieldId])
+  @@index([ruleType])
+  @@index([isActive])
+  @@map("form_field_rules")
+}
+
+model FormResponseConfig {
+  id             String           @id @default(uuid())
+  formModuleId   String           @map("form_module_id")
+  key            String
+  responseType   FormResponseType @map("response_type")
+  label          String?
+  matchCondition Json?            @map("match_condition")
+  pathTemplate   String           @map("path_template")
+  queryTemplate  Json?            @map("query_template")
+  sortOrder      Int              @default(0) @map("sort_order")
+  isDefault      Boolean          @default(false) @map("is_default")
+  isActive       Boolean          @default(true) @map("is_active")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  formModule     FormModule       @relation(fields: [formModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([formModuleId, key])
+  @@index([formModuleId])
+  @@index([responseType])
+  @@index([isDefault])
+  @@index([isActive])
+  @@map("form_response_configs")
+}
+
+model FormIntegrationConfig {
+  id            String                  @id @default(uuid())
+  formModuleId  String                  @map("form_module_id")
+  key           String
+  provider      FormIntegrationProvider
+  dispatchMode  FormDispatchMode        @default(SYNC) @map("dispatch_mode")
+  endpoint      String?
+  mappingConfig Json?                   @map("mapping_config")
+  headersConfig Json?                   @map("headers_config")
+  isActive      Boolean                 @default(true) @map("is_active")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  dispatchLogs  FormSubmissionDispatchLog[]
+  formModule    FormModule              @relation(fields: [formModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([formModuleId, key])
+  @@index([formModuleId])
+  @@index([provider])
+  @@index([isActive])
+  @@map("form_integration_configs")
+}
+
+model FormSubmission {
+  id              String                @id @default(uuid())
+  formModuleId    String                @map("form_module_id")
+  businessUnit    BusinessUnit          @map("business_unit")
+  formSlug        String                @map("form_slug")
+  schemaVersion   Int                   @map("schema_version")
+  status          FormSubmissionStatus  @default(RECEIVED)
+  locale          String                @default("id")
+  requestId       String?               @map("request_id")
+  sessionId       String?               @map("session_id")
+  ipAddress       String?               @map("ip_address")
+  userAgent       String?               @map("user_agent")
+  sourcePath      String?               @map("source_path")
+  promoWebsite    String?               @map("promo_website")
+  pageWebsite     String?               @map("page_website")
+  sourceWebsite   String?               @map("source_website")
+  leadSource      String?               @map("lead_source")
+  primaryName     String?               @map("primary_name")
+  primaryEmail    String?               @map("primary_email")
+  primaryPhone    String?               @map("primary_phone")
+  eventName       String?               @map("event_name")
+  rawPayload      Json?                 @map("raw_payload")
+  responseContext Json?                 @map("response_context")
+  receivedAt      DateTime              @default(now()) @map("received_at")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  deletedAt       DateTime?             @map("deleted_at")
+  dispatchLogs    FormSubmissionDispatchLog[]
+  files           FormSubmissionFile[]
+  formModule      FormModule            @relation(fields: [formModuleId], references: [id], onDelete: Cascade)
+  groups          FormSubmissionGroup[]
+  values          FormSubmissionValue[]
+
+  @@index([formModuleId])
+  @@index([businessUnit])
+  @@index([formSlug])
+  @@index([status])
+  @@index([primaryEmail])
+  @@index([receivedAt])
+  @@index([deletedAt])
+  @@map("form_submissions")
+}
+
+model FormSubmissionValue {
+  id           String         @id @default(uuid())
+  submissionId String         @map("submission_id")
+  fieldPath    String         @map("field_path")
+  fieldKey     String         @map("field_key")
+  value        Json
+  displayValue String?        @map("display_value")
+  isSensitive  Boolean        @default(false) @map("is_sensitive")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  submission   FormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, fieldPath])
+  @@index([submissionId])
+  @@index([fieldKey])
+  @@map("form_submission_values")
+}
+
+model FormSubmissionGroup {
+  id           String                     @id @default(uuid())
+  submissionId String                     @map("submission_id")
+  groupKey     String                     @map("group_key")
+  sortOrder    Int                        @default(0) @map("sort_order")
+  label        String?
+  createdAt    DateTime                   @default(now()) @map("created_at")
+  updatedAt    DateTime                   @updatedAt @map("updated_at")
+  files        FormSubmissionFile[]
+  submission   FormSubmission             @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  values       FormSubmissionGroupValue[]
+
+  @@unique([submissionId, groupKey, sortOrder])
+  @@index([submissionId])
+  @@index([groupKey])
+  @@map("form_submission_groups")
+}
+
+model FormSubmissionGroupValue {
+  id           String              @id @default(uuid())
+  groupId      String              @map("group_id")
+  fieldPath    String              @map("field_path")
+  fieldKey     String              @map("field_key")
+  value        Json
+  displayValue String?             @map("display_value")
+  isSensitive  Boolean             @default(false) @map("is_sensitive")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  group        FormSubmissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, fieldPath])
+  @@index([groupId])
+  @@index([fieldKey])
+  @@map("form_submission_group_values")
+}
+
+model FormSubmissionFile {
+  id           String            @id @default(uuid())
+  submissionId String            @map("submission_id")
+  groupId      String?           @map("group_id")
+  fieldPath    String            @map("field_path")
+  fieldKey     String            @map("field_key")
+  fileId       String?           @map("file_id")
+  originalName String?           @map("original_name")
+  mimeType     String?           @map("mime_type")
+  size         Int?
+  path         String?
+  url          String?
+  checksum     String?
+  status       FormFileStatus    @default(PENDING)
+  metadata     Json?
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  fileAsset    File?             @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  group        FormSubmissionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  submission   FormSubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([groupId])
+  @@index([fileId])
+  @@index([fieldPath])
+  @@index([status])
+  @@map("form_submission_files")
+}
+
+model FormSubmissionDispatchLog {
+  id                  String                  @id @default(uuid())
+  submissionId        String                  @map("submission_id")
+  integrationConfigId String?                 @map("integration_config_id")
+  provider            FormIntegrationProvider
+  dispatchMode        FormDispatchMode        @map("dispatch_mode")
+  status              FormDispatchStatus
+  attempt             Int                     @default(1)
+  requestPayload      Json?                   @map("request_payload")
+  responsePayload     Json?                   @map("response_payload")
+  errorMessage        String?                 @map("error_message")
+  dispatchedAt        DateTime?               @map("dispatched_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  integrationConfig   FormIntegrationConfig?  @relation(fields: [integrationConfigId], references: [id], onDelete: SetNull)
+  submission          FormSubmission          @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([integrationConfigId])
+  @@index([provider])
+  @@index([status])
+  @@map("form_submission_dispatch_logs")
 }
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
@@ -634,6 +971,7 @@ model news {
   news_highlights                 news_highlights?
   news_tag_relations              news_tag_relations[]
   news_views                      news_views[]
+  event_news_relations            event_news_relations[]
 
   @@index([category_id])
   @@index([created_at])
@@ -716,6 +1054,96 @@ model news_views {
 
   @@index([ip_address])
   @@index([news_id])
+}
+
+model events {
+  id                        String                              @id
+  title                     String
+  hero_title                String?
+  slug                      String                              @unique
+  excerpt                   String?
+  content                   String
+  cover_image               String?
+  location                  String?
+  venue                     String?
+  address                   String?
+  map_embed_url             String?
+  organizer_label           String?
+  organizer_name            String?
+  organizer_logo            String?
+  ticket_price              String?
+  register_link             String?
+  registration_end_at       DateTime?
+  max_register_participants Int                                 @default(5)
+  start_date                DateTime
+  end_date                  DateTime?
+  status                    ContentStatus                       @default(DRAFT)
+  created_at                DateTime                            @default(now())
+  updated_at                DateTime
+  event_news_relations      event_news_relations[]
+  event_registrations       event_registrations[]
+
+  @@index([created_at])
+  @@index([registration_end_at])
+  @@index([slug])
+  @@index([start_date])
+  @@index([status])
+}
+
+model event_news_relations {
+  id         String   @id
+  event_id   String
+  news_id    String
+  position   Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime
+  events     events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  news       news     @relation(fields: [news_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, news_id])
+  @@index([event_id])
+  @@index([news_id])
+  @@index([position])
+}
+
+model event_registrations {
+  id                              String                                @id
+  event_id                        String
+  company_name                    String
+  company_email                   String
+  company_phone                   String?
+  company_address                 String?
+  pic_name                        String
+  pic_email                       String
+  pic_phone                       String?
+  notes                           String?
+  participant_count               Int
+  status                          String                                @default("NEW")
+  created_at                      DateTime                              @default(now())
+  updated_at                      DateTime
+  events                          events                                @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_registration_participants event_registration_participants[]
+
+  @@index([company_email])
+  @@index([created_at])
+  @@index([event_id])
+  @@index([pic_email])
+  @@index([status])
+}
+
+model event_registration_participants {
+  id              String              @id
+  registration_id String
+  name            String
+  email           String
+  phone           String?
+  job_title       String?
+  created_at      DateTime            @default(now())
+  updated_at      DateTime
+  registration    event_registrations @relation(fields: [registration_id], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([registration_id])
 }
 
 model reports {
@@ -925,6 +1353,102 @@ enum InquiryType {
 enum ContactStatus {
   NEW
   READ
+}
+
+enum BusinessUnit {
+  ENTERPRISE
+  FIBER
+  MEDIA
+}
+
+enum FormCategory {
+  REGISTRATION
+  INQUIRY
+  PARTNERSHIP
+  RECOMMENDATION
+  EVENT
+}
+
+enum FormHandlingMode {
+  SUBMISSION
+  ROUTING_ONLY
+}
+
+enum FormModuleStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum FormFieldType {
+  TEXT
+  EMAIL
+  PHONE
+  NUMBER
+  TEXTAREA
+  SELECT
+  MULTI_SELECT
+  CHECKBOX
+  CHECKBOX_GROUP
+  RADIO
+  DATE
+  FILE
+  FILE_GROUP
+  ADDRESS_LOOKUP
+  REPEATER
+  HIDDEN
+}
+
+enum FormRuleType {
+  SHOW
+  HIDE
+  REQUIRE
+  CLEAR
+  DISABLE
+  SYNC
+  DERIVE
+  LIMIT
+}
+
+enum FormResponseType {
+  SUCCESS
+  INCOMPLETE
+  REDIRECT
+}
+
+enum FormIntegrationProvider {
+  INTERNAL
+  CRM_WEB_TO_LEAD
+  CUSTOM
+  NOOP
+}
+
+enum FormDispatchMode {
+  SYNC
+  ASYNC
+}
+
+enum FormSubmissionStatus {
+  RECEIVED
+  VALIDATED
+  STORED
+  DISPATCHED
+  PARTIAL_FAILED
+  FAILED
+}
+
+enum FormFileStatus {
+  PENDING
+  UPLOADED
+  LINKED
+  FAILED
+}
+
+enum FormDispatchStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  SKIPPED
 }
 
 // ============================================

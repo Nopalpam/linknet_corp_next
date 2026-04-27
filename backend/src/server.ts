@@ -1,18 +1,16 @@
+import 'dotenv/config';
 import express, { Application, Request, Response } from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 
-// Load environment variables
-dotenv.config();
-
 // Import validators and services
 import { validateEnvironmentAtStartup } from '@middleware/environmentValidator';
 import { initializeTokenCleanupJobs } from '@services/tokenCleanup.service';
 import { closeActivityLogQueue } from '@services/activityLogger.service';
+import { initializeFormSubmissionDispatchJobs } from './modules/form-modules/formSubmissionDispatch.service';
 import healthRoutes from '@routes/health.routes';
 
 // Import centralized middleware
@@ -232,13 +230,25 @@ app.use(`${API_PREFIX}`, publicRoutes);
 import contactRoutes from '@routes/contact.routes';
 app.use(`${API_PREFIX}/contact-us`, contactRoutes);
 
+// Dynamic form module routes (Public)
+import formModuleRoutes from './modules/form-modules/formModule.routes';
+app.use(`${API_PREFIX}`, formModuleRoutes);
+
 // CMS Contact submissions management
 import cmsContactRoutes from '@routes/cms/contactus.routes';
 app.use(`${API_PREFIX}/cms/contactus`, cmsContactRoutes);
 
+// CMS dynamic form module management
+import formModuleCmsRoutes from './modules/form-modules/formModuleCms.routes';
+app.use(`${API_PREFIX}/cms/form-modules`, formModuleCmsRoutes);
+
 // News routes (Public + CMS)
 import newsRoutes from '@routes/news.routes';
 app.use(`${API_PREFIX}`, newsRoutes);
+
+// Event routes (Public + CMS)
+import eventRoutes from '@routes/event.routes';
+app.use(`${API_PREFIX}`, eventRoutes);
 
 // Career routes (Public + CMS)
 import careerRoutes from '@routes/career.routes';
@@ -280,6 +290,7 @@ app.listen(PORT, () => {
 
   // Initialize token cleanup cron jobs
   initializeTokenCleanupJobs();
+  initializeFormSubmissionDispatchJobs();
 
   console.log(`
     ╔══════════════════════════════════════╗

@@ -53,6 +53,12 @@ async function main() {
     { name: 'Update News', slug: 'news.update', module: 'news', description: 'Update existing news article' },
     { name: 'Delete News', slug: 'news.delete', module: 'news', description: 'Delete news article' },
     { name: 'Publish News', slug: 'news.publish', module: 'news', description: 'Publish/unpublish news article' },
+
+    // Events Management
+    { name: 'View Events', slug: 'events.read', module: 'events', description: 'View event list and details' },
+    { name: 'Create Event', slug: 'events.create', module: 'events', description: 'Create new event' },
+    { name: 'Update Event', slug: 'events.update', module: 'events', description: 'Update existing event' },
+    { name: 'Delete Event', slug: 'events.delete', module: 'events', description: 'Delete event' },
     
     // News Categories
     { name: 'View News Categories', slug: 'news_categories.read', module: 'news', description: 'View news category list' },

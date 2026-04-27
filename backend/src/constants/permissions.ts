@@ -43,6 +43,12 @@ export const Permission = {
   NEWS_DELETE: 'news.delete',
   NEWS_PUBLISH: 'news.publish',
 
+  // Events
+  EVENTS_READ: 'events.read',
+  EVENTS_CREATE: 'events.create',
+  EVENTS_UPDATE: 'events.update',
+  EVENTS_DELETE: 'events.delete',
+
   // News Categories
   NEWS_CATEGORIES_READ: 'news_categories.read',
   NEWS_CATEGORIES_CREATE: 'news_categories.create',
@@ -102,6 +108,16 @@ export const Permission = {
   CONTACT_SUBMISSIONS_REPLY: 'contact_submissions.reply',
   CONTACT_SUBMISSIONS_DELETE: 'contact_submissions.delete',
 
+  // Form Modules
+  FORM_MODULES_READ: 'form_modules.read',
+  FORM_MODULES_CREATE: 'form_modules.create',
+  FORM_MODULES_UPDATE: 'form_modules.update',
+  FORM_MODULES_DELETE: 'form_modules.delete',
+
+  // Form Submissions
+  FORM_SUBMISSIONS_READ: 'form_submissions.read',
+  FORM_SUBMISSIONS_DELETE: 'form_submissions.delete',
+
   // Files
   FILES_READ: 'files.read',
   FILES_CREATE: 'files.create',
@@ -155,6 +171,8 @@ export const PermissionModule = {
   AWARDS: 'awards',
   MANAGEMENT: 'management',
   CONTACT_SUBMISSIONS: 'contact_submissions',
+  FORM_MODULES: 'form_modules',
+  FORM_SUBMISSIONS: 'form_submissions',
   FILES: 'files',
   LOG_ACTIVITY: 'log_activity',
   URL_REDIRECTION: 'url_redirection',
@@ -252,6 +270,16 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.CONTACT_SUBMISSIONS_READ,
     Permission.CONTACT_SUBMISSIONS_REPLY,
     Permission.CONTACT_SUBMISSIONS_DELETE,
+  ],
+  form_modules: [
+    Permission.FORM_MODULES_READ,
+    Permission.FORM_MODULES_CREATE,
+    Permission.FORM_MODULES_UPDATE,
+    Permission.FORM_MODULES_DELETE,
+  ],
+  form_submissions: [
+    Permission.FORM_SUBMISSIONS_READ,
+    Permission.FORM_SUBMISSIONS_DELETE,
   ],
   files: [
     Permission.FILES_READ,

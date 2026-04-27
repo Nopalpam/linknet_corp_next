@@ -97,6 +97,11 @@ const menuSections: MenuSection[] = [
         ],
       },
       {
+        icon: <CalenderIcon />,
+        name: "Events",
+        path: "/events",
+      },
+      {
         icon: <BoxCubeIcon />,
         name: "Career",
         path: "/careers",
