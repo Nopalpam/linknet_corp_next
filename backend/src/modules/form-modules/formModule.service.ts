@@ -181,6 +181,22 @@ export class FormModuleService {
     return module;
   }
 
+  async verifyPublicFormModuleExists(businessUnit: BusinessUnit, slug: string) {
+    const exists = await this.prisma.formModule.findFirst({
+      where: {
+        businessUnit,
+        slug,
+        status: FormModuleStatus.ACTIVE,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (!exists) {
+      throw new NotFoundError('Active form module not found');
+    }
+  }
+
   async createFormModule(input: CreateFormModuleInput) {
     return this.prisma.$transaction(async (tx) => {
       const created = await tx.formModule.create({

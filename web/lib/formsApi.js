@@ -1,0 +1,103 @@
+/**
+ * Forms API Service — client-side utilities
+ *
+ * Handles fetching form definitions and submitting form data
+ * via the public forms API endpoints.
+ *
+ * Endpoints:
+ *   GET  /api/v1/forms/:businessUnit/:slug
+ *   POST /api/v1/forms/:businessUnit/:slug/submissions
+ */
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+/**
+ * Fetch a public form module definition by businessUnit + slug.
+ * Returns the module with its steps, fields (with options), rules, and
+ * responseConfigs.
+ *
+ * @param {string} businessUnit  - 'enterprise' | 'fiber' | 'media'
+ * @param {string} slug          - e.g. 'enterprise-consultation'
+ * @param {AbortSignal} [signal] - Optional abort signal for cleanup
+ * @returns {Promise<object>}    - The form module data object
+ */
+export async function fetchFormModule(businessUnit, slug, signal) {
+  const res = await fetch(
+    `${API_BASE_URL}/forms/${encodeURIComponent(businessUnit)}/${encodeURIComponent(slug)}`,
+    {
+      cache: 'no-store',
+      signal,
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Failed to fetch form module: ${res.status}`);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+/**
+ * Submit a form module response.
+ *
+ * @param {string} businessUnit  - 'enterprise' | 'fiber' | 'media'
+ * @param {string} slug          - e.g. 'enterprise-consultation'
+ * @param {{
+ *   locale?: string;
+ *   requestId?: string;
+ *   sessionId?: string;
+ *   sourcePath?: string;
+ *   values: Record<string, unknown>;
+ *   groups?: Array<{ groupKey: string; sortOrder?: number; label?: string; values: Record<string, unknown> }>;
+ *   files?: Array<{ fieldPath: string; fileId?: string; url?: string; originalName?: string; mimeType?: string; size?: number }>;
+ *   responseContext?: unknown;
+ * }} payload
+ * @returns {Promise<{ submission: object|null; response: object|null; persisted: boolean }>}
+ */
+export async function submitFormModule(businessUnit, slug, payload) {
+  const res = await fetch(
+    `${API_BASE_URL}/forms/${encodeURIComponent(businessUnit)}/${encodeURIComponent(slug)}/submissions`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Form submission failed: ${res.status}`);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+/**
+ * Build a redirect URL from a form response config resolved by the backend.
+ *
+ * @param {{ path: string; query?: Record<string, unknown> | null }} response
+ * @returns {string}
+ */
+export function buildRedirectUrl(response) {
+  if (!response?.path) return null;
+
+  const { path, query } = response;
+
+  if (
+    query &&
+    typeof query === 'object' &&
+    !Array.isArray(query) &&
+    Object.keys(query).length > 0
+  ) {
+    const qs = new URLSearchParams(
+      Object.entries(query).map(([k, v]) => [k, v == null ? '' : String(v)]),
+    );
+    return `${path}?${qs.toString()}`;
+  }
+
+  return path;
+}
