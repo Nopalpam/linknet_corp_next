@@ -207,8 +207,10 @@ export const updateRole = async (req: Request, res: Response) => {
     throw new AppError('Role not found', 404, 'NOT_FOUND');
   }
 
-  // Block if system role
-  if (role.isSystem) {
+  // Block if system role — unless the requesting user is a super-admin
+  const userRoles: string[] = (req as any).user?.roles || [];
+  const isSuperAdmin = userRoles.includes('super-admin');
+  if (role.isSystem && !isSuperAdmin) {
     throw new AppError('System roles cannot be edited', 403, 'FORBIDDEN');
   }
 

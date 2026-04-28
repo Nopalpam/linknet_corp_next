@@ -1,6 +1,5 @@
 @use 'tokens'
 @use 'fonts'
-@use 'typography'
 @use 'buttons'
 @use 'icons'
 @use 'animation'
@@ -18,12 +17,7 @@ html, body
     scroll-behavior: smooth
     overflow-x: hidden
 
-.container-lg
-    max-width: 1400px
-    margin-left: auto
-    margin-right: auto
-    padding-left: 16px
-    padding-right: 16px
+
 
 // 1. Variables (Apple Dark Mode Settings)
 $dark-glass-bg: rgba(255, 255, 255, 0.02) // Dark, slightly transparent
@@ -55,7 +49,7 @@ $saturation: 180% // Boosts colors behind the glass
     &__light
         background: var(--bg-light)
     &__lightGradient
-        background: linear-gradient(to bottom, transparent 0%, #F5F5F7 100%)
+        background: linear-gradient(to bottom, #ffffff, #FBFBFD 100%)
     &__glass
         // background-color: rgba(255, 255, 255, 0.1)
         // backdrop-filter: blur(10px)
@@ -108,17 +102,31 @@ $highlight: rgba(255, 255, 255, 0.6)
    ======================================================= */
 
 .container
-  width: 100%
-  margin-right: auto
-  margin-left: auto
-  padding-right: var(--space-20)
-  padding-left: var(--space-20)
-  max-width: 1240px // Standar desktop, bisa disesuaikan (misal: 1440px)
+    width: 100%
+    margin-right: auto
+    margin-left: auto
+    padding-right: var(--space-20)
+    padding-left: var(--space-20)
+    max-width: 1240px // Standar desktop, bisa disesuaikan (misal: 1440px)
 
-  // Responsive padding jika diperlukan (Mobile)
-  @media (max-width: 575.98px)
-    padding-right: var(--space-24)
-    padding-left: var(--space-24)
+    // Responsive padding jika diperlukan (Mobile)
+    @media (max-width: 575.98px)
+        padding-right: var(--space-24)
+        padding-left: var(--space-24)
+    
+.container-sm
+    max-width: 1050px
+    margin-left: auto
+    margin-right: auto
+    padding-left: 16px
+    padding-right: 16px
+
+.container-lg
+    max-width: 1400px
+    margin-left: auto
+    margin-right: auto
+    padding-left: 16px
+    padding-right: 16px
 
 /* Optional: Fluid container untuk lebar penuh tapi tetap ada padding */
 .container-fluid
@@ -140,9 +148,39 @@ $highlight: rgba(255, 255, 255, 0.6)
         background: var(--bg-warning) 
         border-radius: 10px 
 
+.lnMapsCoverageV1__scrollbar
+    scrollbar-width: none
+    -ms-overflow-style: none
+
+    &::-webkit-scrollbar
+        width: 0
+        height: 0
+        display: none
+
+    &::-webkit-scrollbar-track
+        background: transparent
+
+    &::-webkit-scrollbar-thumb
+        background: transparent
+        border-radius: 0
+
 .lnValues__swiper 
     .swiper-pagination-bullet-active 
         background: #FBBF24
         opacity: 1
     .swiper-pagination
         bottom: 0 !important
+@media only screen and (min-width: 992px)
+    .lnStepperNav__swiper 
+        .swiper-wrapper
+            justify-content: center
+    .lnModalFormPartnershipEnterprise, .lnModalFormSwiperLeft
+        .lnStepperNav__swiper
+            .swiper-wrapper
+                justify-content: flex-start
+
+@keyframes progress-loading
+    from
+        width: 0%
+    to
+        width: 100%

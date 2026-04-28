@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import SubmissionDetailModal from "@/components/common/SubmissionDetailModal";
 import { useToast } from "@/context/ToastContext";
+import { getFormSubmissionStatusMeta } from "@/lib/formSubmissionStatus";
 import {
   BusinessUnit,
   FormModule,
@@ -12,14 +13,6 @@ import {
 } from "@/services/formModule.service";
 
 const BU_OPTIONS: BusinessUnit[] = ["ENTERPRISE", "FIBER", "MEDIA"];
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400",
-  PROCESSING: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-  COMPLETED: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
-  FAILED: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
-  REJECTED: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-};
 
 const BU_STYLES: Record<string, string> = {
   ENTERPRISE: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
@@ -243,54 +236,57 @@ export default function FormSubmissionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {submissions.map((sub) => (
-                  <tr
-                    key={sub.id}
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/40"
-                    onClick={() =>
-                      setOpenModal({ formModuleId: sub.formModuleId, submissionId: sub.id })
-                    }
-                  >
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                      {sub.primaryName ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {sub.primaryEmail ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          BU_STYLES[sub.businessUnit] ?? ""
-                        }`}
-                      >
-                        {sub.businessUnit}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          STATUS_STYLES[sub.status] ?? ""
-                        }`}
-                      >
-                        {sub.status.charAt(0) + sub.status.slice(1).toLowerCase()}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(sub.receivedAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenModal({ formModuleId: sub.formModuleId, submissionId: sub.id });
-                        }}
-                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-                      >
-                        View →
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {submissions.map((sub) => {
+                  const statusMeta = getFormSubmissionStatusMeta(sub.status);
+
+                  return (
+                    <tr
+                      key={sub.id}
+                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                      onClick={() =>
+                        setOpenModal({ formModuleId: sub.formModuleId, submissionId: sub.id })
+                      }
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                        {sub.primaryName ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        {sub.primaryEmail ?? "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            BU_STYLES[sub.businessUnit] ?? ""
+                          }`}
+                        >
+                          {sub.businessUnit}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          title={statusMeta.description}
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusMeta.className}`}
+                        >
+                          {statusMeta.label}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        {formatDate(sub.receivedAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenModal({ formModuleId: sub.formModuleId, submissionId: sub.id });
+                          }}
+                          className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          View →
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </>

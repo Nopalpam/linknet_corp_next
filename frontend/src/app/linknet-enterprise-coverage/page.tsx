@@ -29,7 +29,7 @@ export default async function LinknetEnterpriseCoveragePage() {
               </svg>
             </Link>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              Enterprise Coverage
+              Fiber Coverage
             </h1>
           </div>
         </div>

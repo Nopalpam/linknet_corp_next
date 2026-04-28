@@ -160,7 +160,14 @@ export class FormModuleService {
       throw new NotFoundError('Form module not found');
     }
 
-    return module;
+    // Map formStepId → formStepKey so the CMS UI can group fields by step key
+    const stepKeyById = new Map(module.steps.map((s) => [s.id, s.key]));
+    const fields = module.fields.map((field) => ({
+      ...field,
+      formStepKey: field.formStepId ? (stepKeyById.get(field.formStepId) ?? null) : null,
+    }));
+
+    return { ...module, fields };
   }
 
   async getPublicFormModule(businessUnit: BusinessUnit, slug: string) {

@@ -961,8 +961,8 @@ function buildSuggestEnterprise(): CreateFormModuleInput {
     defaultLocale: 'id',
     publicPath: publicPath(businessUnit, slug),
     sourceWebsite: 'Enterprise Website',
-    promoWebsite: null,
-    leadSource: null,
+    promoWebsite: '',
+    leadSource: '',
     integrationProvider: FormIntegrationProvider.NOOP,
     submissionSettings: baseSubmissionSettings(slug, {
       persistSubmission: false,

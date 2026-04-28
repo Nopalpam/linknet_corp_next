@@ -124,7 +124,13 @@ export class BaseCrudService<T> {
         statusText: response.statusText,
         error: error
       });
-      throw new Error(error.message || error.error || `HTTP error! status: ${response.status}`);
+      // Handle nested backend error format: { error: { code, message } }
+      const message =
+        error.message ||
+        (error.error && typeof error.error === 'object' ? error.error.message : undefined) ||
+        (typeof error.error === 'string' ? error.error : undefined) ||
+        `HTTP error! status: ${response.status}`;
+      throw new Error(message);
     }
 
     return response.json();

@@ -2,6 +2,10 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  canRetryFormSubmission,
+  getFormSubmissionStatusMeta,
+} from "@/lib/formSubmissionStatus";
+import {
   FormDispatchLog,
   FormSubmission,
   formModuleService,
@@ -18,14 +22,6 @@ const DISPATCH_STATUS_STYLES: Record<string, string> = {
   SUCCESS: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
   FAILED: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
   SKIPPED: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
-};
-
-const SUB_STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-  PROCESSING: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-  FAILED: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-  REJECTED: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
 function formatDate(v?: string | null) {
@@ -99,6 +95,8 @@ export default function SubmissionDetailModal({
     if (e.target === overlayRef.current) onClose();
   };
 
+  const statusMeta = submission ? getFormSubmissionStatusMeta(submission.status) : null;
+
   return (
     <div
       ref={overlayRef}
@@ -112,8 +110,7 @@ export default function SubmissionDetailModal({
             Submission Detail
           </h2>
           <div className="flex items-center gap-2">
-            {submission &&
-              (submission.status === "FAILED" || submission.status === "PENDING") && (
+            {submission && canRetryFormSubmission(submission.status) && (
                 <button
                   disabled={retrying}
                   onClick={handleRetry}
@@ -153,13 +150,19 @@ export default function SubmissionDetailModal({
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
-                <span
-                  className={`mt-0.5 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    SUB_STATUS_STYLES[submission.status] ?? ""
-                  }`}
-                >
-                  {submission.status.charAt(0) + submission.status.slice(1).toLowerCase()}
-                </span>
+                {statusMeta && (
+                  <>
+                    <span
+                      title={statusMeta.description}
+                      className={`mt-0.5 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusMeta.className}`}
+                    >
+                      {statusMeta.label}
+                    </span>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {statusMeta.description}
+                    </p>
+                  </>
+                )}
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">BU</p>

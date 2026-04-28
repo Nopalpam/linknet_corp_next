@@ -14,7 +14,13 @@ export type BusinessUnit = 'ENTERPRISE' | 'FIBER' | 'MEDIA';
 export type FormCategory = 'REGISTRATION' | 'INQUIRY' | 'PARTNERSHIP' | 'RECOMMENDATION' | 'EVENT';
 export type FormHandlingMode = 'SUBMISSION' | 'ROUTING_ONLY';
 export type FormModuleStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-export type FormSubmissionStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REJECTED';
+export type FormSubmissionStatus =
+  | 'RECEIVED'
+  | 'VALIDATED'
+  | 'STORED'
+  | 'DISPATCHED'
+  | 'PARTIAL_FAILED'
+  | 'FAILED';
 export type FormFieldType =
   | 'TEXT' | 'EMAIL' | 'PHONE' | 'NUMBER' | 'TEXTAREA'
   | 'SELECT' | 'MULTI_SELECT' | 'CHECKBOX' | 'CHECKBOX_GROUP'

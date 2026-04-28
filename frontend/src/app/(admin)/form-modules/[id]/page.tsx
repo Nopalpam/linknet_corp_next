@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { useToast } from "@/context/ToastContext";
@@ -20,9 +20,9 @@ type Tab = "overview" | "steps" | "rules" | "response" | "submissions";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "steps", label: "Steps & Fields" },
-  { id: "rules", label: "Rules" },
-  { id: "response", label: "Response Config" },
+  // { id: "steps", label: "Steps & Fields" },
+  // { id: "rules", label: "Rules" },
+  // { id: "response", label: "Response Config" },
   { id: "submissions", label: "Submissions" },
 ];
 
@@ -41,11 +41,15 @@ const STATUS_STYLES: Record<FormModuleStatus, string> = {
 export default function FormModuleDetailPage() {
   const params = useParams();
   const id = params?.id as string;
+  const searchParams = useSearchParams();
   const toast = useToast();
 
   const [module, setModule] = useState<FormModuleDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const initialTab = (searchParams?.get("tab") as Tab) || "overview";
+  const [activeTab, setActiveTab] = useState<Tab>(
+    TABS.some((t) => t.id === initialTab) ? initialTab : "overview"
+  );
   const [toggling, setToggling] = useState(false);
 
   const fetchModule = useCallback(async () => {
@@ -133,12 +137,12 @@ export default function FormModuleDetailPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/form-modules"
+            href={`/form-modules/${module.businessUnit.toLowerCase()}`}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             ← Back
           </Link>
-          {nextStatus && (
+          {/* {nextStatus && (
             <button
               disabled={toggling}
               onClick={handleToggleStatus}
@@ -148,7 +152,7 @@ export default function FormModuleDetailPage() {
                 ? "Saving…"
                 : `Move to ${nextStatus.charAt(0) + nextStatus.slice(1).toLowerCase()}`}
             </button>
-          )}
+          )} */}
         </div>
       </div>
 

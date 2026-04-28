@@ -1,5 +1,169 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: var(--bg-primary, #EAB308);
+@utility text-headline-h1 {
+  font-size: 44px;
+  line-height: 54px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-tight);
+  --icon-size: 44px;
+
+  @media (max-width: 575.98px) {
+    font-size: 32px;
+    line-height: 36px;
+    --icon-size: 32px;
+  }
+}
+
+@utility text-headline-h2 {
+  font-size: 36px;
+  line-height: 46px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-tight);
+  --icon-size: 36px;
+
+  @media (max-width: 575.98px) {
+    font-size: 28px;
+    line-height: 36px;
+    --icon-size: 28px;
+  }
+}
+
+@utility text-headline-h3 {
+  font-size: 32px;
+  line-height: 42px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
+  --icon-size: 32px;
+
+  @media (max-width: 575.98px) {
+    font-size: 24px;
+    line-height: 32px;
+    --icon-size: 24px;
+  }
+}
+
+@utility text-headline-h4 {
+  font-size: 24px;
+  line-height: 34px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
+  --icon-size: 24px;
+
+  @media (max-width: 575.98px) {
+    font-size: 20px;
+    line-height: 28px;
+    --icon-size: 20px;
+  }
+}
+
+@utility text-headline-h5 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
+  --icon-size: 20px;
+
+  @media (max-width: 575.98px) {
+    font-size: 18px;
+    line-height: 24px;
+    --icon-size: 18px;
+  }
+}
+
+@utility text-headline-h6 {
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
+  --icon-size: 16px;
+
+  @media (max-width: 575.98px) {
+    font-size: 14px;
+    line-height: 20px;
+    --icon-size: 14px;
+  }
+}
+
+@utility text-body-b1 {
+  font-size: 32px;
+  line-height: 42px;
+  --icon-size: 32px;
+
+  @media (max-width: 575.98px) {
+    font-size: 24px;
+    line-height: 34px;
+    --icon-size: 24px;
+  }
+}
+
+@utility text-body-b2 {
+  font-size: 24px;
+  line-height: 34px;
+  --icon-size: 24px;
+
+  @media (max-width: 575.98px) {
+    font-size: 20px;
+    line-height: 30px;
+    --icon-size: 20px;
+  }
+}
+
+@utility text-body-b3 {
+  font-size: 18px;
+  line-height: 26px;
+  --icon-size: 18px;
+
+  @media (max-width: 575.98px) {
+    font-size: 18px;
+    line-height: 26px;
+    --icon-size: 18px;
+  }
+}
+
+@utility text-body-b4 {
+  font-size: 16px;
+  line-height: 26px;
+  --icon-size: 16px;
+
+  @media (max-width: 575.98px) {
+    font-size: 16px;
+    line-height: 24px;
+    --icon-size: 16px;
+  }
+}
+
+@utility text-body-b5 {
+  font-size: 14px;
+  line-height: 22px;
+  --icon-size: 14px;
+
+  @media (max-width: 575.98px) {
+    font-size: 14px;
+    line-height: 22px;
+    --icon-size: 14px;
+  }
+}
+
+@utility text-caption-c1 {
+  font-size: 12px;
+  line-height: 16px;
+  --icon-size: 12px;
+
+  @media (max-width: 575.98px) {
+    font-size: 12px;
+    line-height: 16px;
+    --icon-size: 12px;
+  }
+}
+
+@utility text-caption-c2 {
+  font-size: 10px;
+  line-height: 14px;
+  --icon-size: 10px;
+
+  @media (max-width: 575.98px) {
+    font-size: 10px;
+    line-height: 14px;
+    --icon-size: 10px;
+  }
 }

@@ -47,7 +47,7 @@ export const metadata = {
   },
 
   icons: {
-    icon: "/assets/logos/favicon-onestream.svg", // Pastikan path ini benar di project
+    icon: "/assets/logos/favicon.png", // Pastikan path ini benar di project
   },
 
   twitter: {

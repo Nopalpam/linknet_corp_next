@@ -153,6 +153,16 @@ export const permissionsData: PermissionDef[] = [
   { name: 'Create URL Redirection', slug: 'url_redirection.create', module: 'url_redirection', description: 'Create URL redirection' },
   { name: 'Update URL Redirection', slug: 'url_redirection.update', module: 'url_redirection', description: 'Update URL redirection' },
   { name: 'Delete URL Redirection', slug: 'url_redirection.delete', module: 'url_redirection', description: 'Delete URL redirection' },
+
+  // ── Form Modules ─────────────────────────────────────────────────
+  { name: 'View Form Modules', slug: 'form_modules.read', module: 'form_modules', description: 'View form modules and submissions' },
+  { name: 'Create Form Module', slug: 'form_modules.create', module: 'form_modules', description: 'Create new form module' },
+  { name: 'Update Form Module', slug: 'form_modules.update', module: 'form_modules', description: 'Update existing form module' },
+  { name: 'Delete Form Module', slug: 'form_modules.delete', module: 'form_modules', description: 'Delete form module' },
+
+  // ── Form Submissions ─────────────────────────────────────────────
+  { name: 'View Form Submissions', slug: 'form_submissions.read', module: 'form_submissions', description: 'View form submissions' },
+  { name: 'Delete Form Submission', slug: 'form_submissions.delete', module: 'form_submissions', description: 'Delete form submission' },
 ];
 
 /**

@@ -127,6 +127,7 @@
   --stroke-warning: var(--color-yellow-500);
   --stroke-info: var(--color-blue-500);
   --stroke-white: var(--color-white);
+  --stroke-black: var(--color-neutral-900);
   /* === Semantic Icon === */
   --icon-default: var(--color-neutral-900);
   --icon-success: var(--color-green-500);
@@ -255,18 +256,6 @@
 }
 
 /* ===== Utilities ===== */
-.font-bold {
-  font-weight: var(--font-weight-bold);
-}
-
-.font-medium {
-  font-weight: var(--font-weight-medium);
-}
-
-.font-regular {
-  font-weight: var(--font-weight-regular);
-}
-
 .text-black {
   color: var(--color-neutral-900);
 }
@@ -305,6 +294,66 @@
 
 .bg-danger {
   background: var(--color-red-500);
+}
+
+.bg-warning {
+  background: var(--color-yellow-500);
+}
+
+.bg-warning-50 {
+  background: var(--color-yellow-50);
+}
+
+.bg-success {
+  background: var(--color-green-500);
+}
+
+.bg-light {
+  background: var(--bg-light);
+}
+
+.bg-light-1 {
+  background: var(--bg-light-1);
+}
+
+.bg-light-2 {
+  background: var(--bg-light-2);
+}
+
+.bg-light-3 {
+  background: #F5F5F7;
+}
+
+.bg-green-marble {
+  background: url(/assets/bg/green-marble.jpg);
+}
+
+.border-primary {
+  border-color: var(--stroke-warning);
+}
+
+.border-secondary, .border-neutral {
+  border-color: var(--stroke-default);
+}
+
+.border-warning {
+  border-color: var(--stroke-warning);
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-xl {
+  box-shadow: 0 0 40px rgba(69, 71, 69, 0.2);
 }
 
 #coverage-section .coverage-container {

@@ -121,6 +121,16 @@ const menuSections: MenuSection[] = [
         name: "File Manager",
         path: "/file-manager",
       },
+      {
+        icon: <ListIcon />,
+        name: "Form Registration",
+        subItems: [
+          // { name: "Enterprise Forms", path: "/form-modules/enterprise" },
+          { name: "Fiber Forms", path: "/form-modules/fiber" },
+          { name: "Media Forms", path: "/form-modules/media" },
+          // { name: "All Submissions", path: "/form-modules/submissions" },
+        ],
+      },
     ],
   },
   {

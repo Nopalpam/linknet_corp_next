@@ -163,6 +163,9 @@ const StockInformation = dynamic(() => import('@/components/main/StockInformatio
 const Testimonials = dynamic(() => import('@/components/main/Testimonials'));
 
 const AnnouncementListCMS = dynamic(() => import('@/components/main/AnnouncementList'));
+const FormRegistrationEnterprise = dynamic(() => import('@/components/main/FormRegistrationEnterprise'));
+const FormRegistrationFiber = dynamic(() => import('@/components/main/FormRegistrationFiber'));
+const FormRegistrationMedia = dynamic(() => import('@/components/main/FormRegistrationMedia'));
 
 // Built-in generic section components (no separate file needed per type)
 import {
@@ -913,6 +916,53 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         hideSymbolLogo: data.hide_symbol_logo || false,
       },
       className: data?.custom_class || '',
+    }),
+  },
+
+  // ── Form Registration (Page Builder components) ──────────────────
+
+  form_registration_enterprise: {
+    component: FormRegistrationEnterprise,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      data: {
+        title: localizeField(data, 'title', t, locale),
+        description: localizeField(data, 'description', t, locale),
+        event_name: data.event_name || '',
+        event_promo: data.event_promo || '',
+        event_page: data.event_page || '',
+        max_participants: data.max_participants || 5,
+      },
+      ...styleProps,
+    }),
+  },
+
+  form_registration_fiber: {
+    component: FormRegistrationFiber,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      data: {
+        title: localizeField(data, 'title', t, locale),
+        description: localizeField(data, 'description', t, locale),
+        event_name: data.event_name || '',
+        event_promo: data.event_promo || '',
+        event_page: data.event_page || '',
+        max_participants: data.max_participants || 5,
+      },
+      ...styleProps,
+    }),
+  },
+
+  form_registration_media: {
+    component: FormRegistrationMedia,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      data: {
+        title: localizeField(data, 'title', t, locale),
+        description: localizeField(data, 'description', t, locale),
+        event_name: data.event_name || '',
+        event_promo: data.event_promo || '',
+        event_page: data.event_page || '',
+        max_participants: data.max_participants || 5,
+      },
+      ...styleProps,
     }),
   },
 };

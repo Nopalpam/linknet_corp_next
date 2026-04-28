@@ -168,7 +168,7 @@ export default function FormModulesTable({
                     >
                       View
                     </Link>
-                    {nextStatus && (
+                    {/* {nextStatus && (
                       <button
                         disabled={togglingId === mod.id}
                         onClick={() => onToggleStatus(mod)}
@@ -178,7 +178,7 @@ export default function FormModulesTable({
                           ? "Saving…"
                           : `→ ${nextStatus.charAt(0) + nextStatus.slice(1).toLowerCase()}`}
                       </button>
-                    )}
+                    )} */}
                   </div>
                 </td>
               </tr>

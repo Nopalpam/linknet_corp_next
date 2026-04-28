@@ -180,6 +180,19 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
     type: 'awards_list', name: 'Awards', description: 'Awards and achievements', icon: 'FaTrophy', category: 'main',
     defaultData: COMPONENT_DEFAULT_TEMPLATES['awards_list'],
   },
+  // FORMS
+  {
+    type: 'form_registration_enterprise', name: 'Enterprise Form Registration', description: 'Form registration section for Enterprise BU', icon: 'FaWpforms', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Enterprise Registration', id: 'Registrasi Enterprise' }, description: { en: 'Choose the form that suits your enterprise needs.', id: 'Pilih form sesuai kebutuhan enterprise Anda.' }, event_name: '', event_promo: '', event_page: '', max_participants: 5 }),
+  },
+  {
+    type: 'form_registration_fiber', name: 'Fiber Form Registration', description: 'Form registration section for Fiber BU', icon: 'FaWpforms', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Fiber Registration', id: 'Registrasi Fiber' }, description: { en: 'Register your Fiber service or submit an inquiry.', id: 'Daftarkan layanan Fiber atau ajukan pertanyaan.' }, event_name: '', event_promo: '', event_page: '', max_participants: 5 }),
+  },
+  {
+    type: 'form_registration_media', name: 'Media Form Registration', description: 'Form registration section for Media BU', icon: 'FaWpforms', category: 'basic',
+    defaultData: withCommon({ title: { en: 'Media Registration', id: 'Registrasi Media' }, description: { en: 'Register your media partnership or campaign.', id: 'Daftarkan kemitraan atau kampanye media Anda.' }, event_name: '', event_promo: '', event_page: '', max_participants: 5 }),
+  },
 ];
 
 // =============================================================================
