@@ -23,6 +23,7 @@ import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
 import { isMultilingual, ComponentSettings } from './types';
 import { CkeditorEditor } from './editors/CkeditorEditor';
+import { ICON_OPTIONS } from './iconOptions';
 
 // =============================================================================
 // TYPE-SPECIFIC EDITOR MAPPING
@@ -36,7 +37,7 @@ const TYPE_SPECIFIC_EDITORS: Record<string, React.ComponentType<{ settings: any;
 // FIELD HELPERS & CLASSIFICATION
 // =============================================================================
 
-const COMMON_FIELD_KEYS = ['custom_id', 'custom_class', 'bg_type', 'bg_color', 'bg_image', 'bg_position'];
+const COMMON_FIELD_KEYS = ['config', 'custom_id', 'custom_class', 'bg_type', 'bg_color', 'bg_image', 'bg_position'];
 
 /** Keys that belong to the CONTENT group */
 const CONTENT_KEYS = ['title', 'subtitle', 'heading', 'subheading', 'description', 'content', 'text', 'label', 'name', 'caption', 'alt', 'excerpt', 'summary', 'body', 'quote', 'author', 'source', 'placeholder', 'badge', 'tag', 'category'];
@@ -87,6 +88,8 @@ const FIELD_PLACEHOLDERS: Record<string, string> = {
   button_url: 'https://example.com',
 };
 
+const ICON_FIELD_KEYS = ['icon', 'iconClass', 'iconName', 'iconListDefault'];
+
 function humanize(key: string): string {
   return key
     .replace(/_/g, ' ')
@@ -106,6 +109,7 @@ function isWideField(key: string, value: any): boolean {
   if (isMultilingual(value)) return true;
   if (Array.isArray(value)) return true;
   if (typeof value === 'object' && value !== null) return true;
+  if (['label', 'title', 'description', 'labelClassName', 'titleClassName', 'descriptionClassName', 'className'].includes(key)) return true;
   if (isHtmlField(key, value)) return true;
   if (typeof value === 'string' && value.length > 100) return true;
   return false;
@@ -113,6 +117,7 @@ function isWideField(key: string, value: any): boolean {
 
 /** Classify a field key into a group */
 function classifyField(key: string): 'content' | 'layout' | 'button' | 'items' | 'advanced' {
+  if (key === 'sectionIntro') return 'content';
   if (COMMON_FIELD_KEYS.includes(key)) return 'advanced';
   if (BUTTON_KEYS.some(bk => key.startsWith(bk) || key === bk)) return 'button';
   if (LAYOUT_KEYS.some(lk => key === lk || key.startsWith(lk))) return 'layout';
@@ -134,6 +139,11 @@ function getPlaceholder(key: string): string {
     if (key.endsWith(pk)) return pv;
   }
   return '';
+}
+
+function isIconField(key: string): boolean {
+  const normalized = key.toLowerCase();
+  return ICON_FIELD_KEYS.some((iconKey) => normalized === iconKey.toLowerCase());
 }
 
 // =============================================================================
@@ -341,6 +351,17 @@ function getItemPreview(item: any): string {
   return '';
 }
 
+function getEmptyArrayItemTemplate(fieldKey: string): any {
+  if (fieldKey === 'list') {
+    return {
+      icon: '',
+      text: { en: '', id: '' },
+    };
+  }
+
+  return {};
+}
+
 function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps) {
   const items = Array.isArray(value) ? value : [];
   const [collapsed, setCollapsed] = useState(items.length > 3);
@@ -374,7 +395,7 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
 
   const addItem = () => {
     if (items.length === 0) {
-      onChange([{}]);
+      onChange([getEmptyArrayItemTemplate(fieldKey)]);
       setMinimizedItems({ 0: false });
       return;
     }
@@ -710,6 +731,12 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
   if (key === 'text_position' || key === 'alignment') {
     return { element: <SelectField key={key} {...fieldProps} options={['left', 'center', 'right']} />, wide: false };
   }
+  if (key === 'align') {
+    return { element: <SelectField key={key} {...fieldProps} options={['left', 'center', 'right']} />, wide: false };
+  }
+  if (key === 'as') {
+    return { element: <SelectField key={key} {...fieldProps} options={['h1', 'h2', 'h3', 'h4', 'h5', 'h6']} />, wide: false };
+  }
   if (key === 'layout') {
     return { element: <SelectField key={key} {...fieldProps} options={['grid', 'list', 'carousel']} />, wide: false };
   }
@@ -721,6 +748,9 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
   }
   if (key === 'order') {
     return { element: <SelectField key={key} {...fieldProps} options={['latest', 'oldest', 'alphabetical']} />, wide: false };
+  }
+  if (isIconField(key)) {
+    return { element: <SelectField key={key} {...fieldProps} options={[...ICON_OPTIONS]} />, wide: false };
   }
 
   // Multilingual (always wide)
@@ -820,7 +850,15 @@ function clearValues(obj: any): void {
     if (typeof val === 'string') obj[key] = '';
     else if (typeof val === 'number') obj[key] = 0;
     else if (typeof val === 'boolean') obj[key] = false;
-    else if (Array.isArray(val)) obj[key] = [];
+    else if (Array.isArray(val)) {
+      if (val.length > 0) {
+        const template = JSON.parse(JSON.stringify(val[0]));
+        clearValues(template);
+        obj[key] = [template];
+      } else {
+        obj[key] = [];
+      }
+    }
     else if (typeof val === 'object' && val !== null) {
       clearValues(val);
     }

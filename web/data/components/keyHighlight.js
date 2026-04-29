@@ -1,5 +1,13 @@
 export const KEY_HIGHLIGHT_IMAGE_DATA = {
   "impact": {
+    config: {
+      sectionId: "impact",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "KEY HIGHLIGHT",

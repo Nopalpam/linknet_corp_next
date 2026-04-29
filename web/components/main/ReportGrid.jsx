@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'; // Import Next.js hooks
-import Intro from '../base/section/Intro'; 
-import CardReport from '../base/cards/CardReport'; 
-import { REPORT_GRID_DATA } from '@/data/components/reportGrid'; 
+import Intro from '../base/section/Intro';
+import CardReport from '../base/cards/CardReport';
+import { REPORT_GRID_DATA } from '@/data/components/reportGrid';
 
-export default function ReportGrid({ 
-  name = 'sustainability-reports', 
-  className = "" 
+export default function ReportGrid({
+  name = 'sustainability-reports',
+  className = ""
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -19,32 +19,31 @@ export default function ReportGrid({
   const parsedPage = parseInt(pageParam, 10);
   // Jika URL tidak valid (misal huruf) atau kosong, set default ke 1
   const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  
+
   const ITEMS_PER_PAGE = 9;
 
   const sectionData = REPORT_GRID_DATA[name];
 
   if (!sectionData) return null;
 
-  const { config = {}, id, introData, items } = sectionData;
+  const { config, introData, items } = sectionData;
   const {
-    sectionId = id || 'report-grid-section',
-    className: configClassName = '',
-    bgImage = '',
-    bgImageMobile = '',
-    bgPositionClasses = 'bg-center md:bg-center',
-    bgSizeClass = 'bg-cover',
-  } = config;
-
+    sectionId = 'report-grid-section',
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
   // 2. Kalkulasi Data Pagination
   const totalItems = items ? items.length : 0;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1; // Pastikan minimal 1 page
-  
+
   // Memotong array items untuk mendapatkan data halaman saat ini
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentItems = items ? items.slice(startIndex, startIndex + ITEMS_PER_PAGE) : [];
@@ -55,7 +54,7 @@ export default function ReportGrid({
       // Buat URL parameter baru
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', page.toString());
-      
+
       // Update URL tanpa reload halaman (scroll: false agar kita bisa pakai scroll custom)
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
 
@@ -89,17 +88,20 @@ export default function ReportGrid({
   return (
     <section
       id={sectionId}
-      className={`lnSection__reportGrid py-16 md:py-24 bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      className={`lnSection__reportGrid py-16 md:py-24
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
       style={sectionStyle}
     >
       <div className="container">
-        
+
         {/* ========================================= */}
         {/* HEADER SECTION */}
         {/* ========================================= */}
         {introData && (
           <div className="mb-12 md:mb-16">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -115,7 +117,7 @@ export default function ReportGrid({
         {currentItems && currentItems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10 md:mb-14">
             {currentItems.map((item, index) => (
-              <CardReport 
+              <CardReport
                 key={item.id || index}
                 variant="cover"
                 image={item.image}
@@ -123,7 +125,7 @@ export default function ReportGrid({
                 title={item.title}
                 fileSize={item.fileSize}
                 downloadUrl={item.downloadUrl}
-                className="animate-in fade-in duration-500" 
+                className="animate-in fade-in duration-500"
               />
             ))}
           </div>
@@ -136,9 +138,9 @@ export default function ReportGrid({
         {/* ========================================= */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-8">
-            
+
             {/* Tombol Previous */}
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-4 py-2 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -154,8 +156,8 @@ export default function ReportGrid({
                   onClick={() => typeof page === 'number' ? handlePageChange(page) : null}
                   disabled={page === '...'}
                   className={`w-10 h-10 flex items-center justify-center rounded-full font-medium transition-colors ${
-                    page === currentPage 
-                      ? 'bg-warning text-black' 
+                    page === currentPage
+                      ? 'bg-warning text-black'
                       : page === '...'
                         ? 'bg-transparent text-neutral-400 cursor-default'
                         : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
@@ -172,14 +174,14 @@ export default function ReportGrid({
             </span>
 
             {/* Tombol Next */}
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="px-6 py-2 text-sm font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>
-            
+
           </div>
         )}
 

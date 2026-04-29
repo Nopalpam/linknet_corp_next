@@ -4,6 +4,7 @@ import LinknetLink from '../base/Link';
 import SplitText from '../base/text/SplitText';
 
 export default function Hero({
+    config,
     as: Tag = "h1",
     logoSrc = "",
     logoSquare,
@@ -15,21 +16,35 @@ export default function Hero({
     ctaText = "Get to Know Us",
     ctaLink = "https://google.com",
     ctaTarget = "_blank",
-    bgImageDesktop = "", 
+    bgImageDesktop = "",
     bgImageMobile = "",
     bgColor = "bg-[#FFB800]",
-    bgOverlay = false, 
-    heroSize = "md",    
+    bgOverlay = false,
+    heroSize = "md",
     theme = "light",
     className,
     note
 }) {
-  
-  const hasBgImage = bgImageDesktop || bgImageMobile;
+  const {
+    sectionId,
+    className: configClassName = "",
+    bgImage: configBgImageDesktop = "",
+    bgImageMobile: configBgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
+  const resolvedBgImageDesktop = configBgImageDesktop || bgImageDesktop;
+  const resolvedBgImageMobile = configBgImageMobile || bgImageMobile;
+  const sectionStyle = {
+    '--bg-image-desktop': resolvedBgImageDesktop ? `url('${resolvedBgImageDesktop}')` : 'none',
+    '--bg-image-mobile': resolvedBgImageMobile ? `url('${resolvedBgImageMobile}')` : (resolvedBgImageDesktop ? `url('${resolvedBgImageDesktop}')` : 'none')
+  };
+
+  const hasBgImage = resolvedBgImageDesktop || resolvedBgImageMobile;
 
   // Menentukan class ukuran hero berdasarkan heroSize
-  const heightClass = heroSize === 'sm' 
-    ? 'h-[56vh] md:h-[64vh]' 
+  const heightClass = heroSize === 'sm'
+    ? 'h-[56vh] md:h-[64vh]'
     : 'h-[68vh] md:h-[70vh]';
 
   // Kondisi untuk warna text berdasarkan theme
@@ -38,29 +53,36 @@ export default function Hero({
   if (!title && !hasBgImage && !bgColor) return null;
 
   return (
-    <div className={`p-2 pt-0 bg-white ${className}`}>
+    <section
+        id={sectionId}
+        className={`lnSection__heroStatic p-2 pt-0 bg-white
+          bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+          ${configClassName} ${className}`}
+        style={sectionStyle}
+    >
         {/* Tambahkan heightClass dinamis ke container ini */}
         <div className={`relative w-full ${heightClass} flex items-center overflow-hidden rounded-[20px] md:rounded-[24px] ${!hasBgImage ? bgColor : ''}`}>
-      
+
             {/* ======================================= */}
             {/* 1. BACKGROUND LAYER (Z-INDEX: 0)        */}
             {/* ======================================= */}
             {hasBgImage && (
                 <>
                     {/* Desktop Image: Tetap hanya muncul di layar md ke atas */}
-                    {bgImageDesktop && (
-                    <img 
-                        src={bgImageDesktop} 
+                    {resolvedBgImageDesktop && (
+                    <img
+                        src={resolvedBgImageDesktop}
                         alt="Hero Background Desktop"
                         className="hidden md:block absolute inset-0 w-full h-full object-cover z-0"
                     />
                     )}
 
-                    {/* Mobile Image: Muncul di layar kecil. 
+                    {/* Mobile Image: Muncul di layar kecil.
                         Jika bgImageMobile tidak ada, dia akan merender bgImageDesktop */}
-                    {(bgImageMobile || bgImageDesktop) && (
-                    <img 
-                        src={bgImageMobile || bgImageDesktop} 
+                    {(resolvedBgImageMobile || resolvedBgImageDesktop) && (
+                    <img
+                        src={resolvedBgImageMobile || resolvedBgImageDesktop}
                         alt="Hero Background Mobile"
                         className="block md:hidden absolute inset-0 w-full h-full object-cover z-0"
                     />
@@ -81,15 +103,15 @@ export default function Hero({
             {/* Catatan: Naikkan z-index content agar berada di atas overlay */}
             <div className="relative z-10 w-full p-6 md:p-8 lg:p-12 mx-auto h-full flex flex-col justify-end">
                 <div className="max-w-full md:max-w-[560px] flex flex-col items-start gap-2 md:gap-2 animate-fade-in-up">
-                
+
                     {/* COMPONENT 1: BRAND LOGO */}
                     {logoSrc && (
                     <div className="mb-3">
-                        <img 
-                            src={logoSrc} 
-                            alt="Brand Logo" 
+                        <img
+                            src={logoSrc}
+                            alt="Brand Logo"
                             className={`w-auto object-contain transition-all duration-300 ${
-                                logoSquare 
+                                logoSquare
                                 ? 'h-16 md:h-18' // Ukuran untuk logo Square
                                 : 'h-8 md:h-10'  // Ukuran standar (Landscape)
                             }`}
@@ -102,9 +124,9 @@ export default function Hero({
                         // Gunakan backticks (`) bukan tanda kutip biasa (')
                         <div className={`inline-flex items-center gap-2.5 ${labelWithBg ? "px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-[2px] text-caption-c1" : "text-body-b5"} mb-1`}>
                             {labelIconSrc && (
-                                <img 
-                                src={labelIconSrc} 
-                                alt="Icon" 
+                                <img
+                                src={labelIconSrc}
+                                alt="Icon"
                                 className="w-4 h-auto rounded-[1px] shadow-sm"
                                 />
                             )}
@@ -120,7 +142,7 @@ export default function Hero({
                     {title && (
                         <Tag className={`text-headline-h3 font-medium tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-sm' : 'text-black'}`}>
                             <SplitText
-                                text={title.replace(/<br\s*\/?>/gi, '\n')} 
+                                text={title.replace(/<br\s*\/?>/gi, '\n')}
                                 delay={240}
                                 duration={0.5}
                                 ease="power3.out"
@@ -129,7 +151,7 @@ export default function Hero({
                                 to={{ opacity: 1, y: 0 }}
                                 threshold={0.1}
                                 textAlign="left"
-                                className='whitespace-pre-line' 
+                                className='whitespace-pre-line'
                             />
                         </Tag>
                     )}
@@ -146,16 +168,16 @@ export default function Hero({
                     {/* COMPONENT 4: DESCRIPTION */}
                     {note && (
                         <div className="hero__note">
-                        {note} 
+                        {note}
                         </div>
                     )}
 
                     {/* COMPONENT 5: CTA BUTTON (LINK) */}
                     {ctaText && (
                         <div className="mt-4">
-                            <LinknetLink 
+                            <LinknetLink
                                 href={ctaLink}
-                                variant={isDark ? "secondary-outline--white" : "secondary-outline--black"} 
+                                variant={isDark ? "secondary-outline--white" : "secondary-outline--black"}
                                 size="lg"
                                 target={ctaTarget}
                                 className="transition-all duration-300 group flex"
@@ -167,8 +189,8 @@ export default function Hero({
 
                 </div>
             </div>
-            
+
         </div>
-    </div>
+    </section>
   );
 }

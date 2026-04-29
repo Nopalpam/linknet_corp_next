@@ -1,5 +1,13 @@
 export const JOIN_FIRST_SQUAD_DATA = {
   "career": {
+    config: {
+      sectionId: "career",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "JOIN US AS FIRST SQUAD",
@@ -10,7 +18,7 @@ export const JOIN_FIRST_SQUAD_DATA = {
       {
         id: 1,
         // Gunakan path gambar asli Anda, pastikan berformat PNG/transparan jika backgroundnya menyatu
-        image: "/assets/photos/thumb/fs.png", 
+        image: "/assets/photos/thumb/fs.png",
         roleLabel: "Become First Squad as",
         roleTitle: "First Squad",
         headline: "Are You Ready to Become First Squad At Linknet?",

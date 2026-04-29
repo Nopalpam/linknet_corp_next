@@ -2,6 +2,14 @@
 
 export const MILESTONE_DATA = {
   "history": { // Key halaman atau seksi
+    config: {
+      sectionId: "1996",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "PIONEER IN THE INDUSTRY",
@@ -14,7 +22,7 @@ export const MILESTONE_DATA = {
         id: "1996",
         year: "1996",
         // Kamu bisa ganti image ini dengan background gradasi kuning milikmu
-        image: "/assets/bg/bg-yellow-gradient.jpg", 
+        image: "/assets/bg/bg-yellow-gradient.jpg",
         description: "Establishment of the company under the name PT Seruling Indah Permai",
         list: []
       },

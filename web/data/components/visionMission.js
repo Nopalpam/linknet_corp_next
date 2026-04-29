@@ -1,12 +1,20 @@
 // src/data/components/visionMission.js
 
 export const VISION_MISSION_DATA = {
-  "about": { 
+  "about": {
+    config: {
+      sectionId: "vision",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
-      label: "", 
+      label: "",
       title: "Our Vision & Mission",
-      description: "", 
+      description: "",
       align: "center"
     },
     items: [
@@ -22,8 +30,8 @@ export const VISION_MISSION_DATA = {
         id: "mission",
         label: "OUR MISSION",
         title: "To transform lives by providing innovative and exceptional broadband and media services and solutions.",
-        description: "", 
-        image: "/assets/images/mission-city.jpg", 
+        description: "",
+        image: "/assets/images/mission-city.jpg",
         align: "left"
       }
     ]

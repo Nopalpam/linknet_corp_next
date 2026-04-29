@@ -9,14 +9,14 @@ import Textarea      from '../base/forms/Textarea';
 import Icon          from '../base/Icon';
 import Button        from '../base/Button';
 import SegmentPicker from '../base/forms/SegmentPicker';
-import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 
 // ─────────────────────────────────────────────────────────────
-// ICONS & STATIC CONFIG
+// STATIC DATA
 // ─────────────────────────────────────────────────────────────
 const LiveChatIcon = () => (
   <img src="/assets/icons/chat-yellow.svg" className="w-6 h-6 mr-0.5" alt="Chat" />
 );
+
 const WhatsappIcon = () => (
   <img src="/assets/icons/whatsapp-color.svg" className="w-6 h-6 mr-0.5" alt="Whatsapp" />
 );
@@ -26,29 +26,59 @@ const TAB_OPTIONS = [
   { label: 'Whatsapp',  value: 'whatsapp',  icon: <WhatsappIcon /> },
 ];
 
-// ─── DEFAULT OPTIONS (overridable via cmsData) ──────────────
-const DEFAULT_DEPARTMENT_OPTIONS = [
+const departmentOptions = [
   { label: 'Management',  value: 'management' },
   { label: 'IT Services', value: 'it'         },
   { label: 'Finance',     value: 'finance'    },
   { label: 'Operations',  value: 'operations' },
 ];
 
-const DEFAULT_ROLE_OPTIONS = [
+const roleOptions = [
   { label: 'Manager',           value: 'manager'  },
   { label: 'Staff / Executive', value: 'staff'    },
   { label: 'Director',          value: 'director' },
   { label: 'C-Level',           value: 'clevel'   },
 ];
 
-const DEFAULT_INDUSTRY_OPTIONS = [
+const industryOptions = [
   { label: 'Financial Service', value: 'finance'       },
   { label: 'Manufacturing',     value: 'manufacturing' },
   { label: 'Retail & Commerce', value: 'retail'        },
   { label: 'Technology',        value: 'tech'          },
 ];
 
-const DEFAULT_SOLUTION_OPTIONS = [
+const provinceOptions = [
+  { label: 'Jawa Barat',  value: 'jabar'  },
+  { label: 'DKI Jakarta', value: 'dki'    },
+  { label: 'Jawa Tengah', value: 'jateng' },
+  { label: 'Jawa Timur',  value: 'jatim'  },
+  { label: 'Banten',      value: 'banten' },
+];
+
+const cityByProvince = {
+  jabar:  [{ label: 'Kota Bekasi',     value: 'bekasi'    }, { label: 'Kota Bandung',  value: 'bandung'  }, { label: 'Kota Bogor',  value: 'bogor'  }],
+  dki:    [{ label: 'Jakarta Selatan', value: 'jaksel'    }, { label: 'Jakarta Pusat', value: 'jakpus'   }, { label: 'Jakarta Utara', value: 'jakut' }],
+  jateng: [{ label: 'Kota Semarang',   value: 'semarang'  }, { label: 'Kota Solo',     value: 'solo'     }],
+  jatim:  [{ label: 'Kota Surabaya',   value: 'surabaya'  }, { label: 'Kota Malang',   value: 'malang'   }],
+  banten: [{ label: 'Kota Tangerang',  value: 'tangerang' }, { label: 'Kota Cilegon',  value: 'cilegon'  }],
+};
+
+const zipByCity = {
+  bekasi:    [{ label: '17113 – Mustika Jaya', value: '17113' }, { label: '17114 – Mustikasari', value: '17114' }],
+  bandung:   [{ label: '40111', value: '40111' }, { label: '40112', value: '40112' }],
+  bogor:     [{ label: '16111', value: '16111' }],
+  jaksel:    [{ label: '12110', value: '12110' }, { label: '12120', value: '12120' }],
+  jakpus:    [{ label: '10110', value: '10110' }],
+  jakut:     [{ label: '14110', value: '14110' }],
+  semarang:  [{ label: '50111', value: '50111' }],
+  solo:      [{ label: '57111', value: '57111' }],
+  surabaya:  [{ label: '60111', value: '60111' }],
+  malang:    [{ label: '65111', value: '65111' }],
+  tangerang: [{ label: '15111', value: '15111' }],
+  cilegon:   [{ label: '42411', value: '42411' }],
+};
+
+const solutionOptions = [
   { label: 'Cloud',              value: 'cloud'        },
   { label: 'Corporate TV',       value: 'corporate_tv' },
   { label: 'Data Center',        value: 'data_center'  },
@@ -69,34 +99,30 @@ const INITIAL_FORM = {
 // ─────────────────────────────────────────────────────────────
 // AVATAR GROUP
 // ─────────────────────────────────────────────────────────────
-function AvatarGroup({ size = 32, avatars }) {
-  const defaultLetters = ['A', 'B', 'C'];
-  const items = avatars?.length ? avatars : defaultLetters.map((l, i) => ({
-    letter: l,
-    src: `/assets/photos/cs/cs-${i + 1}.jpg`,
-  }));
-
+function AvatarGroup({ size = 32 }) {
+  const bg      = ['#ffffff', '#ffffff', '#ffffff'];
+  const letters = ['A', 'B', 'C'];
   return (
     <div className="flex shrink-0">
-      {items.map((item, i) => (
+      {letters.map((l, i) => (
         <div
           key={i}
           className="rounded-full border-2 border-white overflow-hidden flex items-center justify-center font-bold shadow-lg text-white relative"
           style={{
             width: size, height: size,
-            backgroundColor: '#ffffff',
+            backgroundColor: bg[i],
             marginLeft: i === 0 ? 0 : -(size * 0.28),
             fontSize: size * 0.34,
-            zIndex: items.length - i,
+            zIndex: letters.length - i,
           }}
         >
           <img
-            src={item.src || `/assets/photos/cs/cs-${i + 1}.jpg`}
-            alt={item.letter || ''}
+            src={`/assets/photos/cs/cs-${i + 1}.jpg`}
+            alt={l}
             onError={e => { e.currentTarget.style.display = 'none'; }}
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {item.letter || ''}
+          {l}
         </div>
       ))}
     </div>
@@ -106,15 +132,15 @@ function AvatarGroup({ size = 32, avatars }) {
 // ─────────────────────────────────────────────────────────────
 // SOLUTION PICKER
 // ─────────────────────────────────────────────────────────────
-function SolutionPicker({ options = [], selectedValues = [], onChange, error = '' }) {
+function SolutionPicker({ selectedValues = [], onChange, error = '' }) {
   const [search, setSearch] = useState('');
 
   const filtered = search.trim()
-    ? options.filter(opt =>
+    ? solutionOptions.filter(opt =>
         selectedValues.includes(opt.value) ||
         opt.label.toLowerCase().includes(search.toLowerCase())
       )
-    : options;
+    : solutionOptions;
 
   const toggle = (val) => {
     onChange(
@@ -174,55 +200,19 @@ function SolutionPicker({ options = [], selectedValues = [], onChange, error = '
 
 // ─────────────────────────────────────────────────────────────
 // MAIN COMPONENT
-// cmsData: {
-//   enabled: boolean,
-//   title?: string,
-//   subtitle?: string,
-//   checklist?: string[],
-//   ctaLabel?: string,
-//   whatsappLabel?: string,
-//   whatsappUrl?: string,
-//   teamName?: string,
-//   responseTime?: string,
-//   avatars?: { letter, src }[],
-//   departmentOptions?, roleOptions?, industryOptions?,
-//   provinceOptions?, cityByProvince?, zipByCity?,
-//   solutionOptions?,
-//   submitEndpoint?: string,
-// }
 // ─────────────────────────────────────────────────────────────
-export default function OmniChannelWidget({ cmsData, className = '' }) {
+export default function OmniFloatingWidget({ cmsData, className = '' }) {
   const cfg = cmsData || {};
-
-  // CMS-configurable options (fallback to shared Indonesia data)
-  const departmentOptions = cfg.departmentOptions || DEFAULT_DEPARTMENT_OPTIONS;
-  const roleOptions       = cfg.roleOptions       || DEFAULT_ROLE_OPTIONS;
-  const industryOptions   = cfg.industryOptions    || DEFAULT_INDUSTRY_OPTIONS;
-  const solutionOptions   = cfg.solutionOptions    || DEFAULT_SOLUTION_OPTIONS;
-
+  const enabled = cfg.enabled !== false && cfg.enabled !== 'false';
+  const widgetTitle = cfg.title || "Let's start new chat";
+  const widgetSubtitle = cfg.subtitle || 'How can we help you today?';
+  const whatsappUrl = cfg.whatsappUrl || 'https://wa.me/628111700700';
+  const submitEndpoint = cfg.submitEndpoint || '';
   const [isOpen, setIsOpen]                   = useState(false);
   const [currentStep, setCurrentStep]         = useState(0);
   const [currentTab, setCurrentTab]           = useState('live_chat');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formData, setFormData]               = useState({ ...INITIAL_FORM });
-
-  const hasCustomLocationConfig = Boolean(
-    Array.isArray(cfg.provinceOptions) && cfg.cityByProvince && cfg.zipByCity
-  );
-  const {
-    cityOptions: indonesiaCityOptions,
-    finalOptions: indonesiaZipOptions,
-    normalizedCity,
-    normalizedProvince,
-    provinceOptions: indonesiaProvinceOptions,
-  } = useIndonesiaLocationOptions({
-    city: formData.city,
-    finalLevel: 'zip',
-    province: formData.province,
-  });
-  const provinceOptions   = hasCustomLocationConfig ? cfg.provinceOptions : indonesiaProvinceOptions;
-  const cityByProvince    = hasCustomLocationConfig ? cfg.cityByProvince : null;
-  const zipByCity         = hasCustomLocationConfig ? cfg.zipByCity : null;
 
   const widgetRef    = useRef(null);
   const overlayRef   = useRef(null);
@@ -231,11 +221,12 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
   const step2FormRef = useRef(null);
   const step3FormRef = useRef(null);
 
-  const introIconRef  = useRef(null);
-  const introTitleRef = useRef(null);
-  const introSubRef   = useRef(null);
-  const introListRef  = useRef(null);
-  const introCardRef  = useRef(null);
+  // Refs untuk elemen GSAP di StepIntro
+  const introIconRef    = useRef(null);
+  const introTitleRef   = useRef(null);
+  const introSubRef     = useRef(null);
+  const introListRef    = useRef(null);
+  const introCardRef    = useRef(null);
 
   // ── Open / close animation — slide-up on mobile, scale on desktop
   useEffect(() => {
@@ -243,7 +234,9 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     const isMobile = window.innerWidth < 768;
 
     if (isOpen) {
+      // Show overlay — mobile only
       if (window.innerWidth < 768) overlayRef.current.style.display = 'block';
+      // Show widget
       widgetRef.current.style.display = 'flex';
 
       if (isMobile) {
@@ -289,19 +282,22 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     }
   }, [isOpen]);
 
-  // ── Step transition animation
+  // ── Step transition animation (GSAP)
   useEffect(() => {
     if (!contentRef.current || !isOpen) return;
     gsap.fromTo(contentRef.current,
       { opacity: 0, x: 12 },
       { opacity: 1, x: 0, duration: 0.25, ease: 'power2.out' }
     );
-  }, [currentStep, isOpen]);
+  }, [currentStep]);
 
-  // ── StepIntro entrance stagger
+  // ── StepIntro entrance animation (GSAP stagger) — runs when step 0 becomes visible
   useEffect(() => {
     if (!isOpen || currentStep !== 0) return;
+
+    // Small delay to let the widget open animation finish first
     const delay = window.innerWidth < 768 ? 0.38 : 0.28;
+
     const targets = [
       introIconRef.current,
       introTitleRef.current,
@@ -310,19 +306,23 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
       introCardRef.current,
     ].filter(Boolean);
 
+    // Set initial state
     gsap.set(targets, { opacity: 0, y: 18 });
+
+    // Stagger reveal
     gsap.to(targets, {
-      opacity: 1, y: 0,
-      duration: 0.45, ease: 'power3.out',
-      stagger: 0.07, delay,
+      opacity: 1,
+      y: 0,
+      duration: 0.45,
+      ease: 'power3.out',
+      stagger: 0.07,
+      delay,
     });
   }, [isOpen, currentStep]);
 
-  // ── If disabled via CMS, don't render
-  if (cfg.enabled === false) return null;
+  // ── Handlers
+  const handleClose = () => setIsOpen(false);
 
-  // ── Handlers ────────────────────────────
-  const handleClose  = () => setIsOpen(false);
   const handleToggle = () => {
     if (!isOpen) {
       setCurrentStep(0);
@@ -360,28 +360,32 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
 
   const handleSubmit = async () => {
     setSubmitAttempted(true);
-    if (formData.solutions.length === 0) {
+    const noSolutions = formData.solutions.length === 0;
+    if (noSolutions) {
       document.getElementById('cu-solutions-wrap')
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    // Submit to API if endpoint configured
-    if (cfg.submitEndpoint) {
+
+    if (submitEndpoint) {
       try {
-        await fetch(cfg.submitEndpoint, {
+        await fetch(submitEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...formData, channel: currentTab }),
+          body: JSON.stringify({
+            ...formData,
+            channel: currentTab,
+          }),
         });
-      } catch (err) {
-        console.error('OmniChannel submit error:', err);
+      } catch (error) {
+        console.error('Failed to submit omnichannel form:', error);
       }
     }
-    // If whatsapp tab selected, redirect
-    if (currentTab === 'whatsapp' && cfg.whatsappUrl) {
-      window.open(cfg.whatsappUrl, '_blank');
+
+    if (currentTab === 'whatsapp' && whatsappUrl) {
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     }
-    // Reset
+
     setFormData({ ...INITIAL_FORM });
     setCurrentTab('live_chat');
     setCurrentStep(0);
@@ -389,29 +393,14 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     setIsOpen(false);
   };
 
-  const cityOptions = hasCustomLocationConfig
-    ? (formData.province ? (cityByProvince[formData.province] ?? []) : [])
-    : indonesiaCityOptions;
-  const zipOptions = hasCustomLocationConfig
-    ? (formData.city ? (zipByCity[formData.city] ?? []) : [])
-    : indonesiaZipOptions;
-  const provinceValue = hasCustomLocationConfig ? formData.province : normalizedProvince;
-  const cityValue = hasCustomLocationConfig ? formData.city : normalizedCity;
+  const cityOptions = formData.province ? (cityByProvince[formData.province] ?? []) : [];
+  const zipOptions  = formData.city     ? (zipByCity[formData.city]          ?? []) : [];
 
-  // CMS content with defaults
-  const title        = cfg.title        || "Let's start new chat\nwith our Expert Team";
-  const subtitle     = cfg.subtitle     || 'How can we help you today?';
-  const teamName     = cfg.teamName     || 'Linknet Enterprise';
-  const responseTime = cfg.responseTime || 'a few minutes';
-  const ctaLabel     = cfg.ctaLabel     || 'Start Conversation';
-  const waLabel      = cfg.whatsappLabel || 'Send us a Whatsapp';
-  const checklist    = cfg.checklist    || [
-    'Ask for our product details now',
-    'Schedule a Demo of our featured products today',
-    'Our Professional Support Team is ready to serve you 24/7',
-  ];
+  if (!enabled) return null;
 
-  // ─── RENDER: Tabs ────────────────────────
+  // ─────────────────────────────────────────────
+  // RENDER: Tabs
+  // ─────────────────────────────────────────────
   const renderTabs = () => (
     <div className="mb-2 shrink-0">
       <SegmentPicker
@@ -423,18 +412,20 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     </div>
   );
 
-  // ─── RENDER: Header (Steps 1–3) ──────────
+  // ─────────────────────────────────────────────
+  // RENDER: Widget header (Steps 1–3)
+  // ─────────────────────────────────────────────
   const renderHeader = () => {
     if (currentStep === 0) return null;
     return (
       <div className="flex items-center justify-between px-5 py-3.5 pb-1 shrink-0">
         <div className="flex items-center gap-3">
-          <AvatarGroup size={36} avatars={cfg.avatars} />
+          <AvatarGroup size={36} />
           <div>
-            <p className="text-body-b4 font-bold text-black leading-tight">{teamName}</p>
+            <p className="text-body-b4 font-bold text-black leading-tight">Linknet Enterprise</p>
             <p className="text-caption-c1 text-secondary font-regular flex items-center gap-1 mt-0.5">
-              <Icon name="clock" style={{ '--icon-size': '14px' }} />
-              {responseTime}
+              <Icon name="clock" style={{'--icon-size':'14px'}} />
+              a few minutes
             </p>
           </div>
         </div>
@@ -449,9 +440,13 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     );
   };
 
-  // ─── RENDER: StepIntro ───────────────────
+  // ─────────────────────────────────────────────
+  // RENDER: StepIntro — GSAP stagger entrance
+  // Each major block has its own ref for individual animation targeting
+  // ─────────────────────────────────────────────
   const renderStepIntro = () => (
     <div className="overflow-y-auto flex-1 px-[20px] md:px-[24px] pt-7 pb-6 relative">
+      {/* Close button — not animated, always visible */}
       <button
         type="button"
         onClick={handleClose}
@@ -460,20 +455,28 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
         <Icon name="close" className="w-[18px] h-[18px]" />
       </button>
 
+      {/* 1. Icon badge */}
       <div ref={introIconRef} className="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center mb-5">
         <img src="/assets/icons/chat-yellow.svg" className="w-8 h-8" alt="Message" />
       </div>
 
-      <h2 ref={introTitleRef} className="text-[22px] font-extrabold text-black leading-[1.3] tracking-tight mb-2 whitespace-pre-line">
-        {title}
+      {/* 2. Title */}
+      <h2 ref={introTitleRef} className="text-[22px] font-extrabold text-black leading-[1.3] tracking-tight mb-2">
+        {widgetTitle}<br />with our Expert Team
       </h2>
 
+      {/* 3. Subtitle */}
       <p ref={introSubRef} className="text-body-b4 text-secondary font-regular mb-6">
-        {subtitle}
+        {widgetSubtitle}
       </p>
 
+      {/* 4. Checklist */}
       <ul ref={introListRef} className="flex flex-col gap-3 mb-8">
-        {checklist.map((text, i) => (
+        {[
+          'Ask for our product details now',
+          'Schedule a Demo of our featured products today',
+          'Our Professional Support Team is ready to serve you 24/7',
+        ].map((text, i) => (
           <li key={i} className="flex items-start gap-2.5 text-body-b4 text-black font-regular">
             <span className="flex items-center justify-center shrink-0 mt-px">
               <Icon name="check" className="text-yellow-600" style={{ '--icon-size': '24px' }} />
@@ -483,40 +486,45 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
         ))}
       </ul>
 
+      {/* 5. CTA card */}
       <div ref={introCardRef} className="rounded-2xl p-4 shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-body-b4 font-bold text-black">{ctaLabel}</p>
+            <p className="text-body-b4 font-bold text-black">Start a Conversation</p>
             <p className="text-body-b5 text-secondary font-regular flex items-center gap-1 mt-0.5">
               <Icon name="clock" />
-              {responseTime}
+              a few minutes
             </p>
           </div>
-          <AvatarGroup size={40} avatars={cfg.avatars} />
+          <AvatarGroup size={40} />
         </div>
 
         <Button
-          type="button" variant="primary" size="lg"
+          type="button"
+          variant="primary" size="lg"
           className="w-full mb-2.5"
           onClick={() => { setCurrentTab('live_chat'); setCurrentStep(1); }}
           iconLeft={<img src="/assets/icons/chat-color.svg" className="w-6 h-6 mr-0.5" alt="Chat" />}
         >
-          {ctaLabel}
+          Start Conversation
         </Button>
 
         <Button
-          type="button" variant="secondary-outline" size="lg"
+          type="button"
+          variant="secondary-outline" size="lg"
           className="w-full flex"
           onClick={() => { setCurrentTab('whatsapp'); setCurrentStep(1); }}
           iconLeft={<img src="/assets/icons/whatsapp-color.svg" className="w-6 h-6 mr-0.5" alt="Whatsapp" />}
         >
-          {waLabel}
+          Send us a Whatsapp
         </Button>
       </div>
     </div>
   );
 
-  // ─── RENDER: StepPersonalData ────────────
+  // ─────────────────────────────────────────────
+  // RENDER: StepPersonalData
+  // ─────────────────────────────────────────────
   const renderStepPersonalData = () => (
     <form
       ref={step1FormRef}
@@ -526,21 +534,65 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     >
       <div className="px-5 pt-3 pb-1 shrink-0">{renderTabs()}</div>
       <div className="overflow-y-auto flex-1 px-5 py-2 flex flex-col gap-3.5">
-        <Input id="cu-firstName" label="First Name" required value={formData.firstName} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Input id="cu-lastName" label="Last Name" required value={formData.lastName} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Input id="cu-email" type="email" label="Company Email" required value={formData.email} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Input id="cu-phone" type="tel" label="Phone Number" required value={formData.phone} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-department" label="Department" options={departmentOptions} required value={formData.department} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-roleTitle" label="Your Role / Title" options={roleOptions} required value={formData.roleTitle} onChange={handleChange} submitAttempted={submitAttempted} />
+
+        <Input
+          id="cu-firstName" label="First Name" required
+          value={formData.firstName} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Input
+          id="cu-lastName" label="Last Name" required
+          value={formData.lastName} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Input
+          id="cu-email" type="email" label="Company Email" required
+          value={formData.email} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Input
+          id="cu-phone" type="tel" label="Phone Number" required
+          value={formData.phone} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Select
+          id="cu-department" label="Department"
+          options={departmentOptions} required
+          value={formData.department} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Select
+          id="cu-roleTitle" label="Your Role / Title"
+          options={roleOptions} required
+          value={formData.roleTitle} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+
       </div>
+
+      {/* Fixed action buttons */}
       <div className="shrink-0 px-5 pb-4 pt-3 bg-white flex gap-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
-        <Button type="button" variant="secondary-outline" size="lg" className="flex-1 border-neutral-200 rounded-xl" onClick={() => setCurrentStep(0)}>Previous</Button>
-        <Button type="button" variant="primary" size="lg" className="flex-1" onClick={() => goNext(step1FormRef)}>Next</Button>
+        <Button
+          type="button" variant="secondary-outline" size="lg"
+          className="flex-1 border-neutral-200 rounded-xl"
+          onClick={() => setCurrentStep(0)}
+        >
+          Previous
+        </Button>
+        <Button
+          type="button" variant="primary" size="lg"
+          className="flex-1"
+          onClick={() => goNext(step1FormRef)}
+        >
+          Next
+        </Button>
       </div>
     </form>
   );
 
-  // ─── RENDER: StepCompanyData ─────────────
+  // ─────────────────────────────────────────────
+  // RENDER: StepCompanyData
+  // ─────────────────────────────────────────────
   const renderStepCompanyData = () => (
     <form
       ref={step2FormRef}
@@ -550,21 +602,70 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     >
       <div className="px-5 pt-3 pb-1 shrink-0">{renderTabs()}</div>
       <div className="overflow-y-auto flex-1 px-5 py-2 flex flex-col gap-3.5">
-        <Input id="cu-companyName" label="Company Name" required value={formData.companyName} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-businessIndustry" label="Business Industry" options={industryOptions} required value={formData.businessIndustry} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-province" label="Province" options={provinceOptions} required value={provinceValue} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-city" label="City / Regency" options={cityOptions} required value={cityValue} onChange={handleChange} submitAttempted={submitAttempted} disabled={!provinceValue} />
-        <Select id="cu-zip" label="ZIP Code" options={zipOptions} required value={formData.zip} onChange={handleChange} submitAttempted={submitAttempted} disabled={!cityValue} />
-        <Textarea id="cu-detailAddress" label="Detail Address" maxLength={200} required value={formData.detailAddress} onChange={handleChange} submitAttempted={submitAttempted} />
+
+        <Input
+          id="cu-companyName" label="Company Name" required
+          value={formData.companyName} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Select
+          id="cu-businessIndustry" label="Business Industry"
+          options={industryOptions} required
+          value={formData.businessIndustry} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Select
+          id="cu-province" label="Province"
+          options={provinceOptions} required
+          value={formData.province} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+        <Select
+          id="cu-city" label="City / Regency"
+          options={cityOptions} required
+          value={formData.city} onChange={handleChange}
+          submitAttempted={submitAttempted}
+          disabled={!formData.province}
+        />
+        <Select
+          id="cu-zip" label="ZIP Code"
+          options={zipOptions} required
+          value={formData.zip} onChange={handleChange}
+          submitAttempted={submitAttempted}
+          disabled={!formData.city}
+        />
+        <Textarea
+          id="cu-detailAddress" label="Detail Address"
+          maxLength={200} required
+          value={formData.detailAddress} onChange={handleChange}
+          submitAttempted={submitAttempted}
+        />
+
       </div>
+
+      {/* Fixed action buttons */}
       <div className="shrink-0 px-5 pb-4 pt-3 bg-white flex gap-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
-        <Button type="button" variant="secondary-outline" size="lg" className="flex-1 border-neutral-200 rounded-xl" onClick={() => setCurrentStep(1)}>Previous</Button>
-        <Button type="button" variant="primary" size="lg" className="flex-1" onClick={() => goNext(step2FormRef)}>Next</Button>
+        <Button
+          type="button" variant="secondary-outline" size="lg"
+          className="flex-1 border-neutral-200 rounded-xl"
+          onClick={() => setCurrentStep(1)}
+        >
+          Previous
+        </Button>
+        <Button
+          type="button" variant="primary" size="lg"
+          className="flex-1"
+          onClick={() => goNext(step2FormRef)}
+        >
+          Next
+        </Button>
       </div>
     </form>
   );
 
-  // ─── RENDER: StepSolution ────────────────
+  // ─────────────────────────────────────────────
+  // RENDER: StepSolution
+  // ─────────────────────────────────────────────
   const renderStepSolution = () => (
     <form
       ref={step3FormRef}
@@ -574,24 +675,45 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     >
       <div className="px-5 pt-3 pb-1 shrink-0">{renderTabs()}</div>
       <div className="overflow-y-auto flex-1 px-5 py-2">
+
         <p className="text-body-b4 font-bold text-black mb-3.5">Choose a Solutions</p>
+
         <div id="cu-solutions-wrap">
           <SolutionPicker
-            options={solutionOptions}
             selectedValues={formData.solutions}
             onChange={(vals) => setFormData(prev => ({ ...prev, solutions: vals }))}
-            error={submitAttempted && formData.solutions.length === 0 ? 'Please select at least one solution.' : ''}
+            error={
+              submitAttempted && formData.solutions.length === 0
+                ? 'Please select at least one solution.'
+                : ''
+            }
           />
         </div>
+
       </div>
+
+      {/* Fixed action buttons */}
       <div className="shrink-0 px-5 pb-4 pt-3 bg-white flex gap-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
-        <Button type="button" variant="secondary-outline" size="lg" className="border-neutral-200 rounded-xl" iconLeft={<Icon name="chevron-left" />} onClick={() => setCurrentStep(2)} />
-        <Button type="button" variant="primary" size="lg" className="flex-1 w-full" onClick={handleSubmit}>{ctaLabel}</Button>
+        <Button
+          type="button" variant="secondary-outline" size="lg"
+          className="border-neutral-200 rounded-xl"
+          iconLeft={<Icon name="chevron-left" />}
+          onClick={() => setCurrentStep(2)}
+        />
+        <Button
+          type="button" variant="primary" size="lg"
+          className="flex-1 w-full"
+          onClick={handleSubmit}
+        >
+          Start Conversation
+        </Button>
       </div>
     </form>
   );
 
-  // ─── STEP ROUTER ─────────────────────────
+  // ─────────────────────────────────────────────
+  // STEP ROUTER
+  // ─────────────────────────────────────────────
   const renderStep = () => {
     switch (currentStep) {
       case 0: return renderStepIntro();
@@ -602,10 +724,13 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     }
   };
 
-  // ─── ROOT ────────────────────────────────
+  // ─────────────────────────────────────────────
+  // ROOT
+  // ─────────────────────────────────────────────
   return (
     <div className={`fixed z-[100] ${className}`}>
-      {/* Overlay — mobile only */}
+
+      {/* ── OVERLAY — mobile only ── */}
       <div
         ref={overlayRef}
         onClick={handleClose}
@@ -613,19 +738,27 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
         className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-[9990]"
       />
 
-      {/* Widget Panel */}
+      {/* ── WIDGET PANEL ── */}
       <div
         ref={widgetRef}
-        style={{ display: 'none', opacity: 1, transform: 'translateY(100%)', pointerEvents: 'none' }}
+        style={{
+          display: 'none',
+          opacity: 1,
+          transform: 'translateY(100%)',
+          pointerEvents: 'none',
+        }}
         className="fixed bottom-0 left-0 right-0 md:inset-auto md:bottom-[96px] md:right-6 w-full max-h-[90vh] md:w-[380px] md:max-h-[80vh] bg-white rounded-t-[20px] md:rounded-[20px] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.06)] flex-col overflow-hidden z-[9995]"
       >
         {renderHeader()}
-        <div ref={contentRef} className="flex flex-col flex-1 overflow-hidden relative">
+        <div
+          ref={contentRef}
+          className="flex flex-col flex-1 overflow-hidden relative"
+        >
           {renderStep()}
         </div>
       </div>
 
-      {/* Floating Action Button */}
+      {/* ── FLOATING ACTION BUTTON ── */}
       <button
         type="button"
         onClick={handleToggle}
@@ -646,13 +779,14 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
           </svg>
         ) : (
           <svg viewBox="0 0 38 38" fill="none" width="28" height="28">
-            <rect x="2" y="2" width="21" height="17" rx="4" fill="white" opacity="0.95"/>
-            <path d="M5 19v5.5l6.5-5.5H23" fill="white" opacity="0.95"/>
+            <rect x="2"  y="2"  width="21" height="17" rx="4" fill="white" opacity="0.95"/>
+            <path d="M5 19v5.5l6.5-5.5H23"  fill="white" opacity="0.95"/>
             <rect x="14" y="11" width="22" height="17" rx="4" fill="white" opacity="0.5"/>
             <path d="M17 28v5.5l6.5-5.5H36" fill="white" opacity="0.5"/>
           </svg>
         )}
       </button>
+
     </div>
   );
 }

@@ -1,47 +1,61 @@
+// src/data/components/tabBusiness.js
+
 export const TAB_BUSINESS_DATA = {
-  home: {
-    id: "our-business",
+  "default": {
+    config: {
+      sectionId: "explore-business",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "EXPLORE OUR BUSINESS",
       title: "Driving Better Lives Through Innovation",
-      description: "Linknet advances Indonesia’s digital transformation through innovative, reliable infrastructure",
+      description: "Linknet advances Indonesia's digital transformation through innovative, reliable infrastructure",
       align: "center"
     },
     items: [
       {
-        id: 1,
+        id: "tab-1",
         label: "EnterpriseCo",
         tagline: "#WeLINKTheNationforBetterLives",
         title: "Seamless Connectivity, Smart ICT Solutions, and Trusted Cybersecurity",
-        desc: "We provide reliable connectivity, technology, and cybersecurity solutions to support digital transformation. With over 3,300 customers, we deliver secure, high-performance internet and ICT services for large-scale enterprises while offering reliable connectivity for SMEs (Small Medium Enterprises) to help businesses grow in the digital era.",
-        image: "/assets/bg/bg-enterprise.jpg",
-        logoSrc: "/assets/logos/logo-enterprise.svg", 
+        desc: "Empowering digital transformation with secure internet & ICT. Trusted by 3,300+ businesses.",
         textCTA: "Learn More",
-        href: "/business/enterprise"
+        href: "/enterprise",
+        image: "/assets/bg/bg-enterprise-home.jpg",
+        imageMobile: "", // <-- Tambahan Mobile Image
+        logoSrc: "/assets/logos/logo-enterprise.svg"
       },
       {
-        id: 2,
+        id: "tab-2",
         label: "FiberCo",
-        tagline: "#WeLINKTheNationforBetterLives",
+        tagline: "#ConnectingTheFuture",
         title: "Your Solution for Nationwide Connectivity",
-        desc: "Linknet Fiber dedicated to delivering the ultimate internet experience with cutting-edge fiber optic technology that will connect Internet Service Providers (ISPs) to customers. Corinections via backbone and last mile networks allow ISPs to provide access to telecommunications services to customers",
-        image: "/assets/bg/bg-fiber.jpg",
-        logoSrc: "/assets/logos/logo-fiberco-white.png", 
+        desc: "Empowering ISPs with fiber optic backbone and last mile networks for the ultimate internet.",
         textCTA: "Learn More",
-        href: "/business/fiber"
+        href: "/fiberco",
+        image: "/assets/bg/bg-fiber-desktop.jpg",
+        imageMobile: "",
+        logoSrc: "/assets/logos/logo-fiberco.svg"
       },
       {
-        id: 3,
+        id: "tab-3",
         label: "MediaCo",
-        tagline: "#WeLINKTheNationforBetterLives",
+        tagline: "#EntertainingTheNation",
         title: "Your Gateway to Quality Content and Smarter Media",
         desc: "Premium entertainment and media solutions that bring the best content directly to your home and business.",
-        image: "/assets/bg/bg-media.jpg",
-        logoSrc: "/assets/logos/logo-mediaco.svg", 
         textCTA: "Learn More",
-        href: "/business/fiber"
+        href: "/mediaco",
+        image: "/assets/bg/onestreamheroimage.jpg",
+        imageMobile: "", // <-- Jika kosong, komponen otomatis merender gambar desktop di layar mobile
+        logoSrc: "/assets/logos/logo-mediaco.svg"
       }
     ]
   }
 };
+
+export default TAB_BUSINESS_DATA;

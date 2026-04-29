@@ -10,17 +10,60 @@
 
 // ─── Helper ─────────────────────────────────────────────────────────
 
-const COMMON_FIELDS = {
-  custom_id: '',
-  custom_class: '',
-  bg_type: 'color',
-  bg_color: '',
-  bg_image: '',
-  bg_position: 'center',
+const DEFAULT_SECTION_INTRO = {
+  label: { en: '', id: '' },
+  title: { en: '', id: '' },
+  description: { en: '', id: '' },
+  as: 'h2',
+  align: 'left',
+  fluid: false,
+  labelClassName: '',
+  titleClassName: '',
+  descriptionClassName: '',
+  className: '',
+};
+
+const DEFAULT_SECTION_CONFIG = {
+  sectionId: '',
+  className: '',
+  bgImage: '',
+  bgImageMobile: '',
+  bgPositionClasses: '',
+  bgSizeClass: '',
 };
 
 function withCommon(data: Record<string, any>): Record<string, any> {
-  return { ...COMMON_FIELDS, ...data };
+  const {
+    intro,
+    sectionIntro,
+    config,
+    custom_id,
+    custom_class,
+    bg_image,
+    bg_image_mobile,
+    bg_position_classes,
+    bg_size_class,
+    ...rest
+  } = data;
+
+  return {
+    sectionIntro: {
+      ...DEFAULT_SECTION_INTRO,
+      ...(intro || {}),
+      ...(sectionIntro || {}),
+    },
+    ...rest,
+    config: {
+      ...DEFAULT_SECTION_CONFIG,
+      ...(config || {}),
+      sectionId: config?.sectionId ?? custom_id ?? '',
+      className: config?.className ?? custom_class ?? '',
+      bgImage: config?.bgImage ?? bg_image ?? '',
+      bgImageMobile: config?.bgImageMobile ?? bg_image_mobile ?? '',
+      bgPositionClasses: config?.bgPositionClasses ?? bg_position_classes ?? '',
+      bgSizeClass: config?.bgSizeClass ?? bg_size_class ?? '',
+    },
+  };
 }
 
 // ─── 1. hero_section (from hero.js) ─────────────────────────────────
@@ -128,7 +171,7 @@ export const uspGridDefaults = withCommon({
   },
   items: [
     {
-      icon: '/assets/icons/usp/icon-homepass.svg',
+      icon: 'home',
       title: { en: '4M+ Homepasses', id: '4 Juta+ Homepass' },
       description: {
         en: 'Spread across more than 47 major cities',
@@ -136,7 +179,7 @@ export const uspGridDefaults = withCommon({
       },
     },
     {
-      icon: '/assets/icons/usp/icon-business.svg',
+      icon: 'business',
       title: { en: '3 Pillars of Business', id: '3 Pilar Bisnis' },
       description: {
         en: 'FiberCo, EnterpriseCo, and MediaCo',
@@ -181,45 +224,53 @@ export const uspGridSliderDefaults = withCommon({
   },
   items: [
     {
-      icon: '/assets/icons/corporate-values/icon-customers.webp',
+      logo: '/assets/icons/corporate-values/icon-customers.webp',
       title: { en: 'Obsession for Customers', id: 'Obsesi terhadap Pelanggan' },
-      description: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      desc: { en: '', id: '' },
+      bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      iconListDefault: 'key',
       list: [
-        { icon: 'key', text: { en: 'I start with my customers in mind in every decision I make.', id: 'Saya memulai dengan pelanggan dalam setiap keputusan yang saya buat.' } },
-        { icon: 'key', text: { en: 'I go the extra mile to deliver beyond customers\' expectations.', id: 'Saya berusaha lebih untuk memberikan melebihi ekspektasi pelanggan.' } },
+        { icon: '', text: { en: 'I start with my customers in mind in every decision I make.', id: 'Saya memulai dengan pelanggan dalam setiap keputusan yang saya buat.' } },
+        { icon: '', text: { en: 'I go the extra mile to deliver beyond customers\' expectations.', id: 'Saya berusaha lebih untuk memberikan melebihi ekspektasi pelanggan.' } },
       ],
     },
     {
-      icon: '/assets/icons/corporate-values/icon-change.webp',
+      logo: '/assets/icons/corporate-values/icon-change.webp',
       title: { en: 'Courage For Change', id: 'Keberanian untuk Berubah' },
-      description: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      desc: { en: '', id: '' },
+      bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      iconListDefault: 'key',
       list: [
-        { icon: 'key', text: { en: 'I fearlessly push boundaries and try new things', id: 'Saya tanpa rasa takut mendorong batas dan mencoba hal baru' } },
-        { icon: 'key', text: { en: 'I continuously adapt and improve to get better every day.', id: 'Saya terus beradaptasi dan meningkatkan diri setiap hari.' } },
+        { icon: '', text: { en: 'I fearlessly push boundaries and try new things', id: 'Saya tanpa rasa takut mendorong batas dan mencoba hal baru' } },
+        { icon: '', text: { en: 'I continuously adapt and improve to get better every day.', id: 'Saya terus beradaptasi dan meningkatkan diri setiap hari.' } },
       ],
     },
     {
-      icon: '/assets/icons/corporate-values/icon-collaboration.webp',
+      logo: '/assets/icons/corporate-values/icon-collaboration.webp',
       title: { en: 'Passion For Collaboration', id: 'Semangat untuk Kolaborasi' },
-      description: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      desc: { en: '', id: '' },
+      bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      iconListDefault: 'key',
       list: [
-        { icon: 'key', text: { en: 'I build trust in all relationships to work towards common goals.', id: 'Saya membangun kepercayaan dalam semua hubungan untuk mencapai tujuan bersama.' } },
-        { icon: 'key', text: { en: 'I embrace diversity and learn from each other.', id: 'Saya menerima keberagaman dan belajar satu sama lain.' } },
+        { icon: '', text: { en: 'I build trust in all relationships to work towards common goals.', id: 'Saya membangun kepercayaan dalam semua hubungan untuk mencapai tujuan bersama.' } },
+        { icon: '', text: { en: 'I embrace diversity and learn from each other.', id: 'Saya menerima keberagaman dan belajar satu sama lain.' } },
       ],
     },
     {
-      icon: '/assets/icons/corporate-values/icon-uncompromising-integrity.webp',
+      logo: '/assets/icons/corporate-values/icon-uncompromising-integrity.webp',
       title: { en: 'Uncompromising Integrity', id: 'Integritas Tanpa Kompromi' },
-      description: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      desc: { en: '', id: '' },
+      bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
+      iconListDefault: 'key',
       list: [
-        { icon: 'key', text: { en: 'I am honest, fair, and show ethical behaviour', id: 'Saya jujur, adil, dan menunjukkan perilaku etis' } },
-        { icon: 'key', text: { en: 'I am consistent and accountable for my actions.', id: 'Saya konsisten dan bertanggung jawab atas tindakan saya.' } },
+        { icon: '', text: { en: 'I am honest, fair, and show ethical behaviour', id: 'Saya jujur, adil, dan menunjukkan perilaku etis' } },
+        { icon: '', text: { en: 'I am consistent and accountable for my actions.', id: 'Saya konsisten dan bertanggung jawab atas tindakan saya.' } },
       ],
     },
   ],
   slides_per_view_desktop: 4,
   slides_per_view_mobile: 1.4,
-  autoplay: true,
+  // autoplay: true,
 });
 
 // ─── 5. about_with_marquee (from aboutRunningPhotos.js) ─────────────

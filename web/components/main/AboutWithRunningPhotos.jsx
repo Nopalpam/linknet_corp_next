@@ -4,16 +4,16 @@ import React from 'react';
 import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
 import { ABOUT_RUNNING_PHOTOS_DATA } from '@/data/components/aboutRunningPhotos'; // Sesuaikan path
 
-export default function AboutWithRunningPhotos({ 
-  name = 'default', 
-  className = "",
+export default function AboutWithRunningPhotos({
+  name = 'default',
   cmsData = null,
+  className = ""
 }) {
   const sectionData = cmsData || ABOUT_RUNNING_PHOTOS_DATA[name];
 
   if (!sectionData) return null;
 
-  const { config = {}, id, introData, photos } = sectionData;
+  const { config = {}, id, introData, photos = [] } = sectionData;
   const {
     sectionId = id,
     className: configClassName = "",
@@ -21,11 +21,11 @@ export default function AboutWithRunningPhotos({
     bgImageMobile = "",
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
-  } = config;
+  } = config || {};
 
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
   // Duplikasi array foto agar animasi marquee tidak pernah terputus (infinite loop)
@@ -38,10 +38,13 @@ export default function AboutWithRunningPhotos({
   return (
     <section
       id={sectionId}
-      className={`py-16 md:py-24 bg-white overflow-hidden bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      className={`lnSection__aboutWithRunningPhotos py-16 md:py-24 bg-white overflow-hidden
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
       style={sectionStyle}
     >
-      
+
       {/* ========================================= */}
       {/* EFEK MARQUEE CSS (Inject Style) */}
       {/* ========================================= */}
@@ -61,13 +64,13 @@ export default function AboutWithRunningPhotos({
       `}} />
 
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
         {introData && (
           <div className="mb-8 md:mb-12">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -84,7 +87,7 @@ export default function AboutWithRunningPhotos({
       {/* ========================================= */}
       {duplicatedPhotos.length > 0 && (
         <div className="w-full relative pb-10 pt-4">
-          
+
           {/* Efek fade out (masking) di kiri dan kanan layar */}
           <div className="absolute inset-0 z-10 pointer-events-none [mask-image:_linear-gradient(to_right,white_0%,transparent_5%,transparent_95%,white_100%)] bg-white/50 hidden md:block"></div>
 
@@ -92,19 +95,19 @@ export default function AboutWithRunningPhotos({
             {duplicatedPhotos.map((photo, index) => {
               // Ambil rotasi secara bergantian berdasarkan index
               const rotateClass = rotations[index % rotations.length];
-              
+
               return (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`flex-shrink-0 transition-transform duration-300 hover:scale-105 hover:z-20 ${rotateClass}`}
                 >
                   {/* POLAROID STYLE CARD */}
                   <div className="bg-white p-2 pb-8 md:p-3 md:pb-12 shadow-lg rounded-sm w-[240px] md:w-[320px]">
                     <div className="w-full aspect-[4/3] bg-neutral-100 overflow-hidden">
-                      <img 
-                        src={photo} 
-                        alt={`Linknet Activity ${index}`} 
-                        className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-500" 
+                      <img
+                        src={photo}
+                        alt={`Linknet Activity ${index}`}
+                        className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-500"
                         loading="lazy"
                       />
                     </div>

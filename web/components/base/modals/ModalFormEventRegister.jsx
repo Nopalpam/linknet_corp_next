@@ -21,6 +21,7 @@ import Textarea from '../forms/Textarea';
 import FormStepperModal from '../forms/FormStepperModal';
 import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 import { submitFormModule } from '@/lib/formsApi';
+import { createEventRegistration } from '@/lib/eventsApi';
 
 const ModalFormEventRegisterContext = createContext({
   openModal: () => {},
@@ -177,6 +178,7 @@ function createInitialForm(payload = INITIAL_MODAL_PAYLOAD) {
     Promo_Website__c: payload.Promo_Website__c || INITIAL_MODAL_PAYLOAD.Promo_Website__c,
     Page_Website__c: payload.Page_Website__c || INITIAL_MODAL_PAYLOAD.Page_Website__c,
     Source_Website__c: payload.Source_Website__c || INITIAL_MODAL_PAYLOAD.Source_Website__c,
+    eventSlug: payload.eventSlug || '',
     LeadSource: 'Website',
     I_am_an_existing_Link_Net_Customer__c: false,
   };
@@ -225,6 +227,28 @@ function buildSubmissionPayload(form) {
     Source_Website__c: form.Source_Website__c,
     LeadSource: form.LeadSource,
     I_am_an_existing_Link_Net_Customer__c: form.I_am_an_existing_Link_Net_Customer__c,
+  };
+}
+
+function buildEventRegistrationPayload(form) {
+  const participants = getSelectedParticipants(form);
+  const primaryParticipant = participants[0] || createParticipant();
+
+  return {
+    company_name: form.companyName,
+    company_email: primaryParticipant.companyEmail,
+    company_phone: primaryParticipant.phoneNumber,
+    company_address: [form.detailAddress, form.city, form.province, form.wardZipCode].filter(Boolean).join(', '),
+    pic_name: [primaryParticipant.firstName, primaryParticipant.lastName].filter(Boolean).join(' '),
+    pic_email: primaryParticipant.companyEmail,
+    pic_phone: primaryParticipant.phoneNumber,
+    notes: `Department: ${primaryParticipant.department || '-'}; Role: ${primaryParticipant.roleTitle || '-'}; Industry: ${form.businessIndustry || '-'}`,
+    participants: participants.map((participant) => ({
+      name: [participant.firstName, participant.lastName].filter(Boolean).join(' '),
+      email: participant.companyEmail,
+      phone: participant.phoneNumber,
+      job_title: participant.roleTitle,
+    })),
   };
 }
 
@@ -821,13 +845,17 @@ function ModalFormEventRegister({ initialPayload, isOpen, onClose }) {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await submitFormModule(businessUnit, 'event-register', {
-        locale,
-        sourcePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
-        values: buildSubmissionPayload(form),
-        groups: [],
-        files: [],
-      });
+      if (form.eventSlug) {
+        await createEventRegistration(form.eventSlug, buildEventRegistrationPayload(form));
+      } else {
+        await submitFormModule(businessUnit, 'event-register', {
+          locale,
+          sourcePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
+          values: buildSubmissionPayload(form),
+          groups: [],
+          files: [],
+        });
+      }
       handleSubmitSuccess();
     } catch (err) {
       setSubmitError(err?.message || 'Submission failed. Please try again.');
@@ -953,6 +981,7 @@ export default function ModalFormEventRegisterProvider({ children }) {
       Promo_Website__c: payload.Promo_Website__c || INITIAL_MODAL_PAYLOAD.Promo_Website__c,
       Page_Website__c: payload.Page_Website__c || INITIAL_MODAL_PAYLOAD.Page_Website__c,
       Source_Website__c: payload.Source_Website__c || INITIAL_MODAL_PAYLOAD.Source_Website__c,
+      eventSlug: payload.eventSlug || '',
       eventName: payload.eventName || '',
       maxParticipants: normalizeMaxParticipants(payload.maxParticipants),
       businessUnit: payload.businessUnit || INITIAL_MODAL_PAYLOAD.businessUnit,

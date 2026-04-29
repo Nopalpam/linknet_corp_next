@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { CMSComponent } from '@/lib/componentRegistry';
-import { COMPONENT_MAP, createLocalizer } from '@/lib/componentMap';
+import { COMPONENT_MAP, createLocalizer, normalizeComponentData } from '@/lib/componentMap';
 import UnknownComponent from '@/components/UnknownComponent';
 
 interface PageRendererProps {
@@ -35,7 +35,8 @@ export default function PageRenderer({ components, locale = 'id' }: PageRenderer
   return (
     <>
       {visibleComponents.map((component) => {
-        const { type, data, id } = component;
+        const { type, id } = component;
+        const data = normalizeComponentData(component.data);
         const entry = COMPONENT_MAP[type];
 
         // Unknown type → safe fallback
@@ -48,9 +49,11 @@ export default function PageRenderer({ components, locale = 'id' }: PageRenderer
 
         const Component = entry.component;
 
-        // Build style props from CMS custom_class
+        // Build style props from CMS config.className
         const styleProps: Record<string, any> = {};
-        if (data?.custom_class) styleProps.className = data.custom_class;
+        if (data.config?.className || data.custom_class) {
+          styleProps.className = data.config?.className || data.custom_class;
+        }
 
         // Map props via the registry's mapper, or just pass styleProps
         const props = entry.mapProps

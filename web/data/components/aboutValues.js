@@ -1,6 +1,13 @@
 export const ABOUT_VALUES_DATA = {
   "corporate-values": {
-    id: "corporate-values-main",
+    config: {
+      sectionId: "corporate-values-main",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "OUR VALUES",
@@ -11,46 +18,50 @@ export const ABOUT_VALUES_DATA = {
     valuesList: [
       {
         id: 1,
-        logo: "/assets/icons/corporate-values/icon-customers.webp", 
+        logo: "/assets/icons/corporate-values/icon-customers.webp",
         title: "Obsession for Customers",
-        // desc: "Berikan kelancaran transaksi data antar kantor cabang secara aman, stabil dan efisien melalui layanan konektivitas andal.",
+        desc: "",
         bodyTitle: "Key Behavior",
+        iconListDefault: "key",
         list: [
-          { icon: "key", text: "I start with my customers in mind in every decision I make." },
-          { icon: "key", text: "I go the extra mile to deliver beyond customers' expectations." }
+          { icon: "", text: "I start with my customers in mind in every decision I make." },
+          { icon: "", text: "I go the extra mile to deliver beyond customers' expectations." }
         ]
       },
       {
         id: 2,
         logo: "/assets/icons/corporate-values/icon-change.webp",
         title: "Courage For Change",
-        // desc: "Berikan kelancaran transaksi data antar kantor cabang secara aman, stabil dan efisien melalui layanan konektivitas andal.",
+        desc: "",
         bodyTitle: "Key Behavior",
+        iconListDefault: "key",
         list: [
-          { icon: "key", text: "I fearlessly push boundaries and try new things" },
-          { icon: "key", text: "I continuously adapt and improve to get better every day." }
+          { icon: "", text: "I fearlessly push boundaries and try new things" },
+          { icon: "", text: "I continuously adapt and improve to get better every day." }
         ]
       },
       {
         id: 3,
         logo: "/assets/icons/corporate-values/icon-collaboration.webp",
         title: "Passion For Collaboration",
-        // desc: "Berikan kelancaran transaksi data antar kantor cabang secara aman, stabil dan efisien melalui layanan konektivitas andal.",
+        desc: "",
         bodyTitle: "Key Behavior",
+        iconListDefault: "key",
         list: [
-          { icon: "key", text: "I build trust in all relationships to work towards common goals." },
-          { icon: "key", text: "I embrace diversity and learn from each other." }
+          { icon: "", text: "I build trust in all relationships to work towards common goals." },
+          { icon: "", text: "I embrace diversity and learn from each other." }
         ]
       },
       {
         id: 4,
         logo: "/assets/icons/corporate-values/icon-uncompromising-integrity.webp",
         title: "Uncompromising Integrity",
-        // desc: "Berikan kelancaran transaksi data antar kantor cabang secara aman, stabil dan efisien melalui layanan konektivitas andal.",
+        desc: "",
         bodyTitle: "Key Behavior",
+        iconListDefault: "key",
         list: [
-          { icon: "key", text: "I am honest, fair, and show ethical behaviour" },
-          { icon: "key", text: "I am consistent and accountable for my actions." }
+          { icon: "", text: "I am honest, fair, and show ethical behaviour" },
+          { icon: "", text: "I am consistent and accountable for my actions." }
         ]
       }
     ]

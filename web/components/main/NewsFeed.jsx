@@ -8,12 +8,12 @@ import Icon from '../base/Icon';
 import CardNews from '../base/cards/CardNews'; // Sesuaikan path
 
 // Import Master Data & Component Data
-import { NEWS_LIST } from '../../data/components/newsList'; 
-import { NEWS_CATEGORIES } from '../../data/components/newsCategory'; 
+import { NEWS_LIST } from '../../data/components/newsList';
+import { NEWS_CATEGORIES } from '../../data/components/newsCategory';
 
-export default function NewsFeed({ 
-  categorySlug, 
-  className = "" 
+export default function NewsFeed({
+  categorySlug,
+  className = ""
 }) {
   const params = useParams();
   const locale = params.locale || 'en';
@@ -37,7 +37,7 @@ export default function NewsFeed({
 const filteredNews = useMemo(() => {
   // a. Ambil semua yang aktif
   let filtered = NEWS_LIST.filter(news => news.status === 'active');
-  
+
   // b. Filter berdasarkan kategori
   // PERBAIKAN: Jika slug adalah "latest", jangan lakukan filter kategori (tampilkan semua)
   if (categorySlug && categorySlug !== "latest") {
@@ -73,22 +73,41 @@ const filteredNews = useMemo(() => {
   };
 
   // 4. SETTING DATA UNTUK INTRO
-  const sectionId = categoryData?.id || 'news-feed';
+  const categoryConfig = categoryData?.config || {};
+  const {
+    sectionId = categoryData?.id || 'news-feed',
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = categoryConfig;
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
   const introLabel = categoryData?.label || "News";
   const introTitle = categoryData?.title ? `Catch up on ${categoryData.title}` : "Catch up on All News";
   const introDesc = categoryData?.desc || "Stay updated with our latest news and announcements.";
 
   return (
-    <section id={sectionId} className={`lnNewsFeed py-6 md:py-10 bg-white ${className}`}>
+    <section
+      id={sectionId}
+      className={`lnSection__newsFeed lnNewsFeed py-6 md:py-10 bg-white
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container">
-        
+
         {/* 1. INTRO SECTION - Akan selalu tampil meskipun berita kosong */}
         <div className="mb-10 md:mb-14">
-          <Intro 
+          <Intro
             as="h1"
-            label={introLabel} 
-            title={introTitle} 
-            description={introDesc} 
+            label={introLabel}
+            title={introTitle}
+            description={introDesc}
             align="center"
           />
         </div>
@@ -102,11 +121,11 @@ const filteredNews = useMemo(() => {
               const badgeLabel = NEWS_CATEGORIES[catSlug]?.label || (typeof news.category === 'object' ? news.category?.label : news.category);
 
               return (
-                <CardNews 
+                <CardNews
                   key={news.id}
-                  variant="default" 
+                  variant="default"
                   image={news.image}
-                  badgeText={badgeLabel} 
+                  badgeText={badgeLabel}
                   title={news.title}
                   author={news.author}
                   date={news.newsDate} // Pastikan field ini sesuai dengan data kamu
@@ -127,8 +146,8 @@ const filteredNews = useMemo(() => {
         {/* 3. PAGINATION SECTION */}
         {totalPages > 1 && (
           <div className="mt-16 flex items-center justify-center gap-2">
-            
-            <Button 
+
+            <Button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               variant='secondary-outline'
@@ -136,8 +155,8 @@ const filteredNews = useMemo(() => {
               aria-label="Previous Page"
               size='lg'
               className={`w-10 h-10 flex items-center justify-center rounded-full border transition-all duration-300 ${
-                currentPage === 1 
-                  ? 'border-neutral-200 text-neutral-400 cursor-not-allowed bg-neutral-50 !opacity-0' 
+                currentPage === 1
+                  ? 'border-neutral-200 text-neutral-400 cursor-not-allowed bg-neutral-50 !opacity-0'
                   : 'border-neutral-300 text-neutral-700 hover:border-primary hover:text-primary'
               }`}
             >
@@ -152,8 +171,8 @@ const filteredNews = useMemo(() => {
                   aria-label={`Go to page ${pageNum}`}
                   aria-current={currentPage === pageNum ? 'page' : undefined}
                   className={`w-12 h-12 flex items-center justify-center rounded-full text-body-b4 font-medium transition-all duration-300 ${
-                    currentPage === pageNum 
-                      ? 'bg-primary text-black border-primary shadow-md' 
+                    currentPage === pageNum
+                      ? 'bg-primary text-black border-primary shadow-md'
                       : 'border border-transparent text-neutral-600 hover:bg-neutral-50'
                   }`}
                 >
@@ -162,7 +181,7 @@ const filteredNews = useMemo(() => {
               );
             })}
 
-            <Button 
+            <Button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               aria-label="Next Page"
@@ -170,8 +189,8 @@ const filteredNews = useMemo(() => {
               variant='secondary-outline'
               iconRight={<Icon name="chevron-right" />}
               className={`w-10 h-10 flex items-center justify-center rounded-full border transition-all duration-300 ${
-                currentPage === totalPages 
-                  ? 'border-neutral-200 text-neutral-400 cursor-not-allowed bg-neutral-50 !opacity-0' 
+                currentPage === totalPages
+                  ? 'border-neutral-200 text-neutral-400 cursor-not-allowed bg-neutral-50 !opacity-0'
                   : 'border-neutral-300 text-neutral-700 hover:border-primary hover:text-primary'
               }`}
             >

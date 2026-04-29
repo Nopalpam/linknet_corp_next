@@ -6,6 +6,11 @@ export type SharedIntroData = {
   title?: string;
   description?: string;
   align?: string;
+  fluid?: boolean;
+  labelClassName?: string;
+  titleClassName?: string;
+  descriptionClassName?: string;
+  className?: string;
 };
 
 export type SharedServiceProduct = {
@@ -75,13 +80,25 @@ function buildIntroData(
     return introData;
   }
 
-  if (data?.intro && typeof data.intro === 'object') {
+  const introSource = data?.sectionIntro || data?.intro;
+  const hasIntroContent = Boolean(
+    resolveField(introSource, 'label') ||
+    resolveField(introSource, 'title') ||
+    resolveField(introSource, 'description')
+  );
+
+  if (introSource && typeof introSource === 'object' && hasIntroContent) {
     return {
-      as: 'h2',
-      label: resolveField(data.intro, 'label'),
-      title: resolveField(data.intro, 'title'),
-      description: resolveField(data.intro, 'description'),
-      align: typeof data.intro.align === 'string' && data.intro.align ? data.intro.align : 'left',
+      as: typeof introSource.as === 'string' && introSource.as ? introSource.as : 'h2',
+      label: resolveField(introSource, 'label'),
+      title: resolveField(introSource, 'title'),
+      description: resolveField(introSource, 'description'),
+      align: typeof introSource.align === 'string' && introSource.align ? introSource.align : 'left',
+      fluid: Boolean(introSource.fluid),
+      labelClassName: typeof introSource.labelClassName === 'string' ? introSource.labelClassName : '',
+      titleClassName: typeof introSource.titleClassName === 'string' ? introSource.titleClassName : '',
+      descriptionClassName: typeof introSource.descriptionClassName === 'string' ? introSource.descriptionClassName : '',
+      className: typeof introSource.className === 'string' ? introSource.className : '',
     };
   }
 

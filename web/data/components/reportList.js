@@ -1,4 +1,12 @@
 export const REPORT_LIST_DATA = {
+  config: {
+    sectionId: "financial-2025",
+    className: "",
+    bgImage: "",
+    bgImageMobile: "",
+    bgPositionClasses: "",
+    bgSizeClass: ""
+  },
   // ==========================================
   // 1. GMS ANNOUNCEMENT
   // ==========================================
@@ -14,7 +22,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 1,
           title: "Consolidated Financial Statements for the year ended 31 December 2025",
-          reportType: "Consolidated", 
+          reportType: "Consolidated",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -23,7 +31,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 2,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -32,7 +40,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 3,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -41,7 +49,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 4,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -50,7 +58,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 5,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -59,7 +67,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 6,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -68,7 +76,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 7,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -77,7 +85,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 8,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -95,7 +103,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 1,
           title: "Consolidated Financial Statements for the year ended 31 December 2025",
-          reportType: "Consolidated", 
+          reportType: "Consolidated",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -104,7 +112,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 2,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -113,7 +121,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 3,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -122,7 +130,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 4,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -131,7 +139,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 5,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -140,7 +148,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 6,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -149,7 +157,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 7,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -158,7 +166,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 8,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -176,7 +184,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 1,
           title: "Consolidated Financial Statements for the year ended 31 December 2025",
-          reportType: "Consolidated", 
+          reportType: "Consolidated",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -185,7 +193,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 2,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -194,7 +202,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 3,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -203,7 +211,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 4,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -212,7 +220,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 5,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -221,7 +229,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 6,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -230,7 +238,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 7,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -239,7 +247,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 8,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -257,7 +265,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 1,
           title: "Consolidated Financial Statements for the year ended 31 December 2026",
-          reportType: "Consolidated", 
+          reportType: "Consolidated",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -266,7 +274,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 2,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -275,7 +283,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 3,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -284,7 +292,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 4,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -293,7 +301,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 5,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -302,7 +310,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 6,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -311,7 +319,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 7,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",
@@ -320,7 +328,7 @@ export const REPORT_LIST_DATA = {
         {
           id: 8,
           title: "Interim Consolidated Financial Statements as of 30 September 2025",
-          reportType: "Interim", 
+          reportType: "Interim",
           auditStatus: "Audited",
           category: "Announcement",
           date: "2026-02-23T17:10:00Z",

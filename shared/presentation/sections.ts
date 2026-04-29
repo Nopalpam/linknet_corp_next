@@ -57,13 +57,25 @@ function buildIntroData(
     return introData;
   }
 
-  if (data?.intro && typeof data.intro === 'object') {
+  const introSource = data?.sectionIntro || data?.intro;
+  const hasIntroContent = Boolean(
+    resolveField(introSource, 'label') ||
+    resolveField(introSource, 'title') ||
+    resolveField(introSource, 'description')
+  );
+
+  if (introSource && typeof introSource === 'object' && hasIntroContent) {
     return {
-      as: 'h2',
-      label: resolveField(data.intro, 'label'),
-      title: resolveField(data.intro, 'title'),
-      description: resolveField(data.intro, 'description'),
-      align: typeof data.intro.align === 'string' && data.intro.align ? data.intro.align : 'left',
+      as: typeof introSource.as === 'string' && introSource.as ? introSource.as : 'h2',
+      label: resolveField(introSource, 'label'),
+      title: resolveField(introSource, 'title'),
+      description: resolveField(introSource, 'description'),
+      align: typeof introSource.align === 'string' && introSource.align ? introSource.align : 'left',
+      fluid: Boolean(introSource.fluid),
+      labelClassName: typeof introSource.labelClassName === 'string' ? introSource.labelClassName : '',
+      titleClassName: typeof introSource.titleClassName === 'string' ? introSource.titleClassName : '',
+      descriptionClassName: typeof introSource.descriptionClassName === 'string' ? introSource.descriptionClassName : '',
+      className: typeof introSource.className === 'string' ? introSource.className : '',
     };
   }
 
@@ -103,10 +115,10 @@ export function mapUspGridPresentation(
     uspVariant: typeof data?.usp_variant === 'string' && data.usp_variant ? data.usp_variant : 'card',
     isSlider: data?.is_slider !== undefined ? Boolean(data.is_slider) : false,
     bgColor: typeof data?.bg_color === 'string' ? data.bg_color : '',
-    bgImage: typeof data?.bg_image === 'string' && data.bg_image ? data.bg_image : undefined,
-    bgImageMobile: typeof data?.bg_image_mobile === 'string' && data.bg_image_mobile ? data.bg_image_mobile : undefined,
-    bgPositionClasses: typeof data?.bg_position_classes === 'string' && data.bg_position_classes ? data.bg_position_classes : 'bg-right-top md:bg-right',
-    bgSizeClass: typeof data?.bg_size_class === 'string' && data.bg_size_class ? data.bg_size_class : 'bg-cover',
+    bgImage: typeof data?.config?.bgImage === 'string' && data.config.bgImage ? data.config.bgImage : (typeof data?.bg_image === 'string' && data.bg_image ? data.bg_image : undefined),
+    bgImageMobile: typeof data?.config?.bgImageMobile === 'string' && data.config.bgImageMobile ? data.config.bgImageMobile : (typeof data?.bg_image_mobile === 'string' && data.bg_image_mobile ? data.bg_image_mobile : undefined),
+    bgPositionClasses: typeof data?.config?.bgPositionClasses === 'string' && data.config.bgPositionClasses ? data.config.bgPositionClasses : (typeof data?.bg_position_classes === 'string' && data.bg_position_classes ? data.bg_position_classes : 'bg-right-top md:bg-right'),
+    bgSizeClass: typeof data?.config?.bgSizeClass === 'string' && data.config.bgSizeClass ? data.config.bgSizeClass : (typeof data?.bg_size_class === 'string' && data.bg_size_class ? data.bg_size_class : 'bg-cover'),
     uspList: Array.isArray(data?.items)
       ? data.items.map((item: Record<string, any>, index: number) => ({
           id: item.id || `usp-item-${index}`,

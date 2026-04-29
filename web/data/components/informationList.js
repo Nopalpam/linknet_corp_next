@@ -1,5 +1,13 @@
 export const INFO_LIST_DATA = {
   "media": {
+    config: {
+      sectionId: "vision",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "MEDIA & ACTIVITIES",
@@ -44,17 +52,21 @@ export const INFO_LIST_DATA = {
           }
         ],
         ctaList: [
-            { 
-                text: "Get to Know Us", 
-                variant: "primary", 
-                size: "lg", 
-                href: "/about" 
+            {
+                text: "Get to Know Us",
+                variant: "primary",
+                size: "lg",
+                iconLeft: "",
+                iconRight: "",
+                href: "/about"
             },
-            { 
-                text: "Contact Us", 
-                variant: "secondary-outline", 
-                size: "lg", 
-                href: "/contact" 
+            {
+                text: "Contact Us",
+                variant: "secondary-outline",
+                size: "lg",
+                iconLeft: "",
+                iconRight: "",
+                href: "/contact"
             }
         ]
       },
@@ -66,6 +78,6 @@ export const INFO_LIST_DATA = {
       }
     ],
     // 2. Tambahkan ctaList di sini
-    
+
   }
 };

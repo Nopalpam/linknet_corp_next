@@ -6,13 +6,17 @@ export default function SectionIntro({
   description, 
   as: Tag = "h2", // Menentukan tag heading (default h2)
   align = "left", // left, center, right
+  fluid = false,
+  labelClassName = "",
+  titleClassName = "",
+  descriptionClassName = "",
   className = "" 
 }) {
   
   // Mapping class berdasarkan alignment
   const alignClasses = {
-    left: "text-left items-start lg:w-[80%]",
-    center: "lnIntro--center text-center items-center mx-auto lg:w-[80%]",
+    left: `text-left items-start ${fluid ? '' : 'lg:w-[80%]'}`.trim(),
+    center: `lnIntro--center text-center items-center mx-auto ${fluid ? '' : 'lg:w-[80%]'}`.trim(),
     right: "text-right items-end ml-auto"
   };
 
@@ -25,20 +29,20 @@ export default function SectionIntro({
       ${alignClasses[align]} ${className}`}
       style={isCenter ? { textAlign: '-webkit-center' } : {}}
     >
-      <div className={`lnIntro__content flex flex-col ${isCenter ? 'w-full' : 'max-w-[800px]'} ${alignClasses[align]}`}>
+      <div className={`lnIntro__content flex flex-col ${isCenter ? 'w-full' : (fluid ? '' : 'max-w-[800px]')} ${alignClasses[align]}`}>
         {label && (
-          <div className="lnIntro__label text-caption-c1 font-bold uppercase text-warning tracking-wider leading-none">
+          <div className={`lnIntro__label text-caption-c1 font-bold uppercase text-warning tracking-wider leading-none ${labelClassName}`}>
             {label}
           </div>
         )}
 
         {/* Dynamic Heading Tag */}
-        <Tag className="lnIntro__title text-headline-h3 font-bold text-black mt-3 leading-tight">
+        <Tag className={`lnIntro__title text-headline-h3 md:text-headline-h3 font-bold text-black mt-3 leading-tight ${titleClassName}`}>
           {title}
         </Tag>
 
         {description && (
-          <p className={`lnIntro__desc text-body-b4 mt-4 font-regular text-secondary leading-relaxed ${isCenter ? 'mx-auto md:w-[80%]' : 'md:w-[80%]'}`}>
+          <p className={`lnIntro__desc text-body-b4 mt-4 font-regular text-secondary leading-relaxed ${isCenter ? 'mx-auto md:w-[80%]' : 'md:w-[80%]'} ${descriptionClassName}`}>
             {description}
           </p>
         )}

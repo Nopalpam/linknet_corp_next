@@ -1,8 +1,15 @@
 export const LIST_REPORT_HOME_DATA = {
   // Key 'home' untuk digunakan di halaman utama
   home: {
-    id: "section-report-announcement",
-    
+    config: {
+      sectionId: "section-report-announcement",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
+
     // Data untuk komponen Intro
     introData: {
       as: "h2",

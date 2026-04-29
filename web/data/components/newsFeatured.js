@@ -1,6 +1,6 @@
 // src/data/components/newsFeatured.js
 
-import { NEWS_LIST } from './newsList'; 
+import { NEWS_LIST } from './newsList';
 
 // Fungsi helper untuk mengambil berita berdasarkan ID dan memastikan statusnya "active"
 const getActiveNewsById = (id) => {
@@ -9,8 +9,15 @@ const getActiveNewsById = (id) => {
 
 export const NEWS_FEATURED_DATA = {
   home: {
-    id: "news-featured-section",
-    
+    config: {
+      sectionId: "news-featured-section",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
+
     introData: {
       as: "h2",
       label: "MEDIA & ACTIVITIES",
@@ -30,11 +37,13 @@ export const NEWS_FEATURED_DATA = {
 
     // Call to Action Buttons
     ctaList: [
-      { 
-        text: "See More", 
-        variant: "secondary-outline", 
-        size: "lg", 
-        href: "/news" 
+      {
+        text: "See More",
+        variant: "secondary-outline",
+        size: "lg",
+        iconLeft: "",
+        iconRight: "",
+        href: "/news"
       }
     ]
 

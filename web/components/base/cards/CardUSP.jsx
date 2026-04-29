@@ -1,5 +1,6 @@
 'use client';
 
+import Icon from '../Icon';
 import "../styles/cardUSP.sass";
 
 export default function CardUSP({ 
@@ -17,11 +18,15 @@ export default function CardUSP({
     <div className={`lnCardUSP__item ${variantClass} ${className}`}>
       {iconURL && (
         <div className="lnCardUSP__icon">
-          <img 
-            src={iconURL} 
-            alt={title} 
-            loading="lazy" 
-          />
+          {typeof iconURL === 'string' && iconURL.startsWith('/') ? (
+            <img 
+              src={iconURL} 
+              alt={title} 
+              loading="lazy" 
+            />
+          ) : (
+            <Icon name={iconURL} style={{ '--icon-size': '40px' }} />
+          )}
         </div>
       )}
       <div className="lnCardUSP__content">

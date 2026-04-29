@@ -3,7 +3,7 @@
 import React from 'react';
 import Intro from '../base/section/Intro';
 import CardNews from '../base/cards/CardNews';
-import Button from '../base/Button'; 
+import CTAList from '../base/section/CTAList';
 
 // Import Swiper React components & styles
 import { useParams } from 'next/navigation';
@@ -12,8 +12,8 @@ import 'swiper/css';
 
 import { NEWS_FEATURED_DATA } from '../../data/components/newsFeatured';
 
-export default function NewsFeatured({ 
-  name = 'home', 
+export default function NewsFeatured({
+  name = 'home',
   className = "",
   hideCta = false // 1. Tambahkan prop hideCta dengan default false
 }) {
@@ -25,36 +25,38 @@ export default function NewsFeatured({
 
   if (!sectionData || !sectionData.featuredNews) return null;
 
-  const { config = {}, id, introData, featuredNews, ctaList } = sectionData;
+  const { config, introData, featuredNews, ctaList } = sectionData;
   const {
-    sectionId = id,
+    sectionId,
     className: configClassName = "",
     bgImage = "",
     bgImageMobile = "",
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
-  } = config;
-
+  } = config || {};
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
-  const topNews = featuredNews.slice(0, 2); 
+  const topNews = featuredNews.slice(0, 2);
   const bottomNews = featuredNews.slice(2);
 
   return (
     <section
       id={sectionId}
-      className={`py-16 md:py-20 bg-white bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      className={`lnSection__newsFeatured py-16 md:py-20 bg-white
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
       style={sectionStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* Intro Section */}
         {introData && (
           <div className="mb-8 md:mb-8">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -68,23 +70,23 @@ export default function NewsFeatured({
         {topNews.length > 0 && (
           <div className="mb-8 md:mb-12">
             <Swiper
-              spaceBetween={16} 
-              slidesPerView={1.1} 
+              spaceBetween={16}
+              slidesPerView={1.1}
               breakpoints={{
                 768: {
-                  slidesPerView: 2, 
-                  spaceBetween: 24, 
+                  slidesPerView: 2,
+                  spaceBetween: 24,
                 },
                 1024: {
                   slidesPerView: 2,
-                  spaceBetween: 32, 
+                  spaceBetween: 32,
                 }
               }}
               className="w-full"
             >
               {topNews.map((news, index) => (
                 <SwiperSlide key={index} className="h-auto">
-                  <CardNews 
+                  <CardNews
                     variant="featured"
                     image={news.image}
                     badgeText={news.category?.label}
@@ -92,7 +94,7 @@ export default function NewsFeatured({
                     author={news.author}
                     date={news.newsDate}
                     href={`/${locale}/newsroom/${news.slug}`}
-                    className="h-full" 
+                    className="h-full"
                   />
                 </SwiperSlide>
               ))}
@@ -105,7 +107,7 @@ export default function NewsFeatured({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {bottomNews.map((news, index) => (
               <div key={index} className="border-t border-neutral-100 md:border-none pt-6 md:pt-0">
-                  <CardNews 
+                  <CardNews
                     variant="default"
                     image={news.image}
                     badgeText={news.category?.label}
@@ -120,19 +122,14 @@ export default function NewsFeatured({
         )}
 
         {/* 2. Tambahkan kondisi !hideCta di sini */}
-        {!hideCta && ctaList && ctaList.length > 0 && (
-            <div className={`lnSection__cta mx-auto mt-12 md:mt-20 flex flex-wrap gap-4 justify-center`}>
-            {ctaList.map((cta, index) => (
-                <Button 
-                  key={index} 
-                  variant={cta.variant || 'primary'}
-                  size={cta.size} 
-                  href={cta.href}
-                >
-                  {cta.text}
-                </Button>
-            ))}
-            </div>
+        {!hideCta && (
+          <CTAList
+            ctaList={ctaList}
+            align="center"
+            className="mx-auto mt-12 md:mt-20"
+            useButton
+            defaultSize="md"
+          />
         )}
 
       </div>

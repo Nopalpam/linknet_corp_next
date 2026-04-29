@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import Intro from '../base/section/Intro'; 
+import Intro from '../base/section/Intro';
 import CardNews from '../base/cards/CardNews'; // Gunakan CardNews sesuai instruksi
 
 // Import GSAP & ScrollTrigger
@@ -10,14 +10,14 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // Asumsi letak data konfigurasi (Sesuaikan dengan nama file datamu)
-import { AWARDS_FEED_DATA } from '@/data/components/awardsFeed'; 
+import { AWARDS_FEED_DATA } from '@/data/components/awardsFeed';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-export default function AwardsFeed({ 
-  name = 'awards-list', 
-  className = "" 
+export default function AwardsFeed({
+  name = 'awards-list',
+  className = ""
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -28,7 +28,7 @@ export default function AwardsFeed({
   const pageParam = searchParams.get('page');
   const parsedPage = parseInt(pageParam, 10);
   const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  
+
   const ITEMS_PER_PAGE = 9; // Batas maksimal item per halaman
 
   const sectionData = AWARDS_FEED_DATA[name];
@@ -41,7 +41,7 @@ export default function AwardsFeed({
 
     let ctx = gsap.context(() => {
       // 1. Animasi Intro (Hanya berjalan sekali saat di-scroll)
-      gsap.from('.gsap-awards-intro', {
+      gsap.from('.lnGsapAwardsIntro', {
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top 80%',
@@ -55,11 +55,11 @@ export default function AwardsFeed({
 
       // 2. Animasi Grid Kartu (Berjalan setiap kali ganti halaman / render ulang)
       // Menggunakan fromTo agar ter-reset saat pengguna klik 'Next' atau 'Prev'
-      gsap.fromTo('.gsap-awards-card', 
+      gsap.fromTo('.lnGsapAwardsCard',
         { y: 60, opacity: 0 },
         {
           scrollTrigger: {
-            trigger: '.gsap-awards-grid',
+            trigger: '.lnGsapAwardsGrid',
             start: 'top 85%',
           },
           y: 0,
@@ -77,12 +77,25 @@ export default function AwardsFeed({
 
   if (!sectionData) return null;
 
-  const { introData, items } = sectionData;
+  const { config, introData, items } = sectionData;
+  const {
+    sectionId = 'awards-feed-section',
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
 
   // 2. Kalkulasi Data Pagination
   const totalItems = items ? items.length : 0;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1; 
-  
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentItems = items ? items.slice(startIndex, startIndex + ITEMS_PER_PAGE) : [];
 
@@ -91,12 +104,12 @@ export default function AwardsFeed({
     if (page >= 1 && page <= totalPages) {
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', page.toString());
-      
+
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
 
       // Scroll halus kembali ke atas grid saat pindah halaman
       window.scrollTo({
-        top: document.getElementById('awards-feed-section')?.offsetTop - 80,
+        top: document.getElementById(sectionId)?.offsetTop - 80,
         behavior: 'smooth'
       });
     }
@@ -122,15 +135,23 @@ export default function AwardsFeed({
   };
 
   return (
-    <section id="awards-feed-section" ref={containerRef} className={`py-16 md:py-24 bg-light-2 ${className}`}>
+    <section
+      id={sectionId}
+      ref={containerRef}
+      className={`lnSection__awardsFeed py-16 md:py-24 bg-light-2
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0 max-w-7xl">
-        
+
         {/* ========================================= */}
         {/* HEADER SECTION */}
         {/* ========================================= */}
         {introData && (
-          <div className="mb-10 md:mb-16 gsap-awards-intro">
-            <Intro 
+          <div className="mb-10 md:mb-16 lnGsapAwardsIntro">
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -145,16 +166,16 @@ export default function AwardsFeed({
         {/* ========================================= */}
         {currentItems && currentItems.length > 0 ? (
           // Setup Grid: Mobile 1, Tablet 2, Desktop 3
-          <div className="gsap-awards-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-10 md:mb-14">
+          <div className="lnGsapAwardsGrid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-10 md:mb-14">
             {currentItems.map((item, index) => (
-              <div key={item.id || index} className="gsap-awards-card h-full">
-                <CardNews 
+              <div key={item.id || index} className="lnGsapAwardsCard h-full">
+                <CardNews
                   variant="with-logo"
                   logo={item.topLogo}
                   image={item.image}
                   title={item.title}
                   desc={item.desc}
-                  date={item.date} 
+                  date={item.date}
                   href={item.url}
                 />
               </div>
@@ -168,10 +189,10 @@ export default function AwardsFeed({
         {/* PAGINATION DINAMIS */}
         {/* ========================================= */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8 gsap-awards-intro">
-            
+          <div className="flex justify-center items-center gap-2 mt-8 lnGsapAwardsIntro">
+
             {/* Tombol Previous */}
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-4 py-2 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -187,8 +208,8 @@ export default function AwardsFeed({
                   onClick={() => typeof page === 'number' ? handlePageChange(page) : null}
                   disabled={page === '...'}
                   className={`w-10 h-10 flex items-center justify-center rounded-full font-medium transition-colors ${
-                    page === currentPage 
-                      ? 'bg-[#FFB800] text-black border-transparent' 
+                    page === currentPage
+                      ? 'bg-[#FFB800] text-black border-transparent'
                       : page === '...'
                         ? 'bg-transparent text-neutral-400 cursor-default'
                         : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
@@ -205,14 +226,14 @@ export default function AwardsFeed({
             </span>
 
             {/* Tombol Next */}
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="px-6 py-2 text-sm font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>
-            
+
           </div>
         )}
 

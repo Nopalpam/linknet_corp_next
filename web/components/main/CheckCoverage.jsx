@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 import Icon from '../base/Icon';
@@ -21,48 +21,19 @@ const INITIAL_MANUAL_DATA = {
   detailAddress: '',
 };
 
-function buildSectionData(resolvedData, fallbackSectionData) {
-  const fallbackConfig = fallbackSectionData?.config || {};
-  const fallbackIntroData = fallbackSectionData?.introData || {};
-
-  return {
-    config: {
-      ...fallbackConfig,
-      sectionId: resolvedData.sectionId || resolvedData.section_id || fallbackConfig.sectionId,
-      className: [fallbackConfig.className, resolvedData.sectionClassName, resolvedData.custom_class]
-        .filter(Boolean)
-        .join(' '),
-      bgImage: resolvedData.bgImage || resolvedData.background_image || fallbackConfig.bgImage,
-      bgImageMobile:
-        resolvedData.bgImageMobile || resolvedData.background_image_mobile || fallbackConfig.bgImageMobile,
-      bgPositionClasses: resolvedData.bgPositionClasses || fallbackConfig.bgPositionClasses,
-      bgSizeClass: resolvedData.bgSizeClass || fallbackConfig.bgSizeClass,
-    },
-    introData: {
-      ...fallbackIntroData,
-      as: resolvedData.as || fallbackIntroData.as,
-      label: resolvedData.label || fallbackIntroData.label,
-      title: resolvedData.title || resolvedData.coverage_title || fallbackIntroData.title,
-      description:
-        resolvedData.description || resolvedData.coverage_description || fallbackIntroData.description,
-      align: resolvedData.align || fallbackIntroData.align,
-    },
-  };
-}
-
 function ActionCard({ title, description, imageSrc, imageAlt, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full cursor-pointer items-center gap-4 rounded-[16px] border border-neutral bg-white px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 md:px-6"
+      className="group flex w-full items-center gap-4 cursor-pointer rounded-[16px] border border-neutral bg-white px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 md:px-6"
     >
-      <div>
+      <div className="">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageSrc}
           alt={imageAlt}
-          className="h-[36px] w-[36px] object-contain md:h-[44px] md:w-[44px]"
+          className="h-[36px] md:h-[44px] w-[36px] md:w-[44px] object-contain"
         />
       </div>
       <div className="min-w-0 flex-1">
@@ -84,14 +55,16 @@ function ActionCard({ title, description, imageSrc, imageAlt, onClick }) {
   );
 }
 
-function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) {
+function CheckCoverageContent({
+  sectionData,
+  className,
+}) {
   const pathname = usePathname();
   const { openModal: openInquiryModal } = useModalFormInquiryFiber();
   const { openModal: openSubscribeModal } = useModalFormSubscribeInternetFiber();
 
   const [coverageMode, setCoverageMode] = useState(COVERAGE_MODE.SEARCH);
   const [siteId, setSiteId] = useState('');
-  const [selectedCoverage, setSelectedCoverage] = useState(null);
   const [manualData, setManualData] = useState(INITIAL_MANUAL_DATA);
   const [manualCoverageChecked, setManualCoverageChecked] = useState(false);
 
@@ -101,35 +74,14 @@ function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) 
   const canCheckProvider =
     coverageMode === COVERAGE_MODE.COVERED && Boolean(siteId);
 
-  const normalizeCoverageProviders = (value) => {
-    if (Array.isArray(value)) {
-      return value;
-    }
-    if (value === null || value === undefined || value === '') {
-      return [];
-    }
-    return [value];
-  };
-
-  const handleAddressSelect = ({ site_id, address = '', raw, providers = [] }) => {
+  const handleAddressSelect = ({ site_id }) => {
     setSiteId(site_id || '');
-    setSelectedCoverage(
-      site_id
-        ? {
-            site_id,
-            address: address || '',
-            raw: raw ?? null,
-            providers: normalizeCoverageProviders(providers),
-          }
-        : null,
-    );
     setManualCoverageChecked(false);
   };
 
   const handleAddressReset = () => {
     setCoverageMode(COVERAGE_MODE.SEARCH);
     setSiteId('');
-    setSelectedCoverage(null);
     setManualData(INITIAL_MANUAL_DATA);
     setManualCoverageChecked(false);
   };
@@ -148,50 +100,15 @@ function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) 
       return;
     }
 
-    const rawSource = selectedCoverage?.providers?.length > 0
-      ? selectedCoverage.providers
-      : (selectedCoverage?.raw?.providers
-          ?? (selectedCoverage?.raw?.data && Array.isArray(selectedCoverage.raw.data) ? selectedCoverage.raw.data[0]?.providers : undefined)
-          ?? (Array.isArray(selectedCoverage?.raw) ? selectedCoverage.raw[0]?.providers : undefined)
-          ?? selectedCoverage?.raw
-          ?? '');
-
-    const normalizeProviders = (src) => {
-      if (!src && src !== 0) return [];
-      if (Array.isArray(src)) {
-        return src.flatMap((p) => (typeof p === 'string' ? p.split(',') : [String(p)]))
-          .map((p) => String(p).trim())
-          .filter(Boolean);
-      }
-
-      if (typeof src === 'string') {
-        return src.split(',').map((p) => p.trim()).filter(Boolean);
-      }
-
-      if (typeof src === 'object') {
-        const cand = src.providers ?? src.provider ?? src.name ?? src.label ?? src.value;
-        return normalizeProviders(cand);
-      }
-
-      return [String(src).trim()].filter(Boolean);
-    };
-
-    const providerArray = normalizeProviders(rawSource);
-
     openSubscribeModal({
       Promo_Website__c: 'Check Coverage',
       Page_Website__c: pathname || '/coverage',
       Source_Website__c: 'Coverage Website',
       SiteID: siteId,
-      address: selectedCoverage?.address || '',
-      raw: selectedCoverage?.raw,
-      providers: providerArray.length > 0 ? providerArray : rawSource,
     });
   };
 
-  if (!sectionData) {
-    return null;
-  }
+  if (!sectionData) return null;
 
   const {
     config = {},
@@ -207,7 +124,7 @@ function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) 
   } = config;
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
   return (
@@ -218,13 +135,12 @@ function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) 
         bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
         ${configClassName} ${className}`}
       style={sectionStyle}
-      {...sectionProps}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_left_top,_rgba(255,255,255,0.78),_rgba(251,251,248,0.64)_42%,_rgba(247,247,243,0.52)_100%)]" />
       </div>
 
-      <div className="container relative z-10 mx-auto w-full px-4 md:px-0">
+      <div className="container relative z-10 mx-auto px-4 md:px-0 w-full">
         <div className="grid grid-cols-1 items-stretch gap-10 md:grid-cols-2 md:gap-12 lg:gap-16">
           <div className="flex min-w-0 flex-col justify-between gap-10 md:gap-14 lg:gap-16">
             <div>
@@ -289,6 +205,8 @@ function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) 
               ) : null}
             </div>
           </div>
+
+
         </div>
       </div>
     </section>
@@ -297,17 +215,11 @@ function CheckCoverageContent({ sectionData, className = '', ...sectionProps }) 
 
 export default function CheckCoverage({
   name = 'enterprise',
+  data = null,
+  cmsData = null,
   className = '',
-  data,
-  cmsData,
-  ...sectionProps
 }) {
-  const resolvedData = cmsData || data || {};
-  const fallbackSectionData = CHECK_COVERAGE_DATA[name] || CHECK_COVERAGE_DATA.enterprise;
-  const sectionData = useMemo(
-    () => buildSectionData(resolvedData, fallbackSectionData),
-    [fallbackSectionData, resolvedData],
-  );
+  const sectionData = cmsData || data || CHECK_COVERAGE_DATA[name];
 
   return (
     <ModalFormInquiryFiberProvider>
@@ -315,7 +227,6 @@ export default function CheckCoverage({
         <CheckCoverageContent
           sectionData={sectionData}
           className={className}
-          {...sectionProps}
         />
       </ModalFormSubscribeInternetFiberProvider>
     </ModalFormInquiryFiberProvider>

@@ -321,6 +321,7 @@ export class ComponentService {
     return ALL_COMPONENT_TYPES.map((ct) => ({
       type: ct.type,
       name: ct.name,
+      componentPath: ct.componentPath,
       description: ct.description,
       icon: ct.icon,
       category: ct.category,

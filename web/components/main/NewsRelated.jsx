@@ -8,23 +8,39 @@ import Button from '../base/Button';
 import LinknetLink from '../base/Link';
 
 // Import Master Data (Sesuaikan path-nya jika berbeda)
-import { NEWS_LIST } from '@/data/components/newsList'; 
+import { NEWS_LIST } from '@/data/components/newsList';
 import { NEWS_CATEGORIES } from '@/data/components/newsCategory';
 
-export default function NewsRelated({ currentArticle, className = "" }) {
+export default function NewsRelated({
+  currentArticle,
+  className = "",
+  config = NEWS_CATEGORIES.latest?.config || {},
+}) {
   const params = useParams();
   const locale = params.locale || 'en';
+  const {
+    sectionId,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config || {};
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
 
   // 1. Logika Cerdas untuk Mencari Berita Terkait + Fallback Latest News
   const relatedNews = useMemo(() => {
     if (!currentArticle) return [];
 
-    const currentCatSlug = typeof currentArticle.category === 'object' 
-      ? currentArticle.category?.slug 
+    const currentCatSlug = typeof currentArticle.category === 'object'
+      ? currentArticle.category?.slug
       : currentArticle.category;
 
     // a. Ambil semua berita aktif dan buang artikel yang sedang dibaca saat ini
-    let allActiveNews = NEWS_LIST.filter(news => 
+    let allActiveNews = NEWS_LIST.filter(news =>
       news.status === 'active' && news.id !== currentArticle.id
     );
 
@@ -36,10 +52,10 @@ export default function NewsRelated({ currentArticle, className = "" }) {
     const otherCategoryNews = [];
 
     allActiveNews.forEach(news => {
-      const catSlug = typeof news.category === 'object' 
-        ? news.category?.slug 
+      const catSlug = typeof news.category === 'object'
+        ? news.category?.slug
         : news.category;
-        
+
       if (catSlug === currentCatSlug) {
         sameCategoryNews.push(news);
       } else {
@@ -56,10 +72,10 @@ export default function NewsRelated({ currentArticle, className = "" }) {
     } else {
       // Jika kurang dari 3, ambil semua dari kategori yang sama...
       finalNews = [...sameCategoryNews];
-      
+
       // ...lalu hitung kekurangannya
       const gap = 3 - finalNews.length;
-      
+
       // ...dan tambal dengan berita terbaru dari kategori lain
       finalNews = [...finalNews, ...otherCategoryNews.slice(0, gap)];
     }
@@ -86,12 +102,19 @@ export default function NewsRelated({ currentArticle, className = "" }) {
   ];
 
   return (
-    <section className={`py-16 md:py-20 bg-white ${className}`}>
+    <section
+      id={sectionId}
+      className={`lnSection__newsRelated py-16 md:py-20 bg-white
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto">
-        
+
         {/* 1. INTRO SECTION */}
         <div className="mb-8 md:mb-10">
-          <Intro 
+          <Intro
             as="h2"
             label={introData.label}
             title={introData.title}
@@ -108,11 +131,11 @@ export default function NewsRelated({ currentArticle, className = "" }) {
             const badgeLabel = NEWS_CATEGORIES[catSlug]?.label || (typeof news.category === 'object' ? news.category?.label : news.category);
 
             return (
-              <CardNews 
+              <CardNews
                 key={news.id}
-                variant="default-row" 
+                variant="default-row"
                 image={news.image}
-                badgeText={badgeLabel} 
+                badgeText={badgeLabel}
                 title={news.title}
                 author={news.author}
                 date={news.newsDate}
@@ -126,10 +149,10 @@ export default function NewsRelated({ currentArticle, className = "" }) {
         {ctaData && ctaData.length > 0 && (
           <div className="mt-12 md:mt-16 flex flex-wrap gap-4 justify-center">
             {ctaData.map((cta, index) => (
-              <LinknetLink 
-                key={index} 
+              <LinknetLink
+                key={index}
                 variant={cta.variant}
-                size={cta.size} 
+                size={cta.size}
                 href={cta.href}
               >
                 {cta.text}

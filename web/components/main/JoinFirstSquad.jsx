@@ -11,10 +11,10 @@ import LinknetLink from '../base/Link'; // Sesuaikan path
 import Icon from '../base/Icon'; // Sesuaikan path
 import { JOIN_FIRST_SQUAD_DATA } from '@/data/components/joinFirstSquad';
 
-export default function JoinFirstSquad({ 
-  name = 'default', 
-  className = "",
+export default function JoinFirstSquad({
+  name = 'default',
   cmsData = null,
+  className = ""
 }) {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -22,22 +22,43 @@ export default function JoinFirstSquad({
   const sectionData = cmsData || JOIN_FIRST_SQUAD_DATA[name];
   if (!sectionData) return null;
 
-  const { introData, items } = sectionData;
+  const { config = {}, id, introData, items = [] } = sectionData;
   if (!items || items.length === 0) return null;
+
+  const {
+    sectionId = id,
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
 
   // Data dinamis berdasarkan slide yang sedang aktif
   const activeItem = items[activeIndex];
 
   return (
-    <section className={`py-16 md:py-24 bg-light-2 rounded-[40px] overflow-hidden ${className}`}>
+    <section
+      id={sectionId}
+      className={`lnSection__joinFirstSquad py-16 md:py-24 bg-light-2 rounded-[40px] overflow-hidden
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
         {introData && (
           <div className="mb-10 md:mb-14">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -51,7 +72,7 @@ export default function JoinFirstSquad({
         {/* SWIPER CAROUSEL (Center Focused) */}
         {/* ========================================= */}
         <div className="relative mx-auto">
-          
+
           <Swiper
             modules={[Navigation]}
             onSwiper={setSwiperInstance}
@@ -69,20 +90,20 @@ export default function JoinFirstSquad({
               <SwiperSlide key={item.id || index}>
                 {/* Render Props Swiper untuk mendeteksi slide aktif */}
                 {({ isActive }) => (
-                  <div 
+                  <div
                     className={`transition-all duration-500 ease-out transform mx-auto h-[440px] md:h-[520px] rounded-[24px] overflow-hidden relative ${
-                      isActive 
-                        ? 'opacity-100 scale-100 shadow-[0_8px_30px_rgba(0,0,0,0.08)] bg-white z-10' 
+                      isActive
+                        ? 'opacity-100 scale-100 shadow-[0_8px_30px_rgba(0,0,0,0.08)] bg-white z-10'
                         : 'opacity-64 scale-90 blur-[1px] bg-transparent -z-10'
                     }`}
                   >
                     {/* Gambar Karakter */}
-                    <img 
-                      src={item.image} 
-                      alt={item.roleTitle} 
+                    <img
+                      src={item.image}
+                      alt={item.roleTitle}
                       className="absolute inset-0 w-full h-full object-cover object-top"
                     />
-                    
+
                     {/* Gradient Overlay Putih (Agar teks terbaca) */}
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent h-3/5 mt-auto"></div>
 
@@ -104,14 +125,14 @@ export default function JoinFirstSquad({
           {/* Custom Navigation Buttons (Center Flanking) */}
           {/* Disembunyikan di mobile agar user fokus ke swipe manual */}
           <div className="flex absolute top-1/2 left-0 right-0 -translate-y-1/2 justify-between px-8 lg:px-4 z-20 pointer-events-none">
-            <button 
+            <button
               onClick={() => swiperInstance?.slidePrev()}
               className="w-12 h-12 mx-[-12%] md:mx-[20%] flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all shadow-md pointer-events-auto text-neutral-800 hover:text-yellow-500"
               aria-label="Previous Slide"
             >
               <Icon name="chevron-left" />
             </button>
-            <button 
+            <button
               onClick={() => swiperInstance?.slideNext()}
               className="w-12 h-12 mx-[-12%] md:mx-[20%] flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all shadow-md pointer-events-auto text-neutral-800 hover:text-yellow-500"
               aria-label="Next Slide"
@@ -119,7 +140,7 @@ export default function JoinFirstSquad({
                 <Icon name="chevron-right" />
             </button>
           </div>
-          
+
         </div>
 
         {/* ========================================= */}
@@ -133,9 +154,9 @@ export default function JoinFirstSquad({
             {activeItem.desc}
           </p>
           <div className="flex justify-center">
-            <LinknetLink 
-              variant="secondary-outline" 
-              size="lg" 
+            <LinknetLink
+              variant="secondary-outline"
+              size="lg"
               href={activeItem.ctaUrl}
               className="rounded-full px-8 bg-white"
             >

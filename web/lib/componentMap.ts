@@ -100,7 +100,29 @@ function extractIntro(
   data: Record<string, any>,
   t: (f: any) => string,
   locale: string
-): { as: string; label: string; title: string; description: string; align: string } | undefined {
+): Record<string, any> | undefined {
+  const introSource = data.sectionIntro || data.intro;
+  const hasIntroContent = Boolean(
+    t(introSource?.label) ||
+    t(introSource?.title) ||
+    t(introSource?.description)
+  );
+
+  if (introSource && typeof introSource === 'object' && hasIntroContent) {
+    return {
+      as: introSource.as || 'h2',
+      label: t(introSource.label),
+      title: t(introSource.title),
+      description: t(introSource.description),
+      align: introSource.align || 'left',
+      fluid: Boolean(introSource.fluid),
+      labelClassName: introSource.labelClassName || '',
+      titleClassName: introSource.titleClassName || '',
+      descriptionClassName: introSource.descriptionClassName || '',
+      className: introSource.className || '',
+    };
+  }
+
   // Format B: nested intro object
   if (data.intro) {
     return {
@@ -123,6 +145,21 @@ function extractIntro(
     };
   }
   return undefined;
+}
+
+export function normalizeComponentData(data: Record<string, any> | undefined): Record<string, any> {
+  const source = data || {};
+  const config = source.config && typeof source.config === 'object' ? source.config : {};
+
+  return {
+    ...source,
+    custom_id: source.custom_id ?? config.sectionId ?? '',
+    custom_class: source.custom_class ?? config.className ?? '',
+    bg_image: source.bg_image ?? config.bgImage ?? '',
+    bg_image_mobile: source.bg_image_mobile ?? config.bgImageMobile ?? '',
+    bg_position_classes: source.bg_position_classes ?? config.bgPositionClasses ?? '',
+    bg_size_class: source.bg_size_class ?? config.bgSizeClass ?? '',
+  };
 }
 
 // ─── Dynamic Imports (code-split per component) ─────────────────────
@@ -167,6 +204,49 @@ const FormRegistrationEnterprise = dynamic(() => import('@/components/main/FormR
 const FormRegistrationFiber = dynamic(() => import('@/components/main/FormRegistrationFiber'));
 const FormRegistrationMedia = dynamic(() => import('@/components/main/FormRegistrationMedia'));
 const CoverageCheckFiber = dynamic(() => import('@/components/main/CoverageCheckFiber'));
+const CareerDetail = dynamic(() => import('@/components/main/CareerDetail'));
+const CheckCoverage = dynamic(() => import('@/components/main/CheckCoverage'));
+const ContentHighlights = dynamic(() => import('@/components/main/ContentHighlights'));
+const EventContent = dynamic(() => import('@/components/main/EventContent'));
+const EventDetail = dynamic(() => import('@/components/main/EventDetail'));
+const EventHero = dynamic(() => import('@/components/main/EventHero'));
+const EventRegistrationForm = dynamic(() => import('@/components/main/EventRegistrationForm'));
+const EventRelated = dynamic(() => import('@/components/main/EventRelated'));
+const EventRelatedNews = dynamic(() => import('@/components/main/EventRelatedNews'));
+const EventsList = dynamic(() => import('@/components/main/EventsList'));
+const Footer = dynamic(() => import('@/components/main/Footer'));
+const FooterFiber = dynamic(() => import('@/components/main/FooterFiber'));
+const FooterMain = dynamic(() => import('@/components/main/FooterMain'));
+const FooterMedia = dynamic(() => import('@/components/main/FooterMedia'));
+const FormRegistration = dynamic(() => import('@/components/main/FormRegistration'));
+const FormRegistrationIncomplete = dynamic(() => import('@/components/main/FormRegistrationIncomplete'));
+const FormRegistrationSuccess = dynamic(() => import('@/components/main/FormRegistrationSuccess'));
+const HeroSlidersTVHighlight = dynamic(() => import('@/components/main/HeroSlidersTVHighlight'));
+const Hospitality = dynamic(() => import('@/components/main/Hospitality'));
+const LayoutChrome = dynamic(() => import('@/components/main/LayoutChrome'));
+const ListReportHome = dynamic(() => import('@/components/main/ListReportHome'));
+const LogoRunning = dynamic(() => import('@/components/main/LogoRunning'));
+const LogoRunningWithBorder = dynamic(() => import('@/components/main/LogoRunningWithBorder'));
+const MapsCoverageV1 = dynamic(() => import('@/components/main/MapsCoverage-v1'));
+const Navbar = dynamic(() => import('@/components/main/Navbar'));
+const NavbarFiber = dynamic(() => import('@/components/main/NavbarFiber'));
+const NavbarMedia = dynamic(() => import('@/components/main/NavbarMedia'));
+const NavbarNewsroom = dynamic(() => import('@/components/main/NavbarNewsroom'));
+const NewsDetail = dynamic(() => import('@/components/main/NewsDetail'));
+const NewsFeed = dynamic(() => import('@/components/main/NewsFeed'));
+const NewsRelated = dynamic(() => import('@/components/main/NewsRelated'));
+const OmniChannelWidget = dynamic(() => import('@/components/main/OmniChannelWidget'));
+const OneStreamPlus = dynamic(() => import('@/components/main/OneStreamPlus'));
+const PackageList = dynamic(() => import('@/components/main/PackageList'));
+const ReportGrid = dynamic(() => import('@/components/main/ReportGrid'));
+const ReportListPart = dynamic(() => import('@/components/main/ReportListPart'));
+const SolutionServicesHome = dynamic(() => import('@/components/main/SolutionServicesHome'));
+const SolutionsFiltered = dynamic(() => import('@/components/main/SolutionsFiltered'));
+const SolutionsServicesWithBackground = dynamic(() => import('@/components/main/SolutionsServicesWithBackground'));
+const TVChannelList = dynamic(() => import('@/components/main/TVChannelList'));
+const TVChannelSneakPeek = dynamic(() => import('@/components/main/TVChannelSneakPeek'));
+const TVHighlightSliders = dynamic(() => import('@/components/main/TVHighlightSliders'));
+const TVHighlightSneekPeak = dynamic(() => import('@/components/main/TVHighlightSneekPeak'));
 
 // Built-in generic section components (no separate file needed per type)
 import {
@@ -274,11 +354,13 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         valuesList: Array.isArray(data.items)
           ? data.items.map((item: any, idx: number) => ({
               id: `value-${idx}`,
-              logo: item.icon || undefined,
+              logo: item.logo || (typeof item.icon === 'string' && item.icon.startsWith('/') ? item.icon : undefined),
               title: localizeField(item, 'title', t, locale),
-              bodyTitle: localizeField(item, 'description', t, locale),
+              desc: localizeField(item, 'desc', t, locale),
+              bodyTitle: localizeField(item, 'bodyTitle', t, locale) || localizeField(item, 'description', t, locale),
+              iconListDefault: item.iconListDefault || undefined,
               list: Array.isArray(item.list)
-                ? item.list.map((li: any) => ({ icon: li.icon || undefined, text: t(li.text) }))
+                ? item.list.map((li: any) => ({ icon: li.icon || item.iconListDefault || undefined, text: t(li.text) }))
                 : [],
             }))
           : [],
@@ -993,6 +1075,132 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       ...styleProps,
     }),
   },
+
+  // Synced one-to-one registrations from web/components/main
+  hero: { component: Hero },
+  career_detail: {
+    component: CareerDetail,
+    mapProps: ({ data, styleProps }) => ({
+      career: data.career || data.item || null,
+      relatedCareers: data.relatedCareers || data.related_careers || [],
+      ...styleProps,
+    }),
+  },
+  check_coverage: { component: CheckCoverage },
+  content_highlights: {
+    component: ContentHighlights,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'home', ...styleProps }),
+  },
+  event_content: {
+    component: EventContent,
+    mapProps: ({ data }) => ({ event: data.event || data.item || null }),
+  },
+  event_detail: {
+    component: EventDetail,
+    mapProps: ({ data, locale }) => ({ event: data.event || data.item || null, locale }),
+  },
+  event_hero: { component: EventHero },
+  event_registration_form: {
+    component: EventRegistrationForm,
+    mapProps: ({ data }) => ({ event: data.event || data.item || null }),
+  },
+  event_related: {
+    component: EventRelated,
+    mapProps: ({ data, styleProps }) => ({
+      currentEvent: data.currentEvent || data.current_event || null,
+      events: data.events || [],
+      ...styleProps,
+    }),
+  },
+  event_related_news: {
+    component: EventRelatedNews,
+    mapProps: ({ data, locale }) => ({ articles: data.articles || [], locale }),
+  },
+  events_list: {
+    component: EventsList,
+    mapProps: ({ data, locale }) => ({ events: data.events || data.mainData || [], locale }),
+  },
+  footer: { component: Footer },
+  footer_fiber: { component: FooterFiber },
+  footer_main: { component: FooterMain },
+  footer_media: { component: FooterMedia },
+  form_registration: { component: FormRegistration },
+  form_registration_incomplete: { component: FormRegistrationIncomplete },
+  form_registration_success: { component: FormRegistrationSuccess },
+  hero_sliders_tv_highlight: { component: HeroSlidersTVHighlight },
+  hospitality: { component: Hospitality },
+  layout_chrome: { component: LayoutChrome },
+  list_report_home: {
+    component: ListReportHome,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'home', ...styleProps }),
+  },
+  logo_running: {
+    component: LogoRunning,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'default', ...styleProps }),
+  },
+  logo_running_with_border: {
+    component: LogoRunningWithBorder,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'default', ...styleProps }),
+  },
+  maps_coverage_v1: { component: MapsCoverageV1 },
+  navbar: { component: Navbar },
+  navbar_fiber: { component: NavbarFiber },
+  navbar_media: { component: NavbarMedia },
+  navbar_newsroom: { component: NavbarNewsroom },
+  news_detail: {
+    component: NewsDetail,
+    mapProps: ({ data }) => ({ article: data.article || data.item || null }),
+  },
+  news_feed: {
+    component: NewsFeed,
+    mapProps: ({ data, styleProps }) => ({ categorySlug: data.categorySlug || data.category_slug || 'latest', ...styleProps }),
+  },
+  news_related: {
+    component: NewsRelated,
+    mapProps: ({ data, styleProps }) => ({ articles: data.articles || data.items || [], ...styleProps }),
+  },
+  news_teaser: { component: NewsTeaser },
+  omni_channel_widget: {
+    component: OmniChannelWidget,
+    mapProps: ({ data, styleProps }) => ({ cmsData: data.cmsData || data, ...styleProps }),
+  },
+  one_stream_plus: { component: OneStreamPlus },
+  package_list: {
+    component: PackageList,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'enterprise', ...styleProps }),
+  },
+  report_grid: {
+    component: ReportGrid,
+    mapProps: ({ data, styleProps }) => ({ data: data.data || data.mainData || [], ...styleProps }),
+  },
+  report_list_part: {
+    component: ReportListPart,
+    mapProps: ({ data, styleProps }) => ({
+      data: data.data || data.mainData || null,
+      config: data.config || null,
+      ...styleProps,
+    }),
+  },
+  solution_services_home: {
+    component: SolutionServicesHome,
+    mapProps: ({ data, styleProps }) => ({
+      name: data.name || 'home',
+      hideTabs: data.hideTabs || data.hide_tabs || false,
+      ...styleProps,
+    }),
+  },
+  solutions_filtered: {
+    component: SolutionsFiltered,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'enterprise', ...styleProps }),
+  },
+  solutions_services_with_background: { component: SolutionsServicesWithBackground },
+  tv_channel_list: {
+    component: TVChannelList,
+    mapProps: ({ data, styleProps }) => ({ name: data.name || 'enterprise', ...styleProps }),
+  },
+  tv_channel_sneak_peek: { component: TVChannelSneakPeek },
+  tv_highlight_sliders: { component: TVHighlightSliders },
+  tv_highlight_sneek_peak: { component: TVHighlightSneekPeak },
 };
 
 // ─── Registry helpers ────────────────────────────────────────────────

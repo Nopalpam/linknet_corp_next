@@ -6,44 +6,47 @@ import Icon from '../base/Icon'; // Sesuaikan path jika berbeda
 
 import { INFO_CONTACT_DATA } from '@/data/components/infoContact';
 
-export default function InfoContact({ 
+export default function InfoContact({
   name = 'enterprise', // Default mengambil data enterprise
-  className = "",
   cmsData = null,
+  className = ""
 }) {
   const sectionData = cmsData || INFO_CONTACT_DATA[name];
 
   if (!sectionData) return null;
 
-  const { config = {}, id, introData, items } = sectionData;
+  const { config = {}, id, introData, items = [] } = sectionData;
   const {
     sectionId = id,
-    className: configClassName = '',
-    bgImage = '',
-    bgImageMobile = '',
-    bgPositionClasses = 'bg-center md:bg-center',
-    bgSizeClass = 'bg-cover',
-  } = config;
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
 
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
   return (
     <section
       id={sectionId}
-      className={`lnSection__infoContact py-16 md:py-24 bg-white bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      className={`lnSection__infoContact py-16 md:py-24 bg-white
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
       style={sectionStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
         {introData && (
           <div className="mb-10">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -59,9 +62,9 @@ export default function InfoContact({
         {items && items.length > 0 && (
           <div className="flex flex-wrap justify-center gap-4 md:gap-6">
             {items.map((item, index) => (
-              <a 
-                key={index} 
-                href={item.href} 
+              <a
+                key={index}
+                href={item.href}
                 target={item.target || "_self"}
                 rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
                 // Desain Pill: Background off-white, padding lebar, rounded-full
@@ -69,13 +72,13 @@ export default function InfoContact({
               >
                 {/* Icon Section */}
                 <div className="flex-shrink-0">
-                  <Icon 
-                    name={item.icon} 
-                    style={{ '--icon-size': '24px' }} 
-                    className="text-neutral-700 group-hover:text-yellow-500 transition-colors" 
+                  <Icon
+                    name={item.icon}
+                    style={{ '--icon-size': '24px' }}
+                    className="text-neutral-700 group-hover:text-yellow-500 transition-colors"
                   />
                 </div>
-                
+
                 {/* Text Section */}
                 <div className="flex flex-col text-left">
                   <span className="text-caption-c1 text-neutral-400 mb-0.5">

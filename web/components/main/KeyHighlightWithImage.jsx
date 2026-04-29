@@ -16,16 +16,16 @@ import { KEY_HIGHLIGHT_IMAGE_DATA } from '@/data/components/keyHighlight'; // Se
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-export default function KeyHighlightWithImage({ 
-  name = 'impact', 
-  className = "",
+export default function KeyHighlightWithImage({
+  name = 'impact',
   cmsData = null,
+  className = ""
 }) {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
 
   const sectionData = cmsData || KEY_HIGHLIGHT_IMAGE_DATA[name];
-  
+
   // =========================================
   // SETUP ANIMASI GSAP
   // =========================================
@@ -35,7 +35,7 @@ export default function KeyHighlightWithImage({
 
     // gsap.context memastikan animasi aman di ekosistem React (menangani unmount)
     let ctx = gsap.context(() => {
-      const gsapElements = gsap.utils.toArray('.gsap-highlight-item');
+      const gsapElements = gsap.utils.toArray('.lnGsapHighlightItem');
 
       gsap.from(gsapElements, {
         scrollTrigger: {
@@ -55,23 +55,45 @@ export default function KeyHighlightWithImage({
   }, [sectionData]);
 
   if (!sectionData) return null;
-  const { introData, items } = sectionData;
+  const { config = {}, id, introData, items = [] } = sectionData;
   if (!items || items.length === 0) return null;
+
+  const {
+    sectionId = id,
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
+
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
 
   return (
     // Tambahkan ref={containerRef} pada bungkus terluar
-    <section ref={containerRef} className={`py-16 md:py-24 overflow-hidden bg-light-2 rounded-[40px] ${className}`}>
+    <section
+      id={sectionId}
+      ref={containerRef}
+      className={`lnSection__keyHighlightWithImage py-16 md:py-24 overflow-hidden bg-light-2 rounded-[40px]
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* ========================================= */}
         {/* HEADER & NAVIGATION SECTION */}
         {/* ========================================= */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-10 md:mb-14">
-          
+
           {/* Intro Content (Kiri) - Dibungkus div untuk dianimasikan GSAP */}
-          <div className="gsap-highlight-item md:max-w-2xl lg:max-w-3xl">
+          <div className="lnGsapHighlightItem md:max-w-2xl lg:max-w-3xl">
             {introData && (
-              <Intro 
+              <Intro
                 as={introData.as || "h2"}
                 label={introData.label}
                 title={introData.title}
@@ -82,8 +104,8 @@ export default function KeyHighlightWithImage({
           </div>
 
           {/* Custom Navigation Buttons (Kanan) - Class GSAP ditambahkan */}
-          <div className="gsap-highlight-item flex items-center gap-4 flex-shrink-0 hidden md:!flex">
-            <button 
+          <div className="lnGsapHighlightItem flex items-center gap-4 flex-shrink-0 hidden md:!flex">
+            <button
               onClick={() => swiperInstance?.slidePrev()}
               className="w-14 h-14 flex items-center justify-center rounded-full shadow-md bg-white hover:bg-neutral-50 transition-colors disabled:opacity-50"
               aria-label="Previous Slide"
@@ -92,7 +114,7 @@ export default function KeyHighlightWithImage({
                 <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <button 
+            <button
               onClick={() => swiperInstance?.slideNext()}
               className="w-14 h-14 flex items-center justify-center rounded-full shadow-md bg-white hover:bg-neutral-50 transition-colors disabled:opacity-50"
               aria-label="Next Slide"
@@ -127,20 +149,18 @@ export default function KeyHighlightWithImage({
                   - Class gsap-highlight-item ditambahkan di sini.
                   - Pastikan animasi diterapkan di dalam SwiperSlide, bukan pada SwiperSlide-nya langsung.
                 */}
-                <div className={`gsap-highlight-item h-full ${index % 2 !== 0 ? 'mt-8 md:mt-12' : ''}`}>
-                  
+                <div className={`lnGsapHighlightItem h-full ${index % 2 !== 0 ? 'mt-8 md:mt-12' : ''}`}>
+
                   {/* Card Wrapper */}
                   <article className="relative w-full h-[400px] md:h-[520px] rounded-[20px] md:rounded-[24px] overflow-hidden flex flex-col justify-end p-6 md:p-8 group cursor-pointer shadow-sm">
-                    
+
                     {/* Background Image */}
                     <div className="absolute inset-0 bg-neutral-200 z-0">
-                      {item.image && (
-                        <img 
-                          src={item.image} 
-                          alt={item.caption}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                        />
-                      )}
+                      <img
+                        src={item.image}
+                        alt={item.caption}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
                     </div>
 
                     {/* Gradient Overlay Gelap */}

@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import gsap from 'gsap'; 
+import gsap from 'gsap';
 
 // Import Data
 import { managementData } from '../../data/components/managementData';
@@ -16,13 +16,25 @@ import ModalManagement from '../base/modals/ModalManagement'; // IMPORT MODAL BA
 // Import Hooks
 import { useModalRegistry } from '../hooks/useModalRegistry';
 
-export default function Management() {
+export default function Management({ config = {}, className = '' }) {
   const [activeTab, setActiveTab] = useState(managementCategories[0].id);
   const [selectedManager, setSelectedManager] = useState(null);
 
   const { openModal, closeModal, isModalOpen } = useModalRegistry();
   const modalId = 'management-detail';
-  
+  const {
+    sectionId,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config || {};
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
+
   const gridRef = useRef(null);
 
   const filteredData = useMemo(() => {
@@ -32,13 +44,13 @@ export default function Management() {
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.fromTo(
-        ".management-card", 
-        { opacity: 0, y: 40 }, 
+        ".management-card",
+        { opacity: 0, y: 40 },
         { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power3.out" }
       );
     }, gridRef);
-    return () => ctx.revert(); 
-  }, [activeTab]); 
+    return () => ctx.revert();
+  }, [activeTab]);
 
   const handleOpenProfile = (manager) => {
     setSelectedManager(manager);
@@ -59,8 +71,15 @@ export default function Management() {
   const hasPrev = filteredData.findIndex((m) => m.id === selectedManager?.id) > 0;
 
   return (
-    <section className="container mx-auto py-12 px-4">
-      
+    <section
+      id={sectionId}
+      className={`lnSection__management container mx-auto py-12 px-4
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
+
       {/* --- TAB NAVIGATION --- */}
       <div className="mb-4">
         <Swiper slidesPerView="auto" spaceBetween={12} className="!pb-4">
@@ -84,9 +103,9 @@ export default function Management() {
       {/* --- GRID CARDS --- */}
       <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
         {filteredData.map((item) => (
-          <div 
-            key={item.id} 
-            onClick={() => handleOpenProfile(item)} 
+          <div
+            key={item.id}
+            onClick={() => handleOpenProfile(item)}
             className="management-card cursor-pointer opacity-0"
           >
             <CardManagement
@@ -100,7 +119,7 @@ export default function Management() {
       </div>
 
       {/* --- MODAL DETAIL --- */}
-      <ModalManagement 
+      <ModalManagement
         isOpen={isModalOpen(modalId)}
         onClose={closeModal}
         selectedManager={selectedManager}
@@ -110,7 +129,7 @@ export default function Management() {
         hasNext={hasNext}
       />
 
-   
+
     </section>
   );
 }

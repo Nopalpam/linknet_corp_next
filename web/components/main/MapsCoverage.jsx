@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Intro from '../base/section/Intro';
-import LinknetLink from '../base/Link'; 
+import LinknetLink from '../base/Link';
 import Button from '../base/Button';
 import Icon from '../base/Icon';
 
@@ -14,18 +14,19 @@ import { MAPS_COVERAGE_DATA } from '../../data/components/mapsCoverage';
 import { MAP_REGIONS_DATA } from '../../data/constants/mapRegions';
 import INDO_TOPOLOGY from '../../data/constants/id-all.topo.json';
 
-export default function MapsCoverage({ 
-  name, 
-  className = "",
+export default function MapsCoverage({
+  name,
   cmsData = null,
+  className = ""
 }) {
   const mapContainerRef = useRef(null);
   const chartInstanceRef = useRef(null);
   const topologyRef = useRef(null);
   const widgetRef = useRef(null);
   const sectionRef = useRef(null);
-  
+
   const [selectedArea, setSelectedArea] = useState(null);
+  const [selectedCity, setSelectedCity] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   const sectionData = cmsData || MAPS_COVERAGE_DATA[name];
@@ -35,7 +36,7 @@ export default function MapsCoverage({
     const buKey = selectedArea ? provinceMap[selectedArea.provinceKey] : null;
     const cities = buKey ? businessUnits[buKey]?.cities : [];
     if (!searchQuery) return cities;
-    return cities.filter(city => 
+    return cities.filter(city =>
       city.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [selectedArea, searchQuery, businessUnits, provinceMap]);
@@ -60,7 +61,7 @@ export default function MapsCoverage({
 
       const topology = INDO_TOPOLOGY;
       topologyRef.current = topology;
-      
+
       const data = topology.objects.default.geometries.map(g => {
         const key = g.properties['hc-key'];
         const covered = !!provinceMap[key];
@@ -105,7 +106,8 @@ export default function MapsCoverage({
                   provinceKey: key,
                   covered: covered
                 });
-                setSearchQuery(''); 
+                setSelectedCity('');
+                setSearchQuery('');
 
                 drawActiveOutline(key, colors.covered, chartInstanceRef.current, topologyRef.current);
 
@@ -145,13 +147,13 @@ export default function MapsCoverage({
     if (!topology || !chart) return;
     const allLines = Highcharts.geojson(topology, 'mapline');
     const selectedLines = allLines.filter(f => f.properties?.['hc-key'] === hcKey);
-    
+
     if (selectedLines.length) {
       chart.addSeries({
         id: 'active-outline-glow',
         type: 'mapline',
         data: selectedLines,
-        color: 'rgba(0, 155, 119, 0.2)', 
+        color: 'rgba(0, 155, 119, 0.2)',
         lineWidth: 8,
         enableMouseTracking: false,
         zIndex: 7
@@ -174,13 +176,15 @@ export default function MapsCoverage({
 
   const handleCloseWidget = () => {
     setSelectedArea(null);
+    setSelectedCity('');
+    setSearchQuery('');
     clearActiveOutline(chartInstanceRef.current);
     chartInstanceRef.current?.getSelectedPoints().forEach(p => p.select(false, false));
-    
+
     if (window.innerWidth < 1024) {
         setTimeout(() => {
             if (sectionRef.current) {
-                const yOffset = -40; 
+                const yOffset = -40;
                 const element = sectionRef.current;
                 const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
@@ -192,17 +196,40 @@ export default function MapsCoverage({
 
   if (!sectionData) return null;
 
-  const { id, introData, widgetData } = sectionData;
+  const { config = {}, id, introData, widgetData } = sectionData;
+  const {
+    sectionId = id,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config || {};
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
   const buKey = selectedArea ? provinceMap[selectedArea.provinceKey] : null;
   const activeBU = buKey ? businessUnits[buKey] : null;
+  const coverageHref = selectedArea
+    ? `https://fiber.linknet.co.id/coverage?province=${encodeURIComponent(selectedArea.provinceName)}${selectedCity ? `&city=${encodeURIComponent(selectedCity)}` : ''}`
+    : 'https://fiber.linknet.co.id/coverage';
 
   return (
-    <section id={id} ref={sectionRef} className={`bg-light-2 rounded-[52px] py-16 md:py-24 overflow-hidden ${className}`}>
+    <section
+      id={sectionId}
+      ref={sectionRef}
+      className={`lnSection__mapsCoverage bg-light-2 rounded-[52px] py-16 md:py-24 overflow-hidden
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
 
         {introData && (
           <div className="mb-8 md:mb-12">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               label={introData.label}
               title={introData.title}
@@ -213,22 +240,22 @@ export default function MapsCoverage({
         )}
 
         <div className="relative flex flex-col lg:flex-row gap-8 items-start w-full min-h-[500px]">
-            
+
             {/* Map Wrapper: Container dipisahkan antara yang relative (untuk label) dan scrollable (untuk maps) */}
             <div className={`
                 relative transition-all duration-500 min-w-0
                 ${selectedArea ? 'w-full lg:flex-1' : 'w-full'}
             `}>
                 {!selectedArea && (
-                  <div className="absolute top-8 left-1/2 -translate-x-1/2 text-caption-c1 md:text-body-b4 text-neutral-500 z-10 pointer-events-none bg-white/90 px-6 py-2.5 rounded-full shadow-sm whitespace-nowrap">
+                  <div className="absolute top-8 left-1/2 -translate-x-1/2 text-caption-c1 text-secondary z-10 pointer-events-none bg-white/90 px-6 py-2.5 rounded-full shadow-sm whitespace-nowrap">
                       {widgetData?.instructionText || "Klik salah satu provinsi pada peta"}
                   </div>
                 )}
-                
+
                 {/* Scroll Container dipindahkan ke layer dalam */}
-                <div className="w-full overflow-x-auto overflow-y-hidden custom-scrollbar">
-                    <div 
-                        ref={mapContainerRef} 
+                <div className="lnMapsCoverage__scrollbar w-full overflow-x-auto overflow-y-hidden">
+                    <div
+                        ref={mapContainerRef}
                         className="min-w-[800px] lg:min-w-full w-full h-[450px] md:h-[600px] lg:h-[520px] relative"
                     ></div>
                 </div>
@@ -240,7 +267,7 @@ export default function MapsCoverage({
                 ${selectedArea ? 'opacity-100 translate-x-0 relative z-20' : 'opacity-0 translate-x-10 absolute pointer-events-none'}
                 w-full lg:w-[400px] ${selectedArea?.covered ? 'bg-green-marble' : 'bg-neutral-50'} rounded-[24px]
             `}>
-                <div 
+                <div
                     className={`
                         rounded-t-[24px] py-3 w-full flex items-center justify-center
                     `}
@@ -250,13 +277,13 @@ export default function MapsCoverage({
                     </span>
                 </div>
 
-                <div 
+                <div
                     ref={widgetRef}
                     className="bg-white border-x border-b border-neutral-50 rounded-[24px] p-6 lg:p-8 flex flex-col animate-fade-in"
                 >
-                    <div className="flex items-center justify-between mb-6 pb-2">
+                    <div className="flex items-center justify-between mb-2 pb-2">
                         <h3 className="text-body-b3 font-bold text-black">{widgetData?.title || "Coverage Details"}</h3>
-                        <Button 
+                        <Button
                             onClick={handleCloseWidget}
                             variant="secondary-plain"
                             size="md"
@@ -273,13 +300,13 @@ export default function MapsCoverage({
                             <h4 className="text-headline-h5 font-bold text-black mb-6">
                                 {activeBU ? activeBU.title : selectedArea.provinceName}
                             </h4>
-                            
+
                             {selectedArea.covered ? (
                                 <>
                                     <div className="relative mb-4">
-                                        <input 
-                                            type="text" 
-                                            placeholder={widgetData?.searchPlaceholder || "Search city"} 
+                                        <input
+                                            type="text"
+                                            placeholder={widgetData?.searchPlaceholder || "Search city"}
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             className="w-full pl-10 pr-4 py-3 border border-neutral-100 rounded-xl text-body-b4 focus:outline-none transition-all focus:border-primary hover:border-primary focus:ring-1 focus:ring-primary/2 focus:outline-none"
@@ -289,12 +316,30 @@ export default function MapsCoverage({
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col mb-8 max-h-[240px] lg:max-h-[252px] overflow-y-scroll custom-scrollbar pr-1">
+                                    <div className="lnMapsCoverage__scrollbar flex flex-col mb-8 max-h-[240px] lg:max-h-[252px] overflow-y-scroll pr-1">
                                         {filteredCities.length > 0 ? (
-                                            filteredCities.map((city, index) => (
-                                                <div key={index} className="flex items-center gap-3 px-4 py-3 border border-white hover:border-neutral-100 transition-all rounded-[12px] hover:border group">
-                                                    <span className="text-body-b4 text-neutral-700 font-medium">{city}</span>
-                                                </div>
+                                            filteredCities.map((city) => (
+                                                <label
+                                                    key={city}
+                                                    className={`flex items-center gap-3 px-4 py-3 border transition-all rounded-[12px] cursor-pointer group ${
+                                                        selectedCity === city
+                                                            ? 'border-primary bg-yellow-50'
+                                                            : 'border-white hover:border-neutral-100'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="coverage-city"
+                                                        value={city}
+                                                        checked={selectedCity === city}
+                                                        onChange={() => setSelectedCity(city)}
+                                                        className="sr-only"
+                                                    />
+                                                    <span className="text-body-b4 text-neutral-700 font-medium flex-1">{city}</span>
+                                                    {selectedCity === city && (
+                                                        <Icon name="check" className="text-warning" style={{ '--icon-size': '24px' }} />
+                                                    )}
+                                                </label>
                                             ))
                                         ) : (
                                             <div className="py-8 text-center text-body-b5 text-neutral-400 italic">
@@ -304,9 +349,9 @@ export default function MapsCoverage({
                                     </div>
 
                                     <div className="mt-auto">
-                                        <LinknetLink 
-                                            href={`https:/fiber.linknet.co.id/coverage?province=${encodeURIComponent(selectedArea.provinceName)}`} 
-                                            variant="primary" 
+                                        <LinknetLink
+                                            href={coverageHref}
+                                            variant="primary"
                                             size='lg'
                                             className="w-full justify-center"
                                         >
@@ -331,6 +376,21 @@ export default function MapsCoverage({
 
         </div>
       </div>
+      <style jsx>{`
+        .lnMapsCoverage__scrollbar::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+        }
+
+        .lnMapsCoverage__scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+        }
+
+        .lnMapsCoverage__scrollbar::-webkit-scrollbar-thumb {
+          background: var(--bg-warning);
+          border-radius: 10px;
+        }
+      `}</style>
     </section>
   );
 }

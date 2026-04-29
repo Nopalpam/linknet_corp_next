@@ -51,6 +51,9 @@ export type ComponentType =
   | 'usp_strip'
   | 'closing_cta'
   | 'video_section'
+  | 'extendable_article'
+  | 'stock_information'
+  | 'testimonials'
   // Main (DB-driven)
   | 'news_highlight'
   | 'news_list'
@@ -64,6 +67,50 @@ export type ComponentType =
   | 'form_registration_fiber'
   | 'form_registration_media'
   | 'coverage_check_fiber'
+  | 'career_detail'
+  | 'check_coverage'
+  | 'content_highlights'
+  | 'event_content'
+  | 'event_detail'
+  | 'event_hero'
+  | 'event_registration_form'
+  | 'event_related'
+  | 'event_related_news'
+  | 'events_list'
+  | 'footer'
+  | 'footer_fiber'
+  | 'footer_main'
+  | 'footer_media'
+  | 'form_registration'
+  | 'form_registration_incomplete'
+  | 'form_registration_success'
+  | 'hero_sliders_tv_highlight'
+  | 'hospitality'
+  | 'layout_chrome'
+  | 'list_report_home'
+  | 'logo_running'
+  | 'logo_running_with_border'
+  | 'maps_coverage_v1'
+  | 'navbar'
+  | 'navbar_fiber'
+  | 'navbar_media'
+  | 'navbar_newsroom'
+  | 'news_detail'
+  | 'news_feed'
+  | 'news_related'
+  | 'news_teaser'
+  | 'omni_channel_widget'
+  | 'one_stream_plus'
+  | 'package_list'
+  | 'report_grid'
+  | 'report_list_part'
+  | 'solution_services_home'
+  | 'solutions_filtered'
+  | 'solutions_services_with_background'
+  | 'tv_channel_list'
+  | 'tv_channel_sneak_peek'
+  | 'tv_highlight_sliders'
+  | 'tv_highlight_sneek_peak'
   // Legacy
   | 'hero'
   | 'pricing';
@@ -133,6 +180,7 @@ export interface PageState {
 export interface ComponentRegistryEntry {
   type: string;
   name: string;
+  componentPath?: string;
   description: string;
   icon: string;
   category: string;

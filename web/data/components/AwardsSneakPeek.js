@@ -2,6 +2,14 @@
 
 export const AWARDS_SNEAK_PEEK_DATA = {
   "default": {
+    config: {
+      sectionId: "default",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "ACHIEVEMENTS & RECOGNITIONS",
@@ -12,9 +20,11 @@ export const AWARDS_SNEAK_PEEK_DATA = {
     ctaList: [
       {
         text: "View All Awards",
-        href: "/about-us/awards", 
-        variant: "secondary-outline", 
-        size: "lg"
+        href: "/about-us/awards",
+        variant: "secondary-outline",
+        size: "lg",
+        iconLeft: "",
+        iconRight: ""
       }
     ]
   }

@@ -1,6 +1,13 @@
 export const NEWS_FEED_DATA = {
   "default": {
-    id: "main-news-feed",
+    config: {
+      sectionId: "main-news-feed",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     categorySlug: null, // null bermaksud paparkan semua kategori berita
     introData: {
       as: "h1",
@@ -11,7 +18,14 @@ export const NEWS_FEED_DATA = {
     }
   },
   "press-release": {
-    id: "press-release-feed",
+    config: {
+      sectionId: "press-release-feed",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     categorySlug: "press-release",
     introData: {
       as: "h1",

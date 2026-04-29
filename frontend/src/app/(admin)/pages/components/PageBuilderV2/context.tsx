@@ -48,6 +48,114 @@ const initialState: PageState = {
   error: null,
 };
 
+const DEFAULT_SECTION_INTRO = {
+  label: { en: '', id: '' },
+  title: { en: '', id: '' },
+  description: { en: '', id: '' },
+  as: 'h2',
+  align: 'left',
+  fluid: false,
+  labelClassName: '',
+  titleClassName: '',
+  descriptionClassName: '',
+  className: '',
+};
+
+const DEFAULT_SECTION_CONFIG = {
+  sectionId: '',
+  className: '',
+  bgImage: '',
+  bgImageMobile: '',
+  bgPositionClasses: '',
+  bgSizeClass: '',
+};
+
+function deepMergeDefaults(defaults: Record<string, any>, value: Record<string, any>): Record<string, any> {
+  const merged: Record<string, any> = { ...defaults };
+
+  for (const [key, nextValue] of Object.entries(value || {})) {
+    const defaultValue = defaults?.[key];
+    if (
+      defaultValue &&
+      nextValue &&
+      typeof defaultValue === 'object' &&
+      typeof nextValue === 'object' &&
+      !Array.isArray(defaultValue) &&
+      !Array.isArray(nextValue)
+    ) {
+      merged[key] = deepMergeDefaults(defaultValue, nextValue);
+    } else {
+      merged[key] = nextValue;
+    }
+  }
+
+  return merged;
+}
+
+function normalizeSectionIntro(settings: Record<string, any>) {
+  return {
+    ...DEFAULT_SECTION_INTRO,
+    ...(settings.intro || {}),
+    ...(settings.sectionIntro || {}),
+  };
+}
+
+function normalizeSectionConfig(settings: Record<string, any>) {
+  return {
+    ...DEFAULT_SECTION_CONFIG,
+    ...(settings.config || {}),
+    sectionId: settings.config?.sectionId ?? settings.custom_id ?? '',
+    className: settings.config?.className ?? settings.custom_class ?? '',
+    bgImage: settings.config?.bgImage ?? settings.bgImage ?? settings.bg_image ?? '',
+    bgImageMobile: settings.config?.bgImageMobile ?? settings.bgImageMobile ?? settings.bg_image_mobile ?? settings.background_image_mobile ?? '',
+    bgPositionClasses: settings.config?.bgPositionClasses ?? settings.bgPositionClasses ?? settings.bg_position_classes ?? '',
+    bgSizeClass: settings.config?.bgSizeClass ?? settings.bgSizeClass ?? settings.bg_size_class ?? '',
+  };
+}
+
+function normalizeComponentSettings(settings: Record<string, any>, defaults: Record<string, any> | null) {
+  const rest = { ...(settings || {}) };
+  const hasSectionIntro = Boolean(settings?.sectionIntro || settings?.intro);
+  const hasSectionConfig = Boolean(
+    settings?.config ||
+    settings?.custom_id ||
+    settings?.custom_class ||
+    settings?.bgImage ||
+    settings?.bg_image ||
+    settings?.bgImageMobile ||
+    settings?.bg_image_mobile ||
+    settings?.bgPositionClasses ||
+    settings?.bg_position_classes ||
+    settings?.bgSizeClass ||
+    settings?.bg_size_class
+  );
+
+  delete rest.intro;
+  delete rest.sectionIntro;
+  delete rest.custom_id;
+  delete rest.custom_class;
+  delete rest.bg_type;
+  delete rest.bg_color;
+  delete rest.bg_image;
+  delete rest.bg_image_mobile;
+  delete rest.bg_position;
+  delete rest.bg_position_classes;
+  delete rest.bg_size_class;
+
+  const migrated: Record<string, any> = {
+    ...rest,
+  };
+
+  if (hasSectionIntro || !defaults) {
+    migrated.sectionIntro = normalizeSectionIntro(settings || {});
+  }
+  if (hasSectionConfig || !defaults) {
+    migrated.config = normalizeSectionConfig(settings || {});
+  }
+
+  return defaults ? deepMergeDefaults(defaults, migrated) : migrated;
+}
+
 // =============================================================================
 // REDUCER
 // =============================================================================
@@ -295,11 +403,14 @@ export function PageBuilderProvider({
               settings = defaultSettings;
             }
 
+            const defaultSettings = getDefaultSettings(normalizedType);
+            const normalizedSettings = normalizeComponentSettings(settings, defaultSettings);
+
             return {
               id: dbComp.id,
               type: normalizedType,
               order: dbComp.order ?? index,
-              settings,
+              settings: normalizedSettings,
               isVisible: dbComp.isVisible ?? true,
             };
           })

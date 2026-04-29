@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import Intro from '../base/section/Intro';
-import { VISION_MISSION_DATA } from '@/data/components/visionMission'; 
+import { VISION_MISSION_DATA } from '@/data/components/visionMission';
 
 // Import GSAP dan ScrollTrigger
 import gsap from 'gsap';
@@ -11,23 +11,22 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Register plugin
 gsap.registerPlugin(ScrollTrigger);
 
-export default function VisionMission({ cmsData = null, className = '' }) {
+export default function VisionMission({ name = 'about', cmsData = null, className = '' }) {
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
 
-  // CMS mode uses cmsData, static mode uses hardcoded 'about' key
-  const data = cmsData || VISION_MISSION_DATA?.about;
-  const { config = {}, id } = data || {};
+  // 1. Gunakan optional chaining (?.) untuk mencegah error jika 'about' tidak ada
+  const data = cmsData || VISION_MISSION_DATA?.[name] || VISION_MISSION_DATA?.about;
   const {
-    sectionId = id,
-    className: configClassName = '',
-    bgImage = '',
-    bgImageMobile = '',
-    bgPositionClasses = 'bg-center md:bg-center',
-    bgSizeClass = 'bg-cover',
-  } = config;
+    sectionId,
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = data?.config || {};
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
   // Setup Animasi GSAP
@@ -38,7 +37,7 @@ export default function VisionMission({ cmsData = null, className = '' }) {
     // Gunakan gsap.context agar animasi aman di React (termasuk saat unmount)
     let ctx = gsap.context(() => {
       // Ambil semua elemen dengan class 'gsap-item'
-      const items = gsap.utils.toArray('.gsap-item');
+      const items = gsap.utils.toArray('.lnGsapVisionItem');
 
       // Animasi muncul berurutan dari bawah (Fade Up Stagger)
       gsap.from(items, {
@@ -59,9 +58,20 @@ export default function VisionMission({ cmsData = null, className = '' }) {
     return () => ctx.revert();
   }, [data]);
 
-  // 2. PROTEKSI: Jika data tidak ada, atau items tidak ada, jangan render apapun
+  // 2. PROTEKSI: Jika data tidak ada, atau items tidak ada, jangan render isi grid
   if (!data || !data.items || data.items.length < 2) {
-    return null;
+    return (
+      <section
+        id={sectionId}
+        className={`lnSection__visionMission py-16 px-4 md:px-8 bg-white text-center
+          bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+          ${configClassName} ${className}`}
+        style={sectionStyle}
+      >
+        <p className="text-red-500">Data Vision & Mission tidak ditemukan atau belum lengkap.</p>
+      </section>
+    );
   }
 
   // Jika aman, baru ambil array-nya
@@ -71,22 +81,25 @@ export default function VisionMission({ cmsData = null, className = '' }) {
   return (
     <section
       id={sectionId}
-      className={`lnSection__visionMission py-16 bg-white bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
-      style={sectionStyle}
       ref={containerRef}
+      className={`lnSection__visionMission py-16 bg-white
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
     >
       <div className="container">
-        
+
         {/* Intro */}
-        <div className="mb-10 text-center gsap-item"> {/* Tambahkan class gsap-item di sini jika ingin Intro ikut teranimasi */}
+        <div className="mb-10 text-center lnGsapVisionItem"> {/* Tambahkan class gsap-item di sini jika ingin Intro ikut teranimasi */}
           <Intro {...data.introData} />
         </div>
 
         {/* Grid Container */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6 overflow-hidden">
-          
+
           {/* 1. OUR VISION (Teks) */}
-          <div className="gsap-item order-1 md:order-1 md:col-span-2 bg-light-1 rounded-[20px] justify-between p-8 flex flex-col h-full min-h-[320px]">
+          <div className="lnGsapVisionItem order-1 md:order-1 md:col-span-2 bg-light-1 rounded-[20px] justify-between p-8 flex flex-col h-full min-h-[320px]">
             <div className={`text-right text-warning text-body-b5 font-bold uppercase tracking-wide mb-4`}>
               {vision.label}
             </div>
@@ -103,25 +116,25 @@ export default function VisionMission({ cmsData = null, className = '' }) {
           </div>
 
           {/* 2. GAMBAR VISION */}
-          <div className="gsap-item order-2 md:order-2 md:col-span-3 rounded-[20px] overflow-hidden min-h-[320px] bg-neutral-100">
-            <img 
-              src={vision.image} 
-              alt={vision.label} 
+          <div className="lnGsapVisionItem order-2 md:order-2 md:col-span-3 rounded-[20px] overflow-hidden min-h-[320px] bg-neutral-100">
+            <img
+              src={vision.image}
+              alt={vision.label}
               className="w-full h-full object-cover"
             />
           </div>
 
           {/* 3. GAMBAR MISSION (Gambar dulu di code, order atur visual) */}
-          <div className="gsap-item order-4 md:order-3 md:col-span-3 rounded-[20px] overflow-hidden min-h-[320px] bg-neutral-100">
-            <img 
-              src={mission.image} 
-              alt={mission.label} 
+          <div className="lnGsapVisionItem order-4 md:order-3 md:col-span-3 rounded-[20px] overflow-hidden min-h-[320px] bg-neutral-100">
+            <img
+              src={mission.image}
+              alt={mission.label}
               className="w-full h-full object-cover"
             />
           </div>
 
           {/* 4. OUR MISSION (Teks) */}
-          <div className="gsap-item order-3 md:order-4 md:col-span-2 bg-light-1 rounded-[20px] justify-between p-8 flex flex-col h-full min-h-[320px]">
+          <div className="lnGsapVisionItem order-3 md:order-4 md:col-span-2 bg-light-1 rounded-[20px] justify-between p-8 flex flex-col h-full min-h-[320px]">
             <div className={`text-${mission.align} text-[#FFB800] text-sm font-bold uppercase tracking-wide mb-4`}>
               {mission.label}
             </div>
@@ -137,7 +150,7 @@ export default function VisionMission({ cmsData = null, className = '' }) {
             </div>
           </div>
         </div>
-        
+
       </div>
     </section>
   );

@@ -2,6 +2,14 @@
 
 export const AWARDS_FEED_DATA = {
   "awards-list": {
+    config: {
+      sectionId: "awd-01",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "ACHIEVEMENTS & RECOGNITIONS",
@@ -12,8 +20,8 @@ export const AWARDS_FEED_DATA = {
     items: [
       {
         id: "awd-01",
-        topLogo: "/assets/logos/awards/logo-swa.png", 
-        image: "/assets/images/award-thumb-1.jpg",  
+        topLogo: "/assets/logos/awards/logo-swa.png",
+        image: "/assets/images/award-thumb-1.jpg",
         title: "Top Digital Company Awards 2026",
         desc: "Recognized for our continuous innovation in broadband technology and digital transformation in Indonesia.",
         date: "2026-03-15T10:00:00Z", // Format ISO

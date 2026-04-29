@@ -1,5 +1,13 @@
 export const ABOUT_RUNNING_PHOTOS_DATA = {
   "career": {
+    config: {
+      sectionId: "about-running-photos",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "ABOUT US",
@@ -9,7 +17,7 @@ export const ABOUT_RUNNING_PHOTOS_DATA = {
     },
     // Ganti path ini dengan gambar asli yang Anda miliki di public/assets/
     photos: [
-      "/assets/photos/squad-1.jpg", 
+      "/assets/photos/squad-1.jpg",
       "/assets/photos/squad-2.jpg",
       "/assets/photos/squad-3.jpg",
       "/assets/photos/squad-4.jpg",

@@ -19,9 +19,9 @@ import { LIST_REPORT_HOME_DATA } from '@/data/components/listReportHome';
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-export default function ListReportHome({ 
-  name, 
-  className = "" 
+export default function ListReportHome({
+  name,
+  className = ""
 }) {
   const [activeTab, setActiveTab] = useState('');
   const containerRef = useRef(null); // Ref untuk scope GSAP
@@ -44,7 +44,7 @@ export default function ListReportHome({
 
     let ctx = gsap.context(() => {
       // Animasi Header (Intro & Tab) saat di-scroll masuk ke viewport
-      gsap.from('.gsap-report-header', {
+      gsap.from('.lnGsapReportHeader', {
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top 80%',
@@ -68,12 +68,12 @@ export default function ListReportHome({
     if (!activeTab) return;
 
     let ctx = gsap.context(() => {
-      // Tambahkan ScrollTrigger di dalam fromTo agar saat awal load, 
+      // Tambahkan ScrollTrigger di dalam fromTo agar saat awal load,
       // animasi Swiper Card juga menunggu di-scroll.
-      gsap.fromTo('.gsap-report-card', 
-        { 
-          y: 60, 
-          opacity: 0 
+      gsap.fromTo('.lnGsapReportCard',
+        {
+          y: 60,
+          opacity: 0
         },
         {
           scrollTrigger: {
@@ -91,45 +91,61 @@ export default function ListReportHome({
     }, containerRef);
 
     return () => ctx.revert();
-  }, [activeTab]); 
+  }, [activeTab]);
 
   // Cegah error jika data tidak ditemukan
   if (!sectionData) return null;
 
-  const { id, introData, tabs, items } = sectionData;
-  
+  const { config, introData, tabs, items } = sectionData;
+  const {
+    sectionId,
+    className: configClassName = '',
+    bgImage = '',
+    bgImageMobile = '',
+    bgPositionClasses = 'bg-center md:bg-center',
+    bgSizeClass = 'bg-cover',
+  } = config || {};
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
+
   // Mengambil daftar array card sesuai dengan tab yang sedang aktif
   const activeItems = items[activeTab] || [];
 
   return (
-    <section 
-      id={id} 
+    <section
+      id={sectionId}
       ref={containerRef} // Pasang ref di kontainer utama
-      className={`py-16 md:py-24 bg-white/50 ${className}`}
+      className={`lnSection__listReportHome py-16 md:py-20 bg-white/50
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* --- HEADER: Intro (Kiri) & Segment Picker (Kanan) --- */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-8 md:mb-8">
-          
+
           {/* Kiri: Intro Title */}
-          <div className="w-full gsap-report-header">
+          <div className="w-full lnGsapReportHeader">
             {introData && (
-              <Intro 
+              <Intro
                 as={introData.as || "h2"}
                 label={introData.label}
                 title={introData.title}
                 description={introData.description}
                 align={introData.align || "left"}
-                className="whitespace-pre-line !mb-auto" 
+                className="whitespace-pre-line !mb-auto"
               />
             )}
           </div>
 
           {/* Kanan: Segment Picker Tabs */}
           {tabs && tabs.length > 0 && (
-            <div className="flex justify-start lg:justify-end shrink-0 gsap-report-header">
-              <SegmentPicker 
+            <div className="flex justify-start lg:justify-end shrink-0 lnGsapReportHeader">
+              <SegmentPicker
                 options={tabs}
                 value={activeTab}
                 onChange={(selectedValue) => setActiveTab(selectedValue)}
@@ -142,39 +158,39 @@ export default function ListReportHome({
         <div className="w-full overflow-hidden mx-auto">
           {activeItems.length > 0 ? (
             <Swiper
-              spaceBetween={16} 
-              slidesPerView={1.1} 
+              spaceBetween={16}
+              slidesPerView={1.1}
               breakpoints={{
                 768: {
-                  slidesPerView: 2.2, 
+                  slidesPerView: 2.2,
                   spaceBetween: 24,
                 },
                 1024: {
-                  slidesPerView: 3, 
+                  slidesPerView: 3,
                   spaceBetween: 32,
                 },
               }}
-              className="w-full pb-4 !overflow-visible" 
+              className="w-full pb-4 !overflow-visible"
             >
               {activeItems.map((item) => (
                 <SwiperSlide key={item.id} className="h-auto">
                   {/* Class gsap-report-card diletakkan di wrapper kartu */}
-                  <div className="gsap-report-card w-full h-full">
-                    <CardReportHome 
+                  <div className="lnGsapReportCard w-full h-full">
+                    <CardReportHome
                       iconSrc={item.iconSrc}
                       title={item.title}
                       description={item.description}
                       ctaText={item.ctaText}
                       ctaLink={item.ctaLink}
                       year={item.year}
-                      className="w-full h-full" 
+                      className="w-full h-full"
                     />
                   </div>
                 </SwiperSlide>
               ))}
             </Swiper>
           ) : (
-            <div className="w-full py-10 text-center text-neutral-500 gsap-report-card">
+            <div className="w-full py-10 text-center text-neutral-500 lnGsapReportCard">
               Belum ada data tersedia untuk kategori ini.
             </div>
           )}

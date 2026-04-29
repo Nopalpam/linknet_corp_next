@@ -1,7 +1,19 @@
 export const HERO_DATA = {
   // Key 'mission' (atau bisa Anda ganti jadi 'home', 'about', dll)
   mission: {
+    config: {
+      sectionId: "mission",
+      className: "",
+      bgImage: "/assets/herosliders/mission-desktop.jpg",
+      bgImageMobile: "/assets/herosliders/mission-mobile.jpg",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "md",
+    parentProduct: {
+      iconImage: "/assets/logos/favicon-onestream.svg",
+      productName: "OneStream",
+    },
     logoSrc: "/assets/logos/logo-onestream.svg",
     logoSquare: false,
     labelText: "Our Mission",
@@ -13,14 +25,23 @@ export const HERO_DATA = {
     ctaLink: "/about-us",
     ctaTarget: "_self", // Default target, bisa disesuaikan
     bgOverlay: false,
-    bgImageDesktop: "/assets/herosliders/mission-desktop.jpg",
-    bgImageMobile: "/assets/herosliders/mission-mobile.jpg",
-    bgColor: "bg-white", // Fallback color jika gambar gagal dimuat
   },
 
   // Slide 1
   slidersHomeMission: {
+    config: {
+      sectionId: "sliders-home-mission",
+      className: "",
+      bgImage: "/assets/herosliders/mission-desktop.jpg",
+      bgImageMobile: "/assets/herosliders/mission-mobile.jpg",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "md",
+    parentProduct: {
+      iconImage: "/assets/logos/favicon-onestream.svg",
+      productName: "OneStream",
+    },
     // logoSrc: "/assets/logos/logo-onestream.svg", // Uncomment jika mau dipakai
     logoSquare: false,
     labelText: "Our Mission",
@@ -28,14 +49,20 @@ export const HERO_DATA = {
     title: "Improving Lives and Supporting Indonesia's Digital Growth",
     description: "Linknet is dedicated to improving lives and supporting Indonesia's digital growth by delivering smart",
     bgOverlay: false,
-    bgImageDesktop: "/assets/herosliders/mission-desktop.jpg",
-    bgImageMobile: "/assets/herosliders/mission-mobile.jpg",
     ctaText: "Get to Know Us",
     ctaLink: "/about-us",
   },
-  
+
   // Slide 2
   slidersHomeVision: {
+    config: {
+      sectionId: "sliders-home-vision",
+      className: "",
+      bgImage: "/assets/herosliders/homepass-desktop.jpg",
+      bgImageMobile: "/assets/herosliders/homepass-mobile.jpg",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "md",
     // logoSrc: "/assets/logos/logo-firstmedia.svg",
     logoSquare: false,
@@ -44,14 +71,20 @@ export const HERO_DATA = {
     title: "Connecting 4 Million Homes, On Track to 8.4 Million by 2027",
     description: "Link Net Continues to Expand Its Digital Footprint for a Closer, More Connected Future.",
     bgOverlay: false,
-    bgImageDesktop: "/assets/herosliders/homepass-desktop.jpg",
-    bgImageMobile: "/assets/herosliders/homepass-mobile.jpg",
     ctaText: "Get to Know Us",
     ctaLink: "/promo",
   },
-  
+
   // Slide 3
   slidersHomeHiring: {
+    config: {
+      sectionId: "sliders-home-hiring",
+      className: "",
+      bgImage: "/assets/herosliders/mt-desktop.jpg",
+      bgImageMobile: "/assets/herosliders/mt-mobile.jpg",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "md",
     // logoSrc: "/assets/logos/logo-linknet.svg",
     logoSquare: false,
@@ -59,13 +92,19 @@ export const HERO_DATA = {
     title: "Let’s Join Management Trainee Generation 6",
     description: "Link Net Management Trainee Program is a comprehensive program that enables the organization",
     bgOverlay: false,
-    bgImageDesktop: "/assets/herosliders/mt-desktop.jpg",
-    bgImageMobile: "/assets/herosliders/mt-mobile.jpg",
     ctaText: "Apply Now",
     ctaLink: "/apply",
   },
 
   news: {
+    config: {
+      sectionId: "news",
+      className: "",
+      bgImage: "/assets/herosliders/mt-desktop.jpg",
+      bgImageMobile: "/assets/herosliders/mt-mobile.jpg",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "md",
     // logoSrc: "/assets/logos/logo-linknet.svg",
     logoSquare: false,
@@ -74,12 +113,18 @@ export const HERO_DATA = {
     title: "Let’s Join Management Trainee Generation 6",
     description: "Link Net Management Trainee Program is a comprehensive program that enables the organization",
     bgOverlay: false,
-    bgImageDesktop: "/assets/herosliders/mt-desktop.jpg",
-    bgImageMobile: "/assets/herosliders/mt-mobile.jpg",
     ctaText: "Apply Now",
     ctaLink: "/apply",
   },
   life_at_linknet: {
+    config: {
+      sectionId: "life-at-linknet",
+      className: "",
+      bgImage: "/assets/bg/bg-career.jpg",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "sm",
     logoSrc: "/assets/logos/life-at-linknet.png",
     logoSquare: true,
@@ -88,12 +133,18 @@ export const HERO_DATA = {
     title: "Let's Discover the Possibilities Together!",
     description: "",
     bgOverlay: true,
-    bgImageDesktop: "/assets/bg/bg-career.jpg",
-    bgImageMobile: "",
     ctaText: "",
     ctaLink: "",
   },
   career: {
+    config: {
+      sectionId: "career",
+      className: "",
+      bgImage: "/assets/bg/bg-career.jpg",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     heroSize: "sm",
     logoSrc: "",
     logoSquare: false,
@@ -102,11 +153,9 @@ export const HERO_DATA = {
     title: "Be a Part In Our Journey to Discover the Possibilities Together",
     description: "We believe in your potential. This is the right time for you to step up your skills and discover endless possibilities.",
     bgOverlay: true,
-    bgImageDesktop: "/assets/bg/bg-career.jpg",
-    bgImageMobile: "",
     ctaText: "",
     ctaLink: "",
   }
 
-  
+
 };

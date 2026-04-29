@@ -1,6 +1,14 @@
 export const INFO_CONTACT_DATA = {
   // Data berdasarkan kode HTML yang Anda berikan
   "enterprise": {
+    config: {
+      sectionId: "enterprise",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       title: "Get More Information about Linknet EnterpriseCo",
@@ -29,9 +37,17 @@ export const INFO_CONTACT_DATA = {
       }
     ]
   },
-  
+
   // Data berdasarkan referensi gambar "Engage With Us"
   "esg": {
+    config: {
+      sectionId: "esg",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       title: "Engage With Us",
@@ -40,7 +56,7 @@ export const INFO_CONTACT_DATA = {
     },
     items: [
       {
-        icon: "phone", 
+        icon: "phone",
         label: "Contact ESG Team",
         value: "(021) 2994 0808",
         href: "tel:+622129940808"

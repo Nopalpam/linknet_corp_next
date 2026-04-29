@@ -2,26 +2,26 @@
 
 import React, { useMemo } from 'react';
 import Intro from '../base/section/Intro';
+import CTAList from '../base/section/CTAList';
 import CardNews from '../base/cards/CardNews'; // Sesuaikan path
-import LinknetLink from '../base/Link';
 
 import { useParams } from 'next/navigation';
 
 // Import Master Data & Component Data
-import { NEWS_LIST } from '../../data/components/newsList'; 
+import { NEWS_LIST } from '../../data/components/newsList';
 import { NEWS_TEASER_DATA } from '../../data/components/newsTeaser';
 
-export default function NewsTeaser({ 
+export default function NewsTeaser({
   name = 'home', // Menerima prop name
-  className = "",
   cmsData = null,
+  className = ""
 }) {
 
 
   const params = useParams();
 const locale = params.locale || 'en';
-  
-  /// Ambil konfigurasi berdasarkan name atau CMS data
+
+  /// Ambil konfigurasi berdasarkan name
   const sectionData = cmsData || NEWS_TEASER_DATA[name];
 
   // 1. Filter dan Urutkan Data
@@ -34,7 +34,7 @@ const locale = params.locale || 'en';
 
     // a. Hanya ambil yang statusnya 'active'
     let filtered = NEWS_LIST.filter(news => news.status === 'active');
-    
+
     // b. Filter berdasarkan kategori (jika categorySlug ada dan tidak null)
     if (categorySlug) {
       // UBAH DI SINI: Bandingkan slug dari object category dengan categorySlug di konfigurasi
@@ -51,16 +51,35 @@ const locale = params.locale || 'en';
   // Jika tidak ada data section atau tidak ada berita yang sesuai, jangan render apa-apa
   if (!sectionData || !displayNews || displayNews.length === 0) return null;
 
-  const { id, introData, ctaList } = sectionData;
+  const { config, introData, ctaList } = sectionData;
+  const {
+    sectionId,
+    className: configClassName = "",
+    bgImage = "",
+    bgImageMobile = "",
+    bgPositionClasses = "bg-center md:bg-center",
+    bgSizeClass = "bg-cover",
+  } = config || {};
+  const sectionStyle = {
+    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
+  };
 
   return (
-    <section id={id} className={`lnNewsTeaser py-8 md:py-12 bg-white ${className}`}>
+    <section
+      id={sectionId}
+      className={`lnSection__newsTeaser lnNewsTeaser py-8 md:py-12 bg-white
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
+      style={sectionStyle}
+    >
       <div className="container mx-auto px-4 md:px-0">
-        
+
         {/* 1. INTRO SECTION */}
         {introData && (
           <div className="mb-8 md:mb-8">
-            <Intro 
+            <Intro
               as={introData.as || "h2"}
               title={introData.label}
               align={introData.align || "left"}
@@ -71,7 +90,7 @@ const locale = params.locale || 'en';
         {/* 2. NEWS GRID (3 Columns) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {displayNews.map((news) => (
-            <CardNews 
+            <CardNews
               key={news.id}
               variant="default-row" // Menggunakan varian default yang sudah responsif
               image={news.image}
@@ -85,20 +104,13 @@ const locale = params.locale || 'en';
         </div>
 
         {/* 3. CTA SECTION */}
-        {ctaList && ctaList.length > 0 && (
-          <div className={`mt-10 md:mt-14 flex flex-wrap gap-4 justify-center`}>
-            {ctaList.map((cta, index) => (
-              <LinknetLink 
-                key={index} 
-                variant={cta.variant || 'secondary-outline'}
-                size={cta.size || 'lg'} 
-                href={`/${locale}/newsroom/category/${cta.href}`}
-              >
-                {cta.text}
-              </LinknetLink>
-            ))}
-          </div>
-        )}
+        <CTAList
+          ctaList={ctaList?.map((cta) => ({ ...cta, href: `/${locale}/newsroom/category/${cta.href}` }))}
+          align="center"
+          className="mt-10 md:mt-14"
+          defaultVariant="secondary-outline"
+          defaultSize="lg"
+        />
 
       </div>
     </section>

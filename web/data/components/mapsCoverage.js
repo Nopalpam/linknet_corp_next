@@ -1,11 +1,18 @@
 export const MAPS_COVERAGE_DATA = {
   home: {
-    id: "coverage-section",
-    
+    config: {
+      sectionId: "coverage-section",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
+
     // Teks yang boleh diubah oleh user/editor
     introData: {
       as: "h2",
-      label: "Coverage Area",
+      label: "NETWORK & DISTRIBUTIONS",
       title: "Linknet continues to expand its reach to serve more cities in Indonesia",
       description: "",
       align: "left"

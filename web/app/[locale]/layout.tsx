@@ -208,7 +208,7 @@ export default async function RootLayout({ children, params }) {
         {/* 8. Bungkus semua komponen dengan Provider */}
         <NextIntlClientProvider messages={messages} locale={locale}>
           <VisitorTracker />
-          <NavbarFiber menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
+          <Navbar menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
           {children}
           <Footer cmsClosingData={cmsClosingData} cmsFooterData={cmsFooterData} />
           <ModalCookies cmsData={cookiesData} />

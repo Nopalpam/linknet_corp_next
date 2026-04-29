@@ -1,5 +1,13 @@
 export const REPORT_GRID_DATA = {
   "sustainability-reports": {
+    config: {
+      sectionId: "sustainability-reports",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "SUSTAINABILITY REPORTS & POLICY",

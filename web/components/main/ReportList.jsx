@@ -7,10 +7,6 @@ import SearchFilterBar from '@/components/base/SearchFilterBar';
 import ReportListPart from '@/components/main/ReportListPart';
 import { REPORT_LIST_DATA } from '@/data/components/reportList';
 
-/**
- * Transform backend mainData (reportTypes with report_sections and reports)
- * into the group format expected by this component: [{ id, header, items }]
- */
 function transformMainData(mainData) {
   if (!mainData?.reportTypes) return null;
 
@@ -51,13 +47,10 @@ export default function ReportListPage({
   showStatusFilter = true,
   showYearFilter = true,
 
-  className = '',
-  
-  // Kategori data yang ingin diambil (fallback untuk static data)
+  // Kategori data yang ingin diambil
   name = "financial-statement",
-
-  // CMS mainData from backend
   mainData = null,
+  className = '',
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -72,10 +65,9 @@ export default function ReportListPage({
   } = REPORT_LIST_DATA.config || {};
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
+    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
-  // Use mainData from CMS if available, otherwise fall back to static data
   const rawData = useMemo(() => {
     const transformed = transformMainData(mainData);
     return transformed && transformed.length > 0 ? transformed : (REPORT_LIST_DATA[name] || []);
@@ -112,7 +104,7 @@ export default function ReportListPage({
     });
 
     const filters = [];
-    
+
     if (showTypeFilter && types.size > 0) {
       filters.push({ key: 'reportType', placeholder: 'Report Type', options: Array.from(types).map(t => ({ label: t, value: t })) });
     }
@@ -138,7 +130,7 @@ export default function ReportListPage({
       const filteredItems = group.items.filter(item => {
         const itemTitle = item.title ? item.title.toLowerCase() : "";
         const matchSearch = searchKeyword === "" || itemTitle.includes(searchKeyword);
-        
+
         let matchFilters = true;
         for (const key in filterValues) {
           const selectedVal = filterValues[key];
@@ -149,7 +141,7 @@ export default function ReportListPage({
                 matchFilters = false;
                 break;
               }
-            } 
+            }
             else if (item[key] !== selectedVal) {
               matchFilters = false;
               break;
@@ -169,7 +161,7 @@ export default function ReportListPage({
   // ==========================================
   // C. KALKULASI DATA PAGINATION
   // ==========================================
-  const totalPages = Math.ceil(filteredGroups.length / GROUPS_PER_PAGE) || 1; 
+  const totalPages = Math.ceil(filteredGroups.length / GROUPS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * GROUPS_PER_PAGE;
   const paginatedGroups = filteredGroups.slice(startIndex, startIndex + GROUPS_PER_PAGE);
 
@@ -177,7 +169,7 @@ export default function ReportListPage({
   // ==========================================
   // D. HANDLERS
   // ==========================================
-  
+
   // Helper untuk reset page ke 1 di URL saat user mengetik search/filter
   const resetPageToFirst = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -201,7 +193,7 @@ export default function ReportListPage({
       // Buat URL parameter baru
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', page.toString());
-      
+
       // Update URL tanpa reload halaman (scroll: false agar kita bisa pakai scroll custom)
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
 
@@ -235,20 +227,23 @@ export default function ReportListPage({
   return (
     <section
       id={sectionId}
-      className={`lnSection__reportList bg-light-2 pt-10 pb-24 bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
+      className={`lnSection__reportList bg-light-2 pt-10 pb-24
+        bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${configClassName} ${className}`}
       style={sectionStyle}
     >
       <div className="container">
-        
+
         {/* ========================================= */}
         {/* GLOBAL SEARCH & FILTER BAR */}
         {/* ========================================= */}
         <div className="mb-4">
-          <SearchFilterBar 
+          <SearchFilterBar
             searchPlaceholder="Search document titles..."
             searchValue={searchValue}
             onSearchChange={handleSearchChange}
-            filters={generatedFilters} 
+            filters={generatedFilters}
             filterValues={filterValues}
             onFilterChange={handleFilterChange}
           />
@@ -276,9 +271,9 @@ export default function ReportListPage({
         {/* ========================================= */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-4 pt-4">
-            
+
             {/* Tombol Previous */}
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-4 py-2 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -294,8 +289,8 @@ export default function ReportListPage({
                   onClick={() => typeof page === 'number' ? handlePageChange(page) : null}
                   disabled={page === '...'}
                   className={`w-10 h-10 flex items-center justify-center rounded-full font-medium transition-colors ${
-                    page === currentPage 
-                      ? 'bg-warning text-black' 
+                    page === currentPage
+                      ? 'bg-warning text-black'
                       : page === '...'
                         ? 'bg-transparent text-neutral-400 cursor-default'
                         : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
@@ -312,14 +307,14 @@ export default function ReportListPage({
             </span>
 
             {/* Tombol Next */}
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="px-6 py-2 text-sm font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>
-            
+
           </div>
         )}
 

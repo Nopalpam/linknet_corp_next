@@ -1,5 +1,13 @@
 export const HIGHLIGHTING_INITIATIVES_DATA = {
   "csr-programs": {
+    config: {
+      sectionId: "csr-programs",
+      className: "",
+      bgImage: "",
+      bgImageMobile: "",
+      bgPositionClasses: "",
+      bgSizeClass: ""
+    },
     introData: {
       as: "h2",
       label: "STORIES OF CHANGE",
@@ -11,7 +19,7 @@ export const HIGHLIGHTING_INITIATIVES_DATA = {
       {
         id: 1,
         topLogo: "/assets/logos/sustainability/logo_lindungihutan.png",
-        image: "/assets/img/sustainability/20250227_095744.jpg", 
+        image: "/assets/img/sustainability/20250227_095744.jpg",
         title: "Program Lindungi Hutan | Forest Protection Program",
         desc: "Through tree planting as part of its CSR activities, PT Link Net Tbk not only reduces its carbon footprint and generates positive effects on the environment but also provides long-term benefits in preserving biodiversity and improving air quality.",
         date: "2025-05-27T00:00:00.000Z",
@@ -29,7 +37,7 @@ export const HIGHLIGHTING_INITIATIVES_DATA = {
       {
         id: 3,
         topLogo: "/assets/logos/sustainability/logo_lindungihutan.png",
-        image: "/assets/img/sustainability/20250227_095744.jpg", 
+        image: "/assets/img/sustainability/20250227_095744.jpg",
         title: "Program Lindungi Hutan | Forest Protection Program",
         desc: "Through tree planting as part of its CSR activities, PT Link Net Tbk not only reduces its carbon footprint and generates positive effects on the environment but also provides long-term benefits in preserving biodiversity and improving air quality.",
         date: "2025-05-27T00:00:00.000Z",
@@ -53,9 +61,11 @@ export const HIGHLIGHTING_INITIATIVES_DATA = {
     ctaList: [
       {
         text: "View All CSR Program",
-        href: "/csr", 
+        href: "/csr",
         variant: "secondary-outline",
-        size: "lg"
+        size: "lg",
+        iconLeft: "",
+        iconRight: ""
       }
       // Anda bisa tambah tombol kedua di sini jika perlu
       // { text: "Contact Us", href: "/contact", variant: "primary", size: "lg" }

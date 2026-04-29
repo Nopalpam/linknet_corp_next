@@ -35,7 +35,7 @@ export default function Hospitality() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      
+
       // --- LOGIC PIN & GROW (Persis TVC Section) ---
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -63,10 +63,10 @@ export default function Hospitality() {
 
   return (
     // Section pembungkus (height screen agar pas saat dipin)
-    <section 
-      id="corporate" className='sectionProduct' 
+    <section
+      id="corporate" className='sectionProduct'
     >
-      
+
         {/* Section Head */}
         <div className="container mx-auto text-start">
             <h2 className="text-headline-h3 text-white font-bold max-w-4xl leading-tight">
@@ -81,12 +81,12 @@ export default function Hospitality() {
             Initial State: width 90%, height 80%, rounded-32px
         */}
         <div ref={sectionRef} className="h-screen w-full flex items-center m-0 justify-center overflow-hidden">
-        <div 
+        <div
             ref={cardRef}
             className="relative w-[90%] md:w-[90%] h-[90vh] bg-neutral-900 rounded-[32px] overflow-hidden shadow-2xl z-10"
             style={{ willChange: 'width, height, borderRadius' }}
         >
-            
+
             {/* --- ISI KONTEN (SWIPER) --- */}
             <Swiper
             modules={[EffectFade, Autoplay]}
@@ -99,13 +99,13 @@ export default function Hospitality() {
             >
             {hospitalityUsage.items.map((item) => (
                 <SwiperSlide key={item.id} className="relative w-full h-full">
-                
+
                 {/* Background Image */}
                 <div className="absolute inset-0 w-full h-full">
-                    <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="w-full h-full object-cover" 
+                    <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
@@ -114,7 +114,7 @@ export default function Hospitality() {
                 {/* Content Card (Posisi Absolute di atas background) */}
                 <div className="absolute inset-0 flex items-center px-6 md:px-20 pb-20">
                     <div className="w-full max-w-md p-8 rounded-3xl border border-white/20 bg-white/5">
-                    
+
                     {/* Tag */}
                     <div className="flex items-center gap-2 mb-4 text-neutral-300">
                         <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10">
@@ -152,7 +152,7 @@ export default function Hospitality() {
 
             {/* --- CUSTOM TABS NAVIGATION (UPDATED) --- */}
             <div className="absolute bottom-8 md:bottom-12 left-0 right-0 z-30 flex justify-center px-6">
-            {/* Perubahan Logic: 
+            {/* Perubahan Logic:
                 - Hapus container background (bg-black/50)
                 - Ganti border container dengan 'gap-3' antar item
                 - Style inactive: bg-white/30 (Transparan Terang)
@@ -165,7 +165,7 @@ export default function Hospitality() {
                     onClick={() => swiperInstance?.slideTo(idx)}
                     className={`
                         px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap backdrop-blur-md border bg__glassBorder
-                    ${activeIndex === idx 
+                    ${activeIndex === idx
                         ? 'opacity-100' // Active: Dark Glass
                         : 'opacity-50 hover:opacity-90' // Inactive: Light Milky Glass
                     }
@@ -191,7 +191,7 @@ export default function Hospitality() {
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-12 items-center">
-                    
+
                     {/* --- Left: Image --- */}
                     <div className="relative w-full aspect-[4/3] group col-span-1 md:col-span-3">
                     <img
@@ -233,14 +233,14 @@ export default function Hospitality() {
         </div>
 
         <div className="relative w-full py-10">
-      
+
             <div className="container flex flex-col items-center">
                 {/* 1. Vertical Connecting Line (Garis atas) */}
                 <div className="h-20 w-px bg-gradient-to-b from-transparent via-white/20 to-white/10 mb-0" />
 
                 {/* 2. Main Container Box */}
                 <div className="w-full border border-white/10 rounded-[24px] py-10 px-8 md:py-12 md:px-12 relative overflow-hidden">
-                    
+
                     {/* Judul Section */}
                     <div className="text-center mb-8 md:mb-12">
                         <h2 className="text-headline-h4 font-bold text-white tracking-wide">
@@ -251,12 +251,12 @@ export default function Hospitality() {
                     {/* Grid Layout (4 Kolom) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 md:gap-y-12 gap-y-8">
                         {hospitalityAppFeatures.items.map((item, index) => (
-                            <div 
-                                key={index} 
+                            <div
+                                key={index}
                                 className="group flex md:flex-col items-center md:items-start text-left gap-4"
                             >
                             {/* Icon */}
-                            
+
                             <img src={item.iconSrc} className='w-14 h-14 md:w-16 md:h-16' alt={`Icon of ${item.title}`} />
 
                                 <div className="content md:mt-2">
@@ -271,10 +271,10 @@ export default function Hospitality() {
                             </div>
                         ))}
                     </div>
-                    
+
                 </div>
             </div>
-            
+
         </div>
 
     </section>
