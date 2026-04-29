@@ -14,13 +14,13 @@ export type BusinessUnit = 'ENTERPRISE' | 'FIBER' | 'MEDIA';
 export type FormCategory = 'REGISTRATION' | 'INQUIRY' | 'PARTNERSHIP' | 'RECOMMENDATION' | 'EVENT';
 export type FormHandlingMode = 'SUBMISSION' | 'ROUTING_ONLY';
 export type FormModuleStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-export type FormSubmissionStatus =
-  | 'RECEIVED'
-  | 'VALIDATED'
-  | 'STORED'
-  | 'DISPATCHED'
-  | 'PARTIAL_FAILED'
-  | 'FAILED';
+export type FormSubmissionStatus = 'STORED' | 'FAILED';
+export type FormSubmissionDatePreset =
+  | 'today'
+  | 'yesterday'
+  | 'last7days'
+  | 'last30days'
+  | 'custom';
 export type FormFieldType =
   | 'TEXT' | 'EMAIL' | 'PHONE' | 'NUMBER' | 'TEXTAREA'
   | 'SELECT' | 'MULTI_SELECT' | 'CHECKBOX' | 'CHECKBOX_GROUP'
@@ -158,6 +158,7 @@ export interface FormSubmissionValue {
   fieldKey?: string | null;
   value?: unknown;
   rawValue?: string | null;
+  displayValue?: string | null;
 }
 
 export interface FormSubmissionGroupValue {
@@ -166,6 +167,7 @@ export interface FormSubmissionGroupValue {
   fieldKey?: string | null;
   value?: unknown;
   rawValue?: string | null;
+  displayValue?: string | null;
 }
 
 export interface FormSubmissionFile {
@@ -239,9 +241,19 @@ export interface FormSubmissionListParams {
   page?: number;
   limit?: number;
   search?: string;
+  email?: string;
+  needs?: string;
   status?: FormSubmissionStatus;
+  datePreset?: FormSubmissionDatePreset;
+  dateFrom?: string;
+  dateTo?: string;
   sortBy?: 'receivedAt' | 'createdAt' | 'primaryName' | 'primaryEmail' | 'status';
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface FormSubmissionFilters {
+  needs: string[];
+  needsFieldLabel?: string | null;
 }
 
 // ================== PAGINATION ==================
@@ -264,6 +276,7 @@ export interface PaginatedFormSubmissions {
     limit: number;
     totalPages: number;
   };
+  filters?: FormSubmissionFilters;
 }
 
 // ================== SERVICE CLASS ==================
@@ -271,6 +284,24 @@ export interface PaginatedFormSubmissions {
 class FormModuleService extends BaseCrudService<FormModule> {
   constructor() {
     super('/cms/form-modules');
+  }
+
+  private buildSubmissionQueryString(params: FormSubmissionListParams = {}) {
+    const qs = new URLSearchParams();
+
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.search) qs.set('search', params.search);
+    if (params.email) qs.set('email', params.email);
+    if (params.needs) qs.set('needs', params.needs);
+    if (params.status) qs.set('status', params.status);
+    if (params.datePreset) qs.set('datePreset', params.datePreset);
+    if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params.dateTo) qs.set('dateTo', params.dateTo);
+    if (params.sortBy) qs.set('sortBy', params.sortBy);
+    if (params.sortOrder) qs.set('sortOrder', params.sortOrder);
+
+    return qs.toString();
   }
 
   async listFormModules(params: FormModuleListParams = {}): Promise<PaginatedFormModules> {
@@ -308,17 +339,31 @@ class FormModuleService extends BaseCrudService<FormModule> {
     formModuleId: string,
     params: FormSubmissionListParams = {}
   ): Promise<PaginatedFormSubmissions> {
-    const qs = new URLSearchParams();
-    if (params.page) qs.set('page', String(params.page));
-    if (params.limit) qs.set('limit', String(params.limit));
-    if (params.search) qs.set('search', params.search);
-    if (params.status) qs.set('status', params.status);
-    if (params.sortBy) qs.set('sortBy', params.sortBy);
-    if (params.sortOrder) qs.set('sortOrder', params.sortOrder);
-
-    const url = `${API_URL}/api/v1${this.baseEndpoint}/${formModuleId}/submissions?${qs.toString()}`;
+    const queryString = this.buildSubmissionQueryString(params);
+    const url = `${API_URL}/api/v1${this.baseEndpoint}/${formModuleId}/submissions?${queryString}`;
     const res = await this.fetchWithAuth(url);
-    return { data: res.data, pagination: res.pagination };
+    return { data: res.data, pagination: res.pagination, filters: res.filters };
+  }
+
+  async exportSubmissions(
+    formModuleId: string,
+    params: FormSubmissionListParams = {}
+  ): Promise<{ blob: Blob; filename: string }> {
+    const queryString = this.buildSubmissionQueryString(params);
+    const url = `${API_URL}/api/v1${this.baseEndpoint}/${formModuleId}/submissions/export?${queryString}`;
+    const response = await this.fetchResponseWithAuth(url, {
+      headers: {
+        Accept: 'text/csv',
+      },
+    });
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition');
+    const filenameMatch = disposition?.match(/filename="?([^";]+)"?/i);
+
+    return {
+      blob,
+      filename: filenameMatch?.[1] ?? `form-submissions-${formModuleId}.csv`,
+    };
   }
 
   async getSubmissionById(formModuleId: string, submissionId: string): Promise<FormSubmission> {

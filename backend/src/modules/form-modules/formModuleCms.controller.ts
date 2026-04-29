@@ -148,10 +148,32 @@ export const getFormModuleSubmissions = [
         success: true,
         data: result.data,
         pagination: result.pagination,
+        filters: result.filters,
       });
     } catch (error) {
       if (error instanceof ZodError) {
         throw new ValidationError('Invalid form submission query');
+      }
+
+      throw error;
+    }
+  }),
+];
+
+export const exportFormModuleSubmissions = [
+  requirePermission(Permission.FORM_SUBMISSIONS_READ),
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const params = formModuleIdParamSchema.parse(req.params);
+      const query = formSubmissionQuerySchema.parse(req.query);
+      const result = await formModuleService.exportFormSubmissions(params.id, query);
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.status(200).send(result.csv);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new ValidationError('Invalid form submission export query');
       }
 
       throw error;

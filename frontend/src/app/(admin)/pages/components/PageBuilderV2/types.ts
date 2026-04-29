@@ -60,6 +60,10 @@ export type ComponentType =
   | 'announcement_list'
   | 'report_list'
   | 'awards_list'
+  | 'form_registration_enterprise'
+  | 'form_registration_fiber'
+  | 'form_registration_media'
+  | 'coverage_check_fiber'
   // Legacy
   | 'hero'
   | 'pricing';

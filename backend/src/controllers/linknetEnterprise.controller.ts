@@ -103,6 +103,132 @@ function sanitiseSearch(raw: string): string {
   return raw.replace(/[^a-zA-Z0-9 .,\-\/]/g, '').trim().slice(0, 100);
 }
 
+type CoverageRecord = Record<string, unknown>;
+
+function normaliseWhitespace(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function toTrimmedString(value: unknown): string {
+  if (value == null) {
+    return '';
+  }
+
+  return String(value).trim();
+}
+
+function getCoverageAddress(item: CoverageRecord): string {
+  return [item.full_address, item.address, item.site_address, item.label]
+    .map(toTrimmedString)
+    .find(Boolean) || '';
+}
+
+function extractProviderNames(source: unknown): string[] {
+  if (Array.isArray(source)) {
+    return source.flatMap(extractProviderNames);
+  }
+
+  if (source && typeof source === 'object') {
+    const provider = source as CoverageRecord;
+    return [provider.name, provider.label, provider.value, provider.provider, provider.providers]
+      .flatMap(extractProviderNames);
+  }
+
+  if (typeof source !== 'string') {
+    return [];
+  }
+
+  return source
+    .split(',')
+    .map(normaliseWhitespace)
+    .filter(Boolean);
+}
+
+function getCoverageProviders(item: CoverageRecord): string[] {
+  return Array.from(new Set(
+    extractProviderNames(
+      item.providers
+      ?? item.provider
+      ?? item.availableProviders
+      ?? item.available_providers,
+    ),
+  ));
+}
+
+function buildCoverageDedupKey(item: CoverageRecord): string | null {
+  const address = getCoverageAddress(item);
+
+  if (address) {
+    return `address:${normaliseWhitespace(address).toLowerCase()}`;
+  }
+
+  const siteId = toTrimmedString(item.site_id ?? item.id);
+
+  if (siteId) {
+    return `site:${siteId.toLowerCase()}`;
+  }
+
+  return null;
+}
+
+function withMergedProviders(item: CoverageRecord, providers: string[]): CoverageRecord {
+  if (providers.length === 0) {
+    return item;
+  }
+
+  return {
+    ...item,
+    providers: providers.join(', '),
+  };
+}
+
+function dedupeCoverageData(items: unknown[]): unknown[] {
+  const uniqueItems: unknown[] = [];
+  const seenIndexes = new Map<string, number>();
+
+  for (const item of items) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      uniqueItems.push(item);
+      continue;
+    }
+
+    const coverageItem = item as CoverageRecord;
+    const key = buildCoverageDedupKey(coverageItem);
+    const providers = getCoverageProviders(coverageItem);
+    const normalisedItem = withMergedProviders(coverageItem, providers);
+
+    if (!key) {
+      uniqueItems.push(normalisedItem);
+      continue;
+    }
+
+    const existingIndex = seenIndexes.get(key);
+
+    if (existingIndex == null) {
+      uniqueItems.push(normalisedItem);
+      seenIndexes.set(key, uniqueItems.length - 1);
+      continue;
+    }
+
+    const existingItem = uniqueItems[existingIndex];
+
+    if (!existingItem || typeof existingItem !== 'object' || Array.isArray(existingItem)) {
+      uniqueItems[existingIndex] = normalisedItem;
+      continue;
+    }
+
+    uniqueItems[existingIndex] = withMergedProviders(
+      existingItem as CoverageRecord,
+      Array.from(new Set([
+        ...getCoverageProviders(existingItem as CoverageRecord),
+        ...providers,
+      ])),
+    );
+  }
+
+  return uniqueItems;
+}
+
 /**
  * Load fallback data from contoh_return_api_coverage_enterprise.json
  */
@@ -208,23 +334,30 @@ export async function getEnterpriseCoverage(
       return;
     }
 
-    const data = (await apiRes.json()) as { data?: unknown[] };
+    const data = (await apiRes.json()) as { data?: unknown[] } | unknown[];
+    const responseData = Array.isArray(data) ? data : data.data ?? [];
+    const dedupedData = dedupeCoverageData(responseData);
 
     res.json({
       success: true,
-      data: data.data ?? data,
-      total: Array.isArray(data.data) ? data.data.length : undefined,
+      data: dedupedData,
+      total: dedupedData.length,
     });
   } catch (error) {
     // External API unreachable — use fallback in development
     const fallback = loadFallbackData();
     if (fallback) {
+      const fallbackData = Array.isArray((fallback as any).data)
+        ? (fallback as any).data
+        : Array.isArray(fallback)
+          ? fallback
+          : [];
+      const dedupedFallbackData = dedupeCoverageData(fallbackData);
+
       res.json({
         success: true,
-        data: (fallback as any).data ?? fallback,
-        total: Array.isArray((fallback as any).data)
-          ? (fallback as any).data.length
-          : undefined,
+        data: dedupedFallbackData,
+        total: dedupedFallbackData.length,
         _fallback: true,
       });
       return;

@@ -166,6 +166,7 @@ const AnnouncementListCMS = dynamic(() => import('@/components/main/Announcement
 const FormRegistrationEnterprise = dynamic(() => import('@/components/main/FormRegistrationEnterprise'));
 const FormRegistrationFiber = dynamic(() => import('@/components/main/FormRegistrationFiber'));
 const FormRegistrationMedia = dynamic(() => import('@/components/main/FormRegistrationMedia'));
+const CoverageCheckFiber = dynamic(() => import('@/components/main/CoverageCheckFiber'));
 
 // Built-in generic section components (no separate file needed per type)
 import {
@@ -961,6 +962,33 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         event_promo: data.event_promo || '',
         event_page: data.event_page || '',
         max_participants: data.max_participants || 5,
+      },
+      ...styleProps,
+    }),
+  },
+
+  coverage_check_fiber: {
+    component: CoverageCheckFiber,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      data: {
+        title: localizeField(data, 'title', t, locale),
+        description: localizeField(data, 'description', t, locale),
+        coverage_title: localizeField(data, 'coverage_title', t, locale),
+        coverage_description: localizeField(data, 'coverage_description', t, locale),
+        request_title: localizeField(data, 'request_title', t, locale),
+        request_description: localizeField(data, 'request_description', t, locale),
+        form_title: localizeField(data, 'form_title', t, locale),
+        form_description: localizeField(data, 'form_description', t, locale),
+        summary_title: localizeField(data, 'summary_title', t, locale),
+        summary_description: localizeField(data, 'summary_description', t, locale),
+        cms_title: localizeField(data, 'cms_title', t, locale),
+        cms_description: localizeField(data, 'cms_description', t, locale),
+        submit_label: localizeField(data, 'submit_label', t, locale),
+        submitting_label: localizeField(data, 'submitting_label', t, locale),
+        success_title: localizeField(data, 'success_title', t, locale),
+        success_description: localizeField(data, 'success_description', t, locale),
+        business_unit: data.business_unit || 'fiber',
+        form_slug: data.form_slug || 'fiber-inquiry',
       },
       ...styleProps,
     }),

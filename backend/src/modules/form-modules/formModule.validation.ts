@@ -15,8 +15,16 @@ import {
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const fieldPathRegex = /^[A-Za-z][A-Za-z0-9_.-]*$/;
+const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
+const formSubmissionDatePresetSchema = z.enum([
+  'today',
+  'yesterday',
+  'last7days',
+  'last30days',
+  'custom',
+]);
 
 export const publicFormModuleParamsSchema = z.object({
   businessUnit: z.enum(['enterprise', 'fiber', 'media']),
@@ -198,14 +206,57 @@ export const publicFormSubmissionSchema = z.object({
   responseContext: z.unknown().optional(),
 });
 
-export const formSubmissionQuerySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(10),
-  search: z.string().max(200).optional(),
-  status: z.nativeEnum(FormSubmissionStatus).optional(),
-  sortBy: z.enum(['receivedAt', 'createdAt', 'primaryName', 'primaryEmail', 'status']).default('receivedAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
+export const formSubmissionQuerySchema = z
+  .object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(10),
+    search: z.string().max(200).optional(),
+    email: z.string().max(200).optional(),
+    needs: z.string().max(255).optional(),
+    status: z.nativeEnum(FormSubmissionStatus).optional(),
+    datePreset: formSubmissionDatePresetSchema.optional(),
+    dateFrom: z.string().regex(dateOnlyRegex, 'Date must use YYYY-MM-DD').optional(),
+    dateTo: z.string().regex(dateOnlyRegex, 'Date must use YYYY-MM-DD').optional(),
+    sortBy: z.enum(['receivedAt', 'createdAt', 'primaryName', 'primaryEmail', 'status']).default('receivedAt'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  })
+  .superRefine((value, ctx) => {
+    const hasCustomRange = value.dateFrom !== undefined || value.dateTo !== undefined;
+
+    if (value.datePreset === 'custom') {
+      if (!value.dateFrom) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['dateFrom'],
+          message: 'dateFrom is required when datePreset=custom',
+        });
+      }
+
+      if (!value.dateTo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['dateTo'],
+          message: 'dateTo is required when datePreset=custom',
+        });
+      }
+    }
+
+    if (hasCustomRange && value.datePreset !== 'custom') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['datePreset'],
+        message: 'datePreset must be custom when dateFrom/dateTo are provided',
+      });
+    }
+
+    if (value.dateFrom && value.dateTo && value.dateFrom > value.dateTo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['dateTo'],
+        message: 'dateTo must be greater than or equal to dateFrom',
+      });
+    }
+  });
 
 export const formModuleIdParamSchema = z.object({
   id: z.string().uuid(),

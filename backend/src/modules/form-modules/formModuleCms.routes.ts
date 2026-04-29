@@ -3,6 +3,7 @@ import { authMiddleware } from '../../middleware/auth.middleware';
 import {
   createFormModule,
   deleteFormModule,
+  exportFormModuleSubmissions,
   getFormModuleById,
   getFormModuleSubmissionById,
   getFormModuleSubmissions,
@@ -21,6 +22,7 @@ router.post('/', createFormModule);
 router.put('/:id', updateFormModule);
 router.delete('/:id', deleteFormModule);
 router.get('/:id/submissions', getFormModuleSubmissions);
+router.get('/:id/submissions/export', exportFormModuleSubmissions);
 router.get('/:id/submissions/:submissionId', getFormModuleSubmissionById);
 router.post('/:id/submissions/:submissionId/retry-dispatch', retryFormModuleSubmissionDispatches);
 

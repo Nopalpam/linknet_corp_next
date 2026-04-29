@@ -7,7 +7,9 @@ import {
 } from "@/lib/formSubmissionStatus";
 import {
   FormDispatchLog,
+  FormField,
   FormSubmission,
+  FormSubmissionValue,
   formModuleService,
 } from "@/services/formModule.service";
 
@@ -49,17 +51,56 @@ export default function SubmissionDetailModal({
   onClose,
 }: SubmissionDetailModalProps) {
   const [submission, setSubmission] = useState<FormSubmission | null>(null);
+  const [moduleFields, setModuleFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  const formatSubmissionValue = (value?: FormSubmissionValue | null) => {
+    if (!value) return "—";
+    if (value.displayValue !== null && value.displayValue !== undefined && value.displayValue !== "") {
+      return value.displayValue;
+    }
+    if (value.rawValue !== null && value.rawValue !== undefined && value.rawValue !== "") {
+      return value.rawValue;
+    }
+    if (value.value === null || value.value === undefined || value.value === "") {
+      return "—";
+    }
+    if (typeof value.value === "object") {
+      try {
+        return JSON.stringify(value.value);
+      } catch {
+        return String(value.value);
+      }
+    }
+
+    return String(value.value);
+  };
+
+  const findValueByField = (field: FormField) => {
+    if (!submission?.values) return undefined;
+    return submission.values.find(
+      (value) =>
+        value.fieldPath === field.fieldPath ||
+        (!!field.key && value.fieldKey === field.key) ||
+        (!!field.key && value.fieldKey?.toLowerCase() === field.key.toLowerCase()) ||
+        value.fieldPath === field.path
+    );
+  };
+
   const fetchSubmission = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await formModuleService.getSubmissionById(formModuleId, submissionId);
-      setSubmission(data);
+      const [submissionData, moduleData] = await Promise.all([
+        formModuleService.getSubmissionById(formModuleId, submissionId),
+        formModuleService.getFormModuleById(formModuleId),
+      ]);
+      setSubmission(submissionData);
+      setModuleFields(moduleData.fields ?? []);
     } catch {
       setSubmission(null);
+      setModuleFields([]);
     } finally {
       setLoading(false);
     }
@@ -191,37 +232,116 @@ export default function SubmissionDetailModal({
             </div>
 
             {/* Field Values */}
-            {submission.values && submission.values.length > 0 && (
-              <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Field Values
-                </h3>
-                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/60">
-                        <th className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                          Field
-                        </th>
-                        <th className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                          Value
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                      {submission.values.map((v) => (
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Field Values
+              </h3>
+              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/60">
+                      <th className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        Field
+                      </th>
+                      <th className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        Value
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {moduleFields.length > 0 ? (
+                      moduleFields
+                        .slice()
+                        .sort((a, b) => a.sortOrder - b.sortOrder)
+                        .map((field) => {
+                          const value = findValueByField(field);
+                          return (
+                            <tr key={field.id}>
+                              <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">
+                                {field.label || field.path}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
+                                {formatSubmissionValue(value)}
+                              </td>
+                            </tr>
+                          );
+                        })
+                    ) : submission.values && submission.values.length > 0 ? (
+                      submission.values.map((v) => (
                         <tr key={v.id}>
                           <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">
                             {v.fieldPath}
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                            {v.rawValue ?? (v.value !== undefined ? String(v.value) : "—")}
+                            {formatSubmissionValue(v)}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400" colSpan={2}>
+                          No field values available.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {submission.values && submission.values.length > 0 && moduleFields.length > 0 && (
+              <section>
+                {submission.values.some(
+                  (value) =>
+                    !moduleFields.some(
+                      (field) =>
+                        field.fieldPath === value.fieldPath ||
+                        (!!field.key && field.key === value.fieldKey) ||
+                        value.fieldPath === field.path
+                    )
+                ) && (
+                  <>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Extra Submission Values
+                    </h3>
+                    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                      <table className="w-full table-auto">
+                        <thead>
+                          <tr className="border-b border-gray-200 bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/60">
+                            <th className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                              Field
+                            </th>
+                            <th className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                          {submission.values
+                            .filter(
+                              (value) =>
+                                !moduleFields.some(
+                                  (field) =>
+                                    field.fieldPath === value.fieldPath ||
+                                    (!!field.key && field.key === value.fieldKey) ||
+                                    value.fieldPath === field.path
+                                )
+                            )
+                            .map((value) => (
+                              <tr key={value.id}>
+                                <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">
+                                  {value.fieldPath}
+                                </td>
+                                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
+                                  {formatSubmissionValue(value)}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </section>
             )}
 
@@ -250,7 +370,7 @@ export default function SubmissionDetailModal({
                                 {v.fieldPath}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                                {v.rawValue ?? (v.value !== undefined ? String(v.value) : "—")}
+                                {v.displayValue ?? v.rawValue ?? (v.value !== undefined ? String(v.value) : "—")}
                               </td>
                             </tr>
                           ))}

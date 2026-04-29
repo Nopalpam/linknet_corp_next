@@ -377,7 +377,7 @@ async function main() {
       ],
     },
     'B1b',
-    'Fiber Registration — POST with file references (status=VALIDATED expected)'
+    'Fiber Registration — POST with file references (status=STORED expected)'
   );
 
   // B2 — fiber-inquiry GET + POST
@@ -652,7 +652,7 @@ async function main() {
   console.log('  ⚠️  Slug discrepancy: Plan says "smb-enterprise" → actual DB: "enterprise-smb-registration"');
   console.log('  ⚠️  Slug discrepancy: Plan says "suggest-enterprise" → actual DB: "enterprise-suggest"');
   console.log('  ⚠️  Server does NOT enforce required fields at API level (frontend-only validation).');
-  console.log('  ⚠️  B1b sets submission status=VALIDATED when files[] is non-empty.');
+  console.log('  ⚠️  B1b stores submissions with status=STORED unless dispatch logs later mark them failed.');
   console.log('══════════════════════════════════════════════════════════\n');
 }
 

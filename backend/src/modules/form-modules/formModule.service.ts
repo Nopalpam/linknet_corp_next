@@ -7,6 +7,8 @@ import {
   Prisma,
   PrismaClient,
 } from '@prisma/client';
+import { endOfDay, startOfDay, subDays } from 'date-fns';
+import { Parser } from 'json2csv';
 import {
   CreateFormModuleInput,
   FormModuleDefinitionInput,
@@ -90,6 +92,34 @@ const submissionDetailInclude = {
     orderBy: [{ createdAt: 'asc' }],
   },
 } satisfies Prisma.FormSubmissionInclude;
+
+const NEEDS_FIELD_PRIORITY = [
+  'needs',
+  'Choose_your_Needs__c',
+  'needType',
+  'typePartnership',
+  'consultationType',
+  'selectedNeeds',
+  'businessNeed',
+  'bandwidthNeed',
+] as const;
+
+type SubmissionModuleContext = {
+  id: string;
+  name: string;
+  slug: string;
+  fields: Array<{
+    path: string;
+    payloadKey: string | null;
+    label: string;
+  }>;
+};
+
+type SubmissionNeedsField = SubmissionModuleContext['fields'][number];
+
+type ExportableSubmission = Prisma.FormSubmissionGetPayload<{
+  include: typeof submissionDetailInclude;
+}>;
 
 export class FormModuleService {
   private readonly dispatchService: FormSubmissionDispatchService;
@@ -335,7 +365,7 @@ export class FormModuleService {
           eventName: primarySnapshot.eventName,
           rawPayload: this.toJsonInput(input),
           responseContext: resolvedResponse ? this.toJsonInput(resolvedResponse) : undefined,
-          status: input.files.length > 0 ? 'VALIDATED' : 'STORED',
+          status: 'STORED',
         },
       });
 
@@ -446,37 +476,17 @@ export class FormModuleService {
   }
 
   async getFormSubmissions(formModuleId: string, query: FormSubmissionQueryInput) {
-    const module = await this.prisma.formModule.findFirst({
-      where: { id: formModuleId, deletedAt: null },
-      select: { id: true },
-    });
-
-    if (!module) {
-      throw new NotFoundError('Form module not found');
-    }
+    const module = await this.getSubmissionModuleContext(formModuleId);
+    const needsField = this.resolveSubmissionNeedsField(module.fields);
+    const where = this.buildFormSubmissionWhere(formModuleId, query, needsField);
 
     const skip = (query.page - 1) * query.limit;
-    const where: Prisma.FormSubmissionWhereInput = {
-      formModuleId,
-      deletedAt: null,
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.search
-        ? {
-            OR: [
-              { primaryName: { contains: query.search, mode: 'insensitive' } },
-              { primaryEmail: { contains: query.search, mode: 'insensitive' } },
-              { primaryPhone: { contains: query.search, mode: 'insensitive' } },
-              { eventName: { contains: query.search, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
-    };
 
     const orderBy = {
       [query.sortBy]: query.sortOrder,
     } as Prisma.FormSubmissionOrderByWithRelationInput;
 
-    const [total, items] = await Promise.all([
+    const [total, items, needsOptions] = await Promise.all([
       this.prisma.formSubmission.count({ where }),
       this.prisma.formSubmission.findMany({
         where,
@@ -491,8 +501,12 @@ export class FormModuleService {
               files: true,
             },
           },
+          values: {
+            orderBy: [{ fieldPath: 'asc' }],
+          },
         },
       }),
+      this.getSubmissionNeedsOptions(formModuleId, query, needsField),
     ]);
 
     return {
@@ -503,6 +517,52 @@ export class FormModuleService {
         limit: query.limit,
         totalPages: Math.ceil(total / query.limit),
       },
+      filters: {
+        needs: needsOptions,
+        needsFieldLabel: needsField?.label ?? null,
+      },
+    };
+  }
+
+  async exportFormSubmissions(formModuleId: string, query: FormSubmissionQueryInput) {
+    const module = await this.getSubmissionModuleContext(formModuleId);
+    const needsField = this.resolveSubmissionNeedsField(module.fields);
+    const where = this.buildFormSubmissionWhere(formModuleId, query, needsField);
+    const orderBy = {
+      [query.sortBy]: query.sortOrder,
+    } as Prisma.FormSubmissionOrderByWithRelationInput;
+
+    const submissions = await this.prisma.formSubmission.findMany({
+      where,
+      orderBy,
+      include: submissionDetailInclude,
+    });
+
+    const rows = this.buildSubmissionExportRows(submissions, module.name, needsField);
+    const baseFields = [
+      'submissionId',
+      'formModuleName',
+      'formModuleId',
+      'businessUnit',
+      'formSlug',
+      'status',
+      'needs',
+      'primaryName',
+      'primaryEmail',
+      'primaryPhone',
+      'receivedAt',
+      'createdAt',
+    ];
+    const dynamicFields = Array.from(
+      new Set(
+        rows.flatMap((row) => Object.keys(row)).filter((field) => !baseFields.includes(field))
+      )
+    ).sort((left, right) => left.localeCompare(right));
+    const parser = new Parser({ fields: [...baseFields, ...dynamicFields] });
+
+    return {
+      filename: `form-submissions-${module.slug}-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv: parser.parse(rows),
     };
   }
 
@@ -896,6 +956,298 @@ export class FormModuleService {
     }
 
     return payload;
+  }
+
+  private async getSubmissionModuleContext(formModuleId: string): Promise<SubmissionModuleContext> {
+    const module = await this.prisma.formModule.findFirst({
+      where: { id: formModuleId, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        fields: {
+          where: { isActive: true },
+          select: {
+            path: true,
+            payloadKey: true,
+            label: true,
+          },
+        },
+      },
+    });
+
+    if (!module) {
+      throw new NotFoundError('Form module not found');
+    }
+
+    return module;
+  }
+
+  private resolveSubmissionNeedsField(fields: SubmissionModuleContext['fields']): SubmissionNeedsField | null {
+    for (const candidate of NEEDS_FIELD_PRIORITY) {
+      const match = fields.find(
+        (field) => field.path === candidate || field.payloadKey === candidate
+      );
+
+      if (match) {
+        return match;
+      }
+    }
+
+    return null;
+  }
+
+  private buildFormSubmissionWhere(
+    formModuleId: string,
+    query: FormSubmissionQueryInput,
+    needsField: SubmissionNeedsField | null,
+    options: { excludeNeeds?: boolean } = {}
+  ): Prisma.FormSubmissionWhereInput {
+    const dateRange = this.resolveSubmissionReceivedAtRange(query);
+    const needsFieldPaths = this.getNeedsFieldPaths(needsField);
+
+    return {
+      formModuleId,
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.email
+        ? {
+            primaryEmail: {
+              contains: query.email,
+              mode: 'insensitive',
+            },
+          }
+        : {}),
+      ...(query.search
+        ? {
+            OR: [
+              { primaryName: { contains: query.search, mode: 'insensitive' } },
+              { primaryEmail: { contains: query.search, mode: 'insensitive' } },
+              { primaryPhone: { contains: query.search, mode: 'insensitive' } },
+              { eventName: { contains: query.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(dateRange ? { receivedAt: dateRange } : {}),
+      ...(!options.excludeNeeds && query.needs && needsFieldPaths.length > 0
+        ? {
+            values: {
+              some: {
+                AND: [
+                  {
+                    fieldPath: {
+                      in: needsFieldPaths,
+                    },
+                  },
+                  {
+                    displayValue: {
+                      equals: query.needs,
+                      mode: 'insensitive',
+                    },
+                  },
+                ],
+              },
+            },
+          }
+        : {}),
+    };
+  }
+
+  private resolveSubmissionReceivedAtRange(query: FormSubmissionQueryInput) {
+    if (!query.datePreset) {
+      return undefined;
+    }
+
+    const now = new Date();
+
+    if (query.datePreset === 'today') {
+      return {
+        gte: startOfDay(now),
+        lte: endOfDay(now),
+      } satisfies Prisma.DateTimeFilter;
+    }
+
+    if (query.datePreset === 'yesterday') {
+      const yesterday = subDays(now, 1);
+      return {
+        gte: startOfDay(yesterday),
+        lte: endOfDay(yesterday),
+      } satisfies Prisma.DateTimeFilter;
+    }
+
+    if (query.datePreset === 'last7days') {
+      return {
+        gte: startOfDay(subDays(now, 6)),
+        lte: endOfDay(now),
+      } satisfies Prisma.DateTimeFilter;
+    }
+
+    if (query.datePreset === 'last30days') {
+      return {
+        gte: startOfDay(subDays(now, 29)),
+        lte: endOfDay(now),
+      } satisfies Prisma.DateTimeFilter;
+    }
+
+    if (!query.dateFrom || !query.dateTo) {
+      throw new ValidationError('Custom date range requires dateFrom and dateTo');
+    }
+
+    const startDate = startOfDay(new Date(`${query.dateFrom}T00:00:00`));
+    const endDate = endOfDay(new Date(`${query.dateTo}T00:00:00`));
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new ValidationError('Invalid submission date range');
+    }
+
+    return {
+      gte: startDate,
+      lte: endDate,
+    } satisfies Prisma.DateTimeFilter;
+  }
+
+  private getNeedsFieldPaths(needsField: SubmissionNeedsField | null) {
+    return Array.from(
+      new Set([needsField?.path, needsField?.payloadKey].filter((value): value is string => Boolean(value)))
+    );
+  }
+
+  private async getSubmissionNeedsOptions(
+    formModuleId: string,
+    query: FormSubmissionQueryInput,
+    needsField: SubmissionNeedsField | null
+  ) {
+    const fieldPaths = this.getNeedsFieldPaths(needsField);
+
+    if (fieldPaths.length === 0) {
+      return [];
+    }
+
+    const optionSourceRows = await this.prisma.formSubmissionValue.findMany({
+      where: {
+        fieldPath: {
+          in: fieldPaths,
+        },
+        submission: {
+          is: this.buildFormSubmissionWhere(
+            formModuleId,
+            {
+              ...query,
+              needs: undefined,
+            },
+            needsField,
+            { excludeNeeds: true }
+          ),
+        },
+      },
+      select: {
+        displayValue: true,
+        value: true,
+      },
+      orderBy: [{ displayValue: 'asc' }],
+    });
+
+    return Array.from(
+      new Set(
+        optionSourceRows
+          .map((row) => this.normalizeSubmissionValue(row.displayValue ?? row.value))
+          .filter((value): value is string => Boolean(value))
+      )
+    ).sort((left, right) => left.localeCompare(right));
+  }
+
+  private buildSubmissionExportRows(
+    submissions: ExportableSubmission[],
+    formModuleName: string,
+    needsField: SubmissionNeedsField | null
+  ) {
+    return submissions.map((submission) => {
+      const row: Record<string, string> = {
+        submissionId: submission.id,
+        formModuleName,
+        formModuleId: submission.formModuleId,
+        businessUnit: submission.businessUnit,
+        formSlug: submission.formSlug,
+        status: submission.status,
+        needs: this.extractSubmissionNeeds(submission.values, needsField) ?? '',
+        primaryName: submission.primaryName ?? '',
+        primaryEmail: submission.primaryEmail ?? '',
+        primaryPhone: submission.primaryPhone ?? '',
+        receivedAt: submission.receivedAt.toISOString(),
+        createdAt: submission.createdAt.toISOString(),
+      };
+
+      for (const value of submission.values) {
+        row[value.fieldPath] = this.normalizeSubmissionValue(value.displayValue ?? value.value) ?? '';
+      }
+
+      for (const group of submission.groups) {
+        for (const value of group.values) {
+          row[`${group.groupKey}[${group.sortOrder + 1}].${value.fieldPath}`] =
+            this.normalizeSubmissionValue(value.displayValue ?? value.value) ?? '';
+        }
+
+        for (const file of group.files) {
+          row[`${group.groupKey}[${group.sortOrder + 1}].${file.fieldPath}.file`] =
+            file.url ?? file.originalName ?? '';
+        }
+      }
+
+      for (const file of submission.files) {
+        row[`${file.fieldPath}.file`] = file.url ?? file.originalName ?? '';
+      }
+
+      return row;
+    });
+  }
+
+  private extractSubmissionNeeds(
+    values: Array<{
+      fieldPath: string;
+      value: Prisma.JsonValue | null;
+      displayValue: string | null;
+    }>,
+    needsField: SubmissionNeedsField | null
+  ) {
+    const fieldPaths = this.getNeedsFieldPaths(needsField);
+
+    if (fieldPaths.length === 0) {
+      return null;
+    }
+
+    const matchedValue = values.find((value) => fieldPaths.includes(value.fieldPath));
+
+    if (!matchedValue) {
+      return null;
+    }
+
+    return this.normalizeSubmissionValue(
+      matchedValue.displayValue ?? matchedValue.value
+    );
+  }
+
+  private normalizeSubmissionValue(value: unknown): string | null {
+    if (value == null) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((entry) => this.normalizeSubmissionValue(entry))
+        .filter((entry): entry is string => Boolean(entry))
+        .join(', ');
+    }
+
+    return JSON.stringify(value);
   }
 
   private toJsonInput(value: unknown): Prisma.InputJsonValue | Prisma.JsonNullValueInput {

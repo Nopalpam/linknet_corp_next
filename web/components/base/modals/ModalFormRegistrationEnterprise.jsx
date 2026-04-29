@@ -21,6 +21,7 @@ import Checkbox from '../forms/Checkbox';
 import FieldReadOnly from '../forms/FieldReadOnly';
 import Button from '../Button';
 import { useFormModule } from '@/components/hooks/useFormModule';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 import { useFormSubmission } from '@/components/hooks/useFormSubmission';
 import { buildRedirectUrl } from '@/lib/formsApi';
 
@@ -126,46 +127,6 @@ const BUSINESS_CHALLENGE_OPTIONS = [
   'Customer Engagement',
   'Data Security and Privacy',
 ].map((option) => ({ label: option, value: option }));
-
-// Cascading location data (static geographic data — not CMS-managed)
-const PROVINCE_OPTIONS = [
-  'DKI Jakarta',
-  'Jawa Barat',
-  'Jawa Tengah',
-  'DI Yogyakarta',
-  'Jawa Timur',
-  'Banten',
-].map((option) => ({ label: option, value: option }));
-
-const CITY_BY_PROVINCE = {
-  'DKI Jakarta': ['Jakarta Selatan', 'Jakarta Barat', 'Jakarta Pusat'],
-  'Jawa Barat': ['Bandung', 'Bekasi', 'Bogor'],
-  'Jawa Tengah': ['Semarang', 'Solo', 'Magelang'],
-  'DI Yogyakarta': ['Yogyakarta', 'Sleman', 'Bantul'],
-  'Jawa Timur': ['Surabaya', 'Sidoarjo', 'Malang'],
-  Banten: ['Tangerang', 'Tangerang Selatan', 'Serang'],
-};
-
-const WARD_BY_CITY = {
-  'Jakarta Selatan': ['Kebayoran Baru', 'Setiabudi', 'Tebet'],
-  'Jakarta Barat': ['Kembangan', 'Palmerah', 'Cengkareng'],
-  'Jakarta Pusat': ['Menteng', 'Tanah Abang', 'Kemayoran'],
-  Bandung: ['Coblong', 'Lengkong', 'Sukajadi'],
-  Bekasi: ['Bekasi Selatan', 'Bekasi Timur', 'Jatiasih'],
-  Bogor: ['Bogor Tengah', 'Bogor Barat', 'Cigombong'],
-  Semarang: ['Banyumanik', 'Candisari', 'Tembalang'],
-  Solo: ['Banjarsari', 'Laweyan', 'Jebres'],
-  Magelang: ['Magelang Tengah', 'Magelang Utara', 'Mertoyudan'],
-  Yogyakarta: ['Gondokusuman', 'Jetis', 'Umbulharjo'],
-  Sleman: ['Depok', 'Ngaglik', 'Mlati'],
-  Bantul: ['Banguntapan', 'Kasihan', 'Sewon'],
-  Surabaya: ['Tegalsari', 'Wonokromo', 'Rungkut'],
-  Sidoarjo: ['Buduran', 'Candi', 'Gedangan'],
-  Malang: ['Klojen', 'Lowokwaru', 'Blimbing'],
-  Tangerang: ['Ciledug', 'Karawaci', 'Pinang'],
-  'Tangerang Selatan': ['Serpong', 'Pondok Aren', 'Ciputat'],
-  Serang: ['Curug', 'Kasemen', 'Walantaka'],
-};
 
 const STEP_META = [
   {
@@ -733,14 +694,17 @@ function Step1Body({ form, onChange, submitAttempted, departmentOptions, roleOpt
 }
 
 function Step2Body({ form, onChange, submitAttempted, industryOptions }) {
-  const cityOptions = (CITY_BY_PROVINCE[form.Province__c] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
-  const wardOptions = (WARD_BY_CITY[form.City__c] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
+  const {
+    cityOptions,
+    finalOptions: wardOptions,
+    normalizedCity,
+    normalizedProvince,
+    provinceOptions,
+  } = useIndonesiaLocationOptions({
+    city: form.City__c,
+    finalLevel: 'wardZip',
+    province: form.Province__c,
+  });
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -772,8 +736,8 @@ function Step2Body({ form, onChange, submitAttempted, industryOptions }) {
         label="Province"
         required
         placeholder="Select province"
-        options={PROVINCE_OPTIONS}
-        value={form.Province__c}
+        options={provinceOptions}
+        value={normalizedProvince}
         onChange={onChange('Province__c')}
         data-error={FORM_ERROR_MESSAGES.Province__c}
         submitAttempted={submitAttempted}
@@ -785,11 +749,11 @@ function Step2Body({ form, onChange, submitAttempted, industryOptions }) {
         required
         placeholder="Select city"
         options={cityOptions}
-        value={form.City__c}
+        value={normalizedCity}
         onChange={onChange('City__c')}
         data-error={FORM_ERROR_MESSAGES.City__c}
         submitAttempted={submitAttempted}
-        disabled={!form.Province__c}
+        disabled={!normalizedProvince}
       />
       <Select
         id="lnForm_Kecamatan_Zipcode__c"
@@ -802,7 +766,7 @@ function Step2Body({ form, onChange, submitAttempted, industryOptions }) {
         onChange={onChange('Kecamatan_Zipcode__c')}
         data-error={FORM_ERROR_MESSAGES.Kecamatan_Zipcode__c}
         submitAttempted={submitAttempted}
-        disabled={!form.City__c}
+        disabled={!normalizedCity}
       />
       <div className="hidden md:block" />
       <Textarea

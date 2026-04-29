@@ -428,21 +428,10 @@ export class FormSubmissionDispatchService {
       return submission?.status ?? FormSubmissionStatus.STORED;
     }
 
-    const statuses = logs.map((log) => log.status);
-    const failureCount = statuses.filter((status) => status === FormDispatchStatus.FAILED).length;
-    const successLikeCount = statuses.filter(
-      (status) => status === FormDispatchStatus.SUCCESS || status === FormDispatchStatus.SKIPPED,
-    ).length;
-
-    let submissionStatus: FormSubmissionStatus = FormSubmissionStatus.STORED;
-
-    if (failureCount === 0 && successLikeCount === statuses.length) {
-      submissionStatus = FormSubmissionStatus.DISPATCHED;
-    } else if (failureCount > 0 && successLikeCount > 0) {
-      submissionStatus = FormSubmissionStatus.PARTIAL_FAILED;
-    } else if (failureCount === statuses.length) {
-      submissionStatus = FormSubmissionStatus.FAILED;
-    }
+    const hasFailure = logs.some((log) => log.status === FormDispatchStatus.FAILED);
+    const submissionStatus = hasFailure
+      ? FormSubmissionStatus.FAILED
+      : FormSubmissionStatus.STORED;
 
     await this.prisma.formSubmission.update({
       where: { id: submissionId },

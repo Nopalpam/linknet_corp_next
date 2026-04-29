@@ -76,7 +76,7 @@ export class BaseCrudService<T> {
    * Fetch with authentication and error handling
    * ✅ FIX: Use 'auth_token' key (same as BaseService)
    */
-  protected async fetchWithAuth(url: string, options: RequestInit = {}): Promise<any> {
+  protected async fetchResponseWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
     // Get token from localStorage or cookie (fallback)
     let token = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
     if (!token) {
@@ -132,6 +132,12 @@ export class BaseCrudService<T> {
         `HTTP error! status: ${response.status}`;
       throw new Error(message);
     }
+
+    return response;
+  }
+
+  protected async fetchWithAuth(url: string, options: RequestInit = {}): Promise<any> {
+    const response = await this.fetchResponseWithAuth(url, options);
 
     return response.json();
   }

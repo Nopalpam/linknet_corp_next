@@ -15,6 +15,7 @@ import Modal from '../Modal';
 import Select from '../forms/Select';
 import Textarea from '../forms/Textarea';
 import FormStepperModal from '../forms/FormStepperModal';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 import { useFormSubmission } from '@/components/hooks/useFormSubmission';
 
 const ModalFormPartnershipEnterpriseContext = createContext({
@@ -83,48 +84,6 @@ const INDUSTRY_OPTIONS = [
   label: option,
   value: option,
 }));
-
-const PROVINCE_OPTIONS = [
-  'DKI Jakarta',
-  'Jawa Barat',
-  'Jawa Tengah',
-  'DI Yogyakarta',
-  'Jawa Timur',
-  'Banten',
-].map((option) => ({
-  label: option,
-  value: option,
-}));
-
-const CITY_BY_PROVINCE = {
-  'DKI Jakarta': ['Jakarta Selatan', 'Jakarta Barat', 'Jakarta Pusat'],
-  'Jawa Barat': ['Bandung', 'Bekasi', 'Bogor'],
-  'Jawa Tengah': ['Semarang', 'Solo', 'Magelang'],
-  'DI Yogyakarta': ['Yogyakarta', 'Sleman', 'Bantul'],
-  'Jawa Timur': ['Surabaya', 'Sidoarjo', 'Malang'],
-  Banten: ['Tangerang', 'Tangerang Selatan', 'Serang'],
-};
-
-const WARD_BY_CITY = {
-  'Jakarta Selatan': ['Kebayoran Baru', 'Setiabudi', 'Tebet'],
-  'Jakarta Barat': ['Kembangan', 'Palmerah', 'Cengkareng'],
-  'Jakarta Pusat': ['Menteng', 'Tanah Abang', 'Kemayoran'],
-  Bandung: ['Coblong', 'Lengkong', 'Sukajadi'],
-  Bekasi: ['Bekasi Selatan', 'Bekasi Timur', 'Jatiasih'],
-  Bogor: ['Bogor Tengah', 'Bogor Barat', 'Cigombong'],
-  Semarang: ['Banyumanik', 'Candisari', 'Tembalang'],
-  Solo: ['Banjarsari', 'Laweyan', 'Jebres'],
-  Magelang: ['Magelang Tengah', 'Magelang Utara', 'Mertoyudan'],
-  Yogyakarta: ['Gondokusuman', 'Jetis', 'Umbulharjo'],
-  Sleman: ['Depok', 'Ngaglik', 'Mlati'],
-  Bantul: ['Banguntapan', 'Kasihan', 'Sewon'],
-  Surabaya: ['Tegalsari', 'Wonokromo', 'Rungkut'],
-  Sidoarjo: ['Buduran', 'Candi', 'Gedangan'],
-  Malang: ['Klojen', 'Lowokwaru', 'Blimbing'],
-  Tangerang: ['Ciledug', 'Karawaci', 'Pinang'],
-  'Tangerang Selatan': ['Serpong', 'Pondok Aren', 'Ciputat'],
-  Serang: ['Curug', 'Kasemen', 'Walantaka'],
-};
 
 const STEP_META = [
   {
@@ -401,15 +360,17 @@ function Step1Fields({ form, onChange, submitAttempted }) {
 }
 
 function Step2Fields({ form, onChange, submitAttempted }) {
-  const cityOptions = (CITY_BY_PROVINCE[form.province] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
-
-  const wardOptions = (WARD_BY_CITY[form.city] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
+  const {
+    cityOptions,
+    finalOptions: wardOptions,
+    normalizedCity,
+    normalizedProvince,
+    provinceOptions,
+  } = useIndonesiaLocationOptions({
+    city: form.city,
+    finalLevel: 'wardZip',
+    province: form.province,
+  });
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -441,8 +402,8 @@ function Step2Fields({ form, onChange, submitAttempted }) {
         label="Province"
         required
         placeholder="Select province"
-        options={PROVINCE_OPTIONS}
-        value={form.province}
+        options={provinceOptions}
+        value={normalizedProvince}
         onChange={onChange('province')}
         data-error={FORM_ERROR_MESSAGES.province}
         submitAttempted={submitAttempted}
@@ -454,11 +415,11 @@ function Step2Fields({ form, onChange, submitAttempted }) {
         required
         placeholder="Select city"
         options={cityOptions}
-        value={form.city}
+        value={normalizedCity}
         onChange={onChange('city')}
         data-error={FORM_ERROR_MESSAGES.city}
         submitAttempted={submitAttempted}
-        disabled={!form.province}
+        disabled={!normalizedProvince}
       />
       <Select
         id="partnership-enterprise-ward-zip-code"
@@ -471,7 +432,7 @@ function Step2Fields({ form, onChange, submitAttempted }) {
         onChange={onChange('wardZipCode')}
         data-error={FORM_ERROR_MESSAGES.wardZipCode}
         submitAttempted={submitAttempted}
-        disabled={!form.city}
+        disabled={!normalizedCity}
       />
       <div className="hidden md:block" />
       <Textarea

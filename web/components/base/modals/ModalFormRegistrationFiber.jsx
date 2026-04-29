@@ -22,6 +22,7 @@ import Checkbox from "../forms/Checkbox";
 import FieldReadOnly from "../forms/FieldReadOnly";
 import Button from "../Button";
 import { useFormSubmission } from '@/components/hooks/useFormSubmission';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 
 const ModalFormRegistrationFiberContext = createContext({
   openModal: () => {},
@@ -47,38 +48,6 @@ const ROLE_OPTIONS = [
   label: option,
   value: option,
 }));
-
-const PROVINCE_OPTIONS = [
-  "DKI Jakarta",
-  "Jawa Barat",
-  "Jawa Tengah",
-  "DI Yogyakarta",
-  "Jawa Timur",
-  "Banten",
-].map((option) => ({
-  label: option,
-  value: option,
-}));
-
-const CITY_BY_PROVINCE = {
-  "DKI Jakarta": ["Jakarta Selatan", "Jakarta Barat"],
-  "Jawa Barat": ["Bandung", "Bekasi"],
-  "Jawa Tengah": ["Semarang"],
-  "DI Yogyakarta": ["Yogyakarta"],
-  "Jawa Timur": ["Surabaya"],
-  "Banten": ["Tangerang"],
-};
-
-const ZIP_BY_CITY = {
-  "Jakarta Selatan": ["12870", "12190"],
-  "Jakarta Barat": ["11530", "11610"],
-  Bandung: ["40115", "40286"],
-  Bekasi: ["17121", "17144"],
-  Semarang: ["50135", "50241"],
-  Yogyakarta: ["55281", "55198"],
-  Surabaya: ["60231", "60189"],
-  Tangerang: ["15143", "15157"],
-};
 
 const STEP_META = [
   {
@@ -745,14 +714,17 @@ function Step1Body({ form, onChange, submitAttempted }) {
 }
 
 function Step2Body({ form, onChange, submitAttempted }) {
-  const cityOptions = (CITY_BY_PROVINCE[form.province] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
-  const zipOptions = (ZIP_BY_CITY[form.city] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
+  const {
+    cityOptions,
+    finalOptions: zipOptions,
+    normalizedCity,
+    normalizedProvince,
+    provinceOptions,
+  } = useIndonesiaLocationOptions({
+    city: form.city,
+    finalLevel: 'zip',
+    province: form.province,
+  });
 
   return (
     <div className="space-y-8">
@@ -784,8 +756,8 @@ function Step2Body({ form, onChange, submitAttempted }) {
             label="Province"
             required
             placeholder="Select province"
-            options={PROVINCE_OPTIONS}
-            value={form.province}
+            options={provinceOptions}
+            value={normalizedProvince}
             onChange={onChange("province")}
             data-error={FORM_ERROR_MESSAGES.province}
             submitAttempted={submitAttempted}
@@ -796,11 +768,11 @@ function Step2Body({ form, onChange, submitAttempted }) {
             required
             placeholder="Select city"
             options={cityOptions}
-            value={form.city}
+            value={normalizedCity}
             onChange={onChange("city")}
             data-error={FORM_ERROR_MESSAGES.city}
             submitAttempted={submitAttempted}
-            disabled={!form.province}
+            disabled={!normalizedProvince}
           />
           <Select
             id="fiber-zip-code"
@@ -812,7 +784,7 @@ function Step2Body({ form, onChange, submitAttempted }) {
             onChange={onChange("zipCode")}
             data-error={FORM_ERROR_MESSAGES.zipCode}
             submitAttempted={submitAttempted}
-            disabled={!form.city}
+            disabled={!normalizedCity}
           />
           <div className="hidden md:block" />
           <Textarea

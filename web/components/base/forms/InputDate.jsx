@@ -74,19 +74,18 @@ const InputDate = forwardRef(({
     if (onBlur) onBlur(e);
   };
 
-  const handleOpenPicker = () => {
-    if (props.disabled) return;
+  const handleOpenPicker = (e) => {
+    if (props.disabled) {
+      e.preventDefault();
+      return;
+    }
 
     const input = inputRef.current;
     if (!input) return;
 
-    if (typeof input.showPicker === 'function') {
-      input.showPicker();
-      return;
-    }
-
+    // Use native behavior via label/input association — do not call `showPicker()`.
+    // Focus so keyboard users still reach the control quickly.
     input.focus();
-    input.click();
   };
 
   const isInvalid = !!error || !!internalError;
@@ -115,15 +114,14 @@ const InputDate = forwardRef(({
           {required && <span className="req">*</span>}
         </label>
 
-        <button
-          type="button"
-          onClick={handleOpenPicker}
-          disabled={props.disabled}
+        <label
+          htmlFor={id}
           aria-label={`Open ${label || 'date'} picker`}
-          className="absolute right-4 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-black transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
+          onClick={handleOpenPicker}
+          className={`absolute right-4 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-black transition-opacity hover:opacity-70 ${props.disabled ? 'pointer-events-none opacity-40 cursor-not-allowed' : ''}`}
         >
           <Icon name="calendar" style={{ '--icon-size': '24px' }} />
-        </button>
+        </label>
       </div>
 
       {(helpText || displayError) && (

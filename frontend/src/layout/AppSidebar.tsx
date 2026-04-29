@@ -127,7 +127,7 @@ const menuSections: MenuSection[] = [
         subItems: [
           // { name: "Enterprise Forms", path: "/form-modules/enterprise" },
           { name: "Fiber Forms", path: "/form-modules/fiber" },
-          { name: "Media Forms", path: "/form-modules/media" },
+          // { name: "Media Forms", path: "/form-modules/media" },
           // { name: "All Submissions", path: "/form-modules/submissions" },
         ],
       },

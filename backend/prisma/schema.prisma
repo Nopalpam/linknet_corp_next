@@ -720,7 +720,7 @@ model FormSubmission {
   businessUnit    BusinessUnit          @map("business_unit")
   formSlug        String                @map("form_slug")
   schemaVersion   Int                   @map("schema_version")
-  status          FormSubmissionStatus  @default(RECEIVED)
+  status          FormSubmissionStatus  @default(STORED)
   locale          String                @default("id")
   requestId       String?               @map("request_id")
   sessionId       String?               @map("session_id")
@@ -1429,11 +1429,7 @@ enum FormDispatchMode {
 }
 
 enum FormSubmissionStatus {
-  RECEIVED
-  VALIDATED
   STORED
-  DISPATCHED
-  PARTIAL_FAILED
   FAILED
 }
 

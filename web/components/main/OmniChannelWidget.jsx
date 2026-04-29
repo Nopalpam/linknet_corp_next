@@ -9,6 +9,7 @@ import Textarea      from '../base/forms/Textarea';
 import Icon          from '../base/Icon';
 import Button        from '../base/Button';
 import SegmentPicker from '../base/forms/SegmentPicker';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 
 // ─────────────────────────────────────────────────────────────
 // ICONS & STATIC CONFIG
@@ -46,37 +47,6 @@ const DEFAULT_INDUSTRY_OPTIONS = [
   { label: 'Retail & Commerce', value: 'retail'        },
   { label: 'Technology',        value: 'tech'          },
 ];
-
-const DEFAULT_PROVINCE_OPTIONS = [
-  { label: 'Jawa Barat',  value: 'jabar'  },
-  { label: 'DKI Jakarta', value: 'dki'    },
-  { label: 'Jawa Tengah', value: 'jateng' },
-  { label: 'Jawa Timur',  value: 'jatim'  },
-  { label: 'Banten',      value: 'banten' },
-];
-
-const DEFAULT_CITY_BY_PROVINCE = {
-  jabar:  [{ label: 'Kota Bekasi', value: 'bekasi' }, { label: 'Kota Bandung', value: 'bandung' }, { label: 'Kota Bogor', value: 'bogor' }],
-  dki:    [{ label: 'Jakarta Selatan', value: 'jaksel' }, { label: 'Jakarta Pusat', value: 'jakpus' }, { label: 'Jakarta Utara', value: 'jakut' }],
-  jateng: [{ label: 'Kota Semarang', value: 'semarang' }, { label: 'Kota Solo', value: 'solo' }],
-  jatim:  [{ label: 'Kota Surabaya', value: 'surabaya' }, { label: 'Kota Malang', value: 'malang' }],
-  banten: [{ label: 'Kota Tangerang', value: 'tangerang' }, { label: 'Kota Cilegon', value: 'cilegon' }],
-};
-
-const DEFAULT_ZIP_BY_CITY = {
-  bekasi:    [{ label: '17113 – Mustika Jaya', value: '17113' }, { label: '17114 – Mustikasari', value: '17114' }],
-  bandung:   [{ label: '40111', value: '40111' }, { label: '40112', value: '40112' }],
-  bogor:     [{ label: '16111', value: '16111' }],
-  jaksel:    [{ label: '12110', value: '12110' }, { label: '12120', value: '12120' }],
-  jakpus:    [{ label: '10110', value: '10110' }],
-  jakut:     [{ label: '14110', value: '14110' }],
-  semarang:  [{ label: '50111', value: '50111' }],
-  solo:      [{ label: '57111', value: '57111' }],
-  surabaya:  [{ label: '60111', value: '60111' }],
-  malang:    [{ label: '65111', value: '65111' }],
-  tangerang: [{ label: '15111', value: '15111' }],
-  cilegon:   [{ label: '42411', value: '42411' }],
-};
 
 const DEFAULT_SOLUTION_OPTIONS = [
   { label: 'Cloud',              value: 'cloud'        },
@@ -224,13 +194,10 @@ function SolutionPicker({ options = [], selectedValues = [], onChange, error = '
 export default function OmniChannelWidget({ cmsData, className = '' }) {
   const cfg = cmsData || {};
 
-  // CMS-configurable options (fallback to defaults)
+  // CMS-configurable options (fallback to shared Indonesia data)
   const departmentOptions = cfg.departmentOptions || DEFAULT_DEPARTMENT_OPTIONS;
   const roleOptions       = cfg.roleOptions       || DEFAULT_ROLE_OPTIONS;
   const industryOptions   = cfg.industryOptions    || DEFAULT_INDUSTRY_OPTIONS;
-  const provinceOptions   = cfg.provinceOptions    || DEFAULT_PROVINCE_OPTIONS;
-  const cityByProvince    = cfg.cityByProvince     || DEFAULT_CITY_BY_PROVINCE;
-  const zipByCity         = cfg.zipByCity           || DEFAULT_ZIP_BY_CITY;
   const solutionOptions   = cfg.solutionOptions    || DEFAULT_SOLUTION_OPTIONS;
 
   const [isOpen, setIsOpen]                   = useState(false);
@@ -238,6 +205,24 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
   const [currentTab, setCurrentTab]           = useState('live_chat');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formData, setFormData]               = useState({ ...INITIAL_FORM });
+
+  const hasCustomLocationConfig = Boolean(
+    Array.isArray(cfg.provinceOptions) && cfg.cityByProvince && cfg.zipByCity
+  );
+  const {
+    cityOptions: indonesiaCityOptions,
+    finalOptions: indonesiaZipOptions,
+    normalizedCity,
+    normalizedProvince,
+    provinceOptions: indonesiaProvinceOptions,
+  } = useIndonesiaLocationOptions({
+    city: formData.city,
+    finalLevel: 'zip',
+    province: formData.province,
+  });
+  const provinceOptions   = hasCustomLocationConfig ? cfg.provinceOptions : indonesiaProvinceOptions;
+  const cityByProvince    = hasCustomLocationConfig ? cfg.cityByProvince : null;
+  const zipByCity         = hasCustomLocationConfig ? cfg.zipByCity : null;
 
   const widgetRef    = useRef(null);
   const overlayRef   = useRef(null);
@@ -404,8 +389,14 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
     setIsOpen(false);
   };
 
-  const cityOptions = formData.province ? (cityByProvince[formData.province] ?? []) : [];
-  const zipOptions  = formData.city     ? (zipByCity[formData.city]          ?? []) : [];
+  const cityOptions = hasCustomLocationConfig
+    ? (formData.province ? (cityByProvince[formData.province] ?? []) : [])
+    : indonesiaCityOptions;
+  const zipOptions = hasCustomLocationConfig
+    ? (formData.city ? (zipByCity[formData.city] ?? []) : [])
+    : indonesiaZipOptions;
+  const provinceValue = hasCustomLocationConfig ? formData.province : normalizedProvince;
+  const cityValue = hasCustomLocationConfig ? formData.city : normalizedCity;
 
   // CMS content with defaults
   const title        = cfg.title        || "Let's start new chat\nwith our Expert Team";
@@ -561,9 +552,9 @@ export default function OmniChannelWidget({ cmsData, className = '' }) {
       <div className="overflow-y-auto flex-1 px-5 py-2 flex flex-col gap-3.5">
         <Input id="cu-companyName" label="Company Name" required value={formData.companyName} onChange={handleChange} submitAttempted={submitAttempted} />
         <Select id="cu-businessIndustry" label="Business Industry" options={industryOptions} required value={formData.businessIndustry} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-province" label="Province" options={provinceOptions} required value={formData.province} onChange={handleChange} submitAttempted={submitAttempted} />
-        <Select id="cu-city" label="City / Regency" options={cityOptions} required value={formData.city} onChange={handleChange} submitAttempted={submitAttempted} disabled={!formData.province} />
-        <Select id="cu-zip" label="ZIP Code" options={zipOptions} required value={formData.zip} onChange={handleChange} submitAttempted={submitAttempted} disabled={!formData.city} />
+        <Select id="cu-province" label="Province" options={provinceOptions} required value={provinceValue} onChange={handleChange} submitAttempted={submitAttempted} />
+        <Select id="cu-city" label="City / Regency" options={cityOptions} required value={cityValue} onChange={handleChange} submitAttempted={submitAttempted} disabled={!provinceValue} />
+        <Select id="cu-zip" label="ZIP Code" options={zipOptions} required value={formData.zip} onChange={handleChange} submitAttempted={submitAttempted} disabled={!cityValue} />
         <Textarea id="cu-detailAddress" label="Detail Address" maxLength={200} required value={formData.detailAddress} onChange={handleChange} submitAttempted={submitAttempted} />
       </div>
       <div className="shrink-0 px-5 pb-4 pt-3 bg-white flex gap-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.07)]">

@@ -11,6 +11,7 @@ import { locales } from '@/i18n/config';
 
 
 import Navbar from "@/components/main/Navbar";
+import NavbarFiber from '@/components/main/NavbarFiber';
 import Footer from "@/components/main/Footer";
 import ModalCookies from "@/components/base/modals/ModalCookies";
 import OmniChannelWidget from "@/components/main/OmniChannelWidget";
@@ -207,7 +208,7 @@ export default async function RootLayout({ children, params }) {
         {/* 8. Bungkus semua komponen dengan Provider */}
         <NextIntlClientProvider messages={messages} locale={locale}>
           <VisitorTracker />
-          <Navbar menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
+          <NavbarFiber menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
           {children}
           <Footer cmsClosingData={cmsClosingData} cmsFooterData={cmsFooterData} />
           <ModalCookies cmsData={cookiesData} />

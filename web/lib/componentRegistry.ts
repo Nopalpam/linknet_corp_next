@@ -66,6 +66,10 @@ export const CMS_COMPONENT_TYPES = {
   EXTENDABLE_ARTICLE: 'extendable_article',
   STOCK_INFORMATION: 'stock_information',
   TESTIMONIALS: 'testimonials',
+  FORM_REGISTRATION_ENTERPRISE: 'form_registration_enterprise',
+  FORM_REGISTRATION_FIBER: 'form_registration_fiber',
+  FORM_REGISTRATION_MEDIA: 'form_registration_media',
+  COVERAGE_CHECK_FIBER: 'coverage_check_fiber',
 } as const;
 
 export type CMSComponentType = typeof CMS_COMPONENT_TYPES[keyof typeof CMS_COMPONENT_TYPES];

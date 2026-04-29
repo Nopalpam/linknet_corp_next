@@ -769,6 +769,7 @@ function Step1Body({
       <CoverageCheckInput
         required
         site_id={form.site_id ?? ""}
+        address={form.address ?? ""}
         addressDetail={form.addressDetail}
         onAddressDetailChange={onChange("addressDetail")}
         manualData={{

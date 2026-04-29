@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
-const MEDIA_API_URL = 'https://api.media.linknet.co.id/portal-media';
+const MEDIA_API_URL = 'https://ui-stb-cpe.sysln.id/api/mit/portal/data';
 const SALT = '@M1Tc0NT3nT#ln';
 
 /**

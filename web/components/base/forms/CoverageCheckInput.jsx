@@ -2,54 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
+import Button from '../Button';
 import Input    from './Input';
 import Select   from './Select';
 import Textarea from './Textarea';
 import Icon     from '../Icon';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
+import { resolveCachedIndonesiaLocationLabels } from '@/data/constants/indonesiaLocations';
 
 // ─────────────────────────────────────────────────────────────
-// MOCK DATA
+// COVERAGE SEARCH
 // ─────────────────────────────────────────────────────────────
-const MOCK_ADDRESSES = [
-  { id: 1, site_id: '9823451', label: 'Centennial Tower, Jl. Gatot Subroto No.24-25, Kuningan Bar., Kec. Mampang Prpt., Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12930' },
-  { id: 2, site_id: '9823452', label: 'Gedung Graha Surya Internusa, Jl. HR Rasuna Said Kav. X-0, Kuningan, Jakarta Selatan 12950' },
-  { id: 3, site_id: '9823453', label: 'Menara Rajawali, Jl. Mega Kuningan Lot 5.1, Kawasan Mega Kuningan, Jakarta Selatan 12950' },
-  { id: 4, site_id: '9823454', label: 'Plaza Sentral, Jl. Jend. Sudirman Kav. 47, Karet Semanggi, Setiabudi, Jakarta Selatan 12930' },
-  { id: 5, site_id: '9823455', label: 'Wisma GKBI, Jl. Jend. Sudirman No.28, RT.10/RW.11, Bendungan Hilir, Tanah Abang, Jakarta Pusat 10210' },
-  { id: 6, site_id: '9823456', label: 'Jl. Gatot Subroto No.77, Tebet, Kota Jakarta Selatan 12810' },
-  { id: 7, site_id: '9823457', label: 'Jl. Sudirman Park, Kav. 5, Karet Tengsin, Tanah Abang, Jakarta Pusat 10250' },
-];
-
-const PROVINCE_OPTIONS = [
-  { value: 'dki',    label: 'DKI Jakarta' },
-  { value: 'jabar',  label: 'Jawa Barat'  },
-  { value: 'jateng', label: 'Jawa Tengah' },
-  { value: 'jatim',  label: 'Jawa Timur'  },
-  { value: 'banten', label: 'Banten'      },
-];
-
-const CITY_BY_PROVINCE = {
-  dki:    [{ value: 'jaksel', label: 'Jakarta Selatan' }, { value: 'jakpus', label: 'Jakarta Pusat' }, { value: 'jakut', label: 'Jakarta Utara' }],
-  jabar:  [{ value: 'bekasi', label: 'Kota Bekasi' }, { value: 'bandung', label: 'Kota Bandung' }, { value: 'bogor', label: 'Kota Bogor' }],
-  jateng: [{ value: 'semarang', label: 'Kota Semarang' }, { value: 'solo', label: 'Kota Solo' }],
-  jatim:  [{ value: 'surabaya', label: 'Kota Surabaya' }, { value: 'malang', label: 'Kota Malang' }],
-  banten: [{ value: 'tangerang', label: 'Kota Tangerang' }, { value: 'cilegon', label: 'Kota Cilegon' }],
-};
-
-const ZIP_BY_CITY = {
-  jaksel:    [{ value: '12110', label: '12110 – Kebayoran Baru' }, { value: '12120', label: '12120 – Mampang Prapatan' }, { value: '12930', label: '12930 – Karet Kuningan' }],
-  jakpus:    [{ value: '10110', label: '10110 – Gambir' }, { value: '10210', label: '10210 – Tanah Abang' }],
-  jakut:     [{ value: '14110', label: '14110 – Penjaringan' }],
-  bekasi:    [{ value: '17113', label: '17113 – Mustika Jaya' }, { value: '17114', label: '17114 – Mustikasari' }],
-  bandung:   [{ value: '40111', label: '40111 – Bandung Kulon' }, { value: '40112', label: '40112 – Babakan Ciparay' }],
-  bogor:     [{ value: '16111', label: '16111 – Bogor Tengah' }],
-  semarang:  [{ value: '50111', label: '50111 – Semarang Tengah' }],
-  solo:      [{ value: '57111', label: '57111 – Laweyan' }],
-  surabaya:  [{ value: '60111', label: '60111 – Tegalsari' }],
-  malang:    [{ value: '65111', label: '65111 – Klojen' }],
-  tangerang: [{ value: '15111', label: '15111 – Tangerang Kota' }],
-  cilegon:   [{ value: '42411', label: '42411 – Cilegon Kota' }],
-};
+const COVERAGE_SEARCH_ENDPOINT = '/linknet-enterprise-coverage';
+const COVERAGE_SEARCH_MIN_LENGTH = 3;
 
 // ─────────────────────────────────────────────────────────────
 // UTILS
@@ -121,23 +86,196 @@ function useSessionState(keySuffix) {
   return { read, write, clear };
 }
 
-function useMockSearch(query, onResults) {
-  const performSearch = useCallback((searchQuery, signal) => {
-    const timeout = setTimeout(() => {
-      if (signal.aborted) return;
-      const filtered = MOCK_ADDRESSES
-        .filter((addr) => addr.label.toLowerCase().includes(searchQuery.toLowerCase()))
-        .slice(0, 5);
-      onResults(filtered);
-    }, 350);
-    signal.addEventListener('abort', () => clearTimeout(timeout));
-  }, [onResults]);
+function normalizeCoverageText(value) {
+  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+}
+
+function extractProviderNames(source) {
+  if (Array.isArray(source)) {
+    return source.flatMap(extractProviderNames);
+  }
+
+  if (source && typeof source === 'object') {
+    return [source.name, source.label, source.value, source.provider, source.providers]
+      .flatMap(extractProviderNames);
+  }
+
+  if (typeof source !== 'string') {
+    return [];
+  }
+
+  return source
+    .split(',')
+    .map(normalizeCoverageText)
+    .filter(Boolean);
+}
+
+function withMergedCoverageProviders(result, providers) {
+  if (!Array.isArray(providers) || providers.length === 0) {
+    return result;
+  }
+
+  const existingRaw = result?.raw && typeof result.raw === 'object' ? result.raw : {};
+
+  return {
+    ...result,
+    providers,
+    raw: {
+      ...existingRaw,
+      providers: providers.join(', '),
+    },
+  };
+}
+
+function getCoverageResultKey(result) {
+  const label = normalizeCoverageText(result?.label);
+
+  if (label) {
+    return `address:${label.toLowerCase()}`;
+  }
+
+  const siteId = normalizeCoverageText(String(result?.site_id ?? result?.id ?? ''));
+
+  if (siteId) {
+    return `site:${siteId.toLowerCase()}`;
+  }
+
+  return null;
+}
+
+function mergeCoverageResults(existingResult, nextResult) {
+  const mergedProviders = Array.from(new Set([
+    ...(existingResult?.providers ?? []),
+    ...(nextResult?.providers ?? []),
+  ]));
+
+  const existingRaw = existingResult?.raw && typeof existingResult.raw === 'object'
+    ? existingResult.raw
+    : {};
+  const nextRaw = nextResult?.raw && typeof nextResult.raw === 'object'
+    ? nextResult.raw
+    : {};
+
+  return withMergedCoverageProviders(
+    {
+      ...nextResult,
+      ...existingResult,
+      raw: {
+        ...nextRaw,
+        ...existingRaw,
+      },
+    },
+    mergedProviders,
+  );
+}
+
+function dedupeCoverageResults(results) {
+  const uniqueResults = [];
+  const seenIndexes = new Map();
+
+  results.forEach((result) => {
+    const key = getCoverageResultKey(result);
+
+    if (!key) {
+      uniqueResults.push(result);
+      return;
+    }
+
+    const existingIndex = seenIndexes.get(key);
+
+    if (existingIndex == null) {
+      uniqueResults.push(result);
+      seenIndexes.set(key, uniqueResults.length - 1);
+      return;
+    }
+
+    uniqueResults[existingIndex] = mergeCoverageResults(uniqueResults[existingIndex], result);
+  });
+
+  return uniqueResults;
+}
+
+function normalizeCoverageResult(item, index) {
+  const siteId = item?.site_id == null ? '' : String(item.site_id).trim();
+  const label = [item?.address, item?.site_address, item?.label]
+    .find((value) => typeof value === 'string' && value.trim())
+    ?.trim() || '';
+  const providers = Array.from(new Set(
+    extractProviderNames(
+      item?.providers
+      ?? item?.provider
+      ?? item?.availableProviders
+      ?? item?.available_providers
+      ?? (item?.data && Array.isArray(item.data) ? item.data[0]?.providers : undefined)
+      ?? (Array.isArray(item) ? item[0]?.providers : undefined),
+    ),
+  ));
+
+  if (!siteId || !label) {
+    return null;
+  }
+
+  return withMergedCoverageProviders({
+    id: item?.id ?? siteId ?? `coverage-${index}`,
+    site_id: siteId,
+    label,
+    raw: item,
+  }, providers);
+}
+
+function useCoverageSearch(query, onResults, onErrorChange, onLoadingChange) {
+  const performSearch = useCallback(async (searchQuery, signal) => {
+    try {
+      onLoadingChange(true);
+      onErrorChange(null);
+
+      const params = new URLSearchParams({ search: searchQuery });
+      const response = await fetch(
+        `${COVERAGE_SEARCH_ENDPOINT}?${params.toString()}`,
+        {
+          signal,
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+          },
+        },
+      );
+
+      const payload = await response.json().catch(() => null);
+      const normalizedResults = Array.isArray(payload?.data)
+        ? dedupeCoverageResults(payload.data.map(normalizeCoverageResult).filter(Boolean)).slice(0, 5)
+        : [];
+
+      if (!response.ok || !payload?.success) {
+        onErrorChange(payload?.message || 'Gagal mengambil data coverage.');
+        onResults([]);
+        return;
+      }
+
+      onResults(normalizedResults);
+    } catch (error) {
+      if (signal.aborted) {
+        return;
+      }
+
+      console.error('Coverage search failed:', error);
+      onErrorChange('Gagal menghubungi server. Silakan coba lagi.');
+      onResults([]);
+    } finally {
+      if (!signal.aborted) {
+        onLoadingChange(false);
+      }
+    }
+  }, [onErrorChange, onLoadingChange, onResults]);
 
   useEffect(() => {
-    if (query.length < 3) {
+    if (query.length < COVERAGE_SEARCH_MIN_LENGTH) {
+      onLoadingChange(false);
+      onErrorChange(null);
       onResults(null);
       return;
     }
+
     const controller = new AbortController();
     const debounced = debounce(() => performSearch(query, controller.signal), 350);
     debounced();
@@ -145,7 +283,7 @@ function useMockSearch(query, onResults) {
       debounced.cancel();
       controller.abort();
     };
-  }, [query, performSearch, onResults]);
+  }, [onErrorChange, onLoadingChange, onResults, performSearch, query]);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -210,7 +348,14 @@ function SearchInput({ value, onChange, showHelper, error }) {
   );
 }
 
-function SearchResults({ results, onSelect, onNotFound, showNotFoundAction = true }) {
+function SearchResults({
+  results,
+  onSelect,
+  onNotFound,
+  showNotFoundAction = true,
+  isLoading = false,
+  error = null,
+}) {
   const listRef = useExpand([]);
   const hasResults = results.length > 0;
 
@@ -230,7 +375,21 @@ function SearchResults({ results, onSelect, onNotFound, showNotFoundAction = tru
         </div>
       )}
 
-      {hasResults ? (
+      {isLoading ? (
+        <div className="lnCoverageCheck__resultsEmpty flex flex-col items-center gap-1.5 px-4 py-6 text-center">
+          <Icon name="location" colorClass="text-secondary" className="w-8 h-8 opacity-40 animate-pulse" />
+          <p className="text-body-b3 text-black font-bold">Mencari alamat...</p>
+          <p className="text-caption-c1 text-secondary">
+            Mengambil data coverage terbaru dari server.
+          </p>
+        </div>
+      ) : error ? (
+        <div className="lnCoverageCheck__resultsEmpty flex flex-col items-center gap-1.5 px-4 py-6 text-center">
+          <Icon name="location" colorClass="text-warning" className="w-8 h-8 opacity-60" />
+          <p className="text-body-b3 text-black font-bold">Pencarian belum berhasil.</p>
+          <p className="text-caption-c1 text-secondary">{error}</p>
+        </div>
+      ) : hasResults ? (
         <ul className="lnCoverageCheck__resultsList max-h-[360px] md:max-h-[240px] overflow-y-auto">
           {results.map((item) => (
             <li key={item.id}>
@@ -253,7 +412,8 @@ function SearchResults({ results, onSelect, onNotFound, showNotFoundAction = tru
         </ul>
       ) : (
         <div className="lnCoverageCheck__resultsEmpty flex flex-col items-center gap-1.5 px-4 py-6 text-center">
-          <Icon name="location" colorClass="text-secondary" className="w-8 h-8 opacity-40" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/illustrations/ill-search-not-found.svg" alt="Not Found" className="w-24 mb-4 h-auto" />
           <p className="text-body-b3 text-black font-bold">Alamat tidak ditemukan.</p>
           <p className="text-caption-c1 text-secondary">
             Coba kata kunci lain atau masukkan alamat secara manual.
@@ -263,7 +423,7 @@ function SearchResults({ results, onSelect, onNotFound, showNotFoundAction = tru
 
       {showNotFoundAction && (
         <div className="lnCoverageCheck__resultsFooter text-center py-4">
-          <span className="text-caption-c1 text-secondary px-4 py-2 bg-[var(--color-neutral-50)] rounded-full">
+          <span className="text-caption-c1 text-secondary px-4 py-2 bg-[#f3f3f3] rounded-full">
             Alamat Anda Tidak Ditemukan?{' '}
             <button
               type="button"
@@ -287,6 +447,8 @@ function CoveredCard({
   errors,
   submitAttempted,
   showAddressDetailInput = true,
+  headerText = 'This address is accessible by the Linknet network',
+  actionIconName = 'close',
 }) {
   const cardRef = useFadeIn([]);
 
@@ -302,7 +464,7 @@ function CoveredCard({
 
         <div className="lnCoverageCheck__coveredHeader bg-success flex items-center justify-center px-4 py-2.5 pb-[20px]">
           <span className="text-body-b5 text-white font-medium text-center">
-            This address is accessible by the Linknet network
+            {headerText}
           </span>
         </div>
         <div className="lnCoverageCheck__coveredBody flex items-center gap-2 px-4 py-4 bg-white rounded-[16px] mt-[-12px]">
@@ -314,7 +476,7 @@ function CoveredCard({
             aria-label="Edit alamat"
             className="lnCoverageCheck__editBtn shrink-0 hover:opacity-70 transition-opacity duration-150 focus:outline-none cursor-pointer"
           >
-            <Icon name="close" colorClass="text-secondary" className="w-5 h-5" />
+            <Icon name={actionIconName} colorClass="text-secondary" className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -334,11 +496,28 @@ function CoveredCard({
   );
 }
 
-function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAttempted }) {
+function ManualForm({
+  manualData,
+  onManualDataChange,
+  onBack,
+  errors,
+  submitAttempted,
+  showDetailAddress = true,
+  manualCheckCtaLabel = '',
+  onManualCheckCoverage,
+}) {
   const formRef = useFadeIn([]);
-
-  const cityOptions = manualData.province ? (CITY_BY_PROVINCE[manualData.province] ?? []) : [];
-  const zipOptions  = manualData.city     ? (ZIP_BY_CITY[manualData.city]           ?? []) : [];
+  const {
+    cityOptions,
+    finalOptions: zipOptions,
+    normalizedCity,
+    normalizedProvince,
+    provinceOptions,
+  } = useIndonesiaLocationOptions({
+    city: manualData.city,
+    finalLevel: 'zip',
+    province: manualData.province,
+  });
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -355,14 +534,27 @@ function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAtte
 
   const builtAddress = useMemo(() =>
     [
-      manualData.detailAddress,
-      cityOptions.find((o) => o.value === manualData.city)?.label,
       zipOptions.find((o) => o.value === manualData.zip)?.label,
-      PROVINCE_OPTIONS.find((o) => o.value === manualData.province)?.label,
+      cityOptions.find((o) => o.value === normalizedCity)?.label ?? normalizedCity,
+      provinceOptions.find((o) => o.value === normalizedProvince)?.label ?? normalizedProvince,
+      showDetailAddress ? manualData.detailAddress : '',
     ]
       .filter(Boolean)
       .join(', '),
-    [manualData, cityOptions, zipOptions]
+    [
+      cityOptions,
+      manualData.detailAddress,
+      manualData.zip,
+      normalizedCity,
+      normalizedProvince,
+      provinceOptions,
+      showDetailAddress,
+      zipOptions,
+    ]
+  );
+
+  const isManualCoverageReady = Boolean(
+    normalizedProvince && normalizedCity && manualData.zip,
   );
 
   return (
@@ -377,7 +569,7 @@ function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAtte
         aria-label="Kembali ke pencarian alamat"
       >
         <Icon name="chevron-left" colorClass="text-current" className="w-4 h-4" />
-        <span>Kembali</span>
+        <span>Complete address</span>
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0">
@@ -385,9 +577,9 @@ function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAtte
           <Select
             id="manual-province"
             label="Province*"
-            options={PROVINCE_OPTIONS}
+            options={provinceOptions}
             required
-            value={manualData.province}
+            value={normalizedProvince}
             onChange={handleChange}
             error={errors?.province}
             submitAttempted={submitAttempted}
@@ -401,9 +593,9 @@ function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAtte
             label="City / Regency*"
             options={cityOptions}
             required
-            value={manualData.city}
+            value={normalizedCity}
             onChange={handleChange}
-            disabled={!manualData.province}
+            disabled={!normalizedProvince}
             error={errors?.city}
             submitAttempted={submitAttempted}
             className="mb-3"
@@ -418,25 +610,42 @@ function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAtte
             required
             value={manualData.zip}
             onChange={handleChange}
-            disabled={!manualData.city}
+            disabled={!normalizedCity}
             error={errors?.zip}
             submitAttempted={submitAttempted}
             className="mb-3"
           />
         </div>
 
-        <div className="lnCoverageCheck__formField col-span-1 md:col-span-2">
-          <Textarea
-            id="manual-detailAddress"
-            label="Detail Address*"
-            required
-            maxLength={300}
-            value={manualData.detailAddress}
-            onChange={handleChange}
-            error={errors?.detailAddress}
-            submitAttempted={submitAttempted}
-          />
-        </div>
+        {manualCheckCtaLabel ? (
+          <div className="lnCoverageCheck__formField col-span-1 md:col-span-2">
+            <Button
+              type="button"
+              variant="warning"
+              size="lg"
+              disabled={!isManualCoverageReady}
+              onClick={onManualCheckCoverage}
+              className="w-full md:w-auto mt-4"
+            >
+              {manualCheckCtaLabel}
+            </Button>
+          </div>
+        ) : null}
+
+        {showDetailAddress ? (
+          <div className="lnCoverageCheck__formField col-span-1 md:col-span-2">
+            <Textarea
+              id="manual-detailAddress"
+              label="Detail Address*"
+              required
+              maxLength={300}
+              value={manualData.detailAddress}
+              onChange={handleChange}
+              error={errors?.detailAddress}
+              submitAttempted={submitAttempted}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -444,13 +653,16 @@ function ManualForm({ manualData, onManualDataChange, onBack, errors, submitAtte
 
 // ── Helper: resolve label from option arrays ──────────────────
 export function resolveManualLabels(manualData) {
-  const cityOptions = manualData.province ? (CITY_BY_PROVINCE[manualData.province] ?? []) : [];
-  const zipOptions  = manualData.city     ? (ZIP_BY_CITY[manualData.city]           ?? []) : [];
+  const labels = resolveCachedIndonesiaLocationLabels({
+    city: manualData.city,
+    province: manualData.province,
+    zip: manualData.zip,
+  });
 
   return {
-    provinceLabel: PROVINCE_OPTIONS.find((o) => o.value === manualData.province)?.label ?? '',
-    cityLabel:     cityOptions.find((o) => o.value === manualData.city)?.label ?? '',
-    zipLabel:      zipOptions.find((o) => o.value === manualData.zip)?.label ?? '',
+    provinceLabel: labels.provinceLabel,
+    cityLabel: labels.cityLabel,
+    zipLabel: labels.zipLabel,
     detailAddress: manualData.detailAddress ?? '',
   };
 }
@@ -465,17 +677,23 @@ export function resolveManualLabels(manualData) {
  * @param {object}   [manualData]             - Controlled manual form data
  * @param {Function} [onManualDataChange]     - Callback when manual fields change
  * @param {Function} [onModeChange]           - Called with COVERAGE_MODE when step changes
- * @param {Function} [onAddressSelect]        - Called with { site_id, address } when user selects an address
+ * @param {Function} [onAddressSelect]        - Called with { site_id, address, raw, providers } when user selects an address
  * @param {Function} [onAddressReset]         - Called when user clicks close/edit to reset address data
  * @param {object}   [errors]
  * @param {boolean}  [submitAttempted]
  * @param {boolean}  [required]
  * @param {boolean}  [showNotFoundAction]
  * @param {boolean}  [showAddressDetailInput]
+ * @param {boolean}  [showManualDetailAddress]
+ * @param {string}   [manualCheckCtaLabel]
+ * @param {Function} [onManualCheckCoverage]
+ * @param {string}   [coveredHeaderText]
+ * @param {string}   [coveredActionIconName]
  * @param {string}   [className]
  */
 export default function CoverageCheckInput({
   site_id: prefillSiteId = '',
+  address: prefillAddress = '',
   addressDetail = '',
   onAddressDetailChange,
   manualData = { province: '', city: '', zip: '', detailAddress: '' },
@@ -488,13 +706,18 @@ export default function CoverageCheckInput({
   required = false,
   showNotFoundAction = true,
   showAddressDetailInput = true,
+  showManualDetailAddress = true,
+  manualCheckCtaLabel = '',
+  onManualCheckCoverage,
+  coveredHeaderText = 'This address is accessible by the Linknet network',
+  coveredActionIconName = 'close',
   className = '',
 }) {
-  const resolveAddress = useCallback((siteId) =>
+  const resolveAddress = useCallback((siteId, label = '') => (
     siteId
-      ? MOCK_ADDRESSES.find((a) => a.site_id === siteId) ?? { id: null, site_id: siteId, label: '' }
-      : null,
-  []);
+      ? { id: siteId, site_id: siteId, label }
+      : null
+  ), []);
 
   const { read: readSession, write: writeSession, clear: clearSession } =
     useSessionState(prefillSiteId || 'free');
@@ -506,9 +729,17 @@ export default function CoverageCheckInput({
 
   const [query, setQuery]     = useState('');
   const [results, setResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   const [selectedAddress, setSelectedAddress] = useState(() => {
-    if (prefillSiteId) return resolveAddress(prefillSiteId);
+    if (prefillSiteId) {
+      const saved = readSession();
+      return resolveAddress(
+        prefillSiteId,
+        prefillAddress || saved?.selectedAddress?.label || '',
+      );
+    }
     return readSession()?.selectedAddress ?? null;
   });
 
@@ -537,29 +768,48 @@ export default function CoverageCheckInput({
   // ── Sync when site_id prop changes ──────────────────────────
   useEffect(() => {
     if (prefillSiteId) {
-      const resolved = resolveAddress(prefillSiteId);
+      const saved = readSession();
+      const resolved = resolveAddress(
+        prefillSiteId,
+        prefillAddress || saved?.selectedAddress?.label || '',
+      );
       setSelectedAddress(resolved);
       setStep(3);
       setQuery('');
       setResults([]);
+      setSearchError(null);
+      setIsSearching(false);
       // Notify parent of the resolved address
       onAddressSelect?.({
         site_id: resolved?.site_id ?? '',
         address: resolved?.label ?? '',
+        raw: resolved?.raw ?? null,
+        providers: resolved?.providers ?? [],
       });
     } else {
       const saved = readSession();
       if (saved?.step === 3 || saved?.step === 4) {
         setStep(saved.step);
         setSelectedAddress(saved.selectedAddress ?? null);
+
+        if (saved.step === 3 && saved.selectedAddress) {
+          onAddressSelect?.({
+            site_id: saved.selectedAddress.site_id ?? '',
+            address: saved.selectedAddress.label ?? '',
+            raw: saved.selectedAddress.raw ?? null,
+            providers: saved.selectedAddress.providers ?? [],
+          });
+        }
       } else {
         setSelectedAddress(null);
         setStep(1);
       }
+      setSearchError(null);
+      setIsSearching(false);
     }
     setTouched(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefillSiteId]);
+  }, [prefillAddress, prefillSiteId]);
 
   // ── Validation ──────────────────────────────────────────────
   const isCovered  = step === 3 && selectedAddress;
@@ -578,7 +828,7 @@ export default function CoverageCheckInput({
     }
   }, []);
 
-  useMockSearch(query, handleSearchResults);
+  useCoverageSearch(query, handleSearchResults, setSearchError, setIsSearching);
 
   // ── Handlers ────────────────────────────────────────────────
   const showHelper = step === 1;
@@ -594,15 +844,38 @@ export default function CoverageCheckInput({
     setStep(3);
 
     // ★ Propagate selected address data to parent
+    // Build a robust providers array from possible shapes
+    const providersFromAddress = (() => {
+      if (Array.isArray(address?.providers) && address.providers.length > 0) {
+        return address.providers;
+      }
+
+      // Try common raw shapes and fall back to the whole raw object
+      const candidate =
+        address?.raw?.providers
+        ?? address?.raw?.provider
+        ?? address?.raw?.availableProviders
+        ?? address?.raw?.available_providers
+        ?? (address?.raw?.data && Array.isArray(address.raw.data) ? address.raw.data[0]?.providers : undefined)
+        ?? address?.raw
+        ?? address;
+
+      const extracted = extractProviderNames(candidate);
+      return Array.isArray(extracted) ? extracted : [];
+    })();
+
     onAddressSelect?.({
       site_id: address.site_id ?? '',
       address: address.label ?? '',
+      raw: address.raw ?? null,
+      providers: providersFromAddress,
     });
   }, [onAddressSelect]);
 
   const handleNotFound = useCallback(() => {
     setTouched(true);
     setStep(4);
+    setSearchError(null);
 
     // ★ Reset covered-mode data in parent when switching to manual
     onAddressReset?.();
@@ -613,6 +886,8 @@ export default function CoverageCheckInput({
     setQuery('');
     setResults([]);
     setSelectedAddress(null);
+    setSearchError(null);
+    setIsSearching(false);
     setTouched(false);
     setStep(1);
 
@@ -623,6 +898,8 @@ export default function CoverageCheckInput({
   const handleBack = useCallback(() => {
     setQuery('');
     setResults([]);
+    setSearchError(null);
+    setIsSearching(false);
     setStep(1);
 
     // ★ Reset manual data in parent when going back to search
@@ -647,6 +924,8 @@ export default function CoverageCheckInput({
               onSelect={handleSelectAddress}
               onNotFound={handleNotFound}
               showNotFoundAction={showNotFoundAction}
+              isLoading={isSearching}
+              error={searchError}
             />
           )}
         </div>
@@ -661,6 +940,8 @@ export default function CoverageCheckInput({
           errors={errors}
           submitAttempted={submitAttempted}
           showAddressDetailInput={showAddressDetailInput}
+          headerText={coveredHeaderText}
+          actionIconName={coveredActionIconName}
         />
       )}
 
@@ -671,6 +952,9 @@ export default function CoverageCheckInput({
           onBack={handleBack}
           errors={errors}
           submitAttempted={submitAttempted}
+          showDetailAddress={showManualDetailAddress}
+          manualCheckCtaLabel={manualCheckCtaLabel}
+          onManualCheckCoverage={onManualCheckCoverage}
         />
       )}
 

@@ -19,6 +19,7 @@ import Textarea from "../forms/Textarea";
 import FieldReadOnly from "../forms/FieldReadOnly";
 import Button from "../Button";
 import { useFormSubmission } from '@/components/hooks/useFormSubmission';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
 
 const ModalFormInquiryFiberContext = createContext({
   openModal: () => {},
@@ -70,44 +71,6 @@ const SERVICE_OPTIONS = [
   label: option,
   value: option,
 }));
-
-const PROVINCE_OPTIONS = [
-  "DKI Jakarta",
-  "Jawa Barat",
-  "Jawa Tengah",
-  "DI Yogyakarta",
-  "Jawa Timur",
-  "Banten",
-].map((option) => ({
-  label: option,
-  value: option,
-}));
-
-const CITY_BY_PROVINCE = {
-  "DKI Jakarta": ["Jakarta Selatan", "Jakarta Barat", "Jakarta Pusat"],
-  "Jawa Barat": ["Bandung", "Bekasi", "Bogor"],
-  "Jawa Tengah": ["Semarang", "Solo"],
-  "DI Yogyakarta": ["Yogyakarta", "Sleman"],
-  "Jawa Timur": ["Surabaya", "Malang"],
-  "Banten": ["Tangerang", "Serang"],
-};
-
-const ZIP_BY_CITY = {
-  "Jakarta Selatan": ["12190", "12870"],
-  "Jakarta Barat": ["11530", "11610"],
-  "Jakarta Pusat": ["10110", "10510"],
-  Bandung: ["40115", "40286"],
-  Bekasi: ["17121", "17144"],
-  Bogor: ["16111", "16161"],
-  Semarang: ["50135", "50241"],
-  Solo: ["57111", "57139"],
-  Yogyakarta: ["55198", "55281"],
-  Sleman: ["55581", "55284"],
-  Surabaya: ["60189", "60231"],
-  Malang: ["65111", "65145"],
-  Tangerang: ["15143", "15157"],
-  Serang: ["42111", "42116"],
-};
 
 const STEP_META = [
   {
@@ -626,14 +589,17 @@ function Step1Body({ form, onChange, submitAttempted }) {
 }
 
 function Step2Body({ form, onChange, submitAttempted }) {
-  const cityOptions = (CITY_BY_PROVINCE[form.province] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
-  const zipOptions = (ZIP_BY_CITY[form.city] || []).map((option) => ({
-    label: option,
-    value: option,
-  }));
+  const {
+    cityOptions,
+    finalOptions: zipOptions,
+    normalizedCity,
+    normalizedProvince,
+    provinceOptions,
+  } = useIndonesiaLocationOptions({
+    city: form.city,
+    finalLevel: 'zip',
+    province: form.province,
+  });
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -660,8 +626,8 @@ function Step2Body({ form, onChange, submitAttempted }) {
         label="Province"
         required
         placeholder="Select province"
-        options={PROVINCE_OPTIONS}
-        value={form.province}
+        options={provinceOptions}
+        value={normalizedProvince}
         onChange={onChange("province")}
         data-error={FORM_ERROR_MESSAGES.province}
         submitAttempted={submitAttempted}
@@ -672,11 +638,11 @@ function Step2Body({ form, onChange, submitAttempted }) {
         required
         placeholder="Select city"
         options={cityOptions}
-        value={form.city}
+        value={normalizedCity}
         onChange={onChange("city")}
         data-error={FORM_ERROR_MESSAGES.city}
         submitAttempted={submitAttempted}
-        disabled={!form.province}
+        disabled={!normalizedProvince}
       />
       <Select
         id="inquiry-fiber-zip-code"
@@ -688,7 +654,7 @@ function Step2Body({ form, onChange, submitAttempted }) {
         onChange={onChange("zipCode")}
         data-error={FORM_ERROR_MESSAGES.zipCode}
         submitAttempted={submitAttempted}
-        disabled={!form.city}
+        disabled={!normalizedCity}
       />
       <div className="hidden md:block" />
       <Textarea

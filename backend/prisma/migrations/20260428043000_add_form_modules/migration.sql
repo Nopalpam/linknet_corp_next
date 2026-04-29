@@ -26,7 +26,7 @@ CREATE TYPE "FormIntegrationProvider" AS ENUM ('INTERNAL', 'CRM_WEB_TO_LEAD', 'C
 CREATE TYPE "FormDispatchMode" AS ENUM ('SYNC', 'ASYNC');
 
 -- CreateEnum
-CREATE TYPE "FormSubmissionStatus" AS ENUM ('RECEIVED', 'VALIDATED', 'STORED', 'DISPATCHED', 'PARTIAL_FAILED', 'FAILED');
+CREATE TYPE "FormSubmissionStatus" AS ENUM ('STORED', 'FAILED');
 
 -- CreateEnum
 CREATE TYPE "FormFileStatus" AS ENUM ('PENDING', 'UPLOADED', 'LINKED', 'FAILED');
@@ -180,7 +180,7 @@ CREATE TABLE "form_submissions" (
     "business_unit" "BusinessUnit" NOT NULL,
     "form_slug" TEXT NOT NULL,
     "schema_version" INTEGER NOT NULL,
-    "status" "FormSubmissionStatus" NOT NULL DEFAULT 'RECEIVED',
+    "status" "FormSubmissionStatus" NOT NULL DEFAULT 'STORED',
     "locale" TEXT NOT NULL DEFAULT 'id',
     "request_id" TEXT,
     "session_id" TEXT,

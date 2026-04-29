@@ -828,6 +828,82 @@ const TESTIMONIALS: ComponentTypeDefinition = {
   }),
 };
 
+const FORM_REGISTRATION_ENTERPRISE: ComponentTypeDefinition = {
+  type: 'form_registration_enterprise',
+  name: 'Enterprise Form Registration',
+  description: 'Form registration section for Enterprise BU',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Enterprise Registration', id: 'Registrasi Enterprise' },
+    description: { en: 'Choose the form that suits your enterprise needs.', id: 'Pilih form sesuai kebutuhan enterprise Anda.' },
+    event_name: '',
+    event_promo: '',
+    event_page: '',
+    max_participants: 5,
+  }),
+};
+
+const FORM_REGISTRATION_FIBER: ComponentTypeDefinition = {
+  type: 'form_registration_fiber',
+  name: 'Fiber Form Registration',
+  description: 'Form registration section for Fiber BU',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Fiber Registration', id: 'Registrasi Fiber' },
+    description: { en: 'Register your Fiber service or submit an inquiry.', id: 'Daftarkan layanan Fiber atau ajukan pertanyaan.' },
+    event_name: '',
+    event_promo: '',
+    event_page: '',
+    max_participants: 5,
+  }),
+};
+
+const FORM_REGISTRATION_MEDIA: ComponentTypeDefinition = {
+  type: 'form_registration_media',
+  name: 'Media Form Registration',
+  description: 'Form registration section for Media BU',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Media Registration', id: 'Registrasi Media' },
+    description: { en: 'Register your media partnership or campaign.', id: 'Daftarkan kemitraan atau kampanye media Anda.' },
+    event_name: '',
+    event_promo: '',
+    event_page: '',
+    max_participants: 5,
+  }),
+};
+
+const COVERAGE_CHECK_FIBER: ComponentTypeDefinition = {
+  type: 'coverage_check_fiber',
+  name: 'Fiber Coverage Check',
+  description: 'Inline coverage check and Fiber inquiry section backed by Form Modules',
+  icon: 'FaMapMarkedAlt',
+  category: 'basic',
+  defaultData: withCommon({
+    title: { en: 'Check Fiber coverage and submit your request', id: 'Cek cakupan Fiber dan kirim permintaan Anda' },
+    description: { en: 'Verify coverage first, then submit the live Fiber inquiry form with the selected location.', id: 'Verifikasi coverage terlebih dahulu, lalu kirim form inquiry Fiber dengan lokasi yang dipilih.' },
+    coverage_title: { en: 'Step 1. Verify fiber coverage', id: 'Langkah 1. Verifikasi cakupan fiber' },
+    coverage_description: { en: 'Select a covered address or switch to manual location entry if the site is not listed.', id: 'Pilih alamat yang tercakup atau gunakan input manual jika lokasi tidak ditemukan.' },
+    request_title: { en: 'Step 2. Choose your request type', id: 'Langkah 2. Pilih jenis permintaan' },
+    request_description: { en: 'This value maps directly to the Fiber inquiry module field.', id: 'Nilai ini langsung dipetakan ke field inquiry Fiber.' },
+    form_title: { en: 'Step 3. Complete the Fiber inquiry', id: 'Langkah 3. Lengkapi inquiry Fiber' },
+    form_description: { en: 'Coverage fields are prefilled from Step 1 and submitted into CMS Form Modules.', id: 'Field coverage diisi dari langkah 1 dan dikirim ke CMS Form Modules.' },
+    summary_title: { en: 'Coverage summary', id: 'Ringkasan coverage' },
+    summary_description: { en: 'These values are attached to the submission payload.', id: 'Nilai ini ikut dikirim di payload submission.' },
+    cms_title: { en: 'CMS integration', id: 'Integrasi CMS' },
+    cms_description: { en: 'Reads the active Fiber form module and submits through the public forms API.', id: 'Membaca form module Fiber aktif dan submit lewat public forms API.' },
+    submit_label: { en: 'Submit Fiber Inquiry', id: 'Kirim Inquiry Fiber' },
+    submitting_label: { en: 'Submitting...', id: 'Mengirim...' },
+    success_title: { en: 'Fiber request submitted', id: 'Permintaan Fiber berhasil dikirim' },
+    success_description: { en: 'The Fiber team has received your coverage context and inquiry details.', id: 'Tim Fiber telah menerima konteks coverage dan detail inquiry Anda.' },
+    business_unit: 'fiber',
+    form_slug: 'fiber-inquiry',
+  }),
+};
+
 // ============================================================================
 // COMPONENT REGISTRY
 // ============================================================================
@@ -866,6 +942,10 @@ export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
   EXTENDABLE_ARTICLE,
   STOCK_INFORMATION,
   TESTIMONIALS,
+  FORM_REGISTRATION_ENTERPRISE,
+  FORM_REGISTRATION_FIBER,
+  FORM_REGISTRATION_MEDIA,
+  COVERAGE_CHECK_FIBER,
   // Main (DB-driven)
   NEWS_HIGHLIGHT,
   NEWS_LIST,
