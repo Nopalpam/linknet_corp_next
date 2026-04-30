@@ -65,6 +65,10 @@ export async function generateMetadata({
     title: page.metaTitle || page.title,
     description: page.metaDescription || undefined,
     keywords: page.metaKeywords || undefined,
+    robots: {
+      index: !page.noindex,
+      follow: !page.nofollow,
+    },
     openGraph: {
       title: page.metaTitle || page.title,
       description: page.metaDescription || undefined,

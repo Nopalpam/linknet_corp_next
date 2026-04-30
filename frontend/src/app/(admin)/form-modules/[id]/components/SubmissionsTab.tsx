@@ -111,13 +111,23 @@ interface DatePickerFieldProps {
 function DatePickerField({ label, value, onChange, min, max }: DatePickerFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const id = `submissions-${label.replace(/\s+/g, '-').toLowerCase()}`;
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    try {
+      input.showPicker?.();
+    } catch {
+      // Browser may block showPicker without a direct user gesture.
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1" onClick={openPicker}>
       <label
         htmlFor={id}
         className="text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
-        onClick={() => inputRef.current?.focus()}
+        onClick={openPicker}
       >
         {label}
       </label>
@@ -131,6 +141,7 @@ function DatePickerField({ label, value, onChange, min, max }: DatePickerFieldPr
         max={max}
         placeholder="YYYY-MM-DD"
         onChange={(event) => onChange(event.target.value)}
+        onFocus={openPicker}
         style={{ position: 'relative', zIndex: 2 }}
         className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
       />
@@ -185,6 +196,7 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
     const queryParams = buildQueryParams();
 
     if (!queryParams) {
+      setLoading(false);
       return;
     }
 
@@ -405,7 +417,7 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
                     {companyValue}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {sourceValue}
+                    {sourceValue === "â€”" ? sub.sourceWebsite || sub.sourcePath || "â€”" : sourceValue}
                   </td>
                   <td className="px-4 py-3">
                     <span

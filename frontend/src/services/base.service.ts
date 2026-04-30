@@ -110,13 +110,7 @@ export class BaseService {
       if (errorData.code === 'TOKEN_EXPIRED' || response.status === 401) {
         console.error('🔴 Token expired detected:', errorData);
         
-        // Don't try refresh if it's explicitly TOKEN_EXPIRED
-        if (errorData.code === 'TOKEN_EXPIRED') {
-          forceLogout();
-          throw new Error('Session expired. Please login again.');
-        }
-        
-        // For 401 without TOKEN_EXPIRED, try refresh once
+        // Access-token expiry is recoverable while the refresh token is valid.
         const refreshed = await this.tryRefreshToken();
         
         if (refreshed) {
@@ -242,6 +236,9 @@ export class BaseService {
         // ✅ CRITICAL: Update BOTH localStorage AND cookie
         localStorage.setItem(AUTH_TOKEN_KEY, data.data.accessToken);
         setCookie(AUTH_TOKEN_KEY, data.data.accessToken, 7);
+        if (data.data.refreshToken) {
+          localStorage.setItem(REFRESH_TOKEN_KEY, data.data.refreshToken);
+        }
         console.log('✅ Token refreshed successfully');
         return true;
       }

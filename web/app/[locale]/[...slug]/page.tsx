@@ -29,6 +29,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: page.metaTitle || page.title,
     description: page.metaDescription || undefined,
     keywords: page.metaKeywords || undefined,
+    robots: {
+      index: !page.noindex,
+      follow: !page.nofollow,
+    },
     openGraph: page.ogImage ? { images: [{ url: page.ogImage }] } : undefined,
   };
 }

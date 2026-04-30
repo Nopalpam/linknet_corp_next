@@ -967,6 +967,15 @@ const COVERAGE_CHECK_FIBER: ComponentTypeDefinition = {
   icon: 'FaMapMarkedAlt',
   category: 'basic',
   defaultData: withCommon({
+    sectionIntro: {
+      label: { en: 'CHECK COVERAGE', id: 'CEK COVERAGE' },
+      title: { en: 'Find Fiber Network from Linknet Fiber in Your Area', id: 'Temukan Jaringan Fiber dari Linknet Fiber di Area Anda' },
+      description: { en: 'Check Coverage Availability Now & Discover service options in your location.', id: 'Cek Ketersediaan Coverage Sekarang & Temukan pilihan layanan di lokasi Anda.' },
+      align: 'left',
+    },
+    bg_image: '/assets/bg/bg-usp-home.jpg',
+    bg_position_classes: 'bg-right-top md:bg-right',
+    bg_size_class: 'bg-cover',
     title: { en: 'Check Fiber coverage and submit your request', id: 'Cek cakupan Fiber dan kirim permintaan Anda' },
     description: { en: 'Verify coverage first, then submit the live Fiber inquiry form with the selected location.', id: 'Verifikasi coverage terlebih dahulu, lalu kirim form inquiry Fiber dengan lokasi yang dipilih.' },
     coverage_title: { en: 'Step 1. Verify fiber coverage', id: 'Langkah 1. Verifikasi cakupan fiber' },

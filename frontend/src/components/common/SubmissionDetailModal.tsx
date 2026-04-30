@@ -82,7 +82,6 @@ export default function SubmissionDetailModal({
     if (!submission?.values) return undefined;
     return submission.values.find(
       (value) =>
-        value.fieldPath === field.fieldPath ||
         (!!field.key && value.fieldKey === field.key) ||
         (!!field.key && value.fieldKey?.toLowerCase() === field.key.toLowerCase()) ||
         value.fieldPath === field.path
@@ -212,6 +211,30 @@ export default function SubmissionDetailModal({
                 </p>
               </div>
               <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Product</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {submission.product ?? "â€”"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Promo</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {submission.promoWebsite ?? "â€”"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Source</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {submission.sourceWebsite ?? "â€”"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Page URL</p>
+                <p className="truncate text-sm text-gray-700 dark:text-gray-300">
+                  {submission.pageWebsite ?? submission.sourcePath ?? "â€”"}
+                </p>
+              </div>
+              <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Name</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   {submission.primaryName ?? "—"}
@@ -291,14 +314,12 @@ export default function SubmissionDetailModal({
 
             {submission.values && submission.values.length > 0 && moduleFields.length > 0 && (
               <section>
-                {submission.values.some(
-                  (value) =>
-                    !moduleFields.some(
-                      (field) =>
-                        field.fieldPath === value.fieldPath ||
-                        (!!field.key && field.key === value.fieldKey) ||
-                        value.fieldPath === field.path
-                    )
+                {submission.values.some((value) =>
+                  !moduleFields.some(
+                    (field) =>
+                      (!!field.key && field.key === value.fieldKey) ||
+                      value.fieldPath === field.path
+                  )
                 ) && (
                   <>
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -322,7 +343,6 @@ export default function SubmissionDetailModal({
                               (value) =>
                                 !moduleFields.some(
                                   (field) =>
-                                    field.fieldPath === value.fieldPath ||
                                     (!!field.key && field.key === value.fieldKey) ||
                                     value.fieldPath === field.path
                                 )

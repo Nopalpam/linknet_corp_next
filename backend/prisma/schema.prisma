@@ -37,6 +37,7 @@ model User {
   news_news_created_by_idTousers news[]              @relation("news_created_by_idTousers")
   news_news_updated_by_idTousers news[]              @relation("news_updated_by_idTousers")
   createdPages                   Page[]              @relation("PageCreator")
+  updatedPages                   Page[]              @relation("PageUpdater")
   passwordHistories              PasswordHistory[]
   refreshTokens                  RefreshToken[]
   userRoles                      UserRole[]
@@ -210,14 +211,21 @@ model Page {
   metaDescription String?         @map("meta_description")
   metaKeywords    String?         @map("meta_keywords")
   ogImage         String?         @map("og_image")
+  product         String?
+  promo           String?
+  source          String?
+  noindex         Boolean         @default(false)
+  nofollow        Boolean         @default(false)
   status          PageStatus      @default(DRAFT)
   publishedAt     DateTime?       @map("published_at")
   createdById     String          @map("created_by_id")
+  updatedById     String?         @map("updated_by_id")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   deletedAt       DateTime?       @map("deleted_at")
   components      PageComponent[]
   createdBy       User            @relation("PageCreator", fields: [createdById], references: [id])
+  updatedBy       User?           @relation("PageUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@index([slug])
   @@index([status])
@@ -225,6 +233,7 @@ model Page {
   @@index([publishedAt])
   @@index([createdAt])
   @@index([createdById])
+  @@index([updatedById])
   @@index([deletedAt])
   @@map("pages")
 }
@@ -727,6 +736,7 @@ model FormSubmission {
   ipAddress       String?               @map("ip_address")
   userAgent       String?               @map("user_agent")
   sourcePath      String?               @map("source_path")
+  product         String?
   promoWebsite    String?               @map("promo_website")
   pageWebsite     String?               @map("page_website")
   sourceWebsite   String?               @map("source_website")

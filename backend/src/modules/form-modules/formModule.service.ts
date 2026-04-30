@@ -117,6 +117,13 @@ type SubmissionModuleContext = {
 
 type SubmissionNeedsField = SubmissionModuleContext['fields'][number];
 
+type PageSubmissionContext = {
+  product?: string;
+  promo?: string;
+  source?: string;
+  pageUrl?: string;
+};
+
 type ExportableSubmission = Prisma.FormSubmissionGetPayload<{
   include: typeof submissionDetailInclude;
 }>;
@@ -325,6 +332,7 @@ export class FormModuleService {
       throw new NotFoundError('Active form module not found');
     }
 
+    const pageContext = await this.resolvePageSubmissionContext(input, module.publicPath);
     const primarySnapshot = this.resolvePrimarySnapshot(input.values, input.groups);
     const resolvedResponse = this.resolveResponseConfig(
       module.responseConfigs,
@@ -355,9 +363,10 @@ export class FormModuleService {
           ipAddress: requestMeta.ipAddress ?? undefined,
           userAgent: requestMeta.userAgent ?? undefined,
           sourcePath: input.sourcePath ?? module.publicPath ?? undefined,
-          promoWebsite: this.pickString(input.values, ['Promo_Website__c']) ?? module.promoWebsite ?? undefined,
-          pageWebsite: this.pickString(input.values, ['Page_Website__c']) ?? undefined,
-          sourceWebsite: this.pickString(input.values, ['Source_Website__c']) ?? module.sourceWebsite ?? undefined,
+          product: pageContext.product ?? undefined,
+          promoWebsite: pageContext.promo ?? this.pickString(input.values, ['Promo_Website__c']) ?? module.promoWebsite ?? undefined,
+          pageWebsite: pageContext.pageUrl ?? this.pickString(input.values, ['Page_Website__c']) ?? input.sourcePath ?? undefined,
+          sourceWebsite: pageContext.source ?? this.pickString(input.values, ['Source_Website__c']) ?? module.sourceWebsite ?? undefined,
           leadSource: this.pickString(input.values, ['LeadSource']) ?? module.leadSource ?? undefined,
           primaryName: primarySnapshot.primaryName,
           primaryEmail: primarySnapshot.primaryEmail,
@@ -369,7 +378,7 @@ export class FormModuleService {
         },
       });
 
-      const valueRows = Object.entries(input.values).map(([fieldKey, value]) => ({
+      const valueRows = Object.entries(input.values).filter(([, value]) => value !== undefined).map(([fieldKey, value]) => ({
         submissionId: submission.id,
         fieldPath: fieldKey,
         fieldKey: this.extractFieldKey(fieldKey),
@@ -397,7 +406,7 @@ export class FormModuleService {
 
         groupLookup.set(`${group.groupKey}:${sortOrder}`, createdGroup.id);
 
-        const groupValues = Object.entries(group.values).map(([fieldKey, value]) => ({
+        const groupValues = Object.entries(group.values).filter(([, value]) => value !== undefined).map(([fieldKey, value]) => ({
           groupId: createdGroup.id,
           fieldPath: `${group.groupKey}.${fieldKey}`,
           fieldKey: this.extractFieldKey(fieldKey),
@@ -546,6 +555,10 @@ export class FormModuleService {
       'businessUnit',
       'formSlug',
       'status',
+      'product',
+      'promo',
+      'source',
+      'pageUrl',
       'needs',
       'primaryName',
       'primaryEmail',
@@ -603,6 +616,76 @@ export class FormModuleService {
       where: { id: submissionId },
       include: submissionDetailInclude,
     });
+  }
+
+  private async resolvePageSubmissionContext(
+    input: PublicFormSubmissionInput,
+    modulePublicPath?: string | null
+  ): Promise<PageSubmissionContext> {
+    const candidatePaths = [
+      this.pickString(input.values, ['Page_Website__c', 'pageWebsite', 'pageUrl']),
+      input.sourcePath,
+      modulePublicPath,
+    ].filter((value): value is string => Boolean(value));
+
+    const slugCandidates = Array.from(
+      new Set(
+        candidatePaths
+          .flatMap((path) => this.pathToPageSlugCandidates(path))
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+
+    const page = slugCandidates.length
+      ? await this.prisma.page.findFirst({
+          where: {
+            slug: { in: slugCandidates },
+            deletedAt: null,
+          },
+          select: {
+            slug: true,
+            product: true,
+            promo: true,
+            source: true,
+          },
+        })
+      : null;
+
+    const explicitPageUrl = this.pickString(input.values, ['Page_Website__c', 'pageWebsite', 'pageUrl']);
+    const pageUrl = explicitPageUrl ?? input.sourcePath ?? (page ? `/${page.slug}` : undefined);
+
+    return {
+      product: page?.product ?? this.pickString(input.values, ['Product', 'product', 'Product__c']),
+      promo: page?.promo ?? this.pickString(input.values, ['Promo_Website__c', 'Promo', 'promo']),
+      source: page?.source ?? this.pickString(input.values, ['Source_Website__c', 'Source', 'source']),
+      pageUrl,
+    };
+  }
+
+  private pathToPageSlugCandidates(path: string) {
+    const withoutOrigin = path.replace(/^https?:\/\/[^/]+/i, '');
+    const pathname = withoutOrigin.split(/[?#]/)[0] ?? '';
+    const segments = pathname.split('/').filter(Boolean);
+
+    if (segments.length === 0) {
+      return [];
+    }
+
+    const withoutLocale =
+      segments[0] === 'id' || segments[0] === 'en'
+        ? segments.slice(1)
+        : segments;
+
+    const withoutPagesPrefix = withoutLocale[0] === 'pages' || withoutLocale[0] === 'page'
+      ? withoutLocale.slice(1)
+      : withoutLocale;
+
+    return [
+      withoutLocale.join('/'),
+      withoutPagesPrefix.join('/'),
+      withoutLocale[withoutLocale.length - 1],
+      withoutPagesPrefix[withoutPagesPrefix.length - 1],
+    ].filter((value): value is string => Boolean(value));
   }
 
   private buildCreateModuleData(input: CreateFormModuleInput): Prisma.FormModuleCreateInput {
@@ -1169,6 +1252,10 @@ export class FormModuleService {
         businessUnit: submission.businessUnit,
         formSlug: submission.formSlug,
         status: submission.status,
+        product: submission.product ?? '',
+        promo: submission.promoWebsite ?? '',
+        source: submission.sourceWebsite ?? '',
+        pageUrl: submission.pageWebsite ?? submission.sourcePath ?? '',
         needs: this.extractSubmissionNeeds(submission.values, needsField) ?? '',
         primaryName: submission.primaryName ?? '',
         primaryEmail: submission.primaryEmail ?? '',

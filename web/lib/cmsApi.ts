@@ -17,6 +17,8 @@ export interface CMSPageData {
   metaDescription?: string;
   metaKeywords?: string;
   ogImage?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
   components: CMSComponentData[];
 }
 

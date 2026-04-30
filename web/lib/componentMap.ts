@@ -147,6 +147,17 @@ function extractIntro(
   return undefined;
 }
 
+function backgroundPositionToClasses(position: string | undefined): string {
+  const normalizedPosition = position || 'center';
+
+  if (normalizedPosition.includes('bg-')) {
+    return normalizedPosition;
+  }
+
+  const className = `bg-${normalizedPosition}`;
+  return `${className} md:${className}`;
+}
+
 export function normalizeComponentData(data: Record<string, any> | undefined): Record<string, any> {
   const source = data || {};
   const config = source.config && typeof source.config === 'object' ? source.config : {};
@@ -1051,8 +1062,33 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   coverage_check_fiber: {
     component: CoverageCheckFiber,
-    mapProps: ({ data, t, locale, styleProps }) => ({
-      data: {
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const config = data.config && typeof data.config === 'object' ? data.config : {};
+      const introData = extractIntro(data, t, locale) || {
+        as: 'h2',
+        label: localizeField(data, 'intro_label', t, locale),
+        title: localizeField(data, 'title', t, locale),
+        description: localizeField(data, 'description', t, locale),
+        align: data.intro_align || 'left',
+      };
+
+      return {
+        cmsData: {
+          config: {
+            sectionId: config.sectionId || data.custom_id || '',
+            className: config.className || data.custom_class || '',
+            bgImage: config.bgImage || data.bg_image || '',
+            bgImageMobile: config.bgImageMobile || data.bg_image_mobile || '',
+            bgPositionClasses: config.bgPositionClasses || data.bg_position_classes || backgroundPositionToClasses(data.bg_position),
+            bgSizeClass: config.bgSizeClass || data.bg_size_class || 'bg-cover',
+          },
+          introData,
+          content: {
+            title: localizeField(data, 'title', t, locale),
+            description: localizeField(data, 'description', t, locale),
+          },
+        },
+        data: {
         title: localizeField(data, 'title', t, locale),
         description: localizeField(data, 'description', t, locale),
         coverage_title: localizeField(data, 'coverage_title', t, locale),
@@ -1073,7 +1109,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         form_slug: data.form_slug || 'fiber-inquiry',
       },
       ...styleProps,
-    }),
+      };
+    },
   },
 
   // Synced one-to-one registrations from web/components/main

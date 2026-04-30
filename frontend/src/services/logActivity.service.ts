@@ -39,8 +39,11 @@ export interface GetActivityLogsParams {
   userId?: string;
   action?: string;
   module?: string;
+  recordId?: string;
   startDate?: string;
   endDate?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 class LogActivityService extends BaseService {
@@ -62,8 +65,9 @@ class LogActivityService extends BaseService {
     if (params?.userId) queryParams.append('userId', params.userId);
     if (params?.action) queryParams.append('action', params.action);
     if (params?.module) queryParams.append('module', params.module);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.recordId) queryParams.append('recordId', params.recordId);
+    if (params?.dateFrom || params?.startDate) queryParams.append('dateFrom', params.dateFrom || params.startDate || '');
+    if (params?.dateTo || params?.endDate) queryParams.append('dateTo', params.dateTo || params.endDate || '');
 
     const queryString = queryParams.toString();
     const url = queryString 

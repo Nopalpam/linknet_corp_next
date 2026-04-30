@@ -63,6 +63,7 @@ export type RefreshTokenResponse = {
   success: boolean;
   data: {
     accessToken: string;
+    refreshToken: string;
   };
 };
 

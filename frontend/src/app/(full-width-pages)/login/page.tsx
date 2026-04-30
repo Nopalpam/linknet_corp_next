@@ -2,31 +2,40 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 
 const LoginPage = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated, isAuthValidated } = useAuth();
   const toast = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [error, setError] = useState<string>("");
-  const [sessionExpiredMsg, setSessionExpiredMsg] = useState<string>("");
 
   const isAuthEnabled = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true";
+  const sessionExpiredMsg = searchParams.get('reason') === 'session_expired'
+    ? "Sesi Anda telah berakhir. Silakan login kembali."
+    : "";
+
+  useEffect(() => {
+    if (isAuthValidated && isAuthenticated) {
+      const returnUrl = searchParams.get('from');
+      const safeReturnUrl = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('/login') ? returnUrl : '/';
+      router.replace(safeReturnUrl);
+    }
+  }, [isAuthenticated, isAuthValidated, router, searchParams]);
 
   // Show session expired message if redirected due to token expiry
   useEffect(() => {
-    const reason = searchParams.get('reason');
-    if (reason === 'session_expired') {
-      setSessionExpiredMsg("Sesi Anda telah berakhir. Silakan login kembali.");
+    if (sessionExpiredMsg) {
       toast.warning("Sesi Anda telah berakhir. Silakan login kembali.", 5000);
     }
-  }, [searchParams, toast]);
+  }, [sessionExpiredMsg, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

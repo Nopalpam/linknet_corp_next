@@ -17,6 +17,11 @@ export default function CreatePagePage() {
     metaTitle: "",
     metaDescription: "",
     metaKeywords: "",
+    product: "",
+    promo: "",
+    source: "",
+    noindex: false,
+    nofollow: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -211,6 +216,85 @@ export default function CreatePagePage() {
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Separate keywords with commas
                 </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label
+                    htmlFor="product"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Product
+                  </label>
+                  <input
+                    type="text"
+                    id="product"
+                    value={formData.product}
+                    onChange={(e) =>
+                      setFormData({ ...formData, product: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="promo"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Promo
+                  </label>
+                  <input
+                    type="text"
+                    id="promo"
+                    value={formData.promo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, promo: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="source"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Source
+                  </label>
+                  <input
+                    type="text"
+                    id="source"
+                    value={formData.source}
+                    onChange={(e) =>
+                      setFormData({ ...formData, source: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formData.noindex)}
+                    onChange={(e) =>
+                      setFormData({ ...formData, noindex: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  />
+                  noindex
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formData.nofollow)}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nofollow: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  />
+                  nofollow
+                </label>
               </div>
             </div>
 

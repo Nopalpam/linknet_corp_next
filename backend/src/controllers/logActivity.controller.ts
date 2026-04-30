@@ -29,6 +29,7 @@ export async function getActivityLogs(req: Request, res: Response, next: NextFun
       limit = '20',
       userId,
       module,
+      recordId,
       action,
       dateFrom,
       dateTo,
@@ -52,6 +53,10 @@ export async function getActivityLogs(req: Request, res: Response, next: NextFun
 
     if (module) {
       where.module = module as string;
+    }
+
+    if (recordId) {
+      where.recordId = recordId as string;
     }
 
     if (action) {

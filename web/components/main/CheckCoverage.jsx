@@ -21,6 +21,51 @@ const INITIAL_MANUAL_DATA = {
   detailAddress: '',
 };
 
+function getLocalizedValue(value, locale = 'id') {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value[locale] || value.id || value.en || '';
+  }
+  return String(value);
+}
+
+function toBackgroundClasses(position) {
+  if (!position) return 'bg-center md:bg-center';
+  if (position.includes('bg-')) return position;
+
+  const className = `bg-${position}`;
+  return `${className} md:${className}`;
+}
+
+function normalizeCoverageSectionData(sectionData) {
+  if (!sectionData) return null;
+
+  const config = sectionData.config || {};
+  const introData = sectionData.introData || {};
+
+  return {
+    ...sectionData,
+    config: {
+      ...config,
+      sectionId: config.sectionId || sectionData.custom_id || '',
+      className: config.className || sectionData.custom_class || '',
+      bgImage: config.bgImage || sectionData.bg_image || '',
+      bgImageMobile: config.bgImageMobile || sectionData.bg_image_mobile || '',
+      bgPositionClasses: config.bgPositionClasses || sectionData.bg_position_classes || toBackgroundClasses(sectionData.bg_position),
+      bgSizeClass: config.bgSizeClass || sectionData.bg_size_class || 'bg-cover',
+    },
+    introData: {
+      ...introData,
+      as: introData.as || 'h2',
+      label: introData.label || getLocalizedValue(sectionData.intro_label),
+      title: introData.title || getLocalizedValue(sectionData.intro_title) || getLocalizedValue(sectionData.title),
+      description: introData.description || getLocalizedValue(sectionData.intro_description) || getLocalizedValue(sectionData.description),
+      align: introData.align || sectionData.intro_align || 'left',
+    },
+  };
+}
+
 function ActionCard({ title, description, imageSrc, imageAlt, onClick }) {
   return (
     <button
@@ -219,7 +264,7 @@ export default function CheckCoverage({
   cmsData = null,
   className = '',
 }) {
-  const sectionData = cmsData || data || CHECK_COVERAGE_DATA[name];
+  const sectionData = normalizeCoverageSectionData(cmsData || data || CHECK_COVERAGE_DATA[name]);
 
   return (
     <ModalFormInquiryFiberProvider>

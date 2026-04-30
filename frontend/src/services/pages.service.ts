@@ -15,6 +15,11 @@ export interface Page {
   metaDescription?: string;
   metaKeywords?: string;
   ogImage?: string;
+  product?: string;
+  promo?: string;
+  source?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -23,6 +28,13 @@ export interface Page {
     firstName: string;
     lastName: string;
   };
+  updatedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    username?: string;
+  } | null;
   // Components from PageComponent relation (returned by backend)
   components?: PageComponent[];
   _count?: {
@@ -57,6 +69,11 @@ export interface CreatePageData {
   metaDescription?: string;
   metaKeywords?: string;
   ogImage?: string;
+  product?: string;
+  promo?: string;
+  source?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
 }
 
 export interface UpdatePageData {
@@ -68,6 +85,33 @@ export interface UpdatePageData {
   metaDescription?: string;
   metaKeywords?: string;
   ogImage?: string;
+  product?: string;
+  promo?: string;
+  source?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
+}
+
+export interface PageHistoryLog {
+  id: string;
+  userId?: string | null;
+  action: string;
+  module: string;
+  recordId?: string | null;
+  oldData?: Record<string, any> | null;
+  newData?: Record<string, any> | null;
+  description?: string | null;
+  metadata?: Record<string, any> | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    email?: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
 }
 
 /**
@@ -108,6 +152,10 @@ class PagesService extends BaseService {
    */
   async getPageById(id: string): Promise<{ success: boolean; data: Page }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}`));
+  }
+
+  async getPageHistory(id: string): Promise<{ success: boolean; data: PageHistoryLog[] }> {
+    return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}/history`));
   }
 
   /**

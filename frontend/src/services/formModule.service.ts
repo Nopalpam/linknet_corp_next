@@ -212,8 +212,14 @@ export interface FormSubmission {
   requestId?: string | null;
   sessionId?: string | null;
   sourcePath?: string | null;
+  product?: string | null;
+  promoWebsite?: string | null;
+  pageWebsite?: string | null;
+  sourceWebsite?: string | null;
+  leadSource?: string | null;
   primaryName?: string | null;
   primaryEmail?: string | null;
+  primaryPhone?: string | null;
   status: FormSubmissionStatus;
   receivedAt: string;
   processedAt?: string | null;

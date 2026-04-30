@@ -1,20 +1,82 @@
-import { PrismaClient, PageStatus, PageTemplate } from '@prisma/client';
+import { Prisma, PrismaClient, PageStatus, PageTemplate } from '@prisma/client';
 import { AppError } from '../types/error.types';
 
 const prisma = new PrismaClient();
+
+const pageListSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  template: true,
+  metaTitle: true,
+  metaDescription: true,
+  metaKeywords: true,
+  ogImage: true,
+  status: true,
+  publishedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  createdBy: { select: { id: true, firstName: true, lastName: true } },
+  _count: { select: { components: true } },
+} satisfies Prisma.PageSelect;
+
+const pageDetailSelect = {
+  ...pageListSelect,
+  components: {
+    orderBy: { order: 'asc' },
+    select: {
+      id: true,
+      pageId: true,
+      type: true,
+      data: true,
+      order: true,
+      isVisible: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+} satisfies Prisma.PageSelect;
+
+const normalizePageResponse = <T extends Record<string, unknown>>(page: T) => ({
+  ...page,
+  updatedBy: null,
+});
+
+const parsePageStatus = (status?: string): PageStatus | undefined => {
+  if (!status) return undefined;
+  return Object.values(PageStatus).includes(status as PageStatus)
+    ? (status as PageStatus)
+    : undefined;
+};
 
 export class PageService {
   /**
    * Get all pages
    */
-  async getAllPages() {
-    return await prisma.page.findMany({
+  async getAllPages(params: { status?: string; search?: string } = {}) {
+    const where: Prisma.PageWhereInput = {
+      deletedAt: null,
+    };
+    const status = parsePageStatus(params.status);
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (params.search) {
+      where.OR = [
+        { title: { contains: params.search, mode: 'insensitive' } },
+        { slug: { contains: params.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const pages = await prisma.page.findMany({
+      where,
       orderBy: { updatedAt: 'desc' },
-      include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-        _count: { select: { components: true } }
-      }
+      select: pageListSelect,
     });
+
+    return pages.map(normalizePageResponse);
   }
 
   /**
@@ -23,15 +85,40 @@ export class PageService {
   async getPageById(id: string) {
     const page = await prisma.page.findUnique({
       where: { id },
-      include: {
-        components: {
-          orderBy: { order: 'asc' }
-        },
-        createdBy: { select: { id: true, firstName: true, lastName: true } }
-      }
+      select: pageDetailSelect,
     });
     if (!page) throw new AppError('Page not found', 404);
-    return page;
+    return normalizePageResponse(page);
+  }
+
+  async getPageHistory(id: string, limit = 50) {
+    const page = await prisma.page.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!page) throw new AppError('Page not found', 404);
+
+    return await prisma.logActivity.findMany({
+      where: {
+        module: 'pages',
+        recordId: id,
+        deletedAt: null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 100),
+    });
   }
 
   /**
@@ -66,8 +153,12 @@ export class PageService {
         template: data.template || PageTemplate.DEFAULT,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
-        createdById: userId
-      }
+        metaKeywords: data.metaKeywords,
+        ogImage: data.ogImage,
+        publishedAt: data.status === PageStatus.PUBLISHED ? new Date() : null,
+        createdById: userId,
+      },
+      select: pageListSelect,
     });
   }
 
@@ -90,9 +181,13 @@ export class PageService {
         template: data.template,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
+        metaKeywords: data.metaKeywords,
+        ogImage: data.ogImage,
+        publishedAt: data.status === PageStatus.PUBLISHED ? new Date() : data.status === PageStatus.DRAFT ? null : undefined,
         updatedAt: new Date()
-      }
-    });
+      },
+      select: pageDetailSelect,
+    }).then(normalizePageResponse);
   }
 
   /**
@@ -151,15 +246,12 @@ export class PageService {
         // Return updated page with components
         const result = await tx.page.findUnique({
              where: { id: pageId },
-             include: { 
-               components: { orderBy: { order: 'asc' } },
-               createdBy: { select: { id: true, firstName: true, lastName: true } }
-             }
+             select: pageDetailSelect,
         });
 
         console.log('✅ Components saved successfully:', result?.components?.length || 0);
         
-        return result;
+        return result ? normalizePageResponse(result) : result;
     });
   }
 }
