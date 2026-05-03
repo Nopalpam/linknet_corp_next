@@ -104,6 +104,8 @@ const NEEDS_FIELD_PRIORITY = [
   'bandwidthNeed',
 ] as const;
 
+const FORM_CHANNEL_FIELD_PATHS = ['formChannel', 'form_channel', 'channel', 'sourceInput'] as const;
+
 type SubmissionModuleContext = {
   id: string;
   name: string;
@@ -122,6 +124,18 @@ type PageSubmissionContext = {
   promo?: string;
   source?: string;
   pageUrl?: string;
+};
+
+type FormSubmissionInfo = {
+  moduleName?: string;
+  channel?: string;
+};
+
+type PageSubmissionMetadata = {
+  slug: string;
+  product?: string | null;
+  promo?: string | null;
+  source?: string | null;
 };
 
 type ExportableSubmission = Prisma.FormSubmissionGetPayload<{
@@ -189,7 +203,10 @@ export class FormModuleService {
 
   async getFormModuleById(id: string) {
     const module = await this.prisma.formModule.findFirst({
-      where: { id, deletedAt: null },
+      where: {
+        deletedAt: null,
+        OR: [{ id }, { slug: id }],
+      },
       include: adminDefinitionInclude,
     });
 
@@ -223,6 +240,30 @@ export class FormModuleService {
     }
 
     return module;
+  }
+
+  async getPublicFormModules(businessUnit: BusinessUnit) {
+    return this.prisma.formModule.findMany({
+      where: {
+        businessUnit,
+        status: FormModuleStatus.ACTIVE,
+        deletedAt: null,
+      },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        businessUnit: true,
+        slug: true,
+        name: true,
+        description: true,
+        category: true,
+        handlingMode: true,
+        publicPath: true,
+        sourceWebsite: true,
+        promoWebsite: true,
+        leadSource: true,
+      },
+    });
   }
 
   async verifyPublicFormModuleExists(businessUnit: BusinessUnit, slug: string) {
@@ -307,7 +348,8 @@ export class FormModuleService {
     businessUnit: BusinessUnit,
     slug: string,
     input: PublicFormSubmissionInput,
-    requestMeta: { ipAddress?: string | null; userAgent?: string | null }
+    requestMeta: { ipAddress?: string | null; userAgent?: string | null },
+    options: { forcePersist?: boolean } = {}
   ) {
     const module = await this.prisma.formModule.findFirst({
       where: {
@@ -333,6 +375,7 @@ export class FormModuleService {
     }
 
     const pageContext = await this.resolvePageSubmissionContext(input, module.publicPath);
+    const formInfo = this.resolveFormSubmissionInfo(input, module.name);
     const primarySnapshot = this.resolvePrimarySnapshot(input.values, input.groups);
     const resolvedResponse = this.resolveResponseConfig(
       module.responseConfigs,
@@ -342,7 +385,7 @@ export class FormModuleService {
       primarySnapshot
     );
 
-    if (module.handlingMode === FormHandlingMode.ROUTING_ONLY) {
+    if (module.handlingMode === FormHandlingMode.ROUTING_ONLY && !options.forcePersist) {
       return {
         submission: null,
         response: resolvedResponse,
@@ -367,6 +410,8 @@ export class FormModuleService {
           promoWebsite: pageContext.promo ?? this.pickString(input.values, ['Promo_Website__c']) ?? module.promoWebsite ?? undefined,
           pageWebsite: pageContext.pageUrl ?? this.pickString(input.values, ['Page_Website__c']) ?? input.sourcePath ?? undefined,
           sourceWebsite: pageContext.source ?? this.pickString(input.values, ['Source_Website__c']) ?? module.sourceWebsite ?? undefined,
+          formModuleName: formInfo.moduleName ?? undefined,
+          formChannel: formInfo.channel ?? undefined,
           leadSource: this.pickString(input.values, ['LeadSource']) ?? module.leadSource ?? undefined,
           primaryName: primarySnapshot.primaryName,
           primaryEmail: primarySnapshot.primaryEmail,
@@ -487,7 +532,7 @@ export class FormModuleService {
   async getFormSubmissions(formModuleId: string, query: FormSubmissionQueryInput) {
     const module = await this.getSubmissionModuleContext(formModuleId);
     const needsField = this.resolveSubmissionNeedsField(module.fields);
-    const where = this.buildFormSubmissionWhere(formModuleId, query, needsField);
+    const where = this.buildFormSubmissionWhere(module.id, query, needsField);
 
     const skip = (query.page - 1) * query.limit;
 
@@ -495,7 +540,7 @@ export class FormModuleService {
       [query.sortBy]: query.sortOrder,
     } as Prisma.FormSubmissionOrderByWithRelationInput;
 
-    const [total, items, needsOptions] = await Promise.all([
+    const [total, items, formChannelOptions, sourceOptions] = await Promise.all([
       this.prisma.formSubmission.count({ where }),
       this.prisma.formSubmission.findMany({
         where,
@@ -515,7 +560,8 @@ export class FormModuleService {
           },
         },
       }),
-      this.getSubmissionNeedsOptions(formModuleId, query, needsField),
+      this.getSubmissionFormChannelOptions(module.id, query, needsField),
+      this.getSubmissionSourceOptions(module.id, query, needsField),
     ]);
 
     return {
@@ -527,8 +573,8 @@ export class FormModuleService {
         totalPages: Math.ceil(total / query.limit),
       },
       filters: {
-        needs: needsOptions,
-        needsFieldLabel: needsField?.label ?? null,
+        formChannels: formChannelOptions,
+        sources: sourceOptions,
       },
     };
   }
@@ -536,7 +582,7 @@ export class FormModuleService {
   async exportFormSubmissions(formModuleId: string, query: FormSubmissionQueryInput) {
     const module = await this.getSubmissionModuleContext(formModuleId);
     const needsField = this.resolveSubmissionNeedsField(module.fields);
-    const where = this.buildFormSubmissionWhere(formModuleId, query, needsField);
+    const where = this.buildFormSubmissionWhere(module.id, query, needsField);
     const orderBy = {
       [query.sortBy]: query.sortOrder,
     } as Prisma.FormSubmissionOrderByWithRelationInput;
@@ -552,6 +598,7 @@ export class FormModuleService {
       'submissionId',
       'formModuleName',
       'formModuleId',
+      'formChannel',
       'businessUnit',
       'formSlug',
       'status',
@@ -571,19 +618,32 @@ export class FormModuleService {
         rows.flatMap((row) => Object.keys(row)).filter((field) => !baseFields.includes(field))
       )
     ).sort((left, right) => left.localeCompare(right));
-    const parser = new Parser({ fields: [...baseFields, ...dynamicFields] });
+    const fields = [...baseFields, ...dynamicFields];
+    const filenameBase = `form-submissions-${module.slug}-${new Date().toISOString().slice(0, 10)}`;
+
+    if (query.format === 'xlsx') {
+      return {
+        filename: `${filenameBase}.xlsx`,
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        body: this.buildXlsxBuffer(rows, fields),
+      };
+    }
+
+    const parser = new Parser({ fields });
 
     return {
-      filename: `form-submissions-${module.slug}-${new Date().toISOString().slice(0, 10)}.csv`,
-      csv: parser.parse(rows),
+      filename: `${filenameBase}.csv`,
+      contentType: 'text/csv; charset=utf-8',
+      body: parser.parse(rows),
     };
   }
 
   async getFormSubmissionById(formModuleId: string, submissionId: string) {
+    const module = await this.getSubmissionModuleContext(formModuleId);
     const submission = await this.prisma.formSubmission.findFirst({
       where: {
         id: submissionId,
-        formModuleId,
+        formModuleId: module.id,
         deletedAt: null,
       },
       include: submissionDetailInclude,
@@ -597,10 +657,11 @@ export class FormModuleService {
   }
 
   async retrySubmissionDispatches(formModuleId: string, submissionId: string) {
+    const module = await this.getSubmissionModuleContext(formModuleId);
     const submission = await this.prisma.formSubmission.findFirst({
       where: {
         id: submissionId,
-        formModuleId,
+        formModuleId: module.id,
         deletedAt: null,
       },
       select: { id: true },
@@ -622,7 +683,10 @@ export class FormModuleService {
     input: PublicFormSubmissionInput,
     modulePublicPath?: string | null
   ): Promise<PageSubmissionContext> {
+    const explicitContext = input.context;
+    const explicitContextUrl = explicitContext?.url ?? explicitContext?.pageUrl ?? undefined;
     const candidatePaths = [
+      explicitContextUrl,
       this.pickString(input.values, ['Page_Website__c', 'pageWebsite', 'pageUrl']),
       input.sourcePath,
       modulePublicPath,
@@ -636,8 +700,11 @@ export class FormModuleService {
       )
     );
 
-    const page = slugCandidates.length
-      ? await this.prisma.page.findFirst({
+    let page: PageSubmissionMetadata | null = null;
+
+    if (slugCandidates.length) {
+      try {
+        page = await this.prisma.page.findFirst({
           where: {
             slug: { in: slugCandidates },
             deletedAt: null,
@@ -648,18 +715,90 @@ export class FormModuleService {
             promo: true,
             source: true,
           },
-        })
-      : null;
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2022'
+        ) {
+          page = await this.prisma.page.findFirst({
+            where: {
+              slug: { in: slugCandidates },
+              deletedAt: null,
+            },
+            select: { slug: true },
+          });
+        } else {
+          throw error;
+        }
+      }
+    }
 
     const explicitPageUrl = this.pickString(input.values, ['Page_Website__c', 'pageWebsite', 'pageUrl']);
-    const pageUrl = explicitPageUrl ?? input.sourcePath ?? (page ? `/${page.slug}` : undefined);
+    const pageUrl = explicitContextUrl ?? explicitPageUrl ?? input.sourcePath ?? (page ? `/${page.slug}` : undefined);
+    const urlSource = this.getSourceFromUrl(pageUrl);
 
     return {
-      product: page?.product ?? this.pickString(input.values, ['Product', 'product', 'Product__c']),
-      promo: page?.promo ?? this.pickString(input.values, ['Promo_Website__c', 'Promo', 'promo']),
-      source: page?.source ?? this.pickString(input.values, ['Source_Website__c', 'Source', 'source']),
+      product: page?.product ?? explicitContext?.product ?? this.pickString(input.values, ['Product', 'product', 'Product__c']),
+      promo: page?.promo ?? explicitContext?.promo ?? this.pickString(input.values, ['Promo_Website__c', 'Promo', 'promo']),
+      source: urlSource ?? page?.source ?? explicitContext?.source ?? this.pickString(input.values, ['Source_Website__c', 'Source', 'source']),
       pageUrl,
     };
+  }
+
+  private resolveFormSubmissionInfo(
+    input: PublicFormSubmissionInput,
+    moduleName: string
+  ): FormSubmissionInfo {
+    const context = input.context;
+    const formInfo = input.formInfo;
+    const rawChannel =
+      formInfo?.formChannel ??
+      formInfo?.form_channel ??
+      context?.formChannel ??
+      context?.form_channel ??
+      this.pickString(input.values, ['form_channel', 'formChannel', 'channel', 'sourceInput', 'Source_Input__c']);
+
+    return {
+      moduleName:
+        formInfo?.formModuleName ??
+        formInfo?.form_module_name ??
+        context?.formModuleName ??
+        context?.form_module_name ??
+        moduleName,
+      channel: this.normalizeFormChannel(rawChannel),
+    };
+  }
+
+  private normalizeFormChannel(channel?: string | null) {
+    if (!channel) return undefined;
+
+    const normalized = channel.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+    if (normalized === 'live_chat' || normalized === 'start_conversation') {
+      return 'Live Chat';
+    }
+
+    if (normalized === 'whatsapp' || normalized === 'whats_app') {
+      return 'WhatsApp';
+    }
+
+    return channel.trim() || undefined;
+  }
+
+  private getSourceFromUrl(url?: string | null) {
+    if (!url) return undefined;
+
+    try {
+      const parsedUrl = new URL(url, 'https://linknet.local');
+      return (
+        parsedUrl.searchParams.get('utm_source') ||
+        parsedUrl.searchParams.get('source') ||
+        undefined
+      );
+    } catch {
+      return undefined;
+    }
   }
 
   private pathToPageSlugCandidates(path: string) {
@@ -1043,7 +1182,10 @@ export class FormModuleService {
 
   private async getSubmissionModuleContext(formModuleId: string): Promise<SubmissionModuleContext> {
     const module = await this.prisma.formModule.findFirst({
-      where: { id: formModuleId, deletedAt: null },
+      where: {
+        deletedAt: null,
+        OR: [{ id: formModuleId }, { slug: formModuleId }],
+      },
       select: {
         id: true,
         name: true,
@@ -1088,6 +1230,32 @@ export class FormModuleService {
   ): Prisma.FormSubmissionWhereInput {
     const dateRange = this.resolveSubmissionReceivedAtRange(query);
     const needsFieldPaths = this.getNeedsFieldPaths(needsField);
+    const andConditions: Prisma.FormSubmissionWhereInput[] = [];
+
+    if (query.search) {
+      andConditions.push({
+        OR: [
+          { primaryName: { contains: query.search, mode: 'insensitive' } },
+          { primaryEmail: { contains: query.search, mode: 'insensitive' } },
+          { primaryPhone: { contains: query.search, mode: 'insensitive' } },
+          { eventName: { contains: query.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (query.formChannel) {
+      andConditions.push({
+        OR: [
+          {
+            formChannel: {
+              equals: query.formChannel,
+              mode: 'insensitive',
+            },
+          },
+          ...this.getFormChannelLegacyValueFilters(query.formChannel),
+        ],
+      });
+    }
 
     return {
       formModuleId,
@@ -1101,17 +1269,16 @@ export class FormModuleService {
             },
           }
         : {}),
-      ...(query.search
+      ...(dateRange ? { receivedAt: dateRange } : {}),
+      ...(andConditions.length ? { AND: andConditions } : {}),
+      ...(query.source
         ? {
-            OR: [
-              { primaryName: { contains: query.search, mode: 'insensitive' } },
-              { primaryEmail: { contains: query.search, mode: 'insensitive' } },
-              { primaryPhone: { contains: query.search, mode: 'insensitive' } },
-              { eventName: { contains: query.search, mode: 'insensitive' } },
-            ],
+            sourceWebsite: {
+              equals: query.source,
+              mode: 'insensitive',
+            },
           }
         : {}),
-      ...(dateRange ? { receivedAt: dateRange } : {}),
       ...(!options.excludeNeeds && query.needs && needsFieldPaths.length > 0
         ? {
             values: {
@@ -1134,6 +1301,35 @@ export class FormModuleService {
           }
         : {}),
     };
+  }
+
+  private getFormChannelLegacyValueFilters(channel: string): Prisma.FormSubmissionWhereInput[] {
+    const variants = this.getFormChannelVariants(channel);
+
+    return variants.map((variant) => ({
+      values: {
+        some: {
+          AND: [
+            { fieldPath: { in: [...FORM_CHANNEL_FIELD_PATHS] } },
+            { displayValue: { equals: variant, mode: 'insensitive' } },
+          ],
+        },
+      },
+    }));
+  }
+
+  private getFormChannelVariants(channel: string) {
+    const normalized = channel.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+    if (normalized === 'live_chat' || normalized === 'start_conversation') {
+      return ['Live Chat', 'live_chat', 'start_conversation'];
+    }
+
+    if (normalized === 'whatsapp' || normalized === 'whats_app') {
+      return ['WhatsApp', 'Whatsapp', 'whatsapp'];
+    }
+
+    return [channel];
   }
 
   private resolveSubmissionReceivedAtRange(query: FormSubmissionQueryInput) {
@@ -1195,48 +1391,224 @@ export class FormModuleService {
     );
   }
 
-  private async getSubmissionNeedsOptions(
+  private async getSubmissionFormChannelOptions(
     formModuleId: string,
     query: FormSubmissionQueryInput,
     needsField: SubmissionNeedsField | null
   ) {
-    const fieldPaths = this.getNeedsFieldPaths(needsField);
-
-    if (fieldPaths.length === 0) {
-      return [];
-    }
-
-    const optionSourceRows = await this.prisma.formSubmissionValue.findMany({
-      where: {
-        fieldPath: {
-          in: fieldPaths,
+    const [submissionRows, valueRows] = await Promise.all([
+      this.prisma.formSubmission.findMany({
+        where: this.buildFormSubmissionWhere(
+          formModuleId,
+          { ...query, formChannel: undefined },
+          needsField
+        ),
+        select: { formChannel: true },
+        orderBy: [{ formChannel: 'asc' }],
+      }),
+      this.prisma.formSubmissionValue.findMany({
+        where: {
+          fieldPath: { in: [...FORM_CHANNEL_FIELD_PATHS] },
+          submission: {
+            is: this.buildFormSubmissionWhere(
+              formModuleId,
+              { ...query, formChannel: undefined },
+              needsField
+            ),
+          },
         },
-        submission: {
-          is: this.buildFormSubmissionWhere(
-            formModuleId,
-            {
-              ...query,
-              needs: undefined,
-            },
-            needsField,
-            { excludeNeeds: true }
-          ),
+        select: {
+          displayValue: true,
+          value: true,
         },
-      },
-      select: {
-        displayValue: true,
-        value: true,
-      },
-      orderBy: [{ displayValue: 'asc' }],
+        orderBy: [{ displayValue: 'asc' }],
+      }),
+    ]);
+
+    return Array.from(
+      new Set(
+        [
+          ...submissionRows.map((row) => row.formChannel),
+          ...valueRows.map((row) => this.normalizeFormChannel(
+            this.normalizeSubmissionValue(row.displayValue ?? row.value) ?? undefined
+          )),
+        ]
+          .map((value) => this.normalizeFormChannel(value ?? undefined))
+          .filter((value): value is string => Boolean(value))
+      )
+    ).sort((left, right) => left.localeCompare(right));
+  }
+
+  private async getSubmissionSourceOptions(
+    formModuleId: string,
+    query: FormSubmissionQueryInput,
+    needsField: SubmissionNeedsField | null
+  ) {
+    const rows = await this.prisma.formSubmission.findMany({
+      where: this.buildFormSubmissionWhere(
+        formModuleId,
+        { ...query, source: undefined },
+        needsField
+      ),
+      select: { sourceWebsite: true },
+      orderBy: [{ sourceWebsite: 'asc' }],
     });
 
     return Array.from(
       new Set(
-        optionSourceRows
-          .map((row) => this.normalizeSubmissionValue(row.displayValue ?? row.value))
+        rows
+          .map((row) => row.sourceWebsite?.trim())
           .filter((value): value is string => Boolean(value))
       )
     ).sort((left, right) => left.localeCompare(right));
+  }
+
+  private buildXlsxBuffer(rows: Record<string, string>[], fields: string[]) {
+    const sheetRows = [
+      fields,
+      ...rows.map((row) => fields.map((field) => row[field] ?? '')),
+    ];
+    const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+      `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+      `<sheetData>` +
+      sheetRows.map((row, rowIndex) => {
+        const rowNumber = rowIndex + 1;
+        const cells = row.map((value, columnIndex) => {
+          const ref = `${this.toExcelColumn(columnIndex + 1)}${rowNumber}`;
+          return `<c r="${ref}" t="inlineStr"><is><t>${this.escapeXml(value)}</t></is></c>`;
+        }).join('');
+
+        return `<row r="${rowNumber}">${cells}</row>`;
+      }).join('') +
+      `</sheetData></worksheet>`;
+
+    return this.createZipBuffer([
+      {
+        path: '[Content_Types].xml',
+        content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+          `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+          `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+          `<Default Extension="xml" ContentType="application/xml"/>` +
+          `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
+          `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+          `</Types>`,
+      },
+      {
+        path: '_rels/.rels',
+        content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+          `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+          `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>` +
+          `</Relationships>`,
+      },
+      {
+        path: 'xl/workbook.xml',
+        content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+          `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+          `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+          `<sheets><sheet name="Submissions" sheetId="1" r:id="rId1"/></sheets>` +
+          `</workbook>`,
+      },
+      {
+        path: 'xl/_rels/workbook.xml.rels',
+        content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+          `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+          `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+          `</Relationships>`,
+      },
+      {
+        path: 'xl/worksheets/sheet1.xml',
+        content: sheetXml,
+      },
+    ]);
+  }
+
+  private createZipBuffer(entries: Array<{ path: string; content: string }>) {
+    const localParts: Buffer[] = [];
+    const centralParts: Buffer[] = [];
+    let offset = 0;
+
+    for (const entry of entries) {
+      const name = Buffer.from(entry.path, 'utf8');
+      const data = Buffer.from(entry.content, 'utf8');
+      const crc = this.crc32(data);
+      const localHeader = Buffer.alloc(30);
+
+      localHeader.writeUInt32LE(0x04034b50, 0);
+      localHeader.writeUInt16LE(20, 4);
+      localHeader.writeUInt16LE(0, 6);
+      localHeader.writeUInt16LE(0, 8);
+      localHeader.writeUInt16LE(0, 10);
+      localHeader.writeUInt16LE(0, 12);
+      localHeader.writeUInt32LE(crc, 14);
+      localHeader.writeUInt32LE(data.length, 18);
+      localHeader.writeUInt32LE(data.length, 22);
+      localHeader.writeUInt16LE(name.length, 26);
+
+      localParts.push(localHeader, name, data);
+
+      const centralHeader = Buffer.alloc(46);
+      centralHeader.writeUInt32LE(0x02014b50, 0);
+      centralHeader.writeUInt16LE(20, 4);
+      centralHeader.writeUInt16LE(20, 6);
+      centralHeader.writeUInt16LE(0, 8);
+      centralHeader.writeUInt16LE(0, 10);
+      centralHeader.writeUInt16LE(0, 12);
+      centralHeader.writeUInt16LE(0, 14);
+      centralHeader.writeUInt32LE(crc, 16);
+      centralHeader.writeUInt32LE(data.length, 20);
+      centralHeader.writeUInt32LE(data.length, 24);
+      centralHeader.writeUInt16LE(name.length, 28);
+      centralHeader.writeUInt32LE(offset, 42);
+      centralParts.push(centralHeader, name);
+
+      offset += localHeader.length + name.length + data.length;
+    }
+
+    const centralDirectory = Buffer.concat(centralParts);
+    const end = Buffer.alloc(22);
+    end.writeUInt32LE(0x06054b50, 0);
+    end.writeUInt16LE(entries.length, 8);
+    end.writeUInt16LE(entries.length, 10);
+    end.writeUInt32LE(centralDirectory.length, 12);
+    end.writeUInt32LE(offset, 16);
+
+    return Buffer.concat([...localParts, centralDirectory, end]);
+  }
+
+  private crc32(buffer: Buffer) {
+    let crc = 0xffffffff;
+
+    for (const byte of buffer) {
+      crc ^= byte;
+
+      for (let index = 0; index < 8; index += 1) {
+        crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+      }
+    }
+
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+
+  private toExcelColumn(column: number) {
+    let label = '';
+    let current = column;
+
+    while (current > 0) {
+      current -= 1;
+      label = String.fromCharCode(65 + (current % 26)) + label;
+      current = Math.floor(current / 26);
+    }
+
+    return label;
+  }
+
+  private escapeXml(value: string) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   private buildSubmissionExportRows(
@@ -1247,8 +1619,9 @@ export class FormModuleService {
     return submissions.map((submission) => {
       const row: Record<string, string> = {
         submissionId: submission.id,
-        formModuleName,
+        formModuleName: submission.formModuleName ?? formModuleName,
         formModuleId: submission.formModuleId,
+        formChannel: submission.formChannel ?? '',
         businessUnit: submission.businessUnit,
         formSlug: submission.formSlug,
         status: submission.status,

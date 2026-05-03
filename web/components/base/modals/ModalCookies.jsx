@@ -189,7 +189,10 @@ export default function ModalCookies({ cmsData = null, className = '' }) {
         {/* Text */}
         <div className="min-w-0">
           <p className="text-headline-h6 text-black mb-1">{title}</p>
-          <p className="text-body-b5 text-secondary leading-relaxed">{description}</p>
+          <div
+            className="text-body-b5 text-secondary leading-relaxed [&_p]:mb-1 last:[&_p]:mb-0"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
         </div>
       </div>
 

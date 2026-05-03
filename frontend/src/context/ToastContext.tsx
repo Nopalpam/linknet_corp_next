@@ -1,5 +1,6 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef, ReactNode } from 'react';
+import { SESSION_EXPIRED_EVENT, SESSION_RESUMED_EVENT } from '@/lib/sessionExpired';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -23,6 +24,26 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  // ✅ Suppress error toasts while a session-expired event is active.
+  // This prevents raw backend messages like "Access token has expired" from
+  // showing in a toast — the session warning modal takes over instead.
+  const sessionExpiredActiveRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleExpired = () => { sessionExpiredActiveRef.current = true; };
+    const handleResumed = () => { sessionExpiredActiveRef.current = false; };
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleExpired);
+    window.addEventListener(SESSION_RESUMED_EVENT, handleResumed);
+    // Also suppress on the force-logout event
+    window.addEventListener('auth:forceLogout', handleExpired);
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpired);
+      window.removeEventListener(SESSION_RESUMED_EVENT, handleResumed);
+      window.removeEventListener('auth:forceLogout', handleExpired);
+    };
+  }, []);
+
   const showToast = useCallback((type: ToastType, message: string, duration: number = 5000) => {
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = { id, type, message, duration };
@@ -40,6 +61,10 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   }, [showToast]);
 
   const error = useCallback((message: string, duration?: number) => {
+    // ✅ Suppress error toasts when the session has expired — the session
+    // warning modal is already handling the situation, so showing a raw
+    // backend error message (e.g. "Access token has expired") would confuse users.
+    if (sessionExpiredActiveRef.current) return;
     showToast('error', message, duration);
   }, [showToast]);
 

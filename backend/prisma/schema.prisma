@@ -205,17 +205,22 @@ model Menu {
 model Page {
   id              String          @id @default(uuid())
   title           String
+  titleEn         String?         @map("title_en")
+  titleId         String?         @map("title_id")
   slug            String          @unique
   template        PageTemplate    @default(DEFAULT)
   metaTitle       String?         @map("meta_title")
   metaDescription String?         @map("meta_description")
   metaKeywords    String?         @map("meta_keywords")
+  metaThumbnail   String?         @map("meta_thumbnail")
   ogImage         String?         @map("og_image")
   product         String?
   promo           String?
   source          String?
   noindex         Boolean         @default(false)
   nofollow        Boolean         @default(false)
+  showNavbar      Boolean         @default(true) @map("show_navbar")
+  showFooter      Boolean         @default(true) @map("show_footer")
   status          PageStatus      @default(DRAFT)
   publishedAt     DateTime?       @map("published_at")
   createdById     String          @map("created_by_id")
@@ -293,6 +298,7 @@ model Award {
   description     String?
   descriptionId   String?   @map("description_id")
   descriptionEn   String?   @map("description_en")
+  topLogo         String?   @map("top_logo")
   image           String?
   link            String?
   issuer          String
@@ -740,6 +746,8 @@ model FormSubmission {
   promoWebsite    String?               @map("promo_website")
   pageWebsite     String?               @map("page_website")
   sourceWebsite   String?               @map("source_website")
+  formModuleName  String?               @map("form_module_name")
+  formChannel     String?               @map("form_channel")
   leadSource      String?               @map("lead_source")
   primaryName     String?               @map("primary_name")
   primaryEmail    String?               @map("primary_email")
@@ -961,6 +969,8 @@ model news {
   content_id                      String?
   news_link                       String?
   author                          String?
+  meta_title                      String?
+  meta_description                String?
   meta_desc                       String?
   category_id                     String
   meta_keywords                   String?
@@ -969,6 +979,7 @@ model news {
   view_count                      Int                  @default(0)
   view_count_unique               Int                  @default(0)
   status                          ContentStatus        @default(DRAFT)
+  visibility                      String               @default("PUBLIC")
   published_at                    DateTime?
   created_by_id                   String
   updated_by_id                   String?
@@ -1279,6 +1290,73 @@ model announcements {
   @@index([sort_order])
   @@index([status])
   @@index([type_id])
+}
+
+model ComponentVisibility {
+  id            String                @id @default(uuid())
+  componentKey  String                @unique @map("component_key")
+  componentName String                @map("component_name")
+  status        ComponentVisibilityStatus @default(ACTIVE)
+  businessUnit  String?               @map("business_unit")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([businessUnit])
+  @@map("component_visibility")
+}
+
+model LabelGroup {
+  id         String      @id @default(uuid())
+  parentName String      @unique @map("parent_name")
+  slug       String      @unique
+  createdBy  String?     @map("created_by")
+  updatedBy  String?     @map("updated_by")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  labels     LabelNode[]
+
+  @@index([slug])
+  @@index([createdAt])
+  @@map("label_groups")
+}
+
+model LabelNode {
+  id        String      @id @default(uuid())
+  groupId   String      @map("group_id")
+  parentId  String?     @map("parent_id")
+  labelName Json        @map("label_name")
+  segment   String
+  labelId   String      @unique @map("label_id")
+  isManualLabelId Boolean @default(false) @map("is_manual_label_id")
+  values    Json        @default("{}")
+  status    LabelStatus @default(ACTIVE)
+  position  Int         @default(0)
+  createdBy String?     @map("created_by")
+  updatedBy String?     @map("updated_by")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  group     LabelGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  parent    LabelNode?  @relation("LabelTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  LabelNode[] @relation("LabelTree")
+
+  @@unique([groupId, parentId, segment])
+  @@index([groupId])
+  @@index([parentId])
+  @@index([position])
+  @@index([status])
+  @@index([isManualLabelId])
+  @@map("label_nodes")
+}
+
+enum ComponentVisibilityStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LabelStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum UserStatus {

@@ -18,8 +18,17 @@ import OmniChannelWidget from "@/components/main/OmniChannelWidget";
 import VisitorTracker from "@/components/VisitorTracker";
 import { getHeaderMenus, getFooterMenus, getPublicSettings } from "@/lib/cmsApi";
 
+const toBoolean = (value: unknown) => value === true || value === 'true';
+const localizedValue = (value: any, locale: string, fallback = '') => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value[locale] || value.en || value.id || fallback;
+  }
 
-export const metadata = {
+  return value || fallback;
+};
+
+
+const fallbackMetadata = {
   // Update Base URL sesuai domain Anda
   metadataBase: new URL('https://onestream.co.id'), 
 
@@ -134,6 +143,51 @@ const jsonLd = {
 ]}
     
 
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const { locale } = await params;
+  const publicSettings = await getPublicSettings();
+  const generalBranding = publicSettings.general_branding || {};
+  const seo = publicSettings.seo || {};
+  const analytics = publicSettings.analytics || {};
+
+  const siteTitle = localizedValue(generalBranding.site?.title, locale, fallbackMetadata.openGraph.siteName);
+  const titleSuffix = localizedValue(generalBranding.site?.title_suffix, locale, '- PT Link Net Tbk');
+  const metaTitle = localizedValue(seo.meta_title, locale, siteTitle);
+  const metaDescription = localizedValue(seo.meta_description, locale, localizedValue(generalBranding.site?.description, locale, fallbackMetadata.description));
+  const keywords = Array.isArray(seo.meta_keywords) ? seo.meta_keywords : fallbackMetadata.keywords;
+  const thumbnail = seo.thumbnail || fallbackMetadata.openGraph.images?.[0]?.url;
+  const favicon = generalBranding.branding?.favicon || fallbackMetadata.icons.icon;
+
+  return {
+    metadataBase: fallbackMetadata.metadataBase,
+    title: {
+      default: metaTitle,
+      template: `%s ${titleSuffix}`.trim(),
+    },
+    description: metaDescription,
+    keywords,
+    robots: fallbackMetadata.robots,
+    icons: { icon: favicon },
+    twitter: {
+      card: 'summary_large_image',
+      title: metaTitle,
+      description: metaDescription,
+      images: thumbnail ? [thumbnail] : undefined,
+    },
+    openGraph: {
+      title: metaTitle,
+      description: metaDescription,
+      url: fallbackMetadata.openGraph.url,
+      siteName: siteTitle,
+      images: thumbnail ? [{ url: thumbnail, width: 1200, height: 630, alt: metaTitle }] : undefined,
+      locale: locale === 'id' ? 'id_ID' : 'en_US',
+      type: 'website',
+    },
+    alternates: fallbackMetadata.alternates,
+    other: analytics.google_analytics_id ? { 'google-analytics-id': analytics.google_analytics_id } : undefined,
+  };
+}
+
 export default async function RootLayout({ children, params }) {
   // 1. Ambil locale dari params (gunakan await untuk amannya di Next.js terbaru)
   const { locale } = await params;
@@ -153,32 +207,43 @@ export default async function RootLayout({ children, params }) {
     getPublicSettings(),
   ]);
 
+  const generalBranding = publicSettings.general_branding || {};
+  const contact = publicSettings.contact || {};
+  const footer = publicSettings.footer || {};
+  const cookies = publicSettings.cookies || {};
+  const analytics = publicSettings.analytics || {};
+  const phoneNumbers = Array.isArray(contact.phone_numbers) ? contact.phone_numbers : [];
+
   // 5. Assemble footer data dari settings + menu
   const cmsFooterData = {
-    logo: publicSettings.footer_logo || '/assets/logos/logo-linknet-white.svg',
-    slogan: publicSettings.footer_slogan || '',
-    address: publicSettings.footer_address || '',
+    logo: generalBranding.branding?.logo || '/assets/logos/logo-linknet-white.svg',
+    slogan: localizedValue(generalBranding.site?.slogan, locale),
+    address: localizedValue(generalBranding.site?.address, locale),
     contact: {
-      email: publicSettings.footer_email || publicSettings.contact_email || '',
-      phone: publicSettings.footer_phone || publicSettings.contact_phone || '',
+      email: contact.email || '',
+      phoneNumbers,
     },
     menus: footerMenus || [],
-    socials: (() => {
-      try {
-        const raw = publicSettings.footer_socials;
-        return typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
-      } catch { return []; }
-    })(),
+    socials: Array.isArray(contact.socials)
+      ? contact.socials.map((social) => ({
+          ...social,
+          iconName: social.icon || social.platform,
+          href: social.url,
+        }))
+      : [],
     copyright: publicSettings.footer_copyright || `© ${new Date().getFullYear()} PT Link Net Tbk. All rights reserved.`,
   };
 
+  cmsFooterData.copyright = footer.copyright || cmsFooterData.copyright;
+
   // 6. Assemble closing sentence data
-  const isClosingHidden = publicSettings.closing_hidden === true || publicSettings.closing_hidden === 'true';
+  const isClosingHidden = toBoolean(publicSettings.closing_hidden);
+  const closing = footer.closingSentence_default || {};
   const cmsClosingData = isClosingHidden ? null : {
     introData: {
-      overline: publicSettings.closing_overline || '',
-      title: publicSettings.closing_title || '',
-      description: publicSettings.closing_description || '',
+      overline: closing.overline || '',
+      title: localizedValue(closing.title, locale),
+      description: localizedValue(closing.description, locale),
     },
     videoSrc: publicSettings.closing_video_src || '',
     ctaButtons: (() => {
@@ -191,24 +256,24 @@ export default async function RootLayout({ children, params }) {
 
   // 7. Assemble cookies modal data
   const cookiesData = {
-    enabled: publicSettings.cookies_enabled === true || publicSettings.cookies_enabled === 'true',
-    title: publicSettings.cookies_title || 'We use cookies',
-    description: publicSettings.cookies_description || 'This website uses cookies to ensure you get the best experience.',
-    acceptLabel: publicSettings.cookies_accept_label || 'Accept',
-    moreInfoLabel: publicSettings.cookies_more_info_label || 'More Info',
-    moreInfoUrl: publicSettings.cookies_more_info_url || '/privacy-policy',
-    iconUrl: publicSettings.cookies_icon_url || '',
+    enabled: toBoolean(cookies.enabled),
+    title: localizedValue(cookies.title, locale, 'We use cookies'),
+    description: localizedValue(cookies.description, locale, 'This website uses cookies to ensure you get the best experience.'),
+    acceptLabel: 'Accept',
+    moreInfoLabel: localizedValue(cookies.more_info?.title, locale, 'More Info'),
+    moreInfoUrl: cookies.more_info?.url || '/privacy-policy',
+    iconUrl: cookies.icon || '',
   };
 
   return (
     <html lang={locale}>
       <GoogleTagManager gtmId="GTM-5BND42TQ" />
-      <GoogleAnalytics gaId="G-Q51QMD6Y10" />
+      <GoogleAnalytics gaId={analytics.google_analytics_id || "G-Q51QMD6Y10"} />
       <body>
         {/* 8. Bungkus semua komponen dengan Provider */}
         <NextIntlClientProvider messages={messages} locale={locale}>
           <VisitorTracker />
-          <NavbarFiber menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
+          <Navbar menuData={menuData} defaultLocale={publicSettings.default_locale || 'en'} />
           {children}
           <Footer cmsClosingData={cmsClosingData} cmsFooterData={cmsFooterData} />
           <ModalCookies cmsData={cookiesData} />

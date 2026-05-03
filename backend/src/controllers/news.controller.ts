@@ -57,18 +57,23 @@ export class NewsController {
       const {
         title_en,
         title_id,
+        slug,
         news_date,
         news_thumbnail,
         excerpt_en,
         excerpt_id,
         content_en,
         content_id,
-        news_link,
+        author,
         category_id,
+        meta_title,
+        meta_description,
         meta_keywords,
         custom_css,
         custom_js,
         status,
+        visibility,
+        published_at,
       } = req.body;
 
       if (!title_en || title_en.trim() === '') {
@@ -84,18 +89,23 @@ export class NewsController {
       const data: CreateNewsData = {
         title_en: title_en.trim(),
         title_id: title_id?.trim(),
-        news_date,
+        slug: slug?.trim(),
+        news_date: news_date || published_at || new Date(),
         news_thumbnail,
         excerpt_en: excerpt_en?.trim(),
         excerpt_id: excerpt_id?.trim(),
         content_en: content_en.trim(),
         content_id: content_id?.trim(),
-        news_link: news_link?.trim(),
+        author: author?.trim(),
         category_id: category_id || undefined,
+        meta_title: meta_title?.trim(),
+        meta_description: meta_description?.trim(),
         meta_keywords: meta_keywords?.trim(),
         custom_css: custom_css?.trim(),
         custom_js: custom_js?.trim(),
         status: status || undefined,
+        visibility: visibility || undefined,
+        published_at: published_at ?? undefined,
       };
 
       const userId = req.user?.id || 'system';
@@ -122,18 +132,23 @@ export class NewsController {
       const {
         title_en,
         title_id,
+        slug,
         news_date,
         news_thumbnail,
         excerpt_en,
         excerpt_id,
         content_en,
         content_id,
-        news_link,
+        author,
         category_id,
+        meta_title,
+        meta_description,
         meta_keywords,
         custom_css,
         custom_js,
         status,
+        visibility,
+        published_at,
       } = req.body;
 
       if (title_en !== undefined && title_en.trim() === '') {
@@ -146,18 +161,23 @@ export class NewsController {
       const data: UpdateNewsData = {
         ...(title_en !== undefined && { title_en: title_en.trim() }),
         ...(title_id !== undefined && { title_id: title_id?.trim() }),
+        ...(slug !== undefined && { slug: slug?.trim() }),
         ...(news_date !== undefined && { news_date }),
         ...(news_thumbnail !== undefined && { news_thumbnail }),
         ...(excerpt_en !== undefined && { excerpt_en: excerpt_en?.trim() }),
         ...(excerpt_id !== undefined && { excerpt_id: excerpt_id?.trim() }),
         ...(content_en !== undefined && { content_en: content_en.trim() }),
         ...(content_id !== undefined && { content_id: content_id?.trim() }),
-        ...(news_link !== undefined && { news_link: news_link?.trim() }),
+        ...(author !== undefined && { author: author?.trim() }),
         ...(category_id !== undefined && { category_id: category_id || undefined }),
+        ...(meta_title !== undefined && { meta_title: meta_title?.trim() }),
+        ...(meta_description !== undefined && { meta_description: meta_description?.trim() }),
         ...(meta_keywords !== undefined && { meta_keywords: meta_keywords?.trim() }),
         ...(custom_css !== undefined && { custom_css: custom_css?.trim() }),
         ...(custom_js !== undefined && { custom_js: custom_js?.trim() }),
         ...(status !== undefined && { status }),
+        ...(visibility !== undefined && { visibility }),
+        ...(published_at !== undefined && { published_at }),
       };
 
       const userId = req.user?.id || 'system';
@@ -167,6 +187,27 @@ export class NewsController {
         success: true,
         message: 'News updated successfully',
         data: news,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async checkSlugAvailability(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { slug, excludeId } = req.query;
+      if (!slug || typeof slug !== 'string') {
+        throw new AppError('Slug is required', 400);
+      }
+
+      const result = await newsService.checkSlugAvailability(
+        slug,
+        typeof excludeId === 'string' ? excludeId : undefined
+      );
+
+      res.json({
+        success: true,
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -272,7 +313,8 @@ export class NewsController {
       const ipAddress = req.ip || req.socket.remoteAddress;
       const userAgent = req.headers['user-agent'];
 
-      const news = await newsService.getNewsBySlug(slug, true, ipAddress, userAgent);
+      const shouldTrackView = req.query.track !== 'false';
+      const news = await newsService.getNewsBySlug(slug, shouldTrackView, ipAddress, userAgent);
 
       res.json({
         success: true,

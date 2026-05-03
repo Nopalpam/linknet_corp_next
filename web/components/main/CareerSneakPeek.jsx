@@ -19,11 +19,29 @@ import CTAList from '../base/section/CTAList';
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-const CareerSneakPeek = () => {
+function withLocale(href, locale) {
+  if (!href || !locale) return href;
+  if (href.startsWith('http') || href.startsWith('#') || href.startsWith(`/${locale}`)) {
+    return href;
+  }
+
+  return href.startsWith('/') ? `/${locale}${href}` : `/${locale}/${href}`;
+}
+
+const CareerSneakPeek = ({
+  cmsData = null,
+  mainData = null,
+  className = '',
+  locale: localeProp,
+}) => {
   const containerRef = useRef(null); // Ref untuk scope GSAP
 
-  // Destructure konfigurasi section dari careerSneakPeek.js
-  const { config, introData, ctaList, limit } = careerSneakPeekData;
+  const sectionData = cmsData || careerSneakPeekData;
+  const params = useParams();
+  const locale = localeProp || params?.locale || 'en';
+
+  // Destructure konfigurasi section dari careerSneakPeek.js / CMS
+  const { config, introData, ctaList, limit, max_display } = sectionData;
   const {
     sectionId,
     className: configClassName = "",
@@ -38,11 +56,11 @@ const CareerSneakPeek = () => {
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
+  const careerItems = Array.isArray(mainData?.careers)
+    ? mainData.careers
+    : (Array.isArray(sectionData.items) ? sectionData.items : (Array.isArray(sectionData.careers) ? sectionData.careers : careers));
   // Batasi jumlah data karir yang dirender sesuai dengan 'limit' (misal: 4)
-  const displayedCareers = careers.slice(0, limit || 8);
-
-  const params = useParams();
-  const locale = params.locale || 'en';
+  const displayedCareers = careerItems.slice(0, limit || max_display || 8);
 
   // =========================================
   // SETUP ANIMASI GSAP
@@ -77,7 +95,7 @@ const CareerSneakPeek = () => {
       className={`lnSection__careerSneakPeek py-16
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
         bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
-        ${configClassName}`}
+        ${configClassName} ${className}`}
       style={sectionStyle}
     >
 
@@ -89,6 +107,7 @@ const CareerSneakPeek = () => {
           <Intro
             label={introData.label}
             title={introData.title}
+            description={introData.description}
             align={introData.align || 'center'}
             as={introData.as || 'h2'}
           />
@@ -101,12 +120,12 @@ const CareerSneakPeek = () => {
           // Bungkus CardCareer dengan div yang memiliki class GSAP agar ikut teranimasi
           <div key={career.id} className="lnGsapCareerItem h-full flex">
             <CardCareer
-              department={career.department}
-              title={career.title}
-              type={career.employment_type} // Mapping employment_type ke type
+              department={career.department || career.division}
+              title={career.title || career.position}
+              type={career.employment_type || career.type} // Mapping employment_type ke type
               location={career.location}
-              applyUrl={career.applyURL}
-              detailUrl={career.detailURL}
+              applyUrl={career.applyURL || career.applyUrl || career.linkJob}
+              detailUrl={career.detailURL || career.detailUrl || (career.slug ? `/career/${career.slug}` : '#')}
             />
           </div>
         ))}
@@ -114,7 +133,7 @@ const CareerSneakPeek = () => {
 
       {/* --- CTA Section --- */}
       <CTAList
-        ctaList={ctaList?.map((cta) => ({ ...cta, href: `/${locale}${cta.href}` }))}
+        ctaList={ctaList?.map((cta) => ({ ...cta, href: withLocale(cta.href || cta.action, locale) }))}
         align={introData?.align || 'left'}
         className="mt-10 md:mt-16"
         itemClassName="lnGsapCareerItem"

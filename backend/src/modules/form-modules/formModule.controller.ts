@@ -4,6 +4,7 @@ import prisma from '../../config/database';
 import { asyncHandler } from '../../middleware/errorHandler.middleware';
 import { ValidationError } from '../../types/error.types';
 import {
+  enterpriseFormSubmissionSchema,
   publicFormModuleParamsSchema,
   publicFormSubmissionSchema,
 } from './formModule.validation';
@@ -14,6 +15,25 @@ const formModuleService = new FormModuleService(prisma);
 
 const mapBusinessUnitParam = (value: 'enterprise' | 'fiber' | 'media') => value.toUpperCase() as 'ENTERPRISE' | 'FIBER' | 'MEDIA';
 
+const enterpriseFormTypeToSlug: Record<string, string> = {
+  enterprise_consultation: 'enterprise-consultation',
+  enterprise_consultation_form: 'enterprise-consultation',
+  smb_enterprise: 'smb-enterprise',
+  enterprise_smb_registration: 'smb-enterprise',
+  enterprise_registration_smb: 'smb-enterprise',
+  enterprise_partnership: 'enterprise-partnership',
+  partnership_enterprise: 'enterprise-partnership',
+  suggest_enterprise: 'suggest-enterprise',
+  solution_finder: 'suggest-enterprise',
+  solution_recommender: 'suggest-enterprise',
+  enterprise_suggestion: 'suggest-enterprise',
+  omni_channel: 'omni-channel',
+  enterprise_omni_channel: 'omni-channel',
+  omnichannel: 'omni-channel',
+  event_register: 'event-register',
+  enterprise_event_register: 'event-register',
+};
+
 export const getPublicFormModule = asyncHandler(async (req: Request, res: Response) => {
   try {
     const params = publicFormModuleParamsSchema.parse(req.params);
@@ -22,6 +42,24 @@ export const getPublicFormModule = asyncHandler(async (req: Request, res: Respon
     res.json({
       success: true,
       data: module,
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new ValidationError('Invalid form module route parameters');
+    }
+
+    throw error;
+  }
+});
+
+export const getPublicFormModules = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const params = publicFormModuleParamsSchema.pick({ businessUnit: true }).parse(req.params);
+    const modules = await formModuleService.getPublicFormModules(mapBusinessUnitParam(params.businessUnit));
+
+    res.json({
+      success: true,
+      data: modules,
     });
   } catch (error) {
     if (error instanceof ZodError) {
@@ -56,6 +94,54 @@ export const submitPublicFormModule = asyncHandler(async (req: Request, res: Res
   } catch (error) {
     if (error instanceof ZodError) {
       throw new ValidationError('Invalid form submission payload');
+    }
+
+    throw error;
+  }
+});
+
+export const submitEnterpriseFormModule = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const payload = enterpriseFormSubmissionSchema.parse(req.body);
+    const normalizedFormType = payload.form_type.trim().toLowerCase().replace(/-/g, '_');
+    const slug = enterpriseFormTypeToSlug[normalizedFormType];
+
+    if (!slug) {
+      throw new ValidationError('Unknown enterprise form type');
+    }
+
+    const result = await formModuleService.createSubmission(
+      'ENTERPRISE',
+      slug,
+      {
+        locale: payload.locale,
+        requestId: payload.requestId,
+        sessionId: payload.sessionId,
+        sourcePath: payload.context?.url ?? payload.context?.pageUrl ?? undefined,
+        values: payload.fields,
+        groups: payload.groups,
+        files: payload.files,
+        context: payload.context,
+        formInfo: payload.formInfo,
+        responseContext: payload.responseContext,
+      },
+      {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? null,
+      },
+      { forcePersist: true }
+    );
+
+    res.status(result.persisted ? 201 : 200).json({
+      success: true,
+      message: result.persisted
+        ? 'Enterprise form submission stored successfully'
+        : 'Enterprise form route resolved successfully',
+      data: result,
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new ValidationError('Invalid enterprise form submission payload');
     }
 
     throw error;

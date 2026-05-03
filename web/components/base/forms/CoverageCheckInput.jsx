@@ -509,13 +509,12 @@ function ManualForm({
   const formRef = useFadeIn([]);
   const {
     cityOptions,
-    finalOptions: zipOptions,
     normalizedCity,
     normalizedProvince,
     provinceOptions,
   } = useIndonesiaLocationOptions({
     city: manualData.city,
-    finalLevel: 'zip',
+    finalLevel: 'none',
     province: manualData.province,
   });
 
@@ -534,7 +533,7 @@ function ManualForm({
 
   const builtAddress = useMemo(() =>
     [
-      zipOptions.find((o) => o.value === manualData.zip)?.label,
+      manualData.zip,
       cityOptions.find((o) => o.value === normalizedCity)?.label ?? normalizedCity,
       provinceOptions.find((o) => o.value === normalizedProvince)?.label ?? normalizedProvince,
       showDetailAddress ? manualData.detailAddress : '',
@@ -549,7 +548,6 @@ function ManualForm({
       normalizedProvince,
       provinceOptions,
       showDetailAddress,
-      zipOptions,
     ]
   );
 
@@ -603,10 +601,10 @@ function ManualForm({
         </div>
 
         <div className="lnCoverageCheck__formField">
-          <Select
+          <Input
             id="manual-zip"
             label="Ward / ZIP Code*"
-            options={zipOptions}
+            type="text"
             required
             value={manualData.zip}
             onChange={handleChange}

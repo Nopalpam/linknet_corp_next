@@ -190,6 +190,14 @@ app.use(`${API_PREFIX}/upload`, uploadRoutes);
 import fileRoutes from '@routes/file.routes';
 app.use(`${API_PREFIX}/files`, fileRoutes);
 
+// Component Visibility routes (CMS) - Management Data Components
+import componentVisibilityRoutes from '@routes/componentVisibility.routes';
+app.use(`${API_PREFIX}/cms/component-visibility`, componentVisibilityRoutes);
+
+// Label Data Bank routes (CMS + Public)
+import labelDataBankRoutes from '@routes/labelDataBank.routes';
+app.use(`${API_PREFIX}`, labelDataBankRoutes);
+
 // Page Component routes (CMS) - MUST be before page routes to avoid route conflicts
 import componentRoutes from '@routes/component.routes';
 app.use(`${API_PREFIX}/cms/pages`, componentRoutes);

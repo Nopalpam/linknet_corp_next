@@ -19,57 +19,7 @@ async function seedFooter() {
 
   const footerSettings = [
     {
-      key: 'footer_logo',
-      value: '/assets/logos/linknet-logo.svg',
-      type: SettingType.IMAGE,
-      group: 'footer',
-      label: 'Footer Logo',
-      description: 'Logo displayed in the footer area',
-      isPublic: true,
-      isSystem: true,
-    },
-    {
-      key: 'footer_slogan',
-      value: 'We LINK the nation for better lives',
-      type: SettingType.STRING,
-      group: 'footer',
-      label: 'Footer Slogan',
-      description: 'Tagline displayed below the footer logo',
-      isPublic: true,
-      isSystem: true,
-    },
-    {
-      key: 'footer_address',
-      value: 'Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25. Jakarta 12930, Indonesia.',
-      type: SettingType.STRING,
-      group: 'footer',
-      label: 'Footer Address',
-      description: 'Company address displayed in the footer',
-      isPublic: true,
-      isSystem: true,
-    },
-    {
-      key: 'footer_email',
-      value: 'corporate.secretary@linknet.co.id',
-      type: SettingType.STRING,
-      group: 'footer',
-      label: 'Footer Email',
-      description: 'Contact email displayed in the footer',
-      isPublic: true,
-      isSystem: true,
-    },
-    {
-      key: 'footer_phone',
-      value: '021-29536800',
-      type: SettingType.STRING,
-      group: 'footer',
-      label: 'Footer Phone',
-      description: 'Contact phone displayed in the footer',
-      isPublic: true,
-      isSystem: true,
-    },
-    {
-      key: 'footer_copyright',
+      key: 'footer.copyright',
       value: 'Copyright © 1996 - 2025 PT Link Net Tbk. All Right Reserved.',
       type: SettingType.STRING,
       group: 'footer',
@@ -78,20 +28,6 @@ async function seedFooter() {
       isPublic: true,
       isSystem: true,
     },
-    {
-      key: 'footer_socials',
-      value: [
-        { iconName: 'instagram', href: 'https://instagram.com/linkaboratory' },
-        { iconName: 'youtube', href: 'https://youtube.com/@linknet' },
-      ],
-      type: SettingType.JSON,
-      group: 'footer',
-      label: 'Footer Social Links',
-      description: 'Social media links with icon names (JSON array of {iconName, href})',
-      isPublic: true,
-      isSystem: true,
-    },
-
     // ============================================
     // CLOSING SENTENCE SETTINGS (untuk ClosingSentence component)
     // ============================================
@@ -106,7 +42,7 @@ async function seedFooter() {
       isSystem: true,
     },
     {
-      key: 'closing_overline',
+      key: 'footer.closingSentence_default.overline',
       value: 'Discover Linknet',
       type: SettingType.STRING,
       group: 'footer',
@@ -116,8 +52,11 @@ async function seedFooter() {
       isSystem: true,
     },
     {
-      key: 'closing_title',
-      value: 'Your Trusted Digital Infrastructure Partner',
+      key: 'footer.closingSentence_default.title',
+      value: {
+        en: 'Your Trusted Digital Infrastructure Partner',
+        id: 'Mitra Infrastruktur Digital Tepercaya Anda',
+      },
       type: SettingType.STRING,
       group: 'footer',
       label: 'Closing Title',
@@ -126,8 +65,11 @@ async function seedFooter() {
       isSystem: true,
     },
     {
-      key: 'closing_description',
-      value: 'Empowering businesses and communities with reliable, high-speed connectivity solutions.',
+      key: 'footer.closingSentence_default.description',
+      value: {
+        en: 'Empowering businesses and communities with reliable, high-speed connectivity solutions.',
+        id: 'Memberdayakan bisnis dan komunitas dengan solusi konektivitas cepat dan andal.',
+      },
       type: SettingType.STRING,
       group: 'footer',
       label: 'Closing Description',
@@ -184,7 +126,7 @@ async function seedFooter() {
     { title: 'About Linknet', slug: 'about-us', url: '/about-us', order: 1 },
     { title: 'Management', slug: 'footer-management', url: '/management', order: 2 },
     { title: 'Awards', slug: 'footer-awards', url: '/awards', order: 3 },
-    { title: 'Newsroom', slug: 'footer-newsroom', url: '/newsroom', order: 4 },
+    { title: 'News', slug: 'footer-news', url: '/news', order: 4 },
     { title: 'Career', slug: 'footer-career', url: '/career', order: 5 },
   ];
 

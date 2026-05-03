@@ -29,7 +29,6 @@ export type ComponentType =
   | 'usp_grid'
   | 'usp_grid_slider'
   | 'business_tab'
-  | 'tabs_with_card'
   | 'key_highlight'
   | 'about_with_marquee'
   | 'join_first_squad'

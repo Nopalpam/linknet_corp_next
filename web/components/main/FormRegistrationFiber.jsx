@@ -42,7 +42,7 @@ function FormRegistrationFiberInner({ data = {} }) {
         <Button variant="primary" size="lg" onClick={openInquiry}>
           Inquiry Fiber
         </Button>
-        {eventName && (
+        {/* {eventName && (
           <Button
             variant="primary"
             size="lg"
@@ -59,7 +59,7 @@ function FormRegistrationFiberInner({ data = {} }) {
           >
             Register Event
           </Button>
-        )}
+        )} */}
       </div>
     </section>
   );

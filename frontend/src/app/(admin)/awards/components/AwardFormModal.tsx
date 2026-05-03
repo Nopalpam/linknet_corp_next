@@ -1,10 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { Modal } from "@/components/ui/modal";
 import { awardsServiceNew, Award, CreateAwardData } from "@/services/awards.service.new";
 import { useToast } from "@/context/ToastContext";
+
+function getDisplayImageSrc(value?: string | null): string {
+  const src = value?.trim();
+  if (!src) return "";
+  if (/^(https?:|data:|blob:|\/)/i.test(src)) return src;
+  return `/${src}`;
+}
 
 interface AwardFormModalProps {
   isOpen: boolean;
@@ -27,7 +33,9 @@ export default function AwardFormModal({
     year: new Date().getFullYear(),
     issuer: '',
     description: '',
+    topLogo: '',
     image: '',
+    link: '',
     status: 'ACTIVE',
   });
 
@@ -42,7 +50,9 @@ export default function AwardFormModal({
           year: award.year,
           issuer: award.issuer,
           description: award.description || '',
+          topLogo: award.topLogo || '',
           image: award.image || '',
+          link: award.link || '',
           status: award.status,
         });
       } else {
@@ -51,7 +61,9 @@ export default function AwardFormModal({
           year: new Date().getFullYear(),
           issuer: '',
           description: '',
+          topLogo: '',
           image: '',
+          link: '',
           status: 'ACTIVE',
         });
       }
@@ -209,6 +221,37 @@ export default function AwardFormModal({
             />
           </div>
 
+          {/* Top Logo URL */}
+          <div>
+            <label
+              htmlFor="topLogo"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Top Logo URL
+            </label>
+            <input
+              type="text"
+              id="topLogo"
+              name="topLogo"
+              value={formData.topLogo || ''}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="/assets/logos/awards/logo-swa.png"
+            />
+            {formData.topLogo && (
+              <div className="mt-2 h-12 w-24">
+                <img
+                  src={getDisplayImageSrc(formData.topLogo)}
+                  alt="Top logo preview"
+                  className="h-full w-full rounded object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="48"%3E%3Crect fill="%23eee" width="96" height="48"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Logo%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
           {/* Image URL */}
           <div>
             <label
@@ -227,18 +270,36 @@ export default function AwardFormModal({
               placeholder="Enter image URL"
             />
             {formData.image && (
-              <div className="mt-2 relative h-20 w-20">
-                <Image
-                  src={formData.image}
+              <div className="mt-2 h-20 w-20">
+                <img
+                  src={getDisplayImageSrc(formData.image)}
                   alt="Preview"
-                  fill
-                  className="rounded object-cover"
+                  className="h-full w-full rounded object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23ddd" width="80" height="80"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E';
                   }}
                 />
               </div>
             )}
+          </div>
+
+          {/* URL */}
+          <div>
+            <label
+              htmlFor="link"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              URL
+            </label>
+            <input
+              type="text"
+              id="link"
+              name="link"
+              value={formData.link || ''}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="# or /about-us/awards/detail"
+            />
           </div>
 
           {/* Status */}

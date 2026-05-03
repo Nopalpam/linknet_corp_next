@@ -1,11 +1,6 @@
-import { DataWilayahService } from '@damarkuncoro/data-wilayah-indonesia';
-import { TsDataProvider } from '@damarkuncoro/posindonesia';
-
-const wilayahService = new DataWilayahService();
-const postalDataProvider = new TsDataProvider({
-  maxCacheSize: 64,
-  ttl: 1000 * 60 * 60,
-});
+import cities from '@/data/location/cities.json';
+import provinces from '@/data/location/provinces.json';
+import zips from '@/data/location/zips.json';
 
 const LEGACY_PROVINCE_VALUES = {
   dki: 'DKI Jakarta',
@@ -52,17 +47,25 @@ const LEGACY_CITY_VALUES = {
 };
 
 const PROVINCE_LABEL_OVERRIDES = {
-  'DAERAH ISTIMEWA YOGYAKARTA': 'DI Yogyakarta',
-  'DKI JAKARTA': 'DKI Jakarta',
+  'Daerah Istimewa Yogyakarta': 'DI Yogyakarta',
+  'Dki Jakarta': 'DKI Jakarta',
+};
+
+// The source zip file uses shifted DKI city codes, while the city file uses official city codes.
+const ZIP_CITY_CODE_OVERRIDES = {
+  3171: '3174',
+  3172: '3175',
+  3173: '3171',
+  3174: '3173',
+  3175: '3172',
 };
 
 const provinceValueToCode = new Map();
 const cityOptionsByProvinceValue = new Map();
 const provincePostalIndexCache = new Map();
-const provincePostalIndexPromises = new Map();
 
 function toTitleCase(value) {
-  return value
+  return String(value ?? '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()
@@ -87,52 +90,35 @@ function sortOptions(left, right) {
 }
 
 function formatProvinceLabel(name) {
-  return PROVINCE_LABEL_OVERRIDES[name] ?? toTitleCase(name);
+  const titleName = toTitleCase(name);
+
+  return PROVINCE_LABEL_OVERRIDES[titleName] ?? titleName;
 }
 
-function formatRegencyLabel(name, type, provinceCode) {
-  const baseName = toTitleCase(name);
+function formatCityLabel(name) {
+  const normalizedName = toTitleCase(name);
 
-  if (provinceCode === '31' && type === 'KOTA') {
-    return baseName;
+  if (normalizedName.startsWith('Kota Adm. ')) {
+    return normalizedName.replace('Kota Adm. ', '');
   }
 
-  return type === 'KABUPATEN' ? `Kab. ${baseName}` : `Kota ${baseName}`;
-}
-
-function formatPostalCityLabel(name) {
-  const normalizedName = name.replace(/\s+/g, ' ').trim();
-
-  if (normalizedName.startsWith('KOTA ADM. ')) {
-    return toTitleCase(normalizedName.replace('KOTA ADM. ', ''));
+  if (normalizedName.startsWith('Kab. Adm. ')) {
+    return `Kab. ${normalizedName.replace('Kab. Adm. ', '')}`;
   }
 
-  if (normalizedName.startsWith('KAB. ADM. ')) {
-    return `Kab. ${toTitleCase(normalizedName.replace('KAB. ADM. ', ''))}`;
-  }
-
-  if (normalizedName.startsWith('KOTA ')) {
-    return `Kota ${toTitleCase(normalizedName.replace('KOTA ', ''))}`;
-  }
-
-  if (normalizedName.startsWith('KAB. ')) {
-    return `Kab. ${toTitleCase(normalizedName.replace('KAB. ', ''))}`;
-  }
-
-  if (normalizedName.startsWith('KAB ')) {
-    return `Kab. ${toTitleCase(normalizedName.replace('KAB ', ''))}`;
-  }
-
-  return toTitleCase(normalizedName);
+  return normalizedName;
 }
 
 function formatDistrictLabel(name) {
   return toTitleCase(name);
 }
 
+function normalizeZipCityCode(cityCode) {
+  return ZIP_CITY_CODE_OVERRIDES[cityCode] ?? cityCode;
+}
+
 function buildProvinceOptions() {
-  return wilayahService
-    .getAllProvinces()
+  return provinces
     .map((province) => {
       const label = formatProvinceLabel(province.name);
       const option = { label, value: label };
@@ -146,7 +132,7 @@ function buildProvinceOptions() {
 
 const INDONESIA_PROVINCE_OPTIONS = buildProvinceOptions();
 
-async function getProvincePostalIndex(provinceValue) {
+function buildProvincePostalIndex(provinceValue) {
   const normalizedProvince = normalizeIndonesiaProvinceValue(provinceValue);
   const provinceCode = provinceValueToCode.get(normalizedProvince);
 
@@ -162,72 +148,69 @@ async function getProvincePostalIndex(provinceValue) {
     return cachedIndex;
   }
 
-  const cachedPromise = provincePostalIndexPromises.get(provinceCode);
-  if (cachedPromise) {
-    return cachedPromise;
-  }
+  const cityNameByCode = new Map(
+    cities
+      .filter((city) => city.provinceCode === provinceCode)
+      .map((city) => [city.code, formatCityLabel(city.name)])
+  );
+  const zipOptionsByCity = new Map();
+  const wardZipOptionsByCity = new Map();
 
-  const loadPromise = (async () => {
-    const records = await postalDataProvider.getByProvince(provinceCode);
-    const zipOptionsByCity = new Map();
-    const wardZipOptionsByCity = new Map();
+  zips.forEach((record) => {
+    const cityValue = cityNameByCode.get(normalizeZipCityCode(record.cityCode));
 
-    records.forEach((record) => {
-      const cityValue = formatPostalCityLabel(record.city);
-      const districtLabel = formatDistrictLabel(record.district);
+    if (!cityValue) {
+      return;
+    }
 
-      if (!zipOptionsByCity.has(cityValue)) {
-        zipOptionsByCity.set(cityValue, new Map());
-      }
+    const districtLabel = formatDistrictLabel(record.district);
 
-      if (!wardZipOptionsByCity.has(cityValue)) {
-        wardZipOptionsByCity.set(cityValue, new Map());
-      }
+    if (!zipOptionsByCity.has(cityValue)) {
+      zipOptionsByCity.set(cityValue, new Map());
+    }
 
-      const zipOptions = zipOptionsByCity.get(cityValue);
-      const wardZipOptions = wardZipOptionsByCity.get(cityValue);
+    if (!wardZipOptionsByCity.has(cityValue)) {
+      wardZipOptionsByCity.set(cityValue, new Map());
+    }
 
-      if (!zipOptions.has(record.postalCode)) {
-        zipOptions.set(record.postalCode, {
-          label: `${record.postalCode} - ${districtLabel}`,
-          value: record.postalCode,
-        });
-      }
+    const zipOptions = zipOptionsByCity.get(cityValue);
+    const wardZipOptions = wardZipOptionsByCity.get(cityValue);
 
-      const wardZipValue = `${districtLabel} - ${record.postalCode}`;
+    if (!zipOptions.has(record.zip)) {
+      zipOptions.set(record.zip, {
+        label: `${record.zip} - ${districtLabel}`,
+        value: record.zip,
+      });
+    }
 
-      if (!wardZipOptions.has(wardZipValue)) {
-        wardZipOptions.set(wardZipValue, {
-          label: wardZipValue,
-          value: wardZipValue,
-        });
-      }
-    });
+    const wardZipValue = `${districtLabel} - ${record.zip}`;
 
-    const normalizedIndex = {
-      wardZipOptionsByCity: new Map(
-        Array.from(wardZipOptionsByCity.entries()).map(([city, options]) => [
-          city,
-          Array.from(options.values()).sort(sortOptions),
-        ])
-      ),
-      zipOptionsByCity: new Map(
-        Array.from(zipOptionsByCity.entries()).map(([city, options]) => [
-          city,
-          Array.from(options.values()).sort(sortOptions),
-        ])
-      ),
-    };
+    if (!wardZipOptions.has(wardZipValue)) {
+      wardZipOptions.set(wardZipValue, {
+        label: wardZipValue,
+        value: wardZipValue,
+      });
+    }
+  });
 
-    provincePostalIndexCache.set(provinceCode, normalizedIndex);
-    provincePostalIndexPromises.delete(provinceCode);
+  const normalizedIndex = {
+    wardZipOptionsByCity: new Map(
+      Array.from(wardZipOptionsByCity.entries()).map(([city, options]) => [
+        city,
+        Array.from(options.values()).sort(sortOptions),
+      ])
+    ),
+    zipOptionsByCity: new Map(
+      Array.from(zipOptionsByCity.entries()).map(([city, options]) => [
+        city,
+        Array.from(options.values()).sort(sortOptions),
+      ])
+    ),
+  };
 
-    return normalizedIndex;
-  })();
+  provincePostalIndexCache.set(provinceCode, normalizedIndex);
 
-  provincePostalIndexPromises.set(provinceCode, loadPromise);
-
-  return loadPromise;
+  return normalizedIndex;
 }
 
 export function normalizeIndonesiaProvinceValue(value) {
@@ -261,10 +244,10 @@ export function getIndonesiaCityOptions(provinceValue) {
     return [];
   }
 
-  const options = wilayahService
-    .getRegenciesByProvince(provinceCode)
-    .map((regency) => {
-      const label = formatRegencyLabel(regency.name, regency.type, provinceCode);
+  const options = cities
+    .filter((city) => city.provinceCode === provinceCode)
+    .map((city) => {
+      const label = formatCityLabel(city.name);
       return { label, value: label };
     })
     .sort(sortOptions);
@@ -277,7 +260,7 @@ export function getIndonesiaCityOptions(provinceValue) {
 export async function getIndonesiaZipOptions(provinceValue, cityValue) {
   const normalizedProvince = normalizeIndonesiaProvinceValue(provinceValue);
   const normalizedCity = normalizeIndonesiaCityValue(normalizedProvince, cityValue);
-  const provinceIndex = await getProvincePostalIndex(normalizedProvince);
+  const provinceIndex = buildProvincePostalIndex(normalizedProvince);
 
   return provinceIndex.zipOptionsByCity.get(normalizedCity) ?? [];
 }
@@ -285,7 +268,7 @@ export async function getIndonesiaZipOptions(provinceValue, cityValue) {
 export async function getIndonesiaWardZipOptions(provinceValue, cityValue) {
   const normalizedProvince = normalizeIndonesiaProvinceValue(provinceValue);
   const normalizedCity = normalizeIndonesiaCityValue(normalizedProvince, cityValue);
-  const provinceIndex = await getProvincePostalIndex(normalizedProvince);
+  const provinceIndex = buildProvincePostalIndex(normalizedProvince);
 
   return provinceIndex.wardZipOptionsByCity.get(normalizedCity) ?? [];
 }
@@ -293,14 +276,13 @@ export async function getIndonesiaWardZipOptions(provinceValue, cityValue) {
 export function resolveCachedIndonesiaLocationLabels({ province, city, zip }) {
   const normalizedProvince = normalizeIndonesiaProvinceValue(province);
   const normalizedCity = normalizeIndonesiaCityValue(normalizedProvince, city);
-  const provinceCode = provinceValueToCode.get(normalizedProvince);
-  const provinceIndex = provinceCode ? provincePostalIndexCache.get(provinceCode) : null;
+  const provinceIndex = buildProvincePostalIndex(normalizedProvince);
   const provinceLabel =
     INDONESIA_PROVINCE_OPTIONS.find((option) => option.value === normalizedProvince)?.label ??
     normalizedProvince ??
     '';
   const cityOptions = getIndonesiaCityOptions(normalizedProvince);
-  const zipOptions = provinceIndex?.zipOptionsByCity.get(normalizedCity) ?? [];
+  const zipOptions = provinceIndex.zipOptionsByCity.get(normalizedCity) ?? [];
 
   return {
     cityLabel: cityOptions.find((option) => option.value === normalizedCity)?.label ?? normalizedCity ?? '',

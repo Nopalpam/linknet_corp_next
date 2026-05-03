@@ -74,7 +74,7 @@ export class AwardController {
   // Create new award
   async createAward(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, year, issuer, description, image, order, status } = req.body;
+      const { title, year, issuer, description, topLogo, image, link, order, status } = req.body;
 
       // Validation
       if (!title || title.trim() === '') {
@@ -92,7 +92,9 @@ export class AwardController {
         year,
         issuer: issuer.trim(),
         description: description?.trim(),
+        topLogo,
         image,
+        link,
         order,
         status,
       });
@@ -111,7 +113,7 @@ export class AwardController {
   async updateAward(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { title, year, issuer, description, image, order, status } = req.body;
+      const { title, year, issuer, description, topLogo, image, link, order, status } = req.body;
 
       if (!id) {
         throw new AppError('Award ID is required', 400);
@@ -133,7 +135,9 @@ export class AwardController {
         ...(year !== undefined && { year }),
         ...(issuer !== undefined && { issuer: issuer.trim() }),
         ...(description !== undefined && { description: description?.trim() }),
+        ...(topLogo !== undefined && { topLogo }),
         ...(image !== undefined && { image }),
+        ...(link !== undefined && { link }),
         ...(order !== undefined && { order }),
         ...(status !== undefined && { status }),
       });

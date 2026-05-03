@@ -11,7 +11,7 @@ async function main() {
 
   const pageSettings = [
     {
-      key: 'page_preview_base_url',
+      key: 'pages.preview.base_url',
       value: 'http://localhost:3000',
       type: 'STRING' as SettingType,
       group: 'pages',
@@ -22,7 +22,7 @@ async function main() {
       isSystem: true,
     },
     {
-      key: 'page_preview_path_template',
+      key: 'pages.preview.path_template',
       value: '/pages/{slug}',
       type: 'STRING' as SettingType,
       group: 'pages',

@@ -48,7 +48,7 @@ export default function CardPackage({
         </div>
 
         {description ? (
-          <p className="lnCardPackage__description mt-2 max-w-[260px] text-body-b5 font-regular leading-[1.35] text-secondary line-clamp-3">
+          <p className="lnCardPackage__description mt-4 max-w-[260px] text-body-b5 font-regular leading-[1.35] text-secondary line-clamp-3">
             {description}
           </p>
         ) : null}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -54,7 +54,7 @@ function ToolbarDivider() {
 // TOOLBAR
 // =============================================================================
 
-function EditorToolbar({ editor }: { editor: Editor }) {
+function EditorToolbar({ editor, inlineOnly = false }: { editor: Editor; inlineOnly?: boolean }) {
   const [showSourceCode, setShowSourceCode] = useState(false);
   const [sourceHtml, setSourceHtml] = useState('');
 
@@ -111,33 +111,36 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
-      {/* Heading Dropdown */}
-      <select
-        className="text-xs px-1.5 py-1 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-brand-500"
-        value={
-          editor.isActive('heading', { level: 1 }) ? 'h1' :
-          editor.isActive('heading', { level: 2 }) ? 'h2' :
-          editor.isActive('heading', { level: 3 }) ? 'h3' :
-          editor.isActive('heading', { level: 4 }) ? 'h4' : 'p'
-        }
-        onChange={(e) => {
-          const val = e.target.value;
-          if (val === 'p') {
-            editor.chain().focus().setParagraph().run();
-          } else {
-            const level = parseInt(val.replace('h', '')) as 1 | 2 | 3 | 4;
-            editor.chain().focus().toggleHeading({ level }).run();
-          }
-        }}
-      >
-        <option value="p">Paragraph</option>
-        <option value="h1">Heading 1</option>
-        <option value="h2">Heading 2</option>
-        <option value="h3">Heading 3</option>
-        <option value="h4">Heading 4</option>
-      </select>
+      {!inlineOnly && (
+        <>
+          <select
+            className="text-xs px-1.5 py-1 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-brand-500"
+            value={
+              editor.isActive('heading', { level: 1 }) ? 'h1' :
+              editor.isActive('heading', { level: 2 }) ? 'h2' :
+              editor.isActive('heading', { level: 3 }) ? 'h3' :
+              editor.isActive('heading', { level: 4 }) ? 'h4' : 'p'
+            }
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === 'p') {
+                editor.chain().focus().setParagraph().run();
+              } else {
+                const level = parseInt(val.replace('h', '')) as 1 | 2 | 3 | 4;
+                editor.chain().focus().toggleHeading({ level }).run();
+              }
+            }}
+          >
+            <option value="p">Paragraph</option>
+            <option value="h1">Heading 1</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+            <option value="h4">Heading 4</option>
+          </select>
 
-      <ToolbarDivider />
+          <ToolbarDivider />
+        </>
+      )}
 
       {/* Inline Formatting */}
       <ToolbarBtn onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} title="Bold">
@@ -184,15 +187,18 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 
       <ToolbarDivider />
 
-      {/* Lists */}
-      <ToolbarBtn onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} title="Bullet List">
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
-      </ToolbarBtn>
-      <ToolbarBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} title="Ordered List">
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M10 6h11M10 12h11M10 18h11M3 5l2 1V4M3 11h2l-2 2M3 18h2l-1-1" /></svg>
-      </ToolbarBtn>
+      {!inlineOnly && (
+        <>
+          <ToolbarBtn onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} title="Bullet List">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+          </ToolbarBtn>
+          <ToolbarBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} title="Ordered List">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M10 6h11M10 12h11M10 18h11M3 5l2 1V4M3 11h2l-2 2M3 18h2l-1-1" /></svg>
+          </ToolbarBtn>
 
-      <ToolbarDivider />
+          <ToolbarDivider />
+        </>
+      )}
 
       {/* Insert */}
       <ToolbarBtn onClick={addLink} isActive={editor.isActive('link')} title="Insert Link">
@@ -201,25 +207,29 @@ function EditorToolbar({ editor }: { editor: Editor }) {
       <ToolbarBtn onClick={addImage} title="Insert Image">
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
       </ToolbarBtn>
-      <ToolbarBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} title="Blockquote">
-        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z"/></svg>
-      </ToolbarBtn>
-      <ToolbarBtn
-        onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-        title="Insert Table"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" /></svg>
-      </ToolbarBtn>
-      <ToolbarBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal Line">
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M3 12h18" /></svg>
-      </ToolbarBtn>
+      {!inlineOnly && (
+        <>
+          <ToolbarBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} title="Blockquote">
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z"/></svg>
+          </ToolbarBtn>
+          <ToolbarBtn
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            title="Insert Table"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" /></svg>
+          </ToolbarBtn>
+          <ToolbarBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal Line">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M3 12h18" /></svg>
+          </ToolbarBtn>
+        </>
+      )}
 
       <ToolbarDivider />
 
       {/* Source Code */}
-      <ToolbarBtn onClick={toggleSource} title="Source Code">
+      {/* <ToolbarBtn onClick={toggleSource} title="Source Code">
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-      </ToolbarBtn>
+      </ToolbarBtn> */}
 
       {/* Undo / Redo */}
       <ToolbarBtn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo">
@@ -285,6 +295,14 @@ interface CKEditorWrapperProps {
   placeholder?: string;
   minHeight?: string;
   disabled?: boolean;
+  inlineOnly?: boolean;
+  outputAsSpan?: boolean;
+}
+
+function normalizeParagraphsToSpans(html: string): string {
+  return html
+    .replace(/<p([^>]*)>/gi, '<span$1>')
+    .replace(/<\/p>/gi, '</span>');
 }
 
 const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
@@ -294,6 +312,8 @@ const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
   placeholder,
   minHeight = '200px',
   disabled = false,
+  inlineOnly = false,
+  outputAsSpan = false,
 }) => {
   const editor = useEditor({
     immediatelyRender: false,
@@ -317,7 +337,8 @@ const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
     content: value || '',
     editable: !disabled,
     onUpdate: ({ editor: ed }) => {
-      onChange(ed.getHTML());
+      const html = ed.getHTML();
+      onChange(outputAsSpan ? normalizeParagraphsToSpans(html) : html);
     },
     editorProps: {
       attributes: {
@@ -326,6 +347,15 @@ const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
       },
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    const nextValue = value || '';
+    const currentValue = outputAsSpan ? normalizeParagraphsToSpans(editor.getHTML()) : editor.getHTML();
+    if (currentValue !== nextValue) {
+      editor.commands.setContent(nextValue, { emitUpdate: false });
+    }
+  }, [editor, outputAsSpan, value]);
 
   if (!editor) {
     return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />;
@@ -339,8 +369,8 @@ const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
         </label>
       )}
       <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 transition-colors bg-white dark:bg-gray-800">
-        <EditorToolbar editor={editor} />
-        <TableToolbarMenu editor={editor} />
+        <EditorToolbar editor={editor} inlineOnly={inlineOnly} />
+        {!inlineOnly && <TableToolbarMenu editor={editor} />}
         <EditorContent editor={editor} />
       </div>
     </div>

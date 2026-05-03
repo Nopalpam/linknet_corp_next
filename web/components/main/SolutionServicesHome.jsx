@@ -63,9 +63,10 @@ export default function SolutionServicesHome({
   name      = 'home',
   hideTabs  = false,
   className = '',
+  cmsData = null,
 }) {
   // ── Resolve data ────────────────────────────────────────────────────────────
-  const data = SOLUTION_SERVICES_HOME_DATA[name];
+  const data = cmsData || SOLUTION_SERVICES_HOME_DATA[name];
 
   if (!data) {
     console.warn(`[SolutionServicesHome] Key "${name}" tidak ditemukan di SOLUTION_SERVICES_HOME_DATA.`);

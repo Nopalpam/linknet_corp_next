@@ -14,35 +14,35 @@ export default function CardProduct({
 }) {
   return (
     // Pastikan h-full agar SwiperSlide memiliki tinggi yang sama
-    <div className={`cardProduct flex flex-col bg-light-2 w-full h-full rounded-[20px] md:rounded-[24px] ${className}`}>
+    <div className={`lnCardProduct cardProduct flex flex-col bg-light-2 w-full h-full rounded-[20px] md:rounded-[24px] ${className}`}>
       
       {/* ========================================= */}
       {/* CARD HEADER (White Box) */}
       {/* ========================================= */}
       {/* h-full dan flex flex-col di sini agar deskripsi terdorong ke bawah jika logo&title ringkas */}
-      <div className="cardHeader bg-white rounded-[20px] md:rounded-[24px] shadow-md p-6 md:p-[24px] flex flex-col min-h-[200px] md:min-h-[220px] m-2">
+      <div className="lnCardProduct__header cardHeader bg-white rounded-[20px] md:rounded-[24px] shadow-md p-6 md:p-[24px] flex flex-col min-h-[200px] md:min-h-[220px] m-2">
         
         {/* Kontainer Logo & Title dengan justify-between vertikal */}
         {/* Kita beri min-h agar konsisten jika tinggi logo bervariasi */}
-        <div className="flex flex-col justify-between items-start flex-grow mb-6 gap-4">
+        <div className="lnCardProduct__head flex flex-col justify-between items-start flex-grow mb-6 gap-4">
           {logo && (
             <img 
               src={logo} 
               alt={title || "Product Logo"} 
-              className="w-12 h-12 md:w-14 md:h-14 object-contain block" 
+              className="lnCardProduct__logo w-12 h-12 md:w-14 md:h-14 object-contain block" 
             />
           )}
         </div>
 
-        <div>
+        <div className="lnCardProduct__intro">
           {title && (
-            <h3 className="text-body-b3 font-bold text-neutral-900 mt-auto">
+            <h3 className="lnCardProduct__title text-body-b3 font-bold text-neutral-900 mt-auto">
               {title}
             </h3>
             )}
           
           {desc && (
-            <p className="text-body-b5 text-secondary mt-4">
+            <p className="lnCardProduct__desc text-body-b5 text-secondary mt-4">
               {desc}
             </p>
           )}
@@ -53,30 +53,30 @@ export default function CardProduct({
       {/* CARD BODY (List & Note) */}
       {/* ========================================= */}
       {(bodyTitle || list.length > 0 || note) && (
-        <div className="cardBody pt-2 px-[16px] md:px-[20px] flex-shrink-0">
+        <div className="lnCardProduct__body cardBody pt-2 px-[16px] md:px-[20px] flex-shrink-0">
           
           {bodyTitle && (
-            <h4 className="text-body-b5 text-secondary mb-3">
+            <h4 className="lnCardProduct__bodyTitle text-body-b5 text-secondary mb-3">
               {bodyTitle}
             </h4>
           )}
           
           {list.length > 0 && (
-            <ul className="flex flex-col gap-5">
+            <ul className="lnCardProduct__list flex flex-col gap-5">
               {list.map((item, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-0.5">
+                <li key={index} className="lnCardProduct__listItem flex items-start gap-3">
+                  <div className="lnCardProduct__listIconWrap flex-shrink-0 mt-0.5">
                     {typeof item.icon === 'string' ? (
                       <Icon 
                         name={item.icon} 
-                        className="text-neutral-500" 
+                        className="lnCardProduct__listIcon text-neutral-500" 
                         style={{ '--icon-size': '24px' }} 
                       />
                     ) : (
                       item.icon
                     )}
                   </div>
-                  <span className="text-body-b5 font-medium text-black">
+                  <span className="lnCardProduct__listText text-body-b5 font-medium text-black">
                     {item.text}
                   </span>
                 </li>
@@ -85,7 +85,7 @@ export default function CardProduct({
           )}
 
           {note && (
-            <p className="mt-6 text-caption-c1 text-neutral-400">
+            <p className="lnCardProduct__note mt-6 text-caption-c1 text-neutral-400">
               {note}
             </p>
           )}

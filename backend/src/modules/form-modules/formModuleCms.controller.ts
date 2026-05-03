@@ -168,9 +168,9 @@ export const exportFormModuleSubmissions = [
       const query = formSubmissionQuerySchema.parse(req.query);
       const result = await formModuleService.exportFormSubmissions(params.id, query);
 
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Type', result.contentType);
       res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
-      res.status(200).send(result.csv);
+      res.status(200).send(result.body);
     } catch (error) {
       if (error instanceof ZodError) {
         throw new ValidationError('Invalid form submission export query');

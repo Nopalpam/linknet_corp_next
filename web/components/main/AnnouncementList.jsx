@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchFilterBar from '@/components/base/SearchFilterBar';
 import Icon from '@/components/base/Icon';
+import Intro from '@/components/base/section/Intro';
 
 /**
  * AnnouncementList — Renders announcements from CMS mainData.
@@ -15,6 +16,7 @@ import Icon from '@/components/base/Icon';
  */
 export default function AnnouncementList({
   title,
+  cmsData = null,
   mainData,
   className = '',
 }) {
@@ -24,6 +26,11 @@ export default function AnnouncementList({
 
   const announcements = useMemo(() => mainData?.announcements || [], [mainData]);
   const types = useMemo(() => mainData?.types || [], [mainData]);
+  const introData = cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || (title ? {
+    as: 'h2',
+    title,
+    align: 'left',
+  } : null);
 
   // Pagination from URL
   const pageParam = searchParams.get('page');
@@ -173,7 +180,17 @@ export default function AnnouncementList({
     return (
       <section className={`lnSection ${className}`}>
         <div className="container">
-          {title && <h2 className="text-headline-h2 mb-6">{title}</h2>}
+          {introData && (introData.label || introData.title || introData.description) && (
+            <div className="mb-6">
+              <Intro
+                as={introData.as || 'h2'}
+                label={introData.label}
+                title={introData.title}
+                description={introData.description}
+                align={introData.align || 'left'}
+              />
+            </div>
+          )}
           <p className="text-body-b4 text-secondary">No announcements available.</p>
         </div>
       </section>
@@ -183,7 +200,17 @@ export default function AnnouncementList({
   return (
     <section id="announcement-list-section" className={`bg-light-2 pt-10 pb-24 ${className}`}>
       <div className="container">
-        {title && <h2 className="text-headline-h2 mb-6">{title}</h2>}
+        {introData && (introData.label || introData.title || introData.description) && (
+          <div className="mb-8 md:mb-10">
+            <Intro
+              as={introData.as || 'h2'}
+              label={introData.label}
+              title={introData.title}
+              description={introData.description}
+              align={introData.align || 'left'}
+            />
+          </div>
+        )}
 
         {/* Search & Filters */}
         <div className="mb-4">

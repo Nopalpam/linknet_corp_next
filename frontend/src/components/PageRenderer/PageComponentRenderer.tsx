@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { resolveIntroTextValue } from "../../../../shared/presentation/intro";
 import type { PageComponent } from "@/services/pages.service";
 
 /**
@@ -302,6 +303,10 @@ function BusinessTabComponent({ data }: { data: Record<string, any> }) {
   const { intro_label, intro_title, intro_description, tabs = [], bg_color } = data;
 
   const [activeTab, setActiveTab] = React.useState(0);
+  const introLabel = resolveIntroTextValue(intro_label);
+  const introTitle = resolveIntroTextValue(intro_title);
+  const introDescription = resolveIntroTextValue(intro_description);
+  const activeTabData = tabs[activeTab] || null;
 
   return (
     <section
@@ -311,14 +316,9 @@ function BusinessTabComponent({ data }: { data: Record<string, any> }) {
       <div className="container mx-auto px-4">
         {/* Intro */}
         <div className="text-center mb-12">
-          {typeof intro_label === "string" && <span className="text-sm font-semibold text-brand-600 uppercase tracking-wider">{intro_label}</span>}
-          {typeof intro_label === "object" && intro_label?.en && <span className="text-sm font-semibold text-brand-600 uppercase tracking-wider">{intro_label.en}</span>}
-          
-          {typeof intro_title === "string" && <h2 className="text-3xl md:text-4xl font-bold mt-2">{intro_title}</h2>}
-          {typeof intro_title === "object" && intro_title?.en && <h2 className="text-3xl md:text-4xl font-bold mt-2">{intro_title.en}</h2>}
-          
-          {typeof intro_description === "string" && <p className="text-gray-600 mt-4 max-w-2xl mx-auto">{intro_description}</p>}
-          {typeof intro_description === "object" && intro_description?.en && <p className="text-gray-600 mt-4 max-w-2xl mx-auto">{intro_description.en}</p>}
+          {introLabel && <span className="text-sm font-semibold text-brand-600 uppercase tracking-wider">{introLabel}</span>}
+          {introTitle && <h2 className="text-3xl md:text-4xl font-bold mt-2">{introTitle}</h2>}
+          {introDescription && <p className="text-gray-600 mt-4 max-w-2xl mx-auto">{introDescription}</p>}
         </div>
 
         {/* Tab Navigation */}
@@ -335,41 +335,41 @@ function BusinessTabComponent({ data }: { data: Record<string, any> }) {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  {tab.name}
+                  {resolveIntroTextValue(tab.name)}
                 </button>
               ))}
             </div>
 
             {/* Tab Content */}
-            {tabs[activeTab] && (
+            {activeTabData && (
               <div
                 className="relative rounded-xl overflow-hidden min-h-[400px] bg-cover bg-center"
                 style={{
-                  backgroundImage: tabs[activeTab].background_image
-                    ? `url(${tabs[activeTab].background_image})`
+                  backgroundImage: activeTabData.background_image
+                    ? `url(${activeTabData.background_image})`
                     : undefined,
-                  backgroundPosition: tabs[activeTab].bg_position || "center",
+                  backgroundPosition: activeTabData.bg_position || "center",
                 }}
               >
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative p-8 md:p-12 text-white flex flex-col justify-center min-h-[400px]">
-                  {tabs[activeTab].logo_image && (
+                  {activeTabData.logo_image && (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={tabs[activeTab].logo_image}
-                      alt={tabs[activeTab].name}
+                      src={activeTabData.logo_image}
+                      alt={resolveIntroTextValue(activeTabData.name)}
                       className="h-10 mb-6"
                       loading="lazy"
                     />
                   )}
-                  <h3 className="text-2xl md:text-3xl font-bold mb-4">{tabs[activeTab].title}</h3>
-                  <p className="text-lg opacity-90 max-w-2xl mb-6">{tabs[activeTab].description}</p>
-                  {tabs[activeTab].cta_text && tabs[activeTab].cta_link && (
+                  <h3 className="text-2xl md:text-3xl font-bold mb-4">{resolveIntroTextValue(activeTabData.title)}</h3>
+                  <p className="text-lg opacity-90 max-w-2xl mb-6">{resolveIntroTextValue(activeTabData.description)}</p>
+                  {activeTabData.cta_text && activeTabData.cta_link && (
                     <a
-                      href={tabs[activeTab].cta_link}
+                      href={activeTabData.cta_link}
                       className="inline-block bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition w-fit"
                     >
-                      {tabs[activeTab].cta_text}
+                      {resolveIntroTextValue(activeTabData.cta_text)}
                     </a>
                   )}
                 </div>
@@ -406,8 +406,8 @@ function NewsHighlightComponent({ data }: { data: Record<string, any> }) {
   const [loading, setLoading] = React.useState(true);
 
   // Use legacy fields if new ones not provided
-  const finalIntroLabel = introLabel || intro_label;
-  const finalIntroTitle = introTitle || intro_title;
+  const finalIntroLabel = resolveIntroTextValue(introLabel || intro_label);
+  const finalIntroTitle = resolveIntroTextValue(introTitle || intro_title);
   const finalBgSection = bgSection || bg_section || "bg-gray-50";
   const finalFeaturedCount = featuredCount || featured_count || 1;
   const finalGridCount = gridCount || grid_count || 3;

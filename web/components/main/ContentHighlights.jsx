@@ -9,7 +9,7 @@ import Intro from '../base/section/Intro';
 import SegmentPicker from '../base/SegmentPicker';
 import CardNews from '../base/cards/CardNews';
 import CardEvent from '../base/cards/CardEvent';
-import LinknetLink from '../base/Link';
+import CTAList from '../base/section/CTAList';
 import Icon from '../base/Icon';
 
 import { CONTENT_HIGHLIGHT_DATA } from '@/data/components/contentHighlight';
@@ -25,11 +25,11 @@ const TAB_OPTIONS = [
 const VIEW_ALL_CONFIG = {
   'business-insight': {
     label: 'View All Business Insight',
-    href: '/newsroom/category/press-release',
+    href: '/news/category/press-release',
   },
   news: {
     label: 'View All News',
-    href: '/newsroom/category/news',
+    href: '/news/category/news',
   },
   event: {
     label: 'View All Event',
@@ -58,10 +58,11 @@ function sortByDateDesc(items, getDate) {
 export default function ContentHighlights({
   name = 'home',
   className = '',
+  cmsData = null,
 }) {
   const params = useParams();
   const locale = params?.locale || 'en';
-  const sectionData = CONTENT_HIGHLIGHT_DATA[name] || {};
+  const sectionData = cmsData || CONTENT_HIGHLIGHT_DATA[name] || {};
   const [activeTab, setActiveTab] = useState(TAB_OPTIONS[0].value);
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [isBeginning, setIsBeginning] = useState(true);
@@ -135,7 +136,17 @@ export default function ContentHighlights({
     setIsEnd(swiper.isEnd);
   };
 
-  if (!CONTENT_HIGHLIGHT_DATA[name]) return null;
+  if (!sectionData || Object.keys(sectionData).length === 0) return null;
+
+  const ctaList = Array.isArray(sectionData.ctaList) && sectionData.ctaList.length > 0
+    ? sectionData.ctaList
+    : [{
+        label: activeViewAll.label,
+        text: activeViewAll.label,
+        href: activeViewAll.href,
+        variant: 'secondary-outline',
+        size: 'lg',
+      }];
 
   return (
     <section
@@ -207,7 +218,7 @@ export default function ContentHighlights({
                           title={item.title}
                           author={item.author}
                           date={item.newsDate}
-                          href={withLocale(`/newsroom/${item.slug}`, locale)}
+                          href={withLocale(`/news/${item.slug}`, locale)}
                           className="h-full"
                         />
                       )}
@@ -249,14 +260,15 @@ export default function ContentHighlights({
         </div>
 
         <div className="mt-10 flex justify-center md:mt-14">
-          <LinknetLink
-            href={withLocale(activeViewAll.href, locale)}
-            variant="secondary"
-            outline
-            size="lg"
-          >
-            {activeViewAll.label}
-          </LinknetLink>
+          <CTAList
+            ctaList={ctaList.map((cta) => ({
+              ...cta,
+              href: withLocale(cta.href || cta.action, locale),
+            }))}
+            align="center"
+            defaultVariant="secondary-outline"
+            defaultSize="lg"
+          />
         </div>
       </div>
     </section>

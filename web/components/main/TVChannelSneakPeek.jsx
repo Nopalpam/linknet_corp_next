@@ -26,12 +26,13 @@ function withLocale(href, locale) {
 
 export default function TVChannelSneakPeek({
   name = 'home',
-  className = ''
+  className = '',
+  cmsData = null
 }) {
   const sectionRef = useRef(null);
   const params = useParams();
   const locale = params?.locale || 'en';
-  const sectionData = TV_CHANNEL_SNEAK_PEEK_DATA[name];
+  const sectionData = cmsData || TV_CHANNEL_SNEAK_PEEK_DATA[name];
   const tabs = sectionData?.tabs || [];
   const initialTab = sectionData?.config?.initialTab || tabs[0]?.value || 'all';
   const [tabState, setTabState] = useState({

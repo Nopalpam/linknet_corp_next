@@ -10,10 +10,43 @@ import { useParams } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 
-import { NEWS_FEATURED_DATA } from '../../data/components/newsFeatured';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+function uniqueNews(items) {
+  const seen = new Set();
+  return (items || []).filter((item) => {
+    if (!item?.id) return Boolean(item);
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function sortNews(items, order) {
+  if (!Array.isArray(items)) return [];
+  if (!['latest', 'oldest', 'alphabetical'].includes(order)) return items;
+
+  return [...items].sort((a, b) => {
+    if (order === 'alphabetical') {
+      return String(a.title_en || a.title || '').localeCompare(String(b.title_en || b.title || ''));
+    }
+
+    const left = new Date(a.news_date || a.newsDate || a.created_at || a.createdDate || 0).getTime();
+    const right = new Date(b.news_date || b.newsDate || b.created_at || b.createdDate || 0).getTime();
+    return order === 'oldest' ? left - right : right - left;
+  });
+}
+
+function orderNewsByIds(items, ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return items;
+  const byId = new Map((items || []).map((item) => [item.id, item]));
+  return ids.map((id) => byId.get(id)).filter(Boolean);
+}
 
 export default function NewsFeatured({
   name = 'home',
+  cmsData = null,
+  mainData = null,
   className = "",
   hideCta = false // 1. Tambahkan prop hideCta dengan default false
 }) {
@@ -21,11 +54,52 @@ export default function NewsFeatured({
     const params = useParams();
   const locale = params.locale || 'en';
 
-  const sectionData = NEWS_FEATURED_DATA[name];
+  const sectionData = cmsData || {};
 
-  if (!sectionData || !sectionData.featuredNews) return null;
+  const { config, ctaList } = sectionData;
+  const introData = sectionData.introData || sectionData.sectionIntro || sectionData.intro;
+  const source = sectionData.source || sectionData.data_source || 'manual';
+  const selectedNewsIds = sectionData.news_ids || sectionData.newsIds || sectionData.selected_news_ids || sectionData.selectedNewsIds || [];
+  const [clientHighlights, setClientHighlights] = React.useState([]);
+  React.useEffect(() => {
+    if (source !== 'cms_highlights' && source !== 'news_highlights') return;
+    if (mainData?.featured?.length || mainData?.grid?.length || mainData?.news?.length) return;
 
-  const { config, introData, featuredNews, ctaList } = sectionData;
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/public/news/highlights?limit=${sectionData.limit || sectionData.featured_count || 5}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!cancelled) setClientHighlights((json?.data || []).map((item) => item.news || item));
+      })
+      .catch((error) => console.error('Error fetching news highlights:', error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [source, mainData, sectionData.limit, sectionData.featured_count]);
+  const mainNews = mainData?.news?.length
+    ? mainData.news
+    : [
+        ...(mainData?.featured || []),
+        ...(mainData?.grid || []),
+        ...clientHighlights,
+      ];
+  const cmsHighlightNews = uniqueNews(mainNews);
+  const manualNews = sectionData.featuredNews || sectionData.items || [];
+  const featuredNews = React.useMemo(() => {
+    if (source === 'selected_news') {
+      return orderNewsByIds(cmsHighlightNews, selectedNewsIds);
+    }
+
+    if (source === 'cms_highlights' || source === 'news_highlights') {
+      return sortNews(cmsHighlightNews, sectionData.order);
+    }
+
+    return sortNews(manualNews.length > 0 ? manualNews : cmsHighlightNews, sectionData.order);
+  }, [source, cmsHighlightNews, manualNews, selectedNewsIds, sectionData.order]);
+
+  if (!sectionData || Object.keys(sectionData).length === 0) return null;
+  if (!featuredNews || featuredNews.length === 0) return null;
   const {
     sectionId,
     className: configClassName = "",
@@ -39,8 +113,34 @@ export default function NewsFeatured({
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
-  const topNews = featuredNews.slice(0, 2);
-  const bottomNews = featuredNews.slice(2);
+  const localizeNewsTitle = (news) => {
+    if (locale === 'id' && news.title_id) return news.title_id;
+    if (news.title && typeof news.title === 'object') {
+      return news.title[locale] || news.title.en || news.title.id || '';
+    }
+    return news.title_en || news.title || '';
+  };
+
+  const localizeCategoryName = (category) => {
+    if (!category) return '';
+    if (locale === 'id' && category.name_id) return category.name_id;
+    if (category.label && typeof category.label === 'object') {
+      return category.label[locale] || category.label.en || category.label.id || '';
+    }
+    return category.name_en || category.label || category.name || '';
+  };
+
+  const normalizeNews = (news) => ({
+    ...news,
+    image: news.news_thumbnail || news.image,
+    title: localizeNewsTitle(news),
+    categoryLabel: localizeCategoryName(news.news_categories || news.category),
+    newsDate: news.news_date || news.newsDate,
+  });
+
+  const normalizedNews = featuredNews.map(normalizeNews);
+  const topNews = normalizedNews.slice(0, 2);
+  const bottomNews = normalizedNews.slice(2);
 
   return (
     <section
@@ -89,11 +189,11 @@ export default function NewsFeatured({
                   <CardNews
                     variant="featured"
                     image={news.image}
-                    badgeText={news.category?.label}
+                    badgeText={news.categoryLabel}
                     title={news.title}
-                    author={news.author}
+                    author={news.author || 'Linknet'}
                     date={news.newsDate}
-                    href={`/${locale}/newsroom/${news.slug}`}
+                    href={`/${locale}/news/${news.slug}`}
                     className="h-full"
                   />
                 </SwiperSlide>
@@ -110,11 +210,11 @@ export default function NewsFeatured({
                   <CardNews
                     variant="default"
                     image={news.image}
-                    badgeText={news.category?.label}
+                    badgeText={news.categoryLabel}
                     title={news.title}
-                    author={news.author}
+                    author={news.author || 'Linknet'}
                     date={news.newsDate}
-                    href={`/${locale}/newsroom/${news.slug}`}
+                    href={`/${locale}/news/${news.slug}`}
                   />
               </div>
             ))}

@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getComponentsByCategory } from './registry';
 import { usePageBuilder } from './context';
 import { useDraggable } from '@dnd-kit/core';
@@ -98,8 +98,36 @@ const CATEGORY_CONFIG: Record<string, { label: string; order: number }> = {
 // =============================================================================
 
 export function Sidebar() {
-  const componentsByCategory = getComponentsByCategory();
+  const allComponentsByCategory = getComponentsByCategory();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ── Component visibility filter ─────────────────────────────────────────
+  // Fetches the set of INACTIVE component keys from the backend.
+  // Components NOT in the DB default to ACTIVE (backward compatible).
+  const [inactiveKeys, setInactiveKeys] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    fetch(`${API_URL}/api/v1/cms/component-visibility/inactive-keys`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.data) setInactiveKeys(new Set(json.data as string[]));
+      })
+      .catch(() => {
+        // Network/auth error — show all components (fail open)
+      });
+  }, []);
+
+  // Filter registry to only ACTIVE (not in inactiveKeys)
+  const componentsByCategory = Object.fromEntries(
+    Object.entries(allComponentsByCategory).map(([cat, comps]) => [
+      cat,
+      comps.filter((c) => !inactiveKeys.has(c.type)),
+    ])
+  );
 
   // Sort categories by configured order
   const sortedCategories = Object.entries(componentsByCategory)

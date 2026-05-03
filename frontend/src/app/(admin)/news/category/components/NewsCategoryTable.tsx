@@ -49,7 +49,8 @@ export default function NewsCategoryTable({
         <thead>
           <tr className="border-b border-gray-200 text-left dark:border-gray-700">
             <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">Order</th>
-            <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">Category Name</th>
+            <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">Category Name (EN)</th>
+            <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">Category Name (ID)</th>
             <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">Slug</th>
             <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">News Count</th>
             <th className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">Status</th>
@@ -67,6 +68,11 @@ export default function NewsCategoryTable({
                 <td className="px-4 py-3">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {category.name_en}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {category.name_id || "-"}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">

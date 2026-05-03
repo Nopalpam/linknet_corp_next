@@ -11,12 +11,13 @@ import { TV_HIGHLIGHT_SLIDERS_DATA } from '@/data/components/tvHighlightSliders'
 
 export default function TVHighlightSliders({
   name = 'today-highlight',
-  className = ''
+  className = '',
+  cmsData = null
 }) {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
-  const sectionData = TV_HIGHLIGHT_SLIDERS_DATA[name];
+  const sectionData = cmsData || TV_HIGHLIGHT_SLIDERS_DATA[name];
 
   if (!sectionData) return null;
 

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import { Award } from "@/services/awards.service";
 import {
   Table,
@@ -10,6 +9,13 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+
+function getDisplayImageSrc(value?: string | null): string {
+  const src = value?.trim();
+  if (!src) return "";
+  if (/^(https?:|data:|blob:|\/)/i.test(src)) return src;
+  return `/${src}`;
+}
 
 interface AwardsTableProps {
   awards: Award[];
@@ -106,6 +112,12 @@ export default function AwardsTable({
                 isHeader
                 className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300"
               >
+                Top Logo
+              </TableCell>
+              <TableCell
+                isHeader
+                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300"
+              >
                 Year
               </TableCell>
               <TableCell
@@ -138,11 +150,10 @@ export default function AwardsTable({
                   <div className="flex items-center gap-3">
                     {award.image && (
                       <div className="relative h-10 w-10 flex-shrink-0">
-                        <Image
-                          src={award.image}
+                        <img
+                          src={getDisplayImageSrc(award.image)}
                           alt={award.title}
-                          fill
-                          className="rounded object-cover"
+                          className="h-full w-full rounded object-cover"
                         />
                       </div>
                     )}
@@ -157,6 +168,19 @@ export default function AwardsTable({
                       )}
                     </div>
                   </div>
+                </TableCell>
+                <TableCell className="px-4 py-4">
+                  {award.topLogo ? (
+                    <div className="relative h-8 w-20">
+                      <img
+                        src={getDisplayImageSrc(award.topLogo)}
+                        alt={`${award.title} logo`}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-gray-900 dark:text-white">
                   {award.year}

@@ -599,7 +599,7 @@ function SolutionsCategoryGroup({ titleCategory, descCategory, items }) {
 /** Lookup map dibuat sekali di module level (tidak perlu re-compute per render) */
 const SOLUTIONS_LOOKUP = buildLookupMap(SOLUTIONS_DATA);
 
-export default function SolutionsFiltered({ name = 'enterprise' }) {
+export default function SolutionsFiltered({ name = 'enterprise', cmsData = null }) {
   const searchParams = useSearchParams();
   const initialIndustryFilter = useMemo(() => {
     const queryIndustry = searchParams.get('industry');
@@ -626,7 +626,7 @@ export default function SolutionsFiltered({ name = 'enterprise' }) {
   );
 
   // ── 1. Ambil config ────────────────────────────────────────────────────────
-  const config = SOLUTIONS_FILTERED_CONFIG[name];
+  const config = cmsData || SOLUTIONS_FILTERED_CONFIG[name];
 
   // ── 2. Resolve semua kategori beserta item-itemnya ─────────────────────────
   //    Setiap entry di config.category diubah menjadi:

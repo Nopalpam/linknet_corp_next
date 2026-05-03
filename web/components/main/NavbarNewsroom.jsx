@@ -1,26 +1,110 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { NEWS_CATEGORIES } from '@/data/components/newsCategory';
 import Icon from '../base/Icon';
 import Button from '../base/Button';
 
-export default function NavbarNewsroom() {
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
+
+const normalizeCategory = (category) => ({
+  id: category.id || category.slug,
+  label: category.label || category.name_en || category.name || category.slug,
+  label_id: category.label_id || category.labelId || category.name_id || category.nameId || '',
+  label_en: category.label_en || category.labelEn || category.name_en || category.nameEn || category.label || category.name || '',
+  name_id: category.name_id || category.nameId || '',
+  name_en: category.name_en || category.nameEn || '',
+  slug: category.slug || '',
+  position: Number.isFinite(Number(category.position)) ? Number(category.position) : 0,
+});
+
+const defaultLatest = normalizeCategory({
+  label: 'Latest',
+  label_id: 'Terbaru',
+  slug: 'latest',
+  position: -1,
+});
+
+export default function NavbarNewsroom({
+  label = 'News',
+  categorySortBy = 'default',
+}) {
   const params = useParams();
   const locale = params.locale || 'en';
   const currentSlug = params.slug || params.categorySlug || ''; 
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [cmsCategories, setCmsCategories] = useState([]);
   const dropdownRef = useRef(null);
 
+  const getCategoryLabel = useCallback((item) => {
+    if (!item) return '';
+    if (locale === 'id') {
+      return item.name_id || item.label_id || item.label || item.name_en || item.label_en || item.slug;
+    }
+    return item.name_en || item.label_en || item.label || item.name_id || item.label_id || item.slug;
+  }, [locale]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/news-categories`, { cache: 'no-store' });
+        if (!res.ok) return;
+
+        const json = await res.json();
+        if (isMounted && Array.isArray(json.data)) {
+          setCmsCategories(json.data.map(normalizeCategory).filter((item) => item.slug));
+        }
+      } catch {
+        if (isMounted) setCmsCategories([]);
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // 1. Setup Data
-  const navItems = [
-    { label: 'All', slug: '' },
-    ...Object.values(NEWS_CATEGORIES)
-  ];
+  const navItems = useMemo(() => {
+    const sourceCategories = cmsCategories;
+    const cmsLatest = sourceCategories.find((item) => item.slug === 'latest');
+
+    const categoryMap = new Map();
+    sourceCategories.forEach((item) => {
+      if (item.slug && item.slug !== 'latest') {
+        categoryMap.set(item.slug, item);
+      }
+    });
+
+    const sortedCategories = [...categoryMap.values()].sort((a, b) => {
+      if (categorySortBy === 'label_asc') {
+        return String(getCategoryLabel(a) || '').localeCompare(String(getCategoryLabel(b) || ''));
+      }
+      if (categorySortBy === 'label_desc') {
+        return String(getCategoryLabel(b) || '').localeCompare(String(getCategoryLabel(a) || ''));
+      }
+      if (categorySortBy === 'slug_asc') {
+        return String(a.slug || '').localeCompare(String(b.slug || ''));
+      }
+      if (categorySortBy === 'slug_desc') {
+        return String(b.slug || '').localeCompare(String(a.slug || ''));
+      }
+      return (a.position || 0) - (b.position || 0);
+    });
+
+    return [
+      { label: locale === 'id' ? 'Semua' : 'All', label_en: 'All', label_id: 'Semua', slug: '' },
+      { ...defaultLatest, ...cmsLatest, label: cmsLatest?.label || defaultLatest.label, label_en: cmsLatest?.label_en || defaultLatest.label_en || 'Latest', label_id: cmsLatest?.label_id || defaultLatest.label_id || 'Terbaru', slug: 'latest' },
+      ...sortedCategories,
+    ];
+  }, [categorySortBy, cmsCategories, getCategoryLabel, locale]);
 
   // Maksimal 4 kategori di desktop, sisanya masuk dropdown
   const desktopVisibleItems = navItems.slice(0, 4);
@@ -76,7 +160,7 @@ export default function NavbarNewsroom() {
       <div className="px-[16px] md:px-10 flex items-center justify-between h-12 md:h-12">
         
         {/* Sisi Kiri: Title */}
-        <h1 className="text-body-b4 font-medium text-black">Newsroom</h1>
+        <h1 className="text-body-b4 font-medium text-black">{label}</h1>
 
         {/* Sisi Kanan: Tabs & Dropdown */}
         <div className="flex items-center gap-1 relative" ref={dropdownRef}>
@@ -87,7 +171,7 @@ export default function NavbarNewsroom() {
           <div className="hidden md:flex items-center gap-1">
             {desktopVisibleItems.map((item) => {
               const isActive = currentSlug === item.slug;
-              const href = item.slug ? `/${locale}/newsroom/category/${item.slug}` : `/${locale}/newsroom`;
+              const href = item.slug ? `/${locale}/news/category/${item.slug}` : `/${locale}/news`;
 
               return (
                 <Link
@@ -99,7 +183,7 @@ export default function NavbarNewsroom() {
                       : 'text-secondary hover:text-neutral-800 hover:bg-neutral-50'
                   }`}
                 >
-                  {item.label}
+                  {getCategoryLabel(item)}
                 </Link>
               );
             })}
@@ -110,7 +194,7 @@ export default function NavbarNewsroom() {
           {/* ========================================= */}
           <div className="flex md:hidden items-center mr-1">
             <div className="px-4 py-1.5 rounded-full text-body-b5 font-medium bg-light-3 text-black pointer-events-none">
-              {activeItem.label}
+              {getCategoryLabel(activeItem)}
             </div>
           </div>
 
@@ -139,7 +223,7 @@ export default function NavbarNewsroom() {
               {/* Dropdown Desktop: Hanya munculkan sisa data (>4) */}
               {desktopDropdownItems.length > 0 && desktopDropdownItems.map(item => {
                 const isActive = currentSlug === item.slug;
-                const href = item.slug ? `/${locale}/newsroom/category/${item.slug}` : `/${locale}/newsroom`;
+                const href = item.slug ? `/${locale}/news/category/${item.slug}` : `/${locale}/news`;
                 return (
                   <Link
                     key={`desk-${item.slug}`}
@@ -147,9 +231,9 @@ export default function NavbarNewsroom() {
                     onClick={() => setIsDropdownOpen(false)}
                     className={`hidden md:block px-4 py-2.5 text-sm font-medium transition-colors ${
                       isActive ? 'text-yellow-500 bg-yellow-50/50' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-                    }`}
+                  }`}
                   >
-                    {item.label}
+                    {getCategoryLabel(item)}
                   </Link>
                 );
               })}
@@ -158,7 +242,7 @@ export default function NavbarNewsroom() {
               {navItems.map(item => {
                 if (item.slug === activeItem.slug) return null; // Sembunyikan yang aktif karena sudah jadi Pill
 
-                const href = item.slug ? `/${locale}/newsroom/category/${item.slug}` : `/${locale}/newsroom`;
+                const href = item.slug ? `/${locale}/news/category/${item.slug}` : `/${locale}/news`;
                 return (
                   <Link
                     key={`mob-${item.slug}`}
@@ -166,7 +250,7 @@ export default function NavbarNewsroom() {
                     onClick={() => setIsDropdownOpen(false)}
                     className="block md:hidden px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
                   >
-                    {item.label}
+                    {getCategoryLabel(item)}
                   </Link>
                 );
               })}

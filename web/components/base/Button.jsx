@@ -1,3 +1,14 @@
+import Icon from './Icon';
+
+function renderButtonIcon(icon) {
+  if (!icon) return null;
+  if (typeof icon !== 'string') return icon;
+  if (icon.startsWith('/') || icon.startsWith('http')) {
+    return <img src={icon} alt="" className="h-[1em] w-[1em] object-contain" aria-hidden="true" />;
+  }
+  return <Icon name={icon} />;
+}
+
 export default function Button({ 
   children, 
   variant = 'primary', // primary, secondary, warning, info, danger, link
@@ -35,9 +46,9 @@ export default function Button({
       disabled={disabled}
       {...props}
     >
-      {iconLeft && <span style={{ display: 'flex' }}>{iconLeft}</span>}
+      {iconLeft && <span style={{ display: 'flex' }}>{renderButtonIcon(iconLeft)}</span>}
       {children}
-      {iconRight && <span style={{ display: 'flex' }}>{iconRight}</span>}
+      {iconRight && <span style={{ display: 'flex' }}>{renderButtonIcon(iconRight)}</span>}
     </button>
   );
 }

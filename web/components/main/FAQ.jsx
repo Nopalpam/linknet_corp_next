@@ -27,11 +27,13 @@ export default function Faq({ cmsData = null }) {
         config: cmsData.config || {},
         introData: cmsData.introData || {
           as: 'h2',
-          label: cmsData.label,
-          title: cmsData.title,
-          description: cmsData.description,
-          align: cmsData.align || 'left',
+          // Legacy flat-field fallback (pre-sectionIntro era)
+          label: cmsData.label || '',
+          title: cmsData.title || '',
+          description: cmsData.description || '',
+          align: cmsData.align || 'center',
         },
+        // Support both faqList (new mapProps output) and items (old mapProps output)
         faqList: cmsData.faqList || cmsData.items || [],
         textCTA: cmsData.textCTA || 'See More',
         textCTA_collapse: cmsData.textCTA_collapse || 'Show Less',
@@ -46,7 +48,7 @@ export default function Faq({ cmsData = null }) {
   const initialItemsCount = 5;
   const displayedFaqs = showAll ? faqList : faqList.slice(0, initialItemsCount);
   const getAnswerMarkup = (answer) =>
-    answer
+    (answer || '')
       .replaceAll('text-white underline', 'text-neutral-900 underline')
       .replaceAll('text-white', 'text-neutral-900');
 

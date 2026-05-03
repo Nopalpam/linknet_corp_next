@@ -13,6 +13,10 @@ const Input = forwardRef(({
   const isEmailValid = (raw) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test((raw || '').trim());
   const autoFormatPhone = (raw) => onlyDigits(raw).replace(/(.{4})/g, '$1 ').trim();
 
+  useEffect(() => {
+    setInternalValue(props.value || props.defaultValue || '');
+  }, [props.value, props.defaultValue]);
+
   // Fungsi sentral untuk mengecek validasi
   const validateField = (val) => {
     if (required && !val.trim()) {

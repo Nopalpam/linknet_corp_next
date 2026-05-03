@@ -85,6 +85,7 @@ export class NewsCategoryService {
     if (search) {
       where.OR = [
         { name_en: { contains: search, mode: 'insensitive' } },
+        { name_id: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } },
       ];
     }
@@ -208,8 +209,8 @@ export class NewsCategoryService {
     }
 
     let slug = existingCategory.slug;
-    if (data.name_en && data.name_en !== existingCategory.name_en) {
-      const baseSlug = data.slug || slugify(data.name_en, { lower: true, strict: true });
+    if ((data.name_en && data.name_en !== existingCategory.name_en) || (data.slug && data.slug !== existingCategory.slug)) {
+      const baseSlug = data.slug || slugify(data.name_en || existingCategory.name_en, { lower: true, strict: true });
       slug = baseSlug;
       let counter = 1;
 

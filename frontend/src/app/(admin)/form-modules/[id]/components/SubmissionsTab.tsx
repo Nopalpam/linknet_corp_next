@@ -57,13 +57,6 @@ const COMPANY_FIELD_CANDIDATES = [
   'Company Name',
 ] as const;
 
-const SOURCE_FIELD_CANDIDATES = [
-  'source',
-  'sourceWebsite',
-  'Source_Website__c',
-  'sourcePath',
-] as const;
-
 function resolveSubmissionFieldValue(
   submission: FormSubmission,
   candidates: readonly string[]
@@ -152,11 +145,14 @@ function DatePickerField({ label, value, onChange, min, max }: DatePickerFieldPr
 export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
   const toast = useToast();
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
-  const [needsOptions, setNeedsOptions] = useState<string[]>([]);
+  const [formChannelOptions, setFormChannelOptions] = useState<string[]>([]);
+  const [sourceOptions, setSourceOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedNeeds, setSelectedNeeds] = useState("");
+  const [selectedFormChannel, setSelectedFormChannel] = useState("");
+  const [selectedSource, setSelectedSource] = useState("");
   const [datePreset, setDatePreset] = useState<"" | FormSubmissionDatePreset>("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -183,14 +179,15 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
     return {
       limit: 20,
       email: debouncedSearch || undefined,
-      needs: selectedNeeds || undefined,
+      formChannel: selectedFormChannel || undefined,
+      source: selectedSource || undefined,
       datePreset: datePreset || undefined,
       dateFrom: datePreset === "custom" ? dateFrom : undefined,
       dateTo: datePreset === "custom" ? dateTo : undefined,
       sortBy: "receivedAt" as const,
       sortOrder: "desc" as const,
     };
-  }, [dateFrom, datePreset, dateTo, debouncedSearch, selectedNeeds]);
+  }, [dateFrom, datePreset, dateTo, debouncedSearch, selectedFormChannel, selectedSource]);
 
   const fetchSubmissions = useCallback(async () => {
     const queryParams = buildQueryParams();
@@ -204,17 +201,19 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
       setLoading(true);
       const res = await formModuleService.listSubmissions(formModuleId, queryParams);
       setSubmissions(res.data);
-      setNeedsOptions(res.filters?.needs ?? []);
+      setFormChannelOptions(res.filters?.formChannels ?? []);
+      setSourceOptions(res.filters?.sources ?? []);
     } catch (error: any) {
       toast.error(error.message || "Failed to load submissions");
       setSubmissions([]);
-      setNeedsOptions([]);
+      setFormChannelOptions([]);
+      setSourceOptions([]);
     } finally {
       setLoading(false);
     }
   }, [buildQueryParams, formModuleId, toast]);
 
-  const handleExport = useCallback(async () => {
+  const handleExport = useCallback(async (format: "csv" | "xlsx") => {
     const queryParams = buildQueryParams();
 
     if (!queryParams) {
@@ -224,9 +223,11 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
 
     try {
       setExporting(true);
+      setExportMenuOpen(false);
       const { blob, filename } = await formModuleService.exportSubmissions(
         formModuleId,
-        queryParams
+        queryParams,
+        format
       );
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -246,7 +247,8 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
 
   const handleClearFilters = () => {
     setSearch("");
-    setSelectedNeeds("");
+    setSelectedFormChannel("");
+    setSelectedSource("");
     setDatePreset("");
     setDateFrom("");
     setDateTo("");
@@ -275,16 +277,35 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              Filter by Needs
+              Form Channel
             </label>
             <select
-              value={selectedNeeds}
-              onChange={(e) => setSelectedNeeds(e.target.value)}
-              disabled={needsOptions.length === 0}
+              value={selectedFormChannel}
+              onChange={(e) => setSelectedFormChannel(e.target.value)}
+              disabled={formChannelOptions.length === 0}
               className="h-9 min-w-[220px] rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             >
-              <option value="">All needs</option>
-              {needsOptions.map((option) => (
+              <option value="">All channels</option>
+              {formChannelOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Source
+            </label>
+            <select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+              disabled={sourceOptions.length === 0}
+              className="h-9 min-w-[220px] rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="">All sources</option>
+              {sourceOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -336,14 +357,34 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
             >
               Clear Filters
             </button>
+            <div className="relative">
             <button
               type="button"
-              onClick={handleExport}
+              onClick={() => setExportMenuOpen((open) => !open)}
               disabled={exporting}
               className="h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {exporting ? "Exporting…" : "Export Submissions"}
             </button>
+              {exportMenuOpen && (
+                <div className="absolute right-0 z-10 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => handleExport("csv")}
+                    className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    Export as CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExport("xlsx")}
+                    className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    Export as XLSX
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -379,7 +420,19 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
                 Company
               </th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Product
+              </th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Promo
+              </th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Source
+              </th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Form Channel
+              </th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                URL
               </th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Status
@@ -397,10 +450,7 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
               const statusMeta = getFormSubmissionStatusMeta(sub.status);
               const needsValue = resolveSubmissionFieldValue(sub, NEEDS_FIELD_CANDIDATES);
               const companyValue = resolveSubmissionFieldValue(sub, COMPANY_FIELD_CANDIDATES);
-              const sourceValue =
-                resolveSubmissionFieldValue(sub, SOURCE_FIELD_CANDIDATES) ||
-                sub.sourcePath ||
-                "—";
+              const sourceValue = sub.sourceWebsite || sub.sourcePath || "-";
 
               return (
                 <tr key={sub.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
@@ -417,7 +467,19 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
                     {companyValue}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {sub.product || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {sub.promoWebsite || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {sourceValue === "â€”" ? sub.sourceWebsite || sub.sourcePath || "â€”" : sourceValue}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {sub.formChannel || "â€”"}
+                  </td>
+                  <td className="max-w-[240px] truncate px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {sub.pageWebsite || sub.sourcePath || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span

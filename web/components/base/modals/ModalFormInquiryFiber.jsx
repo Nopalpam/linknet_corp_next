@@ -591,13 +591,12 @@ function Step1Body({ form, onChange, submitAttempted }) {
 function Step2Body({ form, onChange, submitAttempted }) {
   const {
     cityOptions,
-    finalOptions: zipOptions,
     normalizedCity,
     normalizedProvince,
     provinceOptions,
   } = useIndonesiaLocationOptions({
     city: form.city,
-    finalLevel: 'zip',
+    finalLevel: 'none',
     province: form.province,
   });
 
@@ -644,12 +643,12 @@ function Step2Body({ form, onChange, submitAttempted }) {
         submitAttempted={submitAttempted}
         disabled={!normalizedProvince}
       />
-      <Select
+      <Input
         id="inquiry-fiber-zip-code"
         label="Ward/ZIP Code"
         required
-        placeholder="Select ward / ZIP code"
-        options={zipOptions}
+        type="text"
+        placeholder="Enter ward / ZIP code"
         value={form.zipCode}
         onChange={onChange("zipCode")}
         data-error={FORM_ERROR_MESSAGES.zipCode}

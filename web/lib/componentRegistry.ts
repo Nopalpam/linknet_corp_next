@@ -14,6 +14,7 @@ export interface CMSComponent {
   order: number;
   data: Record<string, any>;
   isVisible: boolean;
+  mainData?: Record<string, any> | null;
 }
 
 /**
@@ -32,7 +33,6 @@ export const CMS_COMPONENT_TYPES = {
   USP_GRID: 'usp_grid',
   USP_GRID_SLIDER: 'usp_grid_slider',
   BUSINESS_TAB: 'business_tab',
-  TABS_WITH_CARD: 'tabs_with_card',
   KEY_HIGHLIGHT: 'key_highlight',
   ABOUT_WITH_MARQUEE: 'about_with_marquee',
   JOIN_FIRST_SQUAD: 'join_first_squad',

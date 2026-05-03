@@ -4,6 +4,11 @@
  */
 
 import { BaseService } from './base.service';
+import {
+  createSessionExpiredError,
+  dispatchSessionExpired,
+  isUnauthorizedOrExpired,
+} from "@/lib/sessionExpired";
 
 export type FileItem = {
   id: string;
@@ -97,6 +102,11 @@ class FileManagerService extends BaseService {
     const data = await response.json();
 
     if (!response.ok) {
+      if (isUnauthorizedOrExpired(response.status, data)) {
+        dispatchSessionExpired({ status: response.status, error: data, url });
+        throw createSessionExpiredError(data);
+      }
+
       throw new Error(data.message || 'File upload failed');
     }
 

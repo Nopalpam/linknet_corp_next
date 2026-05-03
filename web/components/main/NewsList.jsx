@@ -6,6 +6,7 @@ import Intro from '../base/section/Intro';
 import Button from '../base/Button';
 import Icon from '../base/Icon';
 import CardNews from '../base/cards/CardNews';
+import CTAList from '../base/section/CTAList';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -237,7 +238,7 @@ export default function NewsList({
                 title={getTitle(item)}
                 author={item.author}
                 date={item.news_date}
-                href={`/${locale}/newsroom/${item.slug}`}
+                href={`/${locale}/news/${item.slug}`}
               />
             ))}
           </div>
@@ -340,21 +341,13 @@ export default function NewsList({
 
         {/* CTA */}
         {ctaList.length > 0 && (
-          <div className="mt-10 md:mt-14 flex flex-wrap gap-4 justify-center">
-            {ctaList.map((cta, index) => (
-              <a
-                key={index}
-                href={cta.href || '#'}
-                className={`inline-flex items-center px-6 py-3 rounded-full font-medium transition-all border ${
-                  cta.variant === 'primary'
-                    ? 'bg-primary text-black border-primary hover:bg-yellow-400'
-                    : 'border-neutral-300 text-neutral-700 hover:border-primary hover:text-primary'
-                }`}
-              >
-                {cta.text}
-              </a>
-            ))}
-          </div>
+          <CTAList
+            ctaList={ctaList}
+            align="center"
+            className="mt-10 md:mt-14"
+            defaultVariant="secondary-outline"
+            defaultSize="lg"
+          />
         )}
 
       </div>

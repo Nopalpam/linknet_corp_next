@@ -3,12 +3,66 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
-import { navItems } from '../../data/navDataFiber';
+import { navItems as defaultNavItems } from '../../data/navDataFiber';
 import { navItems as corporateNavItems } from '../../data/navData';
 import Button from '../base/Button';
 import Icon from '../base/Icon';
 
-export default function Navbar() {
+function transformMenuData(cmsMenus, locale) {
+  if (!Array.isArray(cmsMenus) || cmsMenus.length === 0) return null;
+
+  const getLocalizedTitle = (item) => {
+    const localized = item?.translations?.[locale];
+
+    if (typeof localized === 'string') return localized;
+    if (localized?.title) return localized.title;
+
+    return item?.title || item?.label || '';
+  };
+
+  return cmsMenus
+    .filter((item) => item.isActive !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .map((menu) => {
+      const item = {
+        id: menu.slug || `menu-${menu.id}`,
+        label: getLocalizedTitle(menu),
+        url: menu.url || `/${menu.slug || ''}`,
+      };
+
+      const children = Array.isArray(menu.children)
+        ? menu.children.filter((child) => child.isActive !== false).sort((a, b) => (a.order || 0) - (b.order || 0))
+        : [];
+
+      if (children.length > 0) {
+        const sectionsByTitle = new Map();
+
+        children.forEach((child) => {
+          const title = child.sectionTitle || '';
+
+          if (!sectionsByTitle.has(title)) {
+            sectionsByTitle.set(title, {
+              title,
+              items: [],
+            });
+          }
+
+          sectionsByTitle.get(title).items.push({
+            label: getLocalizedTitle(child),
+            url: child.url || `/${child.slug || ''}`,
+            openNewTab: child.openNewTab || false,
+          });
+        });
+
+        item.sections = Array.from(sectionsByTitle.values());
+      }
+
+      return item;
+    });
+}
+
+export default function Navbar({ menuData = undefined, defaultLocale = 'en' } = {}) {
+  const navItems = transformMenuData(menuData, defaultLocale) || defaultNavItems;
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);

@@ -22,8 +22,7 @@ import FieldReadOnly from '../forms/FieldReadOnly';
 import Button from '../Button';
 import { useFormModule } from '@/components/hooks/useFormModule';
 import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
-import { useFormSubmission } from '@/components/hooks/useFormSubmission';
-import { buildRedirectUrl } from '@/lib/formsApi';
+import { buildRedirectUrl, submitEnterpriseForm } from '@/lib/formsApi';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Context
@@ -219,7 +218,26 @@ const INITIAL_FORM = {
 };
 
 function createInitialForm(overrides = {}) {
-  return { ...INITIAL_FORM, ...overrides };
+  return {
+    ...INITIAL_FORM,
+    ...(overrides.Promo_Website__c ? { Promo_Website__c: overrides.Promo_Website__c } : {}),
+    ...(overrides.Page_Website__c ? { Page_Website__c: overrides.Page_Website__c } : {}),
+    ...(overrides.Source_Website__c ? { Source_Website__c: overrides.Source_Website__c } : {}),
+  };
+}
+
+function resolveSubmissionContext(initialPayload = {}) {
+  const url =
+    initialPayload.context?.url ||
+    (typeof window !== 'undefined' ? window.location.href : undefined) ||
+    initialPayload.Page_Website__c;
+
+  return {
+    product: initialPayload.context?.product || initialPayload.Product,
+    promo: initialPayload.context?.promo || initialPayload.Promo_Website__c,
+    source: initialPayload.context?.source || initialPayload.Source_Website__c,
+    url,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -696,13 +714,12 @@ function Step1Body({ form, onChange, submitAttempted, departmentOptions, roleOpt
 function Step2Body({ form, onChange, submitAttempted, industryOptions }) {
   const {
     cityOptions,
-    finalOptions: wardOptions,
     normalizedCity,
     normalizedProvince,
     provinceOptions,
   } = useIndonesiaLocationOptions({
     city: form.City__c,
-    finalLevel: 'wardZip',
+    finalLevel: 'none',
     province: form.Province__c,
   });
 
@@ -755,13 +772,13 @@ function Step2Body({ form, onChange, submitAttempted, industryOptions }) {
         submitAttempted={submitAttempted}
         disabled={!normalizedProvince}
       />
-      <Select
+      <Input
         id="lnForm_Kecamatan_Zipcode__c"
         name="Kecamatan_Zipcode__c"
         label="Ward/ZIP Code"
         required
-        placeholder="Select ward / ZIP code"
-        options={wardOptions}
+        type="text"
+        placeholder="Enter ward / ZIP code"
         value={form.Kecamatan_Zipcode__c}
         onChange={onChange('Kecamatan_Zipcode__c')}
         data-error={FORM_ERROR_MESSAGES.Kecamatan_Zipcode__c}
@@ -957,11 +974,7 @@ function RegistrationFormContent({ onClose, initialPayload }) {
   // Fetch form definition (dynamic options)
   const { fieldOptions } = useFormModule('enterprise', 'enterprise-consultation');
 
-  // Submission handler
-  const { submit, result: submitResult } = useFormSubmission(
-    'enterprise',
-    'enterprise-consultation',
-  );
+  const [submitResult, setSubmitResult] = useState(null);
 
   // Merge API options with hardcoded fallbacks
   const resolvedOptions = useMemo(
@@ -997,15 +1010,18 @@ function RegistrationFormContent({ onClose, initialPayload }) {
   // Wrap submit in form-compatible callback
   const handleActualSubmit = useCallback(
     async (form) => {
-      return submit({
+      const result = await submitEnterpriseForm('enterprise_consultation', {
         locale,
-        sourcePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
-        values: form,
+        fields: form,
+        context: resolveSubmissionContext(initialPayload),
         groups: [],
         files: [],
       });
+
+      setSubmitResult(result);
+      return result;
     },
-    [locale, submit],
+    [initialPayload, locale],
   );
 
   const {
@@ -1178,9 +1194,11 @@ export default function ModalFormRegistrationEnterpriseProvider({ children }) {
 
   const openModal = useCallback((payload = {}) => {
     setModalPayload({
+      Product: payload.Product,
       Promo_Website__c: payload.Promo_Website__c || INITIAL_MODAL_PAYLOAD.Promo_Website__c,
       Page_Website__c: payload.Page_Website__c || INITIAL_MODAL_PAYLOAD.Page_Website__c,
       Source_Website__c: payload.Source_Website__c || INITIAL_MODAL_PAYLOAD.Source_Website__c,
+      context: payload.context,
     });
     setIsOpen(true);
   }, []);

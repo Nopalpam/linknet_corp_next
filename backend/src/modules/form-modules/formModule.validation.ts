@@ -14,6 +14,7 @@ import {
 } from '@prisma/client';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const formModuleIdentifierRegex = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const fieldPathRegex = /^[A-Za-z][A-Za-z0-9_.-]*$/;
 const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -195,6 +196,25 @@ const submissionFileSchema = z.object({
   metadata: z.unknown().optional(),
 });
 
+const submissionContextSchema = z.object({
+  product: z.string().max(255).optional().nullable(),
+  promo: z.string().max(255).optional().nullable(),
+  source: z.string().max(255).optional().nullable(),
+  formModuleName: z.string().max(255).optional().nullable(),
+  form_module_name: z.string().max(255).optional().nullable(),
+  formChannel: z.string().max(255).optional().nullable(),
+  form_channel: z.string().max(255).optional().nullable(),
+  url: z.string().max(2000).optional().nullable(),
+  pageUrl: z.string().max(2000).optional().nullable(),
+});
+
+const submissionFormInfoSchema = z.object({
+  formModuleName: z.string().max(255).optional().nullable(),
+  form_module_name: z.string().max(255).optional().nullable(),
+  formChannel: z.string().max(255).optional().nullable(),
+  form_channel: z.string().max(255).optional().nullable(),
+});
+
 export const publicFormSubmissionSchema = z.object({
   locale: z.string().min(2).max(10).optional(),
   requestId: z.string().max(255).optional(),
@@ -203,6 +223,21 @@ export const publicFormSubmissionSchema = z.object({
   values: jsonObjectSchema,
   groups: z.array(submissionGroupSchema).default([]),
   files: z.array(submissionFileSchema).default([]),
+  context: submissionContextSchema.optional(),
+  formInfo: submissionFormInfoSchema.optional(),
+  responseContext: z.unknown().optional(),
+});
+
+export const enterpriseFormSubmissionSchema = z.object({
+  form_type: z.string().min(1).max(120),
+  fields: jsonObjectSchema,
+  context: submissionContextSchema.optional(),
+  locale: z.string().min(2).max(10).optional(),
+  requestId: z.string().max(255).optional(),
+  sessionId: z.string().max(255).optional(),
+  groups: z.array(submissionGroupSchema).default([]),
+  files: z.array(submissionFileSchema).default([]),
+  formInfo: submissionFormInfoSchema.optional(),
   responseContext: z.unknown().optional(),
 });
 
@@ -213,10 +248,13 @@ export const formSubmissionQuerySchema = z
     search: z.string().max(200).optional(),
     email: z.string().max(200).optional(),
     needs: z.string().max(255).optional(),
+    formChannel: z.string().max(255).optional(),
+    source: z.string().max(255).optional(),
     status: z.nativeEnum(FormSubmissionStatus).optional(),
     datePreset: formSubmissionDatePresetSchema.optional(),
     dateFrom: z.string().regex(dateOnlyRegex, 'Date must use YYYY-MM-DD').optional(),
     dateTo: z.string().regex(dateOnlyRegex, 'Date must use YYYY-MM-DD').optional(),
+    format: z.enum(['csv', 'xlsx']).default('csv'),
     sortBy: z.enum(['receivedAt', 'createdAt', 'primaryName', 'primaryEmail', 'status']).default('receivedAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
   })
@@ -259,11 +297,19 @@ export const formSubmissionQuerySchema = z
   });
 
 export const formModuleIdParamSchema = z.object({
-  id: z.string().uuid(),
+  id: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(formModuleIdentifierRegex, 'Form module id contains invalid characters'),
 });
 
 export const formSubmissionIdParamSchema = z.object({
-  id: z.string().uuid(),
+  id: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(formModuleIdentifierRegex, 'Form module id contains invalid characters'),
   submissionId: z.string().uuid(),
 });
 

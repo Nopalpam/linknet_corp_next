@@ -184,7 +184,7 @@ export default function EventContent({ event }) {
                 <div className="mt-2 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                   <div className="flex min-w-0 items-center gap-4">
                     <Link
-                      href={`/${locale}/newsroom/${relatedArticle.slug}`}
+                      href={`/${locale}/news/${relatedArticle.slug}`}
                       className="block shrink-0 overflow-hidden rounded-[16px]"
                     >
                       <img
@@ -196,7 +196,7 @@ export default function EventContent({ event }) {
 
                     <div className="min-w-0">
                       <Link
-                        href={`/${locale}/newsroom/${relatedArticle.slug}`}
+                        href={`/${locale}/news/${relatedArticle.slug}`}
                         className="text-body-b4 font-medium text-black transition-colors line-clamp-2 hover:text-primary"
                       >
                         {relatedArticle.title}
@@ -208,7 +208,7 @@ export default function EventContent({ event }) {
                   </div>
 
                   <LinknetLink
-                    href={`/${locale}/newsroom/${relatedArticle.slug}`}
+                    href={`/${locale}/news/${relatedArticle.slug}`}
                     variant="secondary-outline"
                     size="md"
                     className="shrink-0 !hidden md:!block"

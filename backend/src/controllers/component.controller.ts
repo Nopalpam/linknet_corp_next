@@ -194,7 +194,7 @@ export class ComponentController {
    */
   static async getComponentTypes(_req: Request, res: Response, next: NextFunction) {
     try {
-      const types = ComponentService.getComponentTypes();
+      const types = await ComponentService.getComponentTypes();
 
       res.json({
         success: true,

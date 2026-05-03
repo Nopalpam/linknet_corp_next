@@ -160,6 +160,7 @@ export class ComponentService {
     // Check if page exists
     const page = await prisma.page.findUnique({
       where: { id: data.pageId },
+      select: { id: true },
     });
 
     if (!page) {
@@ -314,19 +315,34 @@ export class ComponentService {
   }
 
   /**
-   * Get available component types with schemas and defaults
+   * Get available component types with schemas and defaults.
+   * Filters out INACTIVE entries from ComponentVisibility table.
+   * Components not in the table default to ACTIVE (backward compatible).
    */
-  static getComponentTypes() {
-    // Return new comprehensive component types with defaults
-    return ALL_COMPONENT_TYPES.map((ct) => ({
-      type: ct.type,
-      name: ct.name,
-      componentPath: ct.componentPath,
-      description: ct.description,
-      icon: ct.icon,
-      category: ct.category,
-      defaultData: ct.defaultData,
-    }));
+  static async getComponentTypes() {
+    // Fetch the set of INACTIVE component keys from DB
+    let inactiveKeys: Set<string> = new Set();
+    try {
+      const inactiveEntries = await prisma.componentVisibility.findMany({
+        where: { status: 'INACTIVE' },
+        select: { componentKey: true },
+      });
+      inactiveKeys = new Set(inactiveEntries.map((e) => e.componentKey));
+    } catch {
+      // If the table doesn't exist yet (pre-migration), return all components
+    }
+
+    return ALL_COMPONENT_TYPES
+      .filter((ct) => !inactiveKeys.has(ct.type))
+      .map((ct) => ({
+        type: ct.type,
+        name: ct.name,
+        componentPath: ct.componentPath,
+        description: ct.description,
+        icon: ct.icon,
+        category: ct.category,
+        defaultData: ct.defaultData,
+      }));
   }
 
   /**

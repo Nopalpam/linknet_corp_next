@@ -22,7 +22,7 @@ const ENCRYPTION_IV_LENGTH = 16;
 /**
  * Sensitive setting keys that should be encrypted
  */
-const SENSITIVE_KEYS = ['smtp_password'];
+const SENSITIVE_KEYS = ['smtp_password', 'email.smtp.password'];
 
 /**
  * Settings Service
@@ -151,7 +151,10 @@ export class SettingsService {
       if (await isRedisAvailable()) {
         const cached = await redisClient.get(CACHE_KEY_PUBLIC);
         if (cached) {
-          return JSON.parse(cached);
+          const settings = JSON.parse(cached);
+          if (Array.isArray(settings) && settings.some((setting: Setting) => setting.key === 'general_branding.site.timezone' || setting.key === 'timezone')) {
+            return settings;
+          }
         }
       }
 

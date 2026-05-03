@@ -1,17 +1,60 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 // Sesuaikan path import di bawah ini dengan struktur foldermu
 import SearchFilterBar from '@/components/base/SearchFilterBar';
+import Intro from '@/components/base/section/Intro';
 import CardCareer from '../base/cards/CardCareer';
-import { careers } from '../../data/components/careerList';
 
-export default function CareerPage({ config = {}, className = '' }) {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+function localizeField(value, locale = 'en') {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    if (locale === 'id') return value.id || value.en || '';
+    return value.en || value.id || '';
+  }
+  return String(value);
+}
+
+function getIntroData(data, locale = 'en') {
+  const introSource = data?.introData || data?.sectionIntro || data?.intro || null;
+  if (introSource && typeof introSource === 'object') {
+    return {
+      as: introSource.as || 'h2',
+      label: localizeField(introSource.label, locale),
+      title: localizeField(introSource.title, locale),
+      description: localizeField(introSource.description, locale),
+      align: introSource.align || 'left',
+    };
+  }
+
+  const legacyTitle = localizeField(data?.title, locale);
+  if (!legacyTitle) return null;
+
+  return {
+    as: 'h2',
+    label: '',
+    title: legacyTitle,
+    description: '',
+    align: 'left',
+  };
+}
+
+export default function CareerPage({ cmsData = null, data = null, config = {}, className = '' }) {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const source = cmsData || data || {};
+  const sourceConfig = source?.config || {};
+  const introData = useMemo(() => getIntroData(source, locale), [source, locale]);
+
   const {
     sectionId = 'career-list-section',
     className: configClassName = '',
@@ -19,102 +62,122 @@ export default function CareerPage({ config = {}, className = '' }) {
     bgImageMobile = '',
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
-  } = config || {};
+  } = { ...sourceConfig, ...(config || {}) };
+
+  const itemsPerPage = source?.per_page || 12;
+  const showSearch = source?.show_search !== false;
+  const showDepartmentFilter = source?.show_department_filter !== false;
+  const showLocationFilter = source?.show_location_filter !== false;
+  const showTypeFilter = source?.show_type_filter !== false;
+  const showPagination = source?.show_pagination !== false;
+
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
-  // 1. Ambil state currentPage dari URL Parameter (?page=x)
+  // Ambil current page dari query string
   const pageParam = searchParams.get('page');
   const parsedPage = parseInt(pageParam, 10);
   const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const ITEMS_PER_PAGE = 12; // Menampilkan 12 data per halaman
 
-  // 2. State Lokal untuk Pencarian & Filter
+  const [careers, setCareers] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchValue, setSearchValue] = useState('');
-  const [filterValues, setFilterValues] = useState({});
+  const [filterValues, setFilterValues] = useState({ location: '', type: '', division: '' });
+  const [filterOptions, setFilterOptions] = useState({ locations: [], types: [], divisions: [] });
 
-  // ==========================================
-  // A. AUTO-GENERATE FILTER OPTIONS
-  // ==========================================
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/careers/filters`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json?.success) {
+        setFilterOptions({
+          locations: json.data?.locations || [],
+          types: json.data?.types || [],
+          divisions: json.data?.divisions || [],
+        });
+      }
+    } catch {
+      setFilterOptions({ locations: [], types: [], divisions: [] });
+    }
+  }, []);
+
+  const fetchCareers = useCallback(async (page, search, filters) => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.set('page', String(page));
+      queryParams.set('limit', String(itemsPerPage));
+
+      if (search.trim()) queryParams.set('search', search.trim());
+      if (filters.location) queryParams.set('location', filters.location);
+      if (filters.type) queryParams.set('type', filters.type);
+      if (filters.division) queryParams.set('division', filters.division);
+
+      const res = await fetch(`${API_BASE_URL}/careers?${queryParams.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch careers');
+      const json = await res.json();
+
+      if (json?.success) {
+        setCareers(json.data || []);
+        setTotalPages(json.pagination?.totalPages || 1);
+      } else {
+        setCareers([]);
+        setTotalPages(1);
+      }
+    } catch {
+      setCareers([]);
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [itemsPerPage]);
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      fetchCareers(currentPage, searchValue, filterValues);
+    }, 250);
+
+    return () => clearTimeout(debounce);
+  }, [currentPage, searchValue, filterValues, fetchCareers]);
+
   const generatedFilters = useMemo(() => {
-    const locations = new Set();
-    const types = new Set();
-    const departments = new Set();
-
-    // Ekstrak nilai unik dari data careers
-    careers.forEach(job => {
-      if (job.location) locations.add(job.location);
-      if (job.employment_type) types.add(job.employment_type);
-      if (job.department) departments.add(job.department);
-    });
-
     const filters = [];
 
-    if (locations.size > 0) {
+    if (showLocationFilter && filterOptions.locations.length > 0) {
       filters.push({
         key: 'location',
-        placeholder: 'Location',
-        options: Array.from(locations).map(l => ({ label: l, value: l }))
+        placeholder: locale === 'id' ? 'Lokasi' : 'Location',
+        options: filterOptions.locations.map((location) => ({ label: location, value: location })),
       });
     }
-    if (types.size > 0) {
+
+    if (showTypeFilter && filterOptions.types.length > 0) {
       filters.push({
-        key: 'employment_type',
-        placeholder: 'Job Type',
-        options: Array.from(types).map(t => ({ label: t, value: t }))
+        key: 'type',
+        placeholder: locale === 'id' ? 'Tipe Pekerjaan' : 'Job Type',
+        options: filterOptions.types.map((type) => ({ label: type, value: type })),
       });
     }
-    if (departments.size > 0) {
+
+    if (showDepartmentFilter && filterOptions.divisions.length > 0) {
       filters.push({
-        key: 'department',
-        placeholder: 'Division/Department',
-        options: Array.from(departments).map(d => ({ label: d, value: d }))
+        key: 'division',
+        placeholder: locale === 'id' ? 'Divisi' : 'Division',
+        options: filterOptions.divisions.map((division) => ({ label: division, value: division })),
       });
     }
 
     return filters;
-  }, []);
+  }, [filterOptions, showLocationFilter, showTypeFilter, showDepartmentFilter, locale]);
 
-  // ==========================================
-  // B. LOGIC FILTER DATA (FLAT ARRAY)
-  // ==========================================
-  const filteredCareers = useMemo(() => {
-    const searchKeyword = searchValue.trim().toLowerCase();
-
-    return careers.filter(job => {
-      // Filter Pencarian (Berdasarkan Title)
-      const jobTitle = job.title ? job.title.toLowerCase() : "";
-      const matchSearch = searchKeyword === "" || jobTitle.includes(searchKeyword);
-
-      // Filter Dropdown
-      let matchFilters = true;
-      for (const key in filterValues) {
-        const selectedVal = filterValues[key];
-        if (selectedVal && selectedVal !== '') {
-          // Cocokkan key filter dengan properti di objek job
-          if (job[key] !== selectedVal) {
-            matchFilters = false;
-            break;
-          }
-        }
-      }
-
-      return matchSearch && matchFilters;
-    });
-  }, [searchValue, filterValues]);
-
-  // ==========================================
-  // C. KALKULASI DATA PAGINATION
-  // ==========================================
-  const totalPages = Math.ceil(filteredCareers.length / ITEMS_PER_PAGE) || 1;
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedCareers = filteredCareers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  // ==========================================
-  // D. HANDLERS
-  // ==========================================
   const resetPageToFirst = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', '1');
@@ -175,50 +238,72 @@ export default function CareerPage({ config = {}, className = '' }) {
     >
       <div className="container mx-auto px-4 md:px-8 max-w-7xl">
 
+        {introData && (introData.label || introData.title || introData.description) && (
+          <div className="mb-8 md:mb-10">
+            <Intro
+              as={introData.as || 'h2'}
+              label={introData.label}
+              title={introData.title}
+              description={introData.description}
+              align={introData.align || 'left'}
+            />
+          </div>
+        )}
+
         {/* ========================================= */}
         {/* GLOBAL SEARCH & FILTER BAR */}
         {/* ========================================= */}
-        <div className="mb-10">
-          <SearchFilterBar
-            searchPlaceholder="Search job titles..."
-            searchValue={searchValue}
-            onSearchChange={handleSearchChange}
-            filters={generatedFilters}
-            filterValues={filterValues}
-            onFilterChange={handleFilterChange}
-          />
-        </div>
+        {showSearch && (
+          <div className="mb-10">
+            <SearchFilterBar
+              searchPlaceholder={locale === 'id' ? 'Cari posisi pekerjaan...' : 'Search job titles...'}
+              searchValue={searchValue}
+              onSearchChange={handleSearchChange}
+              filters={generatedFilters}
+              filterValues={filterValues}
+              onFilterChange={handleFilterChange}
+            />
+          </div>
+        )}
 
         {/* ========================================= */}
         {/* LIST RENDERER (PAGINATED GRID) */}
         {/* ========================================= */}
-        {paginatedCareers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:min-h-[500px] items-start">
-            {paginatedCareers.map((job) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center min-h-[240px]">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : careers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+            {careers.map((job) => (
               <div key={job.id} className="animate-in fade-in duration-500 h-full">
                 <CardCareer
-                  department={job.department}
-                  title={job.title}
-                  type={job.employment_type} // Mapping ke type
-                  location={job.location}
-                  applyUrl={job.applyURL}
-                  detailUrl={job.detailURL}
+                  department={job.division || '-'}
+                  title={job.position || '-'}
+                  type={job.type || '-'}
+                  location={job.location || '-'}
+                  applyUrl={job.linkJob || '#'}
+                  detailUrl={job.slug ? `/career/${job.slug}` : '#'}
                 />
               </div>
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-neutral-400 min-h-[400px]">
-            <p className="text-lg">No open positions found matching your criteria.</p>
+            <p className="text-lg">
+              {locale === 'id'
+                ? 'Tidak ada lowongan yang sesuai dengan pencarian Anda.'
+                : 'No open positions found matching your criteria.'}
+            </p>
             <button
               onClick={() => {
                 setSearchValue('');
-                setFilterValues({});
+                setFilterValues({ location: '', type: '', division: '' });
                 resetPageToFirst();
               }}
               className="mt-4 text-[#FFB800] hover:underline font-medium"
             >
-              Clear all filters
+              {locale === 'id' ? 'Hapus semua filter' : 'Clear all filters'}
             </button>
           </div>
         )}
@@ -226,7 +311,7 @@ export default function CareerPage({ config = {}, className = '' }) {
         {/* ========================================= */}
         {/* PAGINATION CONTROLS */}
         {/* ========================================= */}
-        {totalPages > 1 && (
+        {showPagination && totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-12 pt-4">
 
             <button

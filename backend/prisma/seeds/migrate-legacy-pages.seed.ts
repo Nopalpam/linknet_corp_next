@@ -29,7 +29,7 @@ const prisma = new PrismaClient();
 
 const KNOWN_COMPONENT_TYPES = new Set([
   'text_block', 'ckeditor', 'image', 'hero_section', 'sliders_hero',
-  'usp_grid', 'usp_grid_slider', 'business_tab', 'tabs_with_card',
+  'usp_grid', 'usp_grid_slider', 'business_tab',
   'key_highlight', 'about_with_marquee', 'join_first_squad', 'list_services',
   'card_with_highlight_summary', 'highlighting_real_initiatives', 'info_contacts',
   'information_list', 'contact_us', 'document_list', 'accordion',

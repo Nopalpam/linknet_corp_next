@@ -15,10 +15,11 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function LogoRunning({ 
   name = 'default', 
-  className = "" 
+  className = "",
+  cmsData = null
 }) {
   const containerRef = useRef(null);
-  const sectionData = LOGO_RUNNING_DATA[name];
+  const sectionData = cmsData || LOGO_RUNNING_DATA[name];
 
   // =========================================
   // SETUP ANIMASI GSAP

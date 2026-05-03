@@ -17,7 +17,7 @@ router.get('/available-components', getAvailableComponents);
 
 // Public routes (no auth required)
 router.get('/pages/slugs', getPublishedSlugs);
-router.get('/pages/preview/:slug', getPagePreview);
+router.get(/^\/pages\/preview\/(.+)$/, getPagePreview);
 
 // Nested slug support via wildcard: "about", "about/management", "investor/annual-report"
 router.get(/^\/pages\/(.+)$/, getPublicPageBySlug);

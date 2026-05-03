@@ -20,7 +20,7 @@ import Select from '../forms/Select';
 import Textarea from '../forms/Textarea';
 import FormStepperModal from '../forms/FormStepperModal';
 import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
-import { submitFormModule } from '@/lib/formsApi';
+import { submitEnterpriseForm } from '@/lib/formsApi';
 import { createEventRegistration } from '@/lib/eventsApi';
 
 const ModalFormEventRegisterContext = createContext({
@@ -230,6 +230,20 @@ function buildSubmissionPayload(form) {
   };
 }
 
+function resolveSubmissionContext(initialPayload = {}) {
+  const url =
+    initialPayload.context?.url ||
+    (typeof window !== 'undefined' ? window.location.href : undefined) ||
+    initialPayload.Page_Website__c;
+
+  return {
+    product: initialPayload.context?.product || initialPayload.Product,
+    promo: initialPayload.context?.promo || initialPayload.Promo_Website__c,
+    source: initialPayload.context?.source || initialPayload.Source_Website__c,
+    url,
+  };
+}
+
 function buildEventRegistrationPayload(form) {
   const participants = getSelectedParticipants(form);
   const primaryParticipant = participants[0] || createParticipant();
@@ -370,13 +384,12 @@ function StepParticipantCount({ participantCount, maxParticipants, onChange, sub
 function StepCompanyCombined({ form, onChange, onParticipantCountChange, submitAttempted }) {
   const {
     cityOptions,
-    finalOptions: wardOptions,
     normalizedCity,
     normalizedProvince,
     provinceOptions,
   } = useIndonesiaLocationOptions({
     city: form.city,
-    finalLevel: 'wardZip',
+    finalLevel: 'none',
     province: form.province,
   });
 
@@ -430,13 +443,13 @@ function StepCompanyCombined({ form, onChange, onParticipantCountChange, submitA
           submitAttempted={submitAttempted}
           disabled={!normalizedProvince}
         />
-        <Select
+        <Input
           id="event-register-ward-zip-code"
           name="Kecamatan_Zipcode__c"
           label="Ward/ZIP Code"
           required
-          placeholder="Select ward / ZIP code"
-          options={wardOptions}
+          type="text"
+          placeholder="Enter ward / ZIP code"
           value={form.wardZipCode}
           onChange={onChange('wardZipCode')}
           data-error={FORM_ERROR_MESSAGES.wardZipCode}
@@ -848,10 +861,10 @@ function ModalFormEventRegister({ initialPayload, isOpen, onClose }) {
       if (form.eventSlug) {
         await createEventRegistration(form.eventSlug, buildEventRegistrationPayload(form));
       } else {
-        await submitFormModule(businessUnit, 'event-register', {
+        await submitEnterpriseForm('event_register', {
           locale,
-          sourcePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
-          values: buildSubmissionPayload(form),
+          fields: buildSubmissionPayload(form),
+          context: resolveSubmissionContext(initialPayload),
           groups: [],
           files: [],
         });
@@ -862,7 +875,7 @@ function ModalFormEventRegister({ initialPayload, isOpen, onClose }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [activeStep?.id, businessUnit, currentStep, form, handleSubmitSuccess, locale, stepMeta.length]);
+  }, [activeStep?.id, businessUnit, currentStep, form, handleSubmitSuccess, initialPayload, locale, stepMeta.length]);
 
   const handlePrevious = useCallback(() => {
     setSubmitAttempted(false);
@@ -981,6 +994,8 @@ export default function ModalFormEventRegisterProvider({ children }) {
       Promo_Website__c: payload.Promo_Website__c || INITIAL_MODAL_PAYLOAD.Promo_Website__c,
       Page_Website__c: payload.Page_Website__c || INITIAL_MODAL_PAYLOAD.Page_Website__c,
       Source_Website__c: payload.Source_Website__c || INITIAL_MODAL_PAYLOAD.Source_Website__c,
+      Product: payload.Product,
+      context: payload.context,
       eventSlug: payload.eventSlug || '',
       eventName: payload.eventName || '',
       maxParticipants: normalizeMaxParticipants(payload.maxParticipants),

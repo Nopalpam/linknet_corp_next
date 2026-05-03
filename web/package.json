@@ -9,8 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@damarkuncoro/data-wilayah-indonesia": "^1.2.1",
-    "@damarkuncoro/posindonesia": "^1.0.7",
     "@gsap/react": "^2.1.2",
     "@next/third-parties": "^16.1.6",
     "aos": "^2.3.4",

@@ -1,4 +1,5 @@
-import type { PresentationFieldResolver, SharedIntroData } from './solutions';
+import { buildSharedIntroData } from './intro';
+import type { PresentationFieldResolver, SharedIntroData } from './intro';
 
 type ContentPresentationOptions = {
   resolveField: PresentationFieldResolver;
@@ -39,10 +40,18 @@ export type SharedRelatedArticle = {
 
 export type SharedCtaItem = {
   id?: string;
+  label?: string;
   text?: string;
   href?: string;
+  action?: string;
   variant?: string;
   size?: string;
+  icon?: string;
+  iconLeft?: string;
+  iconRight?: string;
+  linkType?: string;
+  actionModal?: string;
+  target?: string;
 };
 
 export type SharedInformationSection = {
@@ -69,46 +78,6 @@ export type InformationListPresentation = {
   introData: SharedIntroData;
   items: SharedInformationSection[];
 };
-
-function buildIntroData(
-  data: Record<string, any> | undefined,
-  resolveField: PresentationFieldResolver,
-  introData?: SharedIntroData
-): SharedIntroData {
-  if (introData) {
-    return introData;
-  }
-
-  const introSource = data?.sectionIntro || data?.intro;
-  const hasIntroContent = Boolean(
-    resolveField(introSource, 'label') ||
-    resolveField(introSource, 'title') ||
-    resolveField(introSource, 'description')
-  );
-
-  if (introSource && typeof introSource === 'object' && hasIntroContent) {
-    return {
-      as: typeof introSource.as === 'string' && introSource.as ? introSource.as : 'h2',
-      label: resolveField(introSource, 'label'),
-      title: resolveField(introSource, 'title'),
-      description: resolveField(introSource, 'description'),
-      align: typeof introSource.align === 'string' && introSource.align ? introSource.align : 'left',
-      fluid: Boolean(introSource.fluid),
-      labelClassName: typeof introSource.labelClassName === 'string' ? introSource.labelClassName : '',
-      titleClassName: typeof introSource.titleClassName === 'string' ? introSource.titleClassName : '',
-      descriptionClassName: typeof introSource.descriptionClassName === 'string' ? introSource.descriptionClassName : '',
-      className: typeof introSource.className === 'string' ? introSource.className : '',
-    };
-  }
-
-  return {
-    as: 'h2',
-    label: resolveField(data, 'label') || resolveField(data, 'intro_label'),
-    title: resolveField(data, 'title') || resolveField(data, 'intro_title') || resolveField(data, 'name'),
-    description: resolveField(data, 'description') || resolveField(data, 'intro_description') || resolveField(data, 'content'),
-    align: typeof data?.intro_align === 'string' && data.intro_align ? data.intro_align : 'left',
-  };
-}
 
 function mapDocumentItem(
   document: Record<string, any> | undefined,
@@ -167,7 +136,7 @@ export function mapInfoContactsPresentation(
   const { resolveField, introData } = options;
 
   return {
-    introData: buildIntroData(data, resolveField, introData),
+    introData: buildSharedIntroData(data, resolveField, introData),
     items: Array.isArray(data?.contact_items)
       ? data.contact_items.map((item: Record<string, any>, index: number) => ({
           id: item.id || `contact-item-${index}`,
@@ -188,7 +157,7 @@ export function mapInformationListPresentation(
   const { resolveField, introData } = options;
 
   return {
-    introData: buildIntroData(data, resolveField, introData),
+    introData: buildSharedIntroData(data, resolveField, introData),
     items: Array.isArray(data?.info_sections)
       ? data.info_sections.map((section: Record<string, any>, index: number) => ({
           id: section.id || `info-${index}`,
@@ -209,10 +178,20 @@ export function mapInformationListPresentation(
           ctaList: Array.isArray(section.cta_list || section.ctaList)
             ? (section.cta_list || section.ctaList).map((cta: Record<string, any>, ctaIndex: number) => ({
                 id: cta.id || `info-${index}-cta-${ctaIndex}`,
-                text: resolveField(cta, 'text'),
-                href: (typeof cta.href === 'string' && cta.href) || (typeof cta.url === 'string' && cta.url) || '#',
+                label: resolveField(cta, 'label') || resolveField(cta, 'text'),
+                text: resolveField(cta, 'label') || resolveField(cta, 'text'),
+                href: (typeof cta.href === 'string' && cta.href) || (typeof cta.url === 'string' && cta.url) || (typeof cta.action === 'string' && cta.action) || '#',
                 variant: typeof cta.variant === 'string' ? cta.variant : 'primary',
                 size: typeof cta.size === 'string' ? cta.size : 'lg',
+                icon: typeof cta.icon === 'string' ? cta.icon : '',
+                iconLeft: typeof cta.iconLeft === 'string' ? cta.iconLeft : (typeof cta.icon_left === 'string' ? cta.icon_left : ''),
+                iconRight: typeof cta.iconRight === 'string' ? cta.iconRight : (typeof cta.icon_right === 'string' ? cta.icon_right : ''),
+                linkType: typeof cta.linkType === 'string'
+                  ? cta.linkType
+                  : (typeof cta.link_type === 'string' ? cta.link_type : (typeof cta.action === 'string' && cta.action ? 'action-modal' : 'url')),
+                action: typeof cta.action === 'string' ? cta.action : '',
+                actionModal: typeof cta.actionModal === 'string' ? cta.actionModal : (typeof cta.action_modal === 'string' ? cta.action_modal : (typeof cta.action === 'string' ? cta.action : '')),
+                target: typeof cta.target === 'string' ? cta.target : undefined,
               }))
             : [],
         }))

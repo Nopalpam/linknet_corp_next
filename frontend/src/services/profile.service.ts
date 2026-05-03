@@ -4,6 +4,11 @@
  */
 
 import { BaseService } from './base.service';
+import {
+  createSessionExpiredError,
+  dispatchSessionExpired,
+  isUnauthorizedOrExpired,
+} from "@/lib/sessionExpired";
 
 export interface UserProfile {
   id: string;
@@ -125,6 +130,11 @@ class ProfileService extends BaseService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'An error occurred' }));
+      if (isUnauthorizedOrExpired(response.status, error)) {
+        dispatchSessionExpired({ status: response.status, error, url: this.getApiUrl('/profile/avatar') });
+        throw createSessionExpiredError(error);
+      }
+
       throw new Error(error.message || `HTTP error! status: ${response.status}`);
     }
 

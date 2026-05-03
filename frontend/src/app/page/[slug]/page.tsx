@@ -111,11 +111,17 @@ export default async function PublicPage({
 
   // Dynamic import to keep this page as a Server Component for SEO
   const PageComponentRenderer = (await import("@/components/PageRenderer/PageComponentRenderer")).default;
+  const components = (page.components || []).filter((component: any) => {
+    const type = String(component.type || "").toLowerCase();
+    if (page.showNavbar === false && type.startsWith("navbar")) return false;
+    if (page.showFooter === false && type.startsWith("footer")) return false;
+    return true;
+  });
 
   return (
     <main className="min-h-screen">
       {/* Render all page components from page_components table */}
-      <PageComponentRenderer components={page.components || []} />
+      <PageComponentRenderer components={components} />
     </main>
   );
 }

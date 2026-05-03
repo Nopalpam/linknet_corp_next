@@ -2,7 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Icon from '@/components/base/Icon';
-import { useModalFormSuggestEnterprise } from '@/components/base/modals/ModalFormSuggestEnterprise';
+import ModalFormSuggestEnterpriseProvider, {
+  useModalFormSuggestEnterprise,
+} from '@/components/base/modals/ModalFormSuggestEnterprise';
 
 const ACTIVE_TEXTS = ['Industry', 'Scale', 'Needs'];
 const ROTATION_INTERVAL = 2200;
@@ -37,7 +39,7 @@ function FlipWord({ text, mode }) {
   );
 }
 
-export default function EnterpriseSolutionFinderCTA({
+function EnterpriseSolutionFinderCTAButton({
   className = '',
   onClick,
 }) {
@@ -83,7 +85,7 @@ export default function EnterpriseSolutionFinderCTA({
           <div className="flex h-10 w-10 shrink-0 items-center justify-center">
             <img
               src="/assets/icons/lamp-colors.svg"
-              alt="Suggest Enterprise"
+              alt="Solution Finder"
               className="object-cover"
             />
           </div>
@@ -127,5 +129,13 @@ export default function EnterpriseSolutionFinderCTA({
         />
       </button>
     </div>
+  );
+}
+
+export default function EnterpriseSolutionFinderCTA(props) {
+  return (
+    <ModalFormSuggestEnterpriseProvider>
+      <EnterpriseSolutionFinderCTAButton {...props} />
+    </ModalFormSuggestEnterpriseProvider>
   );
 }

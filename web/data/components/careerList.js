@@ -8,7 +8,7 @@ export const careers = [
     employment_type: "Internship",
     location: "Cyberpark",
     applyURL: "/apply/c-001",
-    detailURL: "/life-at-linknet/career/c-001",
+    detailURL: "/career/c-001",
     description: `<p>Kami mencari individu yang antusias untuk bergabung dengan tim Human Capital kami. Membantu mengelola hubungan karyawan dan mempelajari dinamika operasional HR.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Mahasiswa tingkat akhir Hukum/Psikologi/Manajemen.</li><li>Minat pada Industrial Relations.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Sesi mentoring HR.</li><li>Uang saku bulanan.</li></ul>`
@@ -20,7 +20,7 @@ export const careers = [
     employment_type: "Internship",
     location: "Cyberpark",
     applyURL: "/apply/c-002",
-    detailURL: "/life-at-linknet/career/c-002",
+    detailURL: "/career/c-002",
     description: `<p>Bantu kami menciptakan lingkungan kerja yang positif melalui program engagement kreatif untuk First Squad.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Mahasiswa Komunikasi atau Psikologi.</li><li>Kreatif dan up-to-date dengan tren.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Networking luas.</li><li>Sertifikat resmi.</li></ul>`
@@ -32,7 +32,7 @@ export const careers = [
     employment_type: "Internship",
     location: "Cyberpark",
     applyURL: "/apply/c-003",
-    detailURL: "/life-at-linknet/career/c-003",
+    detailURL: "/career/c-003",
     description: `<p>Visualisasikan kampanye internal kami. Membuat aset visual dari poster hingga materi presentasi digital.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Mahir Adobe Creative Suite atau Figma.</li><li>Memiliki portofolio desain.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Real-case project portfolio.</li><li>Bimbingan Senior Designer.</li></ul>`
@@ -44,7 +44,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Cyberpark",
     applyURL: "/apply/c-004",
-    detailURL: "/life-at-linknet/career/c-004",
+    detailURL: "/career/c-004",
     description: `<p>Memimpin inisiatif kemitraan strategis dan membangun ekosistem solusi bersama mitra eksternal.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Pengalaman 7+ tahun di B2B Sales/Partnership.</li><li>Kemampuan negosiasi level tinggi.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Remunerasi kompetitif.</li><li>Asuransi keluarga.</li></ul>`
@@ -56,7 +56,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-005",
-    detailURL: "/life-at-linknet/career/c-005",
+    detailURL: "/career/c-005",
     description: `<p>Merancang antarmuka dan pengalaman pengguna produk digital yang intuitif dan fungsional.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>2-3 tahun pengalaman UI/UX.</li><li>Keahlian mendalam di Figma.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Fasilitas laptop kerja.</li><li>Benefit kacamata.</li></ul>`
@@ -68,7 +68,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-006",
-    detailURL: "/life-at-linknet/career/c-006",
+    detailURL: "/career/c-006",
     description: `<p>Mengembangkan aplikasi web responsif menggunakan React.js dan Tailwind CSS.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Mahir JavaScript modern (ES6+).</li><li>Pengalaman dengan REST API.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Hybrid working.</li><li>Bonus performa.</li></ul>`
@@ -80,7 +80,7 @@ export const careers = [
     employment_type: "Contract",
     location: "Cyberpark",
     applyURL: "/apply/c-007",
-    detailURL: "/life-at-linknet/career/c-007",
+    detailURL: "/career/c-007",
     description: `<p>Mengelola performa iklan (Meta & Google Ads) serta optimasi SEO/SEM.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Keahlian Google Analytics.</li><li>Pengalaman campaign management.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Tunjangan internet.</li><li>Insentif KPI.</li></ul>`
@@ -92,7 +92,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-008",
-    detailURL: "/life-at-linknet/career/c-008",
+    detailURL: "/career/c-008",
     description: `<p>Mengolah data besar menjadi insight bisnis melalui visualisasi dashboard interaktif.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Mahir SQL & Tableau/PowerBI.</li><li>Latar belakang Statistik/IT.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Subsidi wellness/gym.</li><li>Training data science.</li></ul>`
@@ -104,7 +104,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Tangerang",
     applyURL: "/apply/c-009",
-    detailURL: "/life-at-linknet/career/c-009",
+    detailURL: "/career/c-009",
     description: `<p>Maintenance infrastruktur jaringan ISP dan memastikan uptime layanan pelanggan.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Sertifikasi CCNA/CCNP.</li><li>Paham routing & switching.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Tunjangan shift.</li><li>Asuransi kesehatan.</li></ul>`
@@ -116,7 +116,7 @@ export const careers = [
     employment_type: "Contract",
     location: "Cyberpark",
     applyURL: "/apply/c-010",
-    detailURL: "/life-at-linknet/career/c-010",
+    detailURL: "/career/c-010",
     description: `<p>Menangani pencatatan transaksi harian, invoice, dan rekonsiliasi bank.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>S1 Akuntansi.</li><li>Mahir Microsoft Excel (Pivot/Vlookup).</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>BPJS Lengkap.</li><li>Tunjangan makan.</li></ul>`
@@ -128,7 +128,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-011",
-    detailURL: "/life-at-linknet/career/c-011",
+    detailURL: "/career/c-011",
     description: `<p>Drafting kontrak komersial dan memastikan kepatuhan regulasi perusahaan.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Sarjana Hukum.</li><li>Pengalaman di law firm/in-house.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>ESOP Program.</li><li>Jam kerja fleksibel.</li></ul>`
@@ -140,7 +140,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Tangerang",
     applyURL: "/apply/c-012",
-    detailURL: "/life-at-linknet/career/c-012",
+    detailURL: "/career/c-012",
     description: `<p>Garda terdepan solusi pelanggan melalui multichannel support.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Komunikasi persuasif.</li><li>Terbiasa sistem ticketing.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Insentif bulanan.</li><li>Fasilitas game room.</li></ul>`
@@ -152,7 +152,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Bandung",
     applyURL: "/apply/c-013",
-    detailURL: "/life-at-linknet/career/c-013",
+    detailURL: "/career/c-013",
     description: `<p>Membangun hubungan dengan klien korporasi dan mencapai target penjualan regional.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Pengalaman sales minimal 2 tahun.</li><li>Target-oriented.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Komisi penjualan.</li><li>Tunjangan transportasi.</li></ul>`
@@ -164,7 +164,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-014",
-    detailURL: "/life-at-linknet/career/c-014",
+    detailURL: "/career/c-014",
     description: `<p>Mengelola infrastruktur cloud dan CI/CD pipeline untuk deployment aplikasi.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Paham Docker & Kubernetes.</li><li>Pengalaman AWS/GCP.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>High-spec laptop.</li><li>Sertifikasi cloud berbayar.</li></ul>`
@@ -176,7 +176,7 @@ export const careers = [
     employment_type: "Contract",
     location: "Cyberpark",
     applyURL: "/apply/c-015",
-    detailURL: "/life-at-linknet/career/c-015",
+    detailURL: "/career/c-015",
     description: `<p>Menciptakan narasi kreatif untuk kampanye marketing dan konten media sosial.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Kemampuan storytelling.</li><li>Paham SEO copywriting.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Creative environment.</li><li>Uang pulsa bulanan.</li></ul>`
@@ -188,7 +188,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-016",
-    detailURL: "/life-at-linknet/career/c-016",
+    detailURL: "/career/c-016",
     description: `<p>Melindungi aset digital dari ancaman siber dan melakukan vulnerability assessment.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Paham Penetration Testing.</li><li>Sertifikasi CEH diutamakan.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Asuransi kesehatan premium.</li><li>Bonus tahunan.</li></ul>`
@@ -200,7 +200,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Cyberpark",
     applyURL: "/apply/c-017",
-    detailURL: "/life-at-linknet/career/c-017",
+    detailURL: "/career/c-017",
     description: `<p>Mengelola pengadaan barang dan jasa serta negosiasi dengan vendor pihak ketiga.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Pengalaman purchasing.</li><li>Skill negosiasi vendor.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Dana pensiun.</li><li>Lingkungan kerja stabil.</li></ul>`
@@ -212,7 +212,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-018",
-    detailURL: "/life-at-linknet/career/c-018",
+    detailURL: "/career/c-018",
     description: `<p>Menjadi mitra strategis divisi bisnis dalam pengelolaan SDM dan pengembangan organisasi.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Pengalaman HRBP 5 tahun.</li><li>Paham UU Ketenagakerjaan.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Car allowance.</li><li>Medical check-up tahunan.</li></ul>`
@@ -224,7 +224,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Surabaya",
     applyURL: "/apply/c-019",
-    detailURL: "/life-at-linknet/career/c-019",
+    detailURL: "/career/c-019",
     description: `<p>Membangun microservices yang scalable dan efisien menggunakan Golang.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Mahir Go & PostgreSQL.</li><li>Paham gRPC & Message Queue.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Remote friendly.</li><li>Laptop pilihan.</li></ul>`
@@ -236,7 +236,7 @@ export const careers = [
     employment_type: "Fulltime",
     location: "Jakarta",
     applyURL: "/apply/c-020",
-    detailURL: "/life-at-linknet/career/c-020",
+    detailURL: "/career/c-020",
     description: `<p>Mengembangkan strategi konten sosial media untuk meningkatkan engagement brand.</p>`,
     requirements: `<ul className="list-disc pl-5 space-y-2"><li>Paham algoritma platform sosial.</li><li>Skill analisis data sosial.</li></ul>`,
     benefit: `<ul className="list-disc pl-5 space-y-2"><li>Budget iklan mandiri.</li><li>Training kreatif.</li></ul>`

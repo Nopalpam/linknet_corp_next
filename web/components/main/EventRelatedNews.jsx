@@ -30,7 +30,7 @@ export default function EventRelatedNews({ articles = [], locale = 'en' }) {
           </span>
           <h2 className="mt-3 text-headline-h4 text-black">Continue Exploring</h2>
           <p className="mt-3 text-body-b4 text-secondary">
-            Articles connected to this event from the Link Net newsroom.
+            Articles connected to this event from Link Net news.
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export default function EventRelatedNews({ articles = [], locale = 'en' }) {
           {articles.slice(0, 3).map((article) => (
             <Link
               key={article.id}
-              href={`/${locale}/newsroom/${article.slug}`}
+              href={`/${locale}/news/${article.slug}`}
               className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100">

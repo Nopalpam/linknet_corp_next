@@ -122,10 +122,20 @@ const menuSections: MenuSection[] = [
         path: "/file-manager",
       },
       {
+        icon: <GridIcon />,
+        name: "Data Components",
+        path: "/component-visibility",
+      },
+      {
+        icon: <TableIcon />,
+        name: "Label Data Bank",
+        path: "/data/label",
+      },
+      {
         icon: <ListIcon />,
         name: "Form Registration",
         subItems: [
-          // { name: "Enterprise Forms", path: "/form-modules/enterprise" },
+          { name: "Enterprise Forms", path: "/form-modules/enterprise" },
           { name: "Fiber Forms", path: "/form-modules/fiber" },
           // { name: "Media Forms", path: "/form-modules/media" },
           // { name: "All Submissions", path: "/form-modules/submissions" },

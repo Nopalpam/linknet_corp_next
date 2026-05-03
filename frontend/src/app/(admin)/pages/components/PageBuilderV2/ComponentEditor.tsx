@@ -18,12 +18,15 @@
 
 'use client';
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
 import { isMultilingual, ComponentSettings } from './types';
 import { CkeditorEditor } from './editors/CkeditorEditor';
+import { CtaListModule, isCtaListItem } from './editors/CtaListModule';
 import { ICON_OPTIONS } from './iconOptions';
+import { awardsService, Award } from '@/services/awards.service';
+import { newsCategoryService, newsService, NewsCategory, News } from '@/services/news.service';
 
 // =============================================================================
 // TYPE-SPECIFIC EDITOR MAPPING
@@ -43,8 +46,22 @@ const COMMON_FIELD_KEYS = ['config', 'custom_id', 'custom_class', 'bg_type', 'bg
 const CONTENT_KEYS = ['title', 'subtitle', 'heading', 'subheading', 'description', 'content', 'text', 'label', 'name', 'caption', 'alt', 'excerpt', 'summary', 'body', 'quote', 'author', 'source', 'placeholder', 'badge', 'tag', 'category'];
 /** Keys that belong to the LAYOUT group */
 const LAYOUT_KEYS = ['theme', 'size', 'layout', 'alignment', 'text_position', 'columns', 'gap', 'padding', 'margin', 'width', 'height', 'max_width', 'max_items', 'per_page', 'order', 'direction', 'position', 'variant', 'style', 'display', 'grid', 'spacing', 'rows', 'cols', 'show_', 'hide_', 'is_', 'enable_', 'visible'];
-/** Keys that belong to the BUTTON group */
-const BUTTON_KEYS = ['button_', 'btn_', 'cta_', 'link_', 'href', 'url', 'target', 'action'];
+/** Keys that belong to the BUTTON group. Button Settings must only expose CTA lists. */
+const CTA_LIST_KEYS = ['ctaList', 'cta_list', 'ctaButtons', 'cta_buttons', 'buttons'];
+const BUTTON_KEYS = CTA_LIST_KEYS;
+const GROUP_ORDER = ['layout', 'content', 'button', 'items', 'advanced'];
+const TYPE_GROUP_ORDER: Record<string, string[]> = {
+  awards_marquee: ['content', 'items', 'button', 'advanced'],
+};
+const TYPE_HIDDEN_FIELDS: Record<string, string[]> = {
+  awards_list: ['layout', 'title'],
+  awards_marquee: ['title', 'marquee_speed', 'marquee_direction'],
+  career_list: ['title'],
+  news_highlight: ['title'],
+  news_featured: ['title'],
+  news_teaser: ['categorySlug', 'category_slug'],
+  navbar_newsroom: ['introData', 'sectionIntro', 'intro'],
+};
 
 /** Helper text for technical/non-obvious fields */
 const FIELD_HELPERS: Record<string, string> = {
@@ -61,6 +78,7 @@ const FIELD_HELPERS: Record<string, string> = {
   max_items: 'Maximum number of items to display',
   per_page: 'Number of items per page for pagination',
   order: 'Sort order for displayed items',
+  news_ids: 'Pilih beberapa berita dari database. Urutan pilihan di bawah ini akan dipakai di public.',
   columns: 'Number of columns in the grid layout',
   gap: 'Spacing between grid items (in pixels or CSS units)',
   alt: 'Alternative text for accessibility (screen readers)',
@@ -88,7 +106,236 @@ const FIELD_PLACEHOLDERS: Record<string, string> = {
   button_url: 'https://example.com',
 };
 
-const ICON_FIELD_KEYS = ['icon', 'iconClass', 'iconName', 'iconListDefault'];
+const ICON_FIELD_KEYS = ['icon', 'iconClass', 'iconName', 'iconListDefault', 'iconLeft', 'iconRight', 'iconURL', 'iconUrl'];
+const USP_VARIANT_OPTIONS = ['default', 'plain', 'background', 'card', 'border', 'accent-stat', 'accent-text', 'icon-left'];
+const CTA_VARIANT_OPTIONS = [
+  'primary',
+  'secondary',
+  'secondary-outline',
+  'secondary-outline--white',
+  'secondary-plain',
+  'warning',
+  'info',
+  'danger',
+  'link',
+];
+const LAYOUT_VARIANT_OPTIONS = ['default', 'image-on-left', 'image-on-right'];
+const LINK_TYPE_OPTIONS = ['url', 'action-modal'];
+const ACTION_MODAL_OPTIONS = [
+  '',
+  'get-started',
+  'form-registration-enterprise',
+  'form-registration-enterprise-smb',
+  'form-registration-fiber',
+  'form-registration-media',
+  'form-inquiry-fiber',
+  'form-subscribe-internet-fiber',
+  'form-partnership-enterprise',
+  'form-suggest-enterprise',
+  'form-event-register',
+];
+
+const SINGLE_BUTTON_TEXT_KEYS = ['cta_label', 'button_label', 'label', 'cta_text', 'button_text', 'textCTA', 'ctaText'];
+const SINGLE_BUTTON_LINK_KEYS = ['cta_href', 'button_href', 'href', 'cta_link', 'button_link', 'button_url', 'cta_url', 'ctaLink', 'action'];
+const LEGACY_SINGLE_BUTTON_FIELD_KEYS = new Set([
+  'cta_label',
+  'button_label',
+  'cta_text',
+  'button_text',
+  'textCTA',
+  'ctaText',
+  'cta_href',
+  'button_href',
+  'cta_link',
+  'button_link',
+  'button_url',
+  'cta_url',
+  'ctaLink',
+  'cta_variant',
+  'button_variant',
+  'cta_size',
+  'button_size',
+  'cta_link_type',
+  'button_link_type',
+  'cta_target',
+  'button_target',
+  'cta_action',
+  'button_action',
+  'cta_action_modal',
+  'button_action_modal',
+  'cta_icon_left',
+  'button_icon_left',
+  'cta_icon_right',
+  'button_icon_right',
+]);
+
+function getFirstDefinedKey(data: Record<string, any>, keys: string[]): string | undefined {
+  return keys.find((key) => key in data);
+}
+
+function getSingleButtonPrefix(data: Record<string, any>): 'button' | 'cta' {
+  return Object.keys(data).some((key) => key.startsWith('button_') || key.startsWith('button'))
+    ? 'button'
+    : 'cta';
+}
+
+function isSingleButtonSettings(data: Record<string, any> | undefined): boolean {
+  if (!data || typeof data !== 'object') return false;
+  const hasText = SINGLE_BUTTON_TEXT_KEYS.some((key) => key in data);
+  const hasLink = SINGLE_BUTTON_LINK_KEYS.some((key) => key in data);
+  if (!hasText && !hasLink) return false;
+  const buttonOnlyKeys = new Set([
+    ...SINGLE_BUTTON_TEXT_KEYS,
+    ...SINGLE_BUTTON_LINK_KEYS,
+    'cta_variant',
+    'button_variant',
+    'variant',
+    'cta_size',
+    'button_size',
+    'size',
+    'cta_link_type',
+    'button_link_type',
+    'link_type',
+    'linkType',
+    'cta_target',
+    'button_target',
+    'target',
+    'cta_action',
+    'button_action',
+    'action',
+    'cta_action_modal',
+    'button_action_modal',
+    'action_modal',
+    'actionModal',
+    'cta_icon_left',
+    'button_icon_left',
+    'iconLeft',
+    'icon_left',
+    'cta_icon_right',
+    'button_icon_right',
+    'iconRight',
+    'icon_right',
+    'icon',
+  ]);
+
+  return Object.keys(data).every((key) => buttonOnlyKeys.has(key));
+}
+
+function normalizeSingleButtonSettings(data: Record<string, any>): Record<string, any> {
+  const label = data.cta_label ?? data.button_label ?? data.label ?? data.cta_text ?? data.button_text ?? data.textCTA ?? data.ctaText ?? '';
+  const href = data.cta_href ?? data.button_href ?? data.href ?? data.cta_link ?? data.button_link ?? data.button_url ?? data.cta_url ?? data.ctaLink ?? data.action ?? '';
+  const action = data.cta_action ?? data.button_action ?? data.action ?? data.cta_action_modal ?? data.button_action_modal ?? data.action_modal ?? data.actionModal ?? '';
+
+  return {
+    label,
+    text: label,
+    href,
+    action,
+    variant: data.cta_variant ?? data.button_variant ?? data.variant ?? 'primary',
+    size: data.cta_size ?? data.button_size ?? data.size ?? 'lg',
+    link_type: data.cta_link_type ?? data.button_link_type ?? data.link_type ?? data.linkType ?? 'url',
+    target: data.cta_target ?? data.button_target ?? data.target ?? '_self',
+    action_modal: data.cta_action_modal ?? data.button_action_modal ?? data.action_modal ?? data.actionModal ?? '',
+    iconLeft: data.cta_icon_left ?? data.button_icon_left ?? data.iconLeft ?? data.icon_left ?? '',
+    iconRight: data.cta_icon_right ?? data.button_icon_right ?? data.iconRight ?? data.icon_right ?? data.icon ?? '',
+  };
+}
+
+function applySingleButtonSettings(original: Record<string, any>, cta: Record<string, any>): Record<string, any> {
+  const prefix = getSingleButtonPrefix(original);
+  const textKey = getFirstDefinedKey(original, SINGLE_BUTTON_TEXT_KEYS) || `${prefix}_text`;
+  const linkKey = getFirstDefinedKey(original, SINGLE_BUTTON_LINK_KEYS) || `${prefix}_link`;
+  const actionKey = getFirstDefinedKey(original, ['cta_action', 'button_action', 'action']) || `${prefix}_action`;
+  const nextLabel = cta.label ?? cta.text ?? '';
+  const next = {
+    ...original,
+    [textKey]: nextLabel,
+    [linkKey]: cta.href,
+    [actionKey]: cta.action,
+    [`${prefix}_variant`]: cta.variant,
+    [`${prefix}_size`]: cta.size,
+    [`${prefix}_link_type`]: cta.link_type,
+    [`${prefix}_target`]: cta.target,
+    [`${prefix}_action_modal`]: cta.action_modal,
+    [`${prefix}_icon_left`]: cta.iconLeft,
+    [`${prefix}_icon_right`]: cta.iconRight,
+  };
+
+  return next;
+}
+
+function hasRenderableValue(value: any): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number' || typeof value === 'boolean') return true;
+  if (Array.isArray(value)) return value.some((entry) => hasRenderableValue(entry));
+  if (typeof value === 'object') return Object.values(value).some((entry) => hasRenderableValue(entry));
+  return false;
+}
+
+function valuesMatch(left: any, right: any): boolean {
+  if (!hasRenderableValue(left) || !hasRenderableValue(right)) return false;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function hasTopLevelSingleButtonFields(data: Record<string, any>): boolean {
+  const hasText = SINGLE_BUTTON_TEXT_KEYS.some((key) => key in data && hasRenderableValue(data[key]));
+  const hasLink = SINGLE_BUTTON_LINK_KEYS.some((key) => key in data && hasRenderableValue(data[key]));
+  return hasText || hasLink;
+}
+
+function normalizeSettingsForEditor(data: Record<string, any> | undefined): Record<string, any> {
+  const normalized: Record<string, any> = { ...(data || {}) };
+  const introSource = normalized.introData || normalized.sectionIntro || normalized.intro;
+
+  if (introSource && typeof introSource === 'object' && !Array.isArray(introSource)) {
+    normalized.introData = { ...introSource };
+
+    if ('title' in normalized) {
+      if (!hasRenderableValue(normalized.introData.title)) {
+        normalized.introData.title = normalized.title;
+        delete normalized.title;
+      } else if (!hasRenderableValue(normalized.title) || valuesMatch(normalized.title, normalized.introData.title)) {
+        delete normalized.title;
+      }
+    }
+    if ('description' in normalized) {
+      if (!hasRenderableValue(normalized.introData.description)) {
+        normalized.introData.description = normalized.description;
+        delete normalized.description;
+      } else if (!hasRenderableValue(normalized.description) || valuesMatch(normalized.description, normalized.introData.description)) {
+        delete normalized.description;
+      }
+    }
+
+    delete normalized.sectionIntro;
+    delete normalized.intro;
+  }
+
+  const ctaListKey = CTA_LIST_KEYS.find((key) => Array.isArray(normalized[key]));
+  if (ctaListKey) {
+    normalized.ctaList = normalized[ctaListKey];
+  } else if (hasTopLevelSingleButtonFields(normalized)) {
+    const legacyCta = normalizeSingleButtonSettings(normalized);
+    if (hasRenderableValue(legacyCta.label) || hasRenderableValue(legacyCta.href) || hasRenderableValue(legacyCta.action)) {
+      normalized.ctaList = [legacyCta];
+    }
+  }
+
+  for (const key of CTA_LIST_KEYS) {
+    if (key !== 'ctaList') {
+      delete normalized[key];
+    }
+  }
+
+  for (const key of Object.keys(normalized)) {
+    if (LEGACY_SINGLE_BUTTON_FIELD_KEYS.has(key)) {
+      delete normalized[key];
+    }
+  }
+
+  return normalized;
+}
 
 function humanize(key: string): string {
   return key
@@ -117,8 +364,9 @@ function isWideField(key: string, value: any): boolean {
 
 /** Classify a field key into a group */
 function classifyField(key: string): 'content' | 'layout' | 'button' | 'items' | 'advanced' {
-  if (key === 'sectionIntro') return 'content';
+  if (key === 'introData' || key === 'sectionIntro' || key === 'intro') return 'content';
   if (COMMON_FIELD_KEYS.includes(key)) return 'advanced';
+  if (isSliderField(key)) return 'layout';
   if (BUTTON_KEYS.some(bk => key.startsWith(bk) || key === bk)) return 'button';
   if (LAYOUT_KEYS.some(lk => key === lk || key.startsWith(lk))) return 'layout';
   if (CONTENT_KEYS.some(ck => key === ck || key.startsWith(ck))) return 'content';
@@ -129,6 +377,13 @@ function getHelperText(key: string): string | undefined {
   if (FIELD_HELPERS[key]) return FIELD_HELPERS[key];
   for (const [hk, hv] of Object.entries(FIELD_HELPERS)) {
     if (key.startsWith(hk) || key.endsWith(hk)) return hv;
+  }
+  return undefined;
+}
+
+function getObjectHelperText(key: string): string | undefined {
+  if (key === 'image') {
+    return 'Only visible when Layout Variant is Image-on-Left or Image-on-Right.';
   }
   return undefined;
 }
@@ -144,6 +399,69 @@ function getPlaceholder(key: string): string {
 function isIconField(key: string): boolean {
   const normalized = key.toLowerCase();
   return ICON_FIELD_KEYS.some((iconKey) => normalized === iconKey.toLowerCase());
+}
+
+function uniqueOptions(options: string[]): string[] {
+  return Array.from(new Set(options));
+}
+
+function isSliderSlidesField(key: string): boolean {
+  return [
+    'slides_per_view',
+    'slides_per_view_desktop',
+    'slides_per_view_mobile',
+    'slidesPerView',
+    'slidesPerViewDesktop',
+    'slidesPerViewMobile',
+  ].includes(key);
+}
+
+function isSliderToggleField(key: string): boolean {
+  return key === 'is_slider' || key === 'isSlider';
+}
+
+function isSliderField(key: string): boolean {
+  return isSliderToggleField(key) || isSliderSlidesField(key);
+}
+
+function isGridColsField(key: string): boolean {
+  return [
+    'grid_cols_desktop',
+    'grid_cols_mobile',
+    'gridColsDesktop',
+    'gridColsMobile',
+  ].includes(key);
+}
+
+function isActionModalField(key: string): boolean {
+  return [
+    'action_modal',
+    'action_modal_id',
+    'actionModal',
+    'actionModalId',
+    'modal_id',
+    'modalId',
+    'form_modal',
+    'formModal',
+  ].includes(key);
+}
+
+function shouldHideField(key: string, data: Record<string, any>): boolean {
+  const linkType = data.link_type ?? data.linkType;
+  if (linkType === 'action-modal' && (key === 'href' || key === 'url')) return true;
+  if (isActionModalField(key) && linkType !== 'action-modal') return true;
+  if (isCtaListItem(data) && (key === 'icon' || key === 'iconLeft' || key === 'icon_left' || key === 'iconRight' || key === 'icon_right')) return true;
+
+  const source = data.source ?? data.data_source;
+  const isNewsIdsField = key === 'news_ids' || key === 'newsIds' || key === 'selected_news_ids' || key === 'selectedNewsIds';
+  if (isNewsIdsField && source !== 'selected_news') return true;
+  if ((key === 'featuredNews' || key === 'items') && source === 'selected_news') return true;
+
+  const sliderValue = data.is_slider ?? data.isSlider;
+  if (sliderValue === false && isSliderSlidesField(key)) return true;
+  if (sliderValue === true && isGridColsField(key)) return true;
+
+  return false;
 }
 
 // =============================================================================
@@ -182,6 +500,7 @@ interface FieldProps {
   value: any;
   onChange: (val: any) => void;
   depth?: number;
+  templateValue?: any;
 }
 
 function FieldWrapper({ children, helper }: { children: React.ReactNode; helper?: string }) {
@@ -317,6 +636,9 @@ function BooleanField({ label, value, onChange, fieldKey }: FieldProps) {
 
 function SelectField({ label, value, onChange, options, fieldKey }: FieldProps & { options: string[] }) {
   const helper = getHelperText(fieldKey);
+  const normalizedOptions = typeof value === 'string' && value && !options.includes(value)
+    ? [value, ...options]
+    : options;
 
   return (
     <FieldWrapper helper={helper}>
@@ -326,10 +648,318 @@ function SelectField({ label, value, onChange, options, fieldKey }: FieldProps &
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
       >
-        {options.map((opt) => (
+        {normalizedOptions.map((opt) => (
           <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
         ))}
       </select>
+    </FieldWrapper>
+  );
+}
+
+function NewsCategorySelectField({ label, value, onChange, fieldKey }: FieldProps) {
+  const [categories, setCategories] = useState<NewsCategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const useSlugValue = fieldKey === 'categorySlug' || fieldKey === 'category_slug';
+  const currentValue = typeof value === 'string' ? value : '';
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    newsCategoryService
+      .getActiveCategories()
+      .then((response) => {
+        if (mounted) setCategories(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setCategories([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <FieldWrapper helper="Pilih kategori berita dari CMS News Category. Title public akan memakai nama kategori ini.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <select
+        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+        value={currentValue}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading categories...' : 'All categories'}</option>
+        {currentValue && !categories.some((category) => (useSlugValue ? category.slug : category.id) === currentValue) && (
+          <option value={currentValue}>{currentValue}</option>
+        )}
+        {categories.map((category) => {
+          const optionValue = useSlugValue ? category.slug : category.id;
+          const labelText = category.name_en || category.name_id || category.slug;
+          return (
+            <option key={category.id} value={optionValue}>
+              {labelText}{category.name_id ? ` / ${category.name_id}` : ''}
+            </option>
+          );
+        })}
+      </select>
+    </FieldWrapper>
+  );
+}
+
+function NewsIdsField({ label, value, onChange }: FieldProps) {
+  const [newsItems, setNewsItems] = useState<News[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const selectedIds = Array.isArray(value) ? value.filter(Boolean) : [];
+  const selectedSet = new Set(selectedIds);
+  const newsById = new Map(newsItems.map((item) => [item.id, item]));
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredNews = normalizedQuery
+    ? newsItems.filter((news) => (
+        news.title_en.toLowerCase().includes(normalizedQuery) ||
+        (news.title_id || '').toLowerCase().includes(normalizedQuery) ||
+        news.slug.toLowerCase().includes(normalizedQuery) ||
+        (news.category?.name_en || '').toLowerCase().includes(normalizedQuery)
+      ))
+    : newsItems;
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    newsService
+      .getActiveNews({ page: 1, limit: 100, sortBy: 'news_date', sortOrder: 'desc' })
+      .then((response) => {
+        if (mounted) setNewsItems(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setNewsItems([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const toggleNews = (newsId: string) => {
+    const nextIds = selectedSet.has(newsId)
+      ? selectedIds.filter((id: string) => id !== newsId)
+      : [...selectedIds, newsId];
+    onChange(nextIds);
+  };
+
+  const moveSelected = (newsId: string, direction: -1 | 1) => {
+    const currentIndex = selectedIds.indexOf(newsId);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= selectedIds.length) return;
+
+    const nextIds = [...selectedIds];
+    const [item] = nextIds.splice(currentIndex, 1);
+    nextIds.splice(nextIndex, 0, item);
+    onChange(nextIds);
+  };
+
+  return (
+    <FieldWrapper helper="Pilih berita dari CMS News. Urutan di daftar Selected News menentukan urutan tampil di public.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+
+      {selectedIds.length > 0 && (
+        <div className="mb-3 rounded-lg border border-brand-100 dark:border-brand-900/50 bg-brand-50/40 dark:bg-brand-900/10 divide-y divide-brand-100 dark:divide-brand-900/50">
+          {selectedIds.map((newsId: string, index: number) => {
+            const news = newsById.get(newsId);
+            const title = news?.title_en || news?.title_id || newsId;
+
+            return (
+              <div key={`${newsId}-${index}`} className="flex items-center gap-2 px-3 py-2 text-xs">
+                <span className="w-5 text-center font-semibold text-brand-600 dark:text-brand-300">{index + 1}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-gray-800 dark:text-gray-100">{title}</span>
+                  {news?.news_date && (
+                    <span className="block text-gray-400 dark:text-gray-500">{news.news_date}</span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => moveSelected(newsId, -1)}
+                  disabled={index === 0}
+                  className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 disabled:opacity-40"
+                >
+                  Up
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveSelected(newsId, 1)}
+                  disabled={index === selectedIds.length - 1}
+                  className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 disabled:opacity-40"
+                >
+                  Down
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleNews(newsId)}
+                  className="px-2 py-1 rounded border border-red-200 text-red-600 dark:border-red-900/50 dark:text-red-400"
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search news..."
+        className="mb-2 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+      />
+      <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+        {loading ? (
+          <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">Loading news...</div>
+        ) : filteredNews.length > 0 ? (
+          filteredNews.map((news) => (
+            <label
+              key={news.id}
+              className="flex items-start gap-2 px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                checked={selectedSet.has(news.id)}
+                onChange={() => toggleNews(news.id)}
+              />
+              <span className="min-w-0">
+                <span className="block font-medium text-gray-800 dark:text-gray-100 truncate">{news.title_en || news.title_id}</span>
+                <span className="block text-gray-400 dark:text-gray-500">
+                  {news.category?.name_en || news.category?.slug || 'Uncategorized'} {news.news_date ? `- ${news.news_date}` : ''}
+                </span>
+              </span>
+            </label>
+          ))
+        ) : (
+          <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">No news found.</div>
+        )}
+      </div>
+    </FieldWrapper>
+  );
+}
+
+function IconField({ label, value, onChange, fieldKey }: FieldProps) {
+  const helper = getHelperText(fieldKey) || 'Select an icon name or enter a file/path value';
+  const currentValue = typeof value === 'string' ? value : '';
+  const selectedIcon = ICON_OPTIONS.includes(currentValue as any) ? currentValue : '';
+  const customPath = selectedIcon ? '' : currentValue;
+
+  return (
+    <FieldWrapper helper={helper}>
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <div className="space-y-2">
+        <select
+          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+          value={selectedIcon}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          {ICON_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>{opt ? opt.charAt(0).toUpperCase() + opt.slice(1) : 'None'}</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder="/assets/icons/example.svg"
+          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+          value={customPath}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+    </FieldWrapper>
+  );
+}
+
+function AwardIdsField({ label, value, onChange }: FieldProps) {
+  const [awards, setAwards] = useState<Award[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const selectedIds = Array.isArray(value) ? value : [];
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredAwards = normalizedQuery
+    ? awards.filter((award) => (
+        award.title.toLowerCase().includes(normalizedQuery) ||
+        award.issuer.toLowerCase().includes(normalizedQuery) ||
+        String(award.year).includes(normalizedQuery)
+      ))
+    : awards;
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    awardsService
+      .getAllAwards('ACTIVE')
+      .then((response) => {
+        if (mounted) setAwards(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setAwards([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const toggleAward = (awardId: string) => {
+    const nextIds = selectedIds.includes(awardId)
+      ? selectedIds.filter((id: string) => id !== awardId)
+      : [...selectedIds, awardId];
+    onChange(nextIds);
+  };
+
+  return (
+    <FieldWrapper helper="Pilih dari bank data Awards CMS. Hanya awards yang dicentang yang akan tampil di public.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search awards..."
+        className="mb-2 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+      />
+      <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+        {loading ? (
+          <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">Loading awards...</div>
+        ) : filteredAwards.length > 0 ? (
+          filteredAwards.map((award) => (
+            <label
+              key={award.id}
+              className="flex items-start gap-2 px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                checked={selectedIds.includes(award.id)}
+                onChange={() => toggleAward(award.id)}
+              />
+              <span className="min-w-0">
+                <span className="block font-medium text-gray-800 dark:text-gray-100 truncate">{award.title}</span>
+                <span className="block text-gray-400 dark:text-gray-500">{award.year} {award.issuer ? `- ${award.issuer}` : ''}</span>
+              </span>
+            </label>
+          ))
+        ) : (
+          <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">No awards found.</div>
+        )}
+      </div>
     </FieldWrapper>
   );
 }
@@ -343,7 +973,7 @@ function getItemPreview(item: any): string {
   if (typeof item === 'string') return item.slice(0, 40) || '(empty)';
   if (typeof item !== 'object' || item === null) return '';
   // Try common label fields
-  for (const key of ['title', 'name', 'label', 'text', 'heading', 'caption', 'value', 'year']) {
+  for (const key of ['title', 'name', 'label', 'text', 'heading', 'caption', 'alt', 'url', 'value', 'year']) {
     const val = item[key];
     if (typeof val === 'string' && val) return val.slice(0, 40);
     if (val && typeof val === 'object' && (val.en || val.id)) return (val.en || val.id).slice(0, 40);
@@ -351,18 +981,164 @@ function getItemPreview(item: any): string {
   return '';
 }
 
-function getEmptyArrayItemTemplate(fieldKey: string): any {
-  if (fieldKey === 'list') {
-    return {
-      icon: '',
-      text: { en: '', id: '' },
-    };
-  }
+const EMPTY_ARRAY_ITEM_TEMPLATES: Record<string, any> = {
+  items: {
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    image: '',
+  },
+  slides: {
+    image: '',
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    button_text: { en: '', id: '' },
+    button_link: '',
+  },
+  list: {
+    icon: '',
+    text: { en: '', id: '' },
+  },
+  tabs: {
+    key: '',
+    label: { en: '', id: '' },
+  },
+  cards: {
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    image: '',
+    link: '',
+  },
+  documents: {
+    title: { en: '', id: '' },
+    url: '',
+    file_type: '',
+    file_size: '',
+  },
+  related_articles: {
+    title: { en: '', id: '' },
+    url: '',
+  },
+  featuredNews: {
+    title: { en: '', id: '' },
+    image: '',
+    slug: '',
+    author: '',
+    newsDate: '',
+    category: {
+      label: { en: '', id: '' },
+      slug: '',
+    },
+  },
+  contact_items: {
+    type: '',
+    icon: '',
+    label: { en: '', id: '' },
+    value: '',
+    url: '',
+  },
+  services: {
+    icon: '',
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    products: [],
+  },
+  products: {
+    name: { en: '', id: '' },
+    link: '',
+  },
+  metrics: {
+    label: { en: '', id: '' },
+    value: '',
+    change: '',
+  },
+  initiatives: {
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    image: '',
+  },
+  community_logos: {
+    url: '',
+    alt: '',
+  },
+  photos: {
+    url: '',
+    alt: '',
+  },
+  testimonials: {
+    image: '',
+    companyLogo: '',
+    companyName: '',
+    quote: { en: '', id: '' },
+    tags: [],
+    readMoreUrl: '',
+    name: '',
+    role: '',
+  },
+  milestones: {
+    year: '',
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    image: '',
+  },
+  missions: {
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+    image: '',
+  },
+  ctaList: {
+    text: { en: '', id: '' },
+    href: '',
+    variant: 'primary',
+    size: 'lg',
+    iconLeft: '',
+    iconRight: '',
+    link_type: 'url',
+    action_modal: '',
+  },
+  cta_list: {
+    text: { en: '', id: '' },
+    href: '',
+    variant: 'primary',
+    size: 'lg',
+    iconLeft: '',
+    iconRight: '',
+    link_type: 'url',
+    action_modal: '',
+  },
+  cta_buttons: {
+    text: { en: '', id: '' },
+    href: '',
+    variant: 'primary',
+    size: 'lg',
+    iconLeft: '',
+    iconRight: '',
+    link_type: 'url',
+    action_modal: '',
+  },
+};
 
-  return {};
+function cloneAndClear(value: any): any {
+  const cloned = JSON.parse(JSON.stringify(value));
+  clearValues(cloned);
+  return cloned;
 }
 
-function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps) {
+function getEmptyArrayItemTemplate(fieldKey: string, templateValue?: any): any {
+  if (Array.isArray(templateValue) && templateValue.length > 0) {
+    return cloneAndClear(templateValue[0]);
+  }
+
+  if (EMPTY_ARRAY_ITEM_TEMPLATES[fieldKey]) {
+    return cloneAndClear(EMPTY_ARRAY_ITEM_TEMPLATES[fieldKey]);
+  }
+
+  return {
+    title: { en: '', id: '' },
+    description: { en: '', id: '' },
+  };
+}
+
+function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue }: FieldProps) {
   const items = Array.isArray(value) ? value : [];
   const [collapsed, setCollapsed] = useState(items.length > 3);
   const [minimizedItems, setMinimizedItems] = useState<Record<number, boolean>>(() => {
@@ -394,8 +1170,9 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
   };
 
   const addItem = () => {
+    setCollapsed(false);
     if (items.length === 0) {
-      onChange([getEmptyArrayItemTemplate(fieldKey)]);
+      onChange([getEmptyArrayItemTemplate(fieldKey, templateValue)]);
       setMinimizedItems({ 0: false });
       return;
     }
@@ -622,7 +1399,7 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex-shrink-0">
                     Item {idx + 1}
                   </span>
-                  {isMinimized && preview && (
+                  {preview && (
                     <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                       — {preview}
                     </span>
@@ -677,6 +1454,8 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
                       data={item}
                       onChange={(newVal) => updateItem(idx, newVal)}
                       depth={depth + 1}
+                      templateData={Array.isArray(templateValue) ? (templateValue[idx] || templateValue[0]) : undefined}
+                      contextData={item}
                     />
                   ) : (
                     <input
@@ -717,9 +1496,16 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0 }: FieldProps)
 // OBJECT FIELDS (recursive, with 2-column grid for short fields)
 // =============================================================================
 
-function renderField(key: string, value: any, handleFieldChange: (key: string, val: any) => void, depth: number): { element: React.ReactNode; wide: boolean } {
+function renderField(
+  key: string,
+  value: any,
+  handleFieldChange: (key: string, val: any) => void,
+  depth: number,
+  templateValue?: any,
+  componentType?: string
+): { element: React.ReactNode; wide: boolean } {
   const label = humanize(key);
-  const fieldProps: FieldProps = { label, fieldKey: key, value, onChange: (v) => handleFieldChange(key, v), depth };
+  const fieldProps: FieldProps = { label, fieldKey: key, value, onChange: (v) => handleFieldChange(key, v), depth, templateValue };
 
   // Select fields for known enums
   if (key === 'bg_type') {
@@ -740,8 +1526,23 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
   if (key === 'layout') {
     return { element: <SelectField key={key} {...fieldProps} options={['grid', 'list', 'carousel']} />, wide: false };
   }
+  if (key === 'layoutVariant' || key === 'layout_variant') {
+    return { element: <SelectField key={key} {...fieldProps} options={LAYOUT_VARIANT_OPTIONS} />, wide: false };
+  }
   if (key === 'theme') {
     return { element: <SelectField key={key} {...fieldProps} options={['light', 'dark']} />, wide: false };
+  }
+  if (key === 'variant') {
+    return { element: <SelectField key={key} {...fieldProps} options={uniqueOptions([...CTA_VARIANT_OPTIONS, ...USP_VARIANT_OPTIONS])} />, wide: false };
+  }
+  if (key === 'usp_variant') {
+    return { element: <SelectField key={key} {...fieldProps} options={USP_VARIANT_OPTIONS} />, wide: false };
+  }
+  if (key === 'link_type' || key === 'linkType') {
+    return { element: <SelectField key={key} {...fieldProps} options={LINK_TYPE_OPTIONS} />, wide: false };
+  }
+  if (isActionModalField(key)) {
+    return { element: <SelectField key={key} {...fieldProps} options={ACTION_MODAL_OPTIONS} />, wide: false };
   }
   if (key === 'size_hero') {
     return { element: <SelectField key={key} {...fieldProps} options={['lnHero__medium', 'lnHero__small']} />, wide: false };
@@ -749,8 +1550,23 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
   if (key === 'order') {
     return { element: <SelectField key={key} {...fieldProps} options={['latest', 'oldest', 'alphabetical']} />, wide: false };
   }
+  if (key === 'source' || key === 'data_source') {
+    return { element: <SelectField key={key} {...fieldProps} options={['cms_highlights', 'selected_news', 'manual']} />, wide: false };
+  }
+  if (key === 'category_sort_by' || key === 'categorySortBy') {
+    return { element: <SelectField key={key} {...fieldProps} options={['default', 'label_asc', 'label_desc', 'slug_asc', 'slug_desc']} />, wide: false };
+  }
+  if (key === 'category_id' || key === 'categoryId' || key === 'category_slug' || key === 'categorySlug') {
+    return { element: <NewsCategorySelectField key={key} {...fieldProps} />, wide: false };
+  }
   if (isIconField(key)) {
-    return { element: <SelectField key={key} {...fieldProps} options={[...ICON_OPTIONS]} />, wide: false };
+    return { element: <IconField key={key} {...fieldProps} />, wide: false };
+  }
+  if (key === 'award_ids' || key === 'awardIds') {
+    return { element: <AwardIdsField key={key} {...fieldProps} />, wide: true };
+  }
+  if (key === 'news_ids' || key === 'newsIds' || key === 'selected_news_ids' || key === 'selectedNewsIds') {
+    return { element: <NewsIdsField key={key} {...fieldProps} />, wide: true };
   }
 
   // Multilingual (always wide)
@@ -775,6 +1591,8 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
   }
   // Nested object
   if (typeof value === 'object') {
+    const objectHelper = getObjectHelperText(key);
+
     return {
       element: (
         <div key={key} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -785,11 +1603,20 @@ function renderField(key: string, value: any, handleFieldChange: (key: string, v
               </svg>
               {label}
             </summary>
+            {objectHelper && (
+              <p className="px-4 pt-3 text-[11px] text-gray-400 dark:text-gray-500 leading-tight">
+                {objectHelper}
+              </p>
+            )}
             <div className="p-4">
               <ObjectFields
                 data={value}
                 onChange={(v) => handleFieldChange(key, v)}
                 depth={depth + 1}
+                templateData={templateValue}
+                contextData={value}
+                objectKey={key}
+                componentType={componentType}
               />
             </div>
           </details>
@@ -808,21 +1635,51 @@ function ObjectFields({
   onChange,
   depth = 0,
   excludeKeys = [],
+  templateData,
+  contextData,
+  objectKey,
+  componentType,
 }: {
   data: Record<string, any>;
   onChange: (newData: Record<string, any>) => void;
   depth?: number;
   excludeKeys?: string[];
+  templateData?: Record<string, any>;
+  contextData?: Record<string, any>;
+  objectKey?: string;
+  componentType?: string;
 }) {
+  const editorData = data || {};
+
+  if (isCtaListItem(editorData)) {
+    return (
+      <div className={`${depth > 0 ? 'pl-3 border-l-2 border-brand-200 dark:border-brand-800/40' : ''}`}>
+        <CtaListModule value={editorData} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (isSingleButtonSettings(editorData)) {
+    return (
+      <div className={`${depth > 0 ? 'pl-3 border-l-2 border-brand-200 dark:border-brand-800/40' : ''}`}>
+        <CtaListModule
+          value={normalizeSingleButtonSettings(editorData)}
+          onChange={(nextCta) => onChange(applySingleButtonSettings(editorData, nextCta))}
+        />
+      </div>
+    );
+  }
+
   const handleFieldChange = (key: string, newVal: any) => {
-    onChange({ ...data, [key]: newVal });
+    onChange({ ...editorData, [key]: newVal });
   };
 
-  const entries = Object.entries(data || {}).filter(([key]) => !excludeKeys.includes(key));
+  const visibilityContext = contextData || data || {};
+  const entries = Object.entries(editorData).filter(([key]) => !excludeKeys.includes(key) && !shouldHideField(key, visibilityContext));
 
   // Render fields into a smart grid: wide fields get full width, short fields share a row
   const rendered = entries.map(([key, value]) => {
-    const { element, wide } = renderField(key, value, handleFieldChange, depth);
+    const { element, wide } = renderField(key, value, handleFieldChange, depth, templateData?.[key], componentType);
     return { key, element, wide };
   });
 
@@ -914,8 +1771,8 @@ export function ComponentEditor() {
   } = usePageBuilder();
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    content: true,
     layout: true,
+    content: true,
     button: true,
     items: true,
     advanced: false,
@@ -955,25 +1812,37 @@ export function ComponentEditor() {
 
   const registryEntry = getRegistryEntry(selectedComponent.type);
   const displayName = registryEntry?.name || selectedComponent.type.replace(/_/g, ' ');
+  const defaultSettings = registryEntry?.defaultData || {};
 
   const handleSettingsChange = (newSettings: ComponentSettings) => {
-    updateComponent(selectedComponentId, newSettings);
+    updateComponent(selectedComponentId, normalizeSettingsForEditor(newSettings));
   };
 
   // Categorize fields into groups
-  const settings = selectedComponent.settings || {};
+  const settings = {
+    ...(selectedComponent.type === 'awards_marquee' ? { award_ids: [] } : {}),
+    ...(['news_highlight', 'news_featured'].includes(selectedComponent.type) ? { news_ids: [] } : {}),
+    ...normalizeSettingsForEditor(selectedComponent.settings || {}),
+  };
   const groups: Record<string, Record<string, any>> = {
-    content: {},
     layout: {},
+    content: {},
     button: {},
     items: {},
     advanced: {},
   };
 
+  const hiddenFields = TYPE_HIDDEN_FIELDS[selectedComponent.type] || [];
+
   for (const [key, value] of Object.entries(settings)) {
-    // Arrays always go to items group
+    if (hiddenFields.includes(key)) continue;
+    // CTA arrays belong with buttons; other arrays are content lists/items.
     if (Array.isArray(value)) {
-      groups.items[key] = value;
+      if (BUTTON_KEYS.some(bk => key.startsWith(bk) || key === bk)) {
+        groups.button[key] = value;
+      } else {
+        groups.items[key] = value;
+      }
     } else if (COMMON_FIELD_KEYS.includes(key)) {
       groups.advanced[key] = value;
     } else {
@@ -983,11 +1852,14 @@ export function ComponentEditor() {
   }
 
   // Remove empty groups
-  const activeGroups = Object.entries(groups).filter(([, data]) => Object.keys(data).length > 0);
+  const groupOrder = TYPE_GROUP_ORDER[selectedComponent.type] || GROUP_ORDER;
+  const activeGroups = groupOrder
+    .map((groupKey) => [groupKey, groups[groupKey]] as [string, Record<string, any>])
+    .filter(([, data]) => Object.keys(data).length > 0);
 
   const sectionConfig: Record<string, { title: string; icon: React.ReactNode }> = {
-    content: { title: 'Content', icon: <ContentIcon /> },
     layout: { title: 'Layout', icon: <LayoutIcon /> },
+    content: { title: 'Content', icon: <ContentIcon /> },
     button: { title: 'Button Settings', icon: <ButtonIcon /> },
     items: { title: 'Items / Lists', icon: <ItemsIcon /> },
     advanced: { title: 'Advanced', icon: <AdvancedIcon /> },
@@ -1075,16 +1947,16 @@ export function ComponentEditor() {
                   <div className="px-4 pb-5">
                     <ObjectFields
                       data={groupData}
+                      templateData={defaultSettings}
+                      contextData={settings}
+                      componentType={selectedComponent.type}
                       onChange={(newGroupData) => {
-                        // Merge back all groups
-                        const merged: Record<string, any> = {};
-                        for (const [gk, gd] of activeGroups) {
-                          if (gk === groupKey) {
-                            Object.assign(merged, newGroupData);
-                          } else {
-                            Object.assign(merged, gd);
-                          }
+                        // Preserve hidden/unrendered keys while replacing the edited group.
+                        const merged: Record<string, any> = { ...settings };
+                        for (const key of Object.keys(groupData)) {
+                          delete merged[key];
                         }
+                        Object.assign(merged, newGroupData);
                         handleSettingsChange(merged);
                       }}
                     />

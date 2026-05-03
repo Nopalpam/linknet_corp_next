@@ -15,9 +15,20 @@ export default function FooterMain({
   if (!main) return null;
 
   const email = main.contact?.email?.trim() || '';
-  const phone = main.contact?.phone?.trim() || '';
-  const whatsappNumber = main.contact?.whatsapp_no?.replace(/\s+/g, '') || '';
-  const hasInquiryContact = Boolean(email || phone || whatsappNumber);
+  const phoneNumbers = Array.isArray(main.contact?.phoneNumbers)
+    ? main.contact.phoneNumbers
+    : [
+        main.contact?.phone ? { type: 'phone', label: 'Phone', number: main.contact.phone } : null,
+        main.contact?.whatsapp_no ? { type: 'whatsapp', label: 'WhatsApp', number: main.contact.whatsapp_no } : null,
+      ].filter(Boolean);
+  const hasInquiryContact = Boolean(email || phoneNumbers.length > 0);
+
+  const normalizePhoneNumber = (number = '') => number.replace(/[^\d+]/g, '');
+  const normalizeWhatsAppNumber = (number = '') => {
+    const cleaned = normalizePhoneNumber(number).replace(/^\+/, '');
+    if (cleaned.startsWith('0')) return `62${cleaned.slice(1)}`;
+    return cleaned;
+  };
 
   return (
     <div className={`lnFooter bg-light-2 mx-auto px-3 pt-4 sm:px-4 md:px-4 ${className}`}>
@@ -63,25 +74,27 @@ export default function FooterMain({
                           <span className="underline decoration-neutral-300 underline-offset-4 group-hover:decoration-yellow-500">{email}</span>
                         </a>
                       )}
-                      {phone && (
-                        <a href={`tel:${phone.replace(/\s+/g, '')}`} className="flex items-center gap-3 hover:text-yellow-500 transition-colors group">
-                          <Icon name="phone" className="text-black group-hover:text-yellow-500 transition-colors" />
-                          <span className="underline decoration-neutral-300 underline-offset-4 group-hover:decoration-yellow-500">{phone}</span>
-                        </a>
-                      )}
-                      {whatsappNumber && (
+                      {phoneNumbers.map((item, index) => {
+                        const isWhatsApp = item.type === 'whatsapp';
+                        const href = isWhatsApp
+                          ? `https://wa.me/${normalizeWhatsAppNumber(item.number)}`
+                          : `tel:${normalizePhoneNumber(item.number)}`;
+
+                        return (
                         <a
-                          href={`https://wa.me/${whatsappNumber}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          key={`${item.type || 'phone'}-${item.number || index}`}
+                          href={href}
+                          target={isWhatsApp ? '_blank' : undefined}
+                          rel={isWhatsApp ? 'noopener noreferrer' : undefined}
                           className="flex items-center gap-3 hover:text-yellow-500 transition-colors group"
                         >
-                          <Icon name="whatsapp" className="text-black group-hover:text-yellow-500 transition-colors" />
+                          <Icon name={isWhatsApp ? 'whatsapp' : 'phone'} className="text-black group-hover:text-yellow-500 transition-colors" />
                           <span className="underline decoration-neutral-300 underline-offset-4 group-hover:decoration-yellow-500">
-                            +{whatsappNumber.replace(/(\d{2})(\d{3})(\d{4})(\d{4})/, '$1 $2 $3 $4')}
+                            {item.label ? `${item.label}: ` : ''}{item.number}
                           </span>
                         </a>
-                      )}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -121,17 +134,27 @@ export default function FooterMain({
                     Follow Us
                 </span>
                 <div className="flex items-center gap-4 text-black">
-                    {(main.socials || []).map((social, idx) => (
+                    {(main.socials || []).map((social, idx) => {
+                      const iconName = social.iconName || social.icon || social.name;
+                      const isImageIcon = typeof iconName === 'string' && (iconName.startsWith('/') || iconName.startsWith('http'));
+
+                      return (
                         <a
                           key={idx}
                           href={social.href || social.url || '#'}
                           target={social.target || '_blank'}
                           rel="noopener noreferrer"
+                          aria-label={social.label || iconName || 'Social media'}
                           className="hover:text-yellow-500 transition-colors"
                         >
-                        <Icon name={social.iconName || social.icon || social.name} />
+                          {isImageIcon ? (
+                            <img src={iconName} alt="" className="h-5 w-5 object-contain" />
+                          ) : (
+                            <Icon name={iconName} />
+                          )}
                         </a>
-                    ))}
+                      );
+                    })}
                 </div>
             </div>
 

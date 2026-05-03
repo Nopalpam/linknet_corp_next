@@ -41,8 +41,8 @@ export default function PagesListPage() {
       try {
         const response = await settingsService.getAllSettings("pages");
         const settings = response.data || [];
-        const baseUrlSetting = settings.find((s) => s.key === "page_preview_base_url");
-        const pathTemplateSetting = settings.find((s) => s.key === "page_preview_path_template");
+        const baseUrlSetting = settings.find((s) => s.key === "pages.preview.base_url" || s.key === "page_preview_base_url");
+        const pathTemplateSetting = settings.find((s) => s.key === "pages.preview.path_template" || s.key === "page_preview_path_template");
         if (baseUrlSetting?.value) setPreviewBaseUrl(baseUrlSetting.value);
         if (pathTemplateSetting?.value) setPreviewPathTemplate(pathTemplateSetting.value);
       } catch {

@@ -16,7 +16,7 @@ import Select from '../forms/Select';
 import Textarea from '../forms/Textarea';
 import FormStepperModal from '../forms/FormStepperModal';
 import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
-import { useFormSubmission } from '@/components/hooks/useFormSubmission';
+import { submitEnterpriseForm } from '@/lib/formsApi';
 
 const ModalFormPartnershipEnterpriseContext = createContext({
   openModal: () => {},
@@ -124,6 +124,7 @@ const INITIAL_MODAL_PAYLOAD = {
 };
 
 const INITIAL_FORM = {
+  Product: '',
   firstName: '',
   lastName: '',
   companyEmail: '',
@@ -144,16 +145,33 @@ const INITIAL_FORM = {
   Source_Website__c: INITIAL_MODAL_PAYLOAD.Source_Website__c,
   LeadSource: 'Website',
   I_am_an_existing_Link_Net_Customer__c: false,
+  context: undefined,
 };
 
-function createInitialForm() {
+function createInitialForm(overrides = {}) {
   return {
     ...INITIAL_FORM,
+    ...overrides,
+  };
+}
+
+function resolveSubmissionContext(initialPayload = {}) {
+  const url =
+    initialPayload.context?.url ||
+    (typeof window !== 'undefined' ? window.location.href : undefined) ||
+    initialPayload.Page_Website__c;
+
+  return {
+    product: initialPayload.context?.product || initialPayload.Product,
+    promo: initialPayload.context?.promo || initialPayload.Promo_Website__c,
+    source: initialPayload.context?.source || initialPayload.Source_Website__c,
+    url,
   };
 }
 
 function buildSubmissionPayload(form) {
   return {
+    Product: form.Product,
     FirstName: form.firstName,
     LastName: form.lastName,
     Department__c: form.department,
@@ -362,13 +380,12 @@ function Step1Fields({ form, onChange, submitAttempted }) {
 function Step2Fields({ form, onChange, submitAttempted }) {
   const {
     cityOptions,
-    finalOptions: wardOptions,
     normalizedCity,
     normalizedProvince,
     provinceOptions,
   } = useIndonesiaLocationOptions({
     city: form.city,
-    finalLevel: 'wardZip',
+    finalLevel: 'none',
     province: form.province,
   });
 
@@ -421,13 +438,13 @@ function Step2Fields({ form, onChange, submitAttempted }) {
         submitAttempted={submitAttempted}
         disabled={!normalizedProvince}
       />
-      <Select
+      <Input
         id="partnership-enterprise-ward-zip-code"
         name="Kecamatan_Zipcode__c"
         label="Ward/ZIP Code"
         required
-        placeholder="Select ward / ZIP code"
-        options={wardOptions}
+        type="text"
+        placeholder="Enter ward / ZIP code"
         value={form.wardZipCode}
         onChange={onChange('wardZipCode')}
         data-error={FORM_ERROR_MESSAGES.wardZipCode}
@@ -473,9 +490,9 @@ function HiddenFields({ form }) {
   );
 }
 
-function ModalFormPartnershipEnterprise({ isOpen, onClose }) {
+function ModalFormPartnershipEnterprise({ isOpen, onClose, initialPayload = INITIAL_MODAL_PAYLOAD }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [form, setForm] = useState(createInitialForm);
+  const [form, setForm] = useState(() => createInitialForm(initialPayload));
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -483,13 +500,11 @@ function ModalFormPartnershipEnterprise({ isOpen, onClose }) {
   const router = useRouter();
   const locale = params?.locale || 'id';
 
-  const { submit } = useFormSubmission('enterprise', 'enterprise-partnership');
-
   const handleReset = useCallback(() => {
     setCurrentStep(1);
-    setForm(createInitialForm());
+    setForm(createInitialForm(initialPayload));
     setSubmitAttempted(false);
-  }, []);
+  }, [initialPayload]);
 
   const handleClose = useCallback(() => {
     handleReset();
@@ -562,10 +577,10 @@ function ModalFormPartnershipEnterprise({ isOpen, onClose }) {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await submit({
+      await submitEnterpriseForm('enterprise_partnership', {
         locale,
-        sourcePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
-        values: buildSubmissionPayload(form),
+        fields: buildSubmissionPayload(form),
+        context: resolveSubmissionContext(initialPayload),
         groups: [],
         files: [],
       });
@@ -575,7 +590,7 @@ function ModalFormPartnershipEnterprise({ isOpen, onClose }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentStep, form, handleSubmitSuccess, locale, submit]);
+  }, [currentStep, form, handleSubmitSuccess, initialPayload, locale]);
 
   const handlePrevious = useCallback(() => {
     setSubmitAttempted(false);
@@ -661,16 +676,25 @@ export function useModalFormPartnershipEnterprise() {
 
 export default function ModalFormPartnershipEnterpriseProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [modalPayload, setModalPayload] = useState(INITIAL_MODAL_PAYLOAD);
   const [sessionKey, setSessionKey] = useState(0);
   const hasMounted = useHasMounted();
 
-  const openModal = useCallback(() => {
+  const openModal = useCallback((payload = {}) => {
+    setModalPayload({
+      Product: payload.Product,
+      Promo_Website__c: payload.Promo_Website__c || INITIAL_MODAL_PAYLOAD.Promo_Website__c,
+      Page_Website__c: payload.Page_Website__c || INITIAL_MODAL_PAYLOAD.Page_Website__c,
+      Source_Website__c: payload.Source_Website__c || INITIAL_MODAL_PAYLOAD.Source_Website__c,
+      context: payload.context,
+    });
     setSessionKey((prev) => prev + 1);
     setIsOpen(true);
   }, []);
 
   const closeModal = useCallback(() => {
     setIsOpen(false);
+    setModalPayload(INITIAL_MODAL_PAYLOAD);
   }, []);
 
   return (
@@ -681,6 +705,7 @@ export default function ModalFormPartnershipEnterpriseProvider({ children }) {
           key={sessionKey}
           isOpen={isOpen}
           onClose={closeModal}
+          initialPayload={modalPayload}
         />
       ) : null}
     </ModalFormPartnershipEnterpriseContext.Provider>

@@ -1,22 +1,26 @@
 'use client';
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Icon from '../base/Icon'; // Sesuaikan path jika berbeda
 import Button from '../base/Button'; // Sesuaikan path jika berbeda
 
-export default function NewsDetail({ article }) {
+export default function NewsDetail({ article, settings = {} }) {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const [isCopied, setIsCopied] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const shareMenuRef = useRef(null);
 
   // 1. Kalkulasi Estimasi Waktu Baca Otomatis
   const readingTime = useMemo(() => {
-    if (!article?.content) return 1;
-    const text = article.content.replace(/<[^>]+>/g, ' ').trim();
+    const content = article?.content || article?.content_en || article?.content_id || '';
+    if (!content) return 1;
+    const text = content.replace(/<[^>]+>/g, ' ').trim();
     const words = text.split(/\s+/).length;
     const wpm = 200; // Rata-rata kecepatan baca: 200 kata per menit
     return Math.ceil(words / wpm);
-  }, [article?.content]);
+  }, [article?.content, article?.content_en, article?.content_id]);
 
   // 2. Logic Klik di Luar untuk Menutup Dropdown Share
   useEffect(() => {
@@ -98,6 +102,29 @@ export default function NewsDetail({ article }) {
 
   if (!article) return null;
 
+  const localizedValue = (value, fallback = '') => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value[locale] || value.en || value.id || fallback;
+    }
+
+    return value || fallback;
+  };
+
+  const title = locale === 'id' && article.title_id ? article.title_id : (article.title || article.title_en || '');
+  const content = locale === 'id' && article.content_id ? article.content_id : (article.content || article.content_en || '');
+  const excerpt = locale === 'id' && article.excerpt_id ? article.excerpt_id : (article.excerpt || article.excerpt_en || '');
+  const image = article.image || article.news_thumbnail || '';
+  const newsDate = article.newsDate || article.news_date;
+  const category = article.news_categories || article.category || {};
+  const categoryLabel = locale === 'id' && category.name_id ? category.name_id : (category.label || category.name_en || category.name || 'News');
+  const mediaContacts = Array.isArray(settings.general_branding?.media_contacts?.items)
+    ? settings.general_branding.media_contacts.items
+    : [];
+  const aboutTitle = locale === 'id' ? 'Tentang Linknet' : 'About Linknet';
+  const aboutContent = localizedValue(settings.general_branding?.about?.content);
+  const timezone = settings.general_branding?.site?.timezone || 'Asia/Jakarta';
+  const dateLocale = locale === 'id' ? 'id-ID' : 'en-US';
+
   return (
     <article className="min-h-screen">
       <div className="px-2 md:px-3 pt-0">
@@ -105,7 +132,7 @@ export default function NewsDetail({ article }) {
         {/* HERO SECTION DENGAN GAMBAR BACKGROUND */}
         <div 
           className="relative w-full rounded-[24px] min-h-[600px] md:min-h-[640px] flex flex-col justify-end bg-cover bg-center"
-          style={{ backgroundImage: `url(${article.image})` }}
+          style={{ backgroundImage: `url(${image})` }}
         >
           {/* Overlay Gradient (Semakin gelap ke bawah agar teks & tombol terbaca) */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/20 rounded-[24px]"></div>
@@ -114,17 +141,18 @@ export default function NewsDetail({ article }) {
             {/* CONTENT POSISI DI BOTTOM HERO */}
             <header className="max-w-4xl mx-auto">
               <span className="text-caption-c1 uppercase tracking-widest text-yellow-500 font-bold mb-3 md:mb-4 block drop-shadow-md">
-                {article.category?.label || "News"}
+                {categoryLabel}
               </span>
               
               <h1 className="text-headline-h3 md:text-headline-h3 font-bold text-white leading-tight mb-6 md:mb-4 drop-shadow-lg">
-                {article.title}
+                {title}
               </h1>
               
               <div className="flex flex-row md:flex-row md:items-center justify-between gap-4">
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-1.5 md:gap-4 text-body-b5 text-neutral-200 font-regular">
-                  <time dateTime={article.newsDate} className='font-medium'>
-                    {new Date(article.newsDate).toLocaleDateString('en-US', {
+                  <time dateTime={newsDate} className='font-medium'>
+                    {new Date(newsDate).toLocaleDateString(dateLocale, {
+                      timeZone: timezone,
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric'
@@ -201,9 +229,9 @@ export default function NewsDetail({ article }) {
         {/* BODY CONTENT SECTION */}
         <div className="container">
           {/* EXCERPT dipindahkan ke sini sebagai ringkasan pembuka */}
-          {article.excerpt && (
+          {excerpt && (
              <div className="md:max-w-4xl mx-auto mt-10 text-body-b4 font-regular text-neutral-500 italic border-l-2 border-yellow-500 pl-4 md:pl-6">
-               {article.excerpt}
+               {excerpt}
              </div>
           )}
 
@@ -220,7 +248,7 @@ export default function NewsDetail({ article }) {
               [&_img]:rounded-xl md:[&_img]:rounded-2xl 
               [&_img]:my-10 [&_img]:shadow-sm
             `}
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: content }}
           />
           
           {/* ========================================= */}
@@ -235,59 +263,43 @@ export default function NewsDetail({ article }) {
           {/* ========================================= */}
           {/* TAMBAHAN: KONTAK PERS */}
           {/* ========================================= */}
+          {mediaContacts.length > 0 && (
           <div className="md:max-w-4xl mx-auto mb-16 p-6 md:p-8 border border-neutral-100 bg-white rounded-[16px] md:rounded-[20px]">
-            <h3 className="text-body-b2 font-bold text-black mb-4 md:mb-4">Kontak Media</h3>
+            <h3 className="text-body-b2 font-bold text-black mb-4 md:mb-4">
+              {locale === 'id' ? 'Kontak Media' : 'Media Contacts'}
+            </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-10">
-              {/* Kontak 1 */}
-              <div>
-                <h4 className="text-body-b4 font-medium text-black mb-1">Annisa Kameila</h4>
-                <p className="text-body-b5 text-secondary mb-2">Corporate Communication Specialist</p>
-                <div className="text-body-b5 text-secondary space-y-1">
-                  <p>M: 0878 7873 4852</p>
-                  <p>E: annisa.kameila@linknet.co.id</p>
+              {mediaContacts.map((contact, index) => (
+                <div key={`${contact.email || contact.name || 'contact'}-${index}`}>
+                  <h4 className="text-body-b4 font-medium text-black mb-1">{contact.name}</h4>
+                  {(contact.role || contact.position) && (
+                    <p className="text-body-b5 text-secondary mb-2">{contact.role || contact.position}</p>
+                  )}
+                  <div className="text-body-b5 text-secondary space-y-1">
+                    {contact.phone && <p>M: {contact.phone}</p>}
+                    {contact.email && <p>E: {contact.email}</p>}
+                  </div>
                 </div>
-              </div>
-              
-              {/* Kontak 2 */}
-              <div>
-                <h4 className="text-body-b4 font-medium text-black mb-1">Annisa Kameila</h4>
-                <p className="text-body-b5 text-secondary mb-2">Corporate Communication Specialist</p>
-                <div className="text-body-b5 text-secondary space-y-1">
-                  <p>M: 0878 7873 4852</p>
-                  <p>E: annisa.kameila@linknet.co.id</p>
-                </div>
-              </div>
+              ))}
 
             </div>
           </div>
+          )}
 
           {/* ========================================= */}
           {/* TAMBAHAN: TENTANG LINKNET */}
           {/* ========================================= */}
+          {aboutContent && (
           <div className="md:max-w-4xl mx-auto mb-20 md:mb-32">
-            <h3 className="text-body-b5 font-medium text-neutral-400 mb-4">Tentang Linknet</h3>
+            <h3 className="text-body-b5 font-medium text-neutral-400 mb-4">{aboutTitle}</h3>
             
-            <div className="text-body-b5 text-neutral-300 leading-relaxed space-y-6">
-              <p>
-                PT Link Net Tbk ("Linknet", Kode Emiten: LINK), bagian dari Axiata Group, berkomitmen untuk meningkatkan kualitas 
-                hidup masyarakat dan mendukung pertumbuhan digital Indonesia melalui penyediaan infrastruktur teknologi yang 
-                cerdas dan andal. Linknet menjalankan operasionalnya melalui tiga unit bisnis utama, yaitu FiberCo untuk jaringan 
-                serat optik, EnterpriseCo untuk solusi konektivitas dan bisnis-ke-bisnis (B2B), serta MediaCo untuk layanan konten dan 
-                media. Melalui ketiga unit ini, Linknet berperan dalam mendorong kemajuan masa depan digital Indonesia.
-              </p>
-              <p>
-                Dengan mengusung tujuan 'We LINK the nation for better lives', Linknet senantiasa menempatkan pelanggan sebagai 
-                prioritas utama, mendorong inovasi dan kolaborasi, serta berkomitmen untuk terus melakukan perbaikan 
-                berkelanjutan demi menghasilkan kinerja terbaik di setiap aspek usahanya.
-              </p>
-              <p>
-                Saat ini, jaringan Linknet telah menjangkau berbagai wilayah strategis di Indonesia, antara lain Jabodetabek, Bandung 
-                Raya, Surabaya Raya (termasuk Malang, Gresik, dan Sidoarjo), Bali, Serang-Cilegon, Semarang, Solo, Medan, Batam, 
-                Cikampek-Purwakarta, Cirebon, Tegal, Yogyakarta, dan Kediri.
-              </p>
-            </div>
+            <div
+              className="text-body-b5 text-neutral-300 leading-relaxed space-y-6"
+              dangerouslySetInnerHTML={{ __html: aboutContent }}
+            />
           </div>
+          )}
 
         </div>
       </div>

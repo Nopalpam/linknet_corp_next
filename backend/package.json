@@ -24,6 +24,7 @@
     "db:seed:career": "ts-node prisma/seeds/career-content.seed.ts",
     "db:seed:footer": "ts-node -r tsconfig-paths/register prisma/seeds/footer.seed.ts",
     "db:seed:form-modules": "ts-node prisma/seeds/form-modules.seed.ts",
+    "db:seed:component-visibility": "ts-node -r tsconfig-paths/register scripts/seed-component-visibility.ts",
     "db:migrate:pages-sql": "ts-node scripts/migrate-pages-from-sql.ts",
     "db:migrate:news-mysql": "ts-node scripts/migrate-news-from-mysql.ts",
     "db:studio": "prisma studio",

@@ -89,7 +89,7 @@ function renderPreviewCount(label: string, value: number) {
 }
 
 function TypeBadge({ type }: { type: string }) {
-  const isMain = ['news_highlight', 'news_list', 'career_highlight', 'career_list', 'management_list', 'announcement_list', 'report_list', 'awards_list'].includes(type);
+  const isMain = ['news_highlight', 'news_list', 'news_teaser', 'career_highlight', 'career_list', 'management_list', 'announcement_list', 'report_list', 'awards_list', 'awards_marquee'].includes(type);
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
@@ -676,6 +676,7 @@ function ComponentPreview({ type, settings, registryName }: { type: string; sett
 
   // Extract a title to display from common fields
   const displayTitle =
+    getLocalizedValue(settings.introData?.title) ||
     getLocalizedValue(settings.title) ||
     getLocalizedValue(settings.name) ||
     getLocalizedValue(settings.label) ||
@@ -683,6 +684,7 @@ function ComponentPreview({ type, settings, registryName }: { type: string; sett
     registryName;
 
   const displayDescription =
+    getPreviewText(settings.introData?.description, 120) ||
     getPreviewText(settings.description, 120) ||
     getPreviewText(settings.content, 120) ||
     '';

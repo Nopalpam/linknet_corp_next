@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { buildLoginRedirectUrl } from "@/lib/authSession";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -23,16 +24,16 @@ interface AuthGuardProps {
  * ```
  */
 export default function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const { isAuthenticated, isAuthValidated, isLoading } = useAuth();
+  const { isAuthenticated, isAuthValidated, isLoading, isSessionWarningOpen } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // Only redirect if validation is complete and user is not authenticated
-    if (isAuthValidated && !isLoading && !isAuthenticated) {
+    if (isAuthValidated && !isLoading && !isAuthenticated && !isSessionWarningOpen) {
       console.warn('🔴 AuthGuard: Not authenticated - redirecting to login');
-      router.replace('/login');
+      router.replace(buildLoginRedirectUrl());
     }
-  }, [isAuthenticated, isAuthValidated, isLoading, router]);
+  }, [isAuthenticated, isAuthValidated, isLoading, isSessionWarningOpen, router]);
 
   // Show loading state while validating or loading
   if (!isAuthValidated || isLoading) {

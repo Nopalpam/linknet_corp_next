@@ -9,10 +9,12 @@ import Textarea      from '../base/forms/Textarea';
 import Icon          from '../base/Icon';
 import Button        from '../base/Button';
 import SegmentPicker from '../base/forms/SegmentPicker';
+import useIndonesiaLocationOptions from '@/components/hooks/useIndonesiaLocationOptions';
+import { buildRedirectUrl, submitEnterpriseForm } from '@/lib/formsApi';
 
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 // STATIC DATA
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 const LiveChatIcon = () => (
   <img src="/assets/icons/chat-yellow.svg" className="w-6 h-6 mr-0.5" alt="Chat" />
 );
@@ -23,7 +25,7 @@ const WhatsappIcon = () => (
 
 const TAB_OPTIONS = [
   { label: 'Live Chat', value: 'live_chat', icon: <LiveChatIcon /> },
-  { label: 'Whatsapp',  value: 'whatsapp',  icon: <WhatsappIcon /> },
+  { label: 'WhatsApp',  value: 'whatsapp',  icon: <WhatsappIcon /> },
 ];
 
 const departmentOptions = [
@@ -47,37 +49,6 @@ const industryOptions = [
   { label: 'Technology',        value: 'tech'          },
 ];
 
-const provinceOptions = [
-  { label: 'Jawa Barat',  value: 'jabar'  },
-  { label: 'DKI Jakarta', value: 'dki'    },
-  { label: 'Jawa Tengah', value: 'jateng' },
-  { label: 'Jawa Timur',  value: 'jatim'  },
-  { label: 'Banten',      value: 'banten' },
-];
-
-const cityByProvince = {
-  jabar:  [{ label: 'Kota Bekasi',     value: 'bekasi'    }, { label: 'Kota Bandung',  value: 'bandung'  }, { label: 'Kota Bogor',  value: 'bogor'  }],
-  dki:    [{ label: 'Jakarta Selatan', value: 'jaksel'    }, { label: 'Jakarta Pusat', value: 'jakpus'   }, { label: 'Jakarta Utara', value: 'jakut' }],
-  jateng: [{ label: 'Kota Semarang',   value: 'semarang'  }, { label: 'Kota Solo',     value: 'solo'     }],
-  jatim:  [{ label: 'Kota Surabaya',   value: 'surabaya'  }, { label: 'Kota Malang',   value: 'malang'   }],
-  banten: [{ label: 'Kota Tangerang',  value: 'tangerang' }, { label: 'Kota Cilegon',  value: 'cilegon'  }],
-};
-
-const zipByCity = {
-  bekasi:    [{ label: '17113 – Mustika Jaya', value: '17113' }, { label: '17114 – Mustikasari', value: '17114' }],
-  bandung:   [{ label: '40111', value: '40111' }, { label: '40112', value: '40112' }],
-  bogor:     [{ label: '16111', value: '16111' }],
-  jaksel:    [{ label: '12110', value: '12110' }, { label: '12120', value: '12120' }],
-  jakpus:    [{ label: '10110', value: '10110' }],
-  jakut:     [{ label: '14110', value: '14110' }],
-  semarang:  [{ label: '50111', value: '50111' }],
-  solo:      [{ label: '57111', value: '57111' }],
-  surabaya:  [{ label: '60111', value: '60111' }],
-  malang:    [{ label: '65111', value: '65111' }],
-  tangerang: [{ label: '15111', value: '15111' }],
-  cilegon:   [{ label: '42411', value: '42411' }],
-};
-
 const solutionOptions = [
   { label: 'Cloud',              value: 'cloud'        },
   { label: 'Corporate TV',       value: 'corporate_tv' },
@@ -96,9 +67,35 @@ const INITIAL_FORM = {
   solutions: [],
 };
 
-// ─────────────────────────────────────────────────────────────
+function getCurrentLocale() {
+  if (typeof window === 'undefined') return 'id';
+
+  const locale = window.location.pathname.split('/').filter(Boolean)[0];
+  return locale || 'id';
+}
+
+function buildDefaultSuccessUrl(fields) {
+  const params = new URLSearchParams();
+  const name = [fields.firstName, fields.lastName].filter(Boolean).join(' ').trim();
+
+  if (name) params.set('name', name);
+  params.set('needs', 'sales-inquiry');
+
+  return `/${getCurrentLocale()}/enterprise/form/success?${params.toString()}`;
+}
+
+function resolveSuccessUrl(result, fields, salesForceSucceeded) {
+  if (salesForceSucceeded) {
+    const customUrl = buildRedirectUrl(result?.response);
+    if (customUrl) return customUrl;
+  }
+
+  return buildDefaultSuccessUrl(fields);
+}
+
+// ------------------------------------------------------------
 // AVATAR GROUP
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 function AvatarGroup({ size = 32 }) {
   const bg      = ['#ffffff', '#ffffff', '#ffffff'];
   const letters = ['A', 'B', 'C'];
@@ -129,9 +126,9 @@ function AvatarGroup({ size = 32 }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 // SOLUTION PICKER
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 function SolutionPicker({ selectedValues = [], onChange, error = '' }) {
   const [search, setSearch] = useState('');
 
@@ -198,9 +195,9 @@ function SolutionPicker({ selectedValues = [], onChange, error = '' }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 // MAIN COMPONENT
-// ─────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 export default function OmniFloatingWidget({ cmsData, className = '' }) {
   const cfg = cmsData || {};
   const enabled = cfg.enabled !== false && cfg.enabled !== 'false';
@@ -208,11 +205,24 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
   const widgetSubtitle = cfg.subtitle || 'How can we help you today?';
   const whatsappUrl = cfg.whatsappUrl || 'https://wa.me/628111700700';
   const submitEndpoint = cfg.submitEndpoint || '';
+  const sendToSalesForce =
+    cfg.sendToSalesForce === true ||
+    cfg.sendToSalesForce === 'true' ||
+    cfg.send_to_sales_force === true ||
+    cfg.send_to_sales_force === 'true';
   const [isOpen, setIsOpen]                   = useState(false);
   const [currentStep, setCurrentStep]         = useState(0);
   const [currentTab, setCurrentTab]           = useState('live_chat');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formData, setFormData]               = useState({ ...INITIAL_FORM });
+  const {
+    cityOptions,
+    provinceOptions,
+  } = useIndonesiaLocationOptions({
+    province: formData.province,
+    city: formData.city,
+    finalLevel: 'none',
+  });
 
   const widgetRef    = useRef(null);
   const overlayRef   = useRef(null);
@@ -228,13 +238,13 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
   const introListRef    = useRef(null);
   const introCardRef    = useRef(null);
 
-  // ── Open / close animation — slide-up on mobile, scale on desktop
+  // Open / close animation - slide-up on mobile, scale on desktop
   useEffect(() => {
     if (!widgetRef.current || !overlayRef.current) return;
     const isMobile = window.innerWidth < 768;
 
     if (isOpen) {
-      // Show overlay — mobile only
+      // Show overlay - mobile only
       if (window.innerWidth < 768) overlayRef.current.style.display = 'block';
       // Show widget
       widgetRef.current.style.display = 'flex';
@@ -282,7 +292,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     }
   }, [isOpen]);
 
-  // ── Step transition animation (GSAP)
+  // Step transition animation (GSAP)
   useEffect(() => {
     if (!contentRef.current || !isOpen) return;
     gsap.fromTo(contentRef.current,
@@ -291,7 +301,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     );
   }, [currentStep]);
 
-  // ── StepIntro entrance animation (GSAP stagger) — runs when step 0 becomes visible
+  // StepIntro entrance animation (GSAP stagger) - runs when step 0 becomes visible
   useEffect(() => {
     if (!isOpen || currentStep !== 0) return;
 
@@ -320,7 +330,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     });
   }, [isOpen, currentStep]);
 
-  // ── Handlers
+  // Handlers
   const handleClose = () => setIsOpen(false);
 
   const handleToggle = () => {
@@ -330,6 +340,19 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     }
     setIsOpen(v => !v);
   };
+
+  useEffect(() => {
+    const handleExternalOpen = (event) => {
+      const channel = event?.detail?.channel === 'whatsapp' ? 'whatsapp' : 'live_chat';
+      setCurrentTab(channel);
+      setCurrentStep(event?.detail?.skipIntro ? 1 : 0);
+      setSubmitAttempted(false);
+      setIsOpen(true);
+    };
+
+    window.addEventListener('linknet:open-omni-channel', handleExternalOpen);
+    return () => window.removeEventListener('linknet:open-omni-channel', handleExternalOpen);
+  }, []);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -367,18 +390,49 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
       return;
     }
 
-    if (submitEndpoint) {
+    const submissionFields = {
+      ...formData,
+      channel: currentTab,
+      sourceInput: currentTab === 'whatsapp' ? 'whatsapp' : 'start_conversation',
+      sendToSalesForce,
+    };
+    const formChannel = currentTab === 'whatsapp' ? 'WhatsApp' : 'Live Chat';
+
+    let cmsResult = null;
+    let salesForceSucceeded = false;
+
+    try {
+      cmsResult = await submitEnterpriseForm('enterprise_omni_channel', {
+        fields: submissionFields,
+        context: {
+          url: typeof window !== 'undefined' ? window.location.href : undefined,
+        },
+        formInfo: {
+          formModuleName: 'Enterprise Omni Channel',
+          formChannel,
+        },
+        groups: [],
+        files: [],
+        responseContext: {
+          channel: currentTab,
+          formChannel,
+          salesForceRequested: sendToSalesForce,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to store omnichannel form submission:', error);
+    }
+
+    if (submitEndpoint && sendToSalesForce) {
       try {
-        await fetch(submitEndpoint, {
+        const response = await fetch(submitEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...formData,
-            channel: currentTab,
-          }),
+          body: JSON.stringify(submissionFields),
         });
+        salesForceSucceeded = response.ok;
       } catch (error) {
-        console.error('Failed to submit omnichannel form:', error);
+        console.error('Failed to submit omnichannel Sales Force handoff:', error);
       }
     }
 
@@ -391,16 +445,17 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     setCurrentStep(0);
     setSubmitAttempted(false);
     setIsOpen(false);
-  };
 
-  const cityOptions = formData.province ? (cityByProvince[formData.province] ?? []) : [];
-  const zipOptions  = formData.city     ? (zipByCity[formData.city]          ?? []) : [];
+    if (typeof window !== 'undefined') {
+      window.location.assign(resolveSuccessUrl(cmsResult, submissionFields, salesForceSucceeded));
+    }
+  };
 
   if (!enabled) return null;
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   // RENDER: Tabs
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   const renderTabs = () => (
     <div className="mb-2 shrink-0">
       <SegmentPicker
@@ -412,9 +467,9 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     </div>
   );
 
-  // ─────────────────────────────────────────────
-  // RENDER: Widget header (Steps 1–3)
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
+  // RENDER: Widget header (Steps 1-3)
+  // ------------------------------------------------------------
   const renderHeader = () => {
     if (currentStep === 0) return null;
     return (
@@ -440,13 +495,13 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     );
   };
 
-  // ─────────────────────────────────────────────
-  // RENDER: StepIntro — GSAP stagger entrance
+  // ------------------------------------------------------------
+  // RENDER: StepIntro - GSAP stagger entrance
   // Each major block has its own ref for individual animation targeting
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   const renderStepIntro = () => (
     <div className="overflow-y-auto flex-1 px-[20px] md:px-[24px] pt-7 pb-6 relative">
-      {/* Close button — not animated, always visible */}
+      {/* Close button - not animated, always visible */}
       <button
         type="button"
         onClick={handleClose}
@@ -490,7 +545,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
       <div ref={introCardRef} className="rounded-2xl p-4 shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-body-b4 font-bold text-black">Start a Conversation</p>
+            <p className="text-body-b4 font-bold text-black">Live Chat</p>
             <p className="text-body-b5 text-secondary font-regular flex items-center gap-1 mt-0.5">
               <Icon name="clock" />
               a few minutes
@@ -506,7 +561,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
           onClick={() => { setCurrentTab('live_chat'); setCurrentStep(1); }}
           iconLeft={<img src="/assets/icons/chat-color.svg" className="w-6 h-6 mr-0.5" alt="Chat" />}
         >
-          Start Conversation
+          Live Chat
         </Button>
 
         <Button
@@ -516,15 +571,15 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
           onClick={() => { setCurrentTab('whatsapp'); setCurrentStep(1); }}
           iconLeft={<img src="/assets/icons/whatsapp-color.svg" className="w-6 h-6 mr-0.5" alt="Whatsapp" />}
         >
-          Send us a Whatsapp
+          Send us a WhatsApp
         </Button>
       </div>
     </div>
   );
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   // RENDER: StepPersonalData
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   const renderStepPersonalData = () => (
     <form
       ref={step1FormRef}
@@ -590,9 +645,9 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     </form>
   );
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   // RENDER: StepCompanyData
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   const renderStepCompanyData = () => (
     <form
       ref={step2FormRef}
@@ -627,9 +682,9 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
           submitAttempted={submitAttempted}
           disabled={!formData.province}
         />
-        <Select
+        <Input
           id="cu-zip" label="ZIP Code"
-          options={zipOptions} required
+          type="text" required
           value={formData.zip} onChange={handleChange}
           submitAttempted={submitAttempted}
           disabled={!formData.city}
@@ -663,9 +718,9 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     </form>
   );
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   // RENDER: StepSolution
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   const renderStepSolution = () => (
     <form
       ref={step3FormRef}
@@ -705,15 +760,15 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
           className="flex-1 w-full"
           onClick={handleSubmit}
         >
-          Start Conversation
+          {currentTab === 'whatsapp' ? 'Send us a WhatsApp' : 'Live Chat'}
         </Button>
       </div>
     </form>
   );
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   // STEP ROUTER
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   const renderStep = () => {
     switch (currentStep) {
       case 0: return renderStepIntro();
@@ -724,13 +779,13 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
     }
   };
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   // ROOT
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   return (
     <div className={`fixed z-[100] ${className}`}>
 
-      {/* ── OVERLAY — mobile only ── */}
+      {/* OVERLAY mobile only */}
       <div
         ref={overlayRef}
         onClick={handleClose}
@@ -738,7 +793,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
         className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-[9990]"
       />
 
-      {/* ── WIDGET PANEL ── */}
+      {/* WIDGET PANEL */}
       <div
         ref={widgetRef}
         style={{
@@ -758,7 +813,7 @@ export default function OmniFloatingWidget({ cmsData, className = '' }) {
         </div>
       </div>
 
-      {/* ── FLOATING ACTION BUTTON ── */}
+      {/* FLOATING ACTION BUTTON */}
       <button
         type="button"
         onClick={handleToggle}

@@ -17,6 +17,11 @@ export default function CardReport({
   
   // Props Khusus variant="list"
   icon,
+  suffixIcon,
+  suffixHref,
+  suffixTarget = "_blank",
+  suffixRel = "noopener noreferrer",
+  suffixLabel = "Download file",
   badges = [], // Array string, misal: ['Audited']
   category,
   date,
@@ -26,46 +31,70 @@ export default function CardReport({
   // VARIANT 2: LIST / ROW (Gambar Bawah)
   // ==========================================
   if (variant === 'list') {
+    const actionHref = suffixHref || downloadUrl;
+    const actionIcon = suffixIcon || <Icon name="download" className='text-secondary' style={{ '--icon-size': '24px' }} />;
+    const hasMeta = badges.length > 0 || category || date;
+
     return (
-      <a 
-        href={downloadUrl} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className={`flex items-start gap-4 group !pr-5 md:px-3 py-3 rounded-[16px] group hover:bg-neutral-50 transition-colors duration-300 ${className}`}
+      <div
+        className={`lnCardReport lnCardReport--list flex items-center gap-4 group !pr-5 md:px-3 py-3 rounded-[16px] hover:bg-neutral-50 transition-colors duration-300 ${className}`}
       >
         {/* Left: Icon Badge */}
-        <div className="shrink-0 w-10 h-10 md:w-10 md:h-10 flex items-center justify-center">
+        <div className="lnCardReport__iconWrap shrink-0 w-10 h-10 md:w-10 md:h-10 flex items-center justify-center">
           {icon ? (
-            <img src={icon} alt="PDF Icon" className="w-full h-full object-cover" />
+            <img src={icon} alt="PDF Icon" className="lnCardReport__icon w-full h-full object-cover" />
           ) : (
             // Fallback jika tidak ada icon
-            <span className="text-pink-600 font-bold text-xs">PDF</span>
+            <span className="lnCardReport__iconFallback text-pink-600 font-bold text-xs">PDF</span>
           )}
         </div>
 
         {/* Right: Content */}
-        <div className="flex flex-col flex-1 mt-0.5">
-          <h3 className="text-body-b4 text-black font-regular transition-colors mb-2 md:mb-3">
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="lnCardReport__body flex flex-col flex-1 min-w-0"
+        >
+          <h3 className="lnCardReport__title text-body-b4 text-black font-regular transition-colors">
             {title}
           </h3>
           
-          <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
-            {/* Badges Pill */}
-            {badges.map((badge, index) => (
-              <span 
-                key={index} 
-                className="px-3 py-1 bg-neutral-50 text-black font-medium rounded-full text-caption-c1 transition-colors group-hover:bg-yellow-500"
-              >
-                {badge}
-              </span>
-            ))}
-            
-            {/* Meta Text */}
-            {category && <span>{category}</span>}
-            {date && <span>{date}</span>}
-          </div>
-        </div>
-      </a>
+          {hasMeta ? (
+            <div className="lnCardReport__meta flex flex-wrap items-center gap-3 text-sm text-neutral-400 mt-2 md:mt-3">
+              {/* Badges Pill */}
+              {badges.map((badge, index) => (
+                <span 
+                  key={index} 
+                  className="lnCardReport__badge px-3 py-1 bg-neutral-50 text-black font-medium rounded-full text-caption-c1 transition-colors group-hover:bg-yellow-500"
+                >
+                  {badge}
+                </span>
+              ))}
+              
+              {/* Meta Text */}
+              {category && <span className="lnCardReport__metaText">{category}</span>}
+              {date && <span className="lnCardReport__metaText">{date}</span>}
+            </div>
+          ) : null}
+        </a>
+
+        {actionHref ? (
+          <a
+            href={actionHref}
+            target={suffixTarget}
+            rel={suffixRel}
+            aria-label={suffixLabel}
+            className="lnCardReport__suffixAction ml-auto mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center text-black transition-colors duration-300 hover:text-yellow-500"
+          >
+            {typeof actionIcon === 'string' ? (
+              <img src={actionIcon} alt="" className="h-8 w-8 object-contain" aria-hidden="true" />
+            ) : (
+              actionIcon
+            )}
+          </a>
+        ) : null}
+      </div>
     );
   }
 
@@ -73,35 +102,35 @@ export default function CardReport({
   // VARIANT 1: COVER CARD (Gambar Atas)
   // ==========================================
   return (
-    <div className={`flex flex-row bg-white rounded-[16px] h-[180px] shadow-md border border-neutral-50 overflow-hidden transition-shadow duration-300 ${className}`}>
+    <div className={`lnCardReport lnCardReport--cover flex flex-row bg-white rounded-[16px] h-[180px] shadow-md border border-neutral-50 overflow-hidden transition-shadow duration-300 ${className}`}>
       
       {/* Left: Cover Image */}
-      <div className="w-[120px] h-auto shrink-0 relative m-1.5">
+      <div className="lnCardReport__coverMedia w-[120px] h-auto shrink-0 relative m-1.5">
         {/* Aspect ratio di mobile agak kotak, di desktop mengikuti tinggi konten via h-full absolute */}
         <img 
           src={image} 
           alt={title} 
-          className="w-full h-full object-cover rounded-[12px]" 
+          className="lnCardReport__coverImage w-full h-full object-cover rounded-[12px]" 
           loading="lazy"
         />
       </div>
 
       {/* Right: Content */}
-      <div className="p-4 !pl-3 md:p-4 flex flex-col !justify-between flex-1 bg-white relative z-10">
+      <div className="lnCardReport__coverBody p-4 !pl-3 md:p-4 flex flex-col !justify-between flex-1 bg-white relative z-10">
         
-        <div>
+        <div className="lnCardReport__coverIntro">
           {year && (
-            <h3 className="text-headline-h5 font-bold text-black mb-1">
+            <h3 className="lnCardReport__year text-headline-h5 font-bold text-black mb-1">
               {year}
             </h3>
           )}
           
-          <p className="text-body-b4 text-black font-regular mb-4 line-clamp-2">
+          <p className="lnCardReport__title text-body-b4 text-black font-regular mb-4 line-clamp-2">
             {title}
           </p>
         </div>
 
-        <div className="mt-auto">
+        <div className="lnCardReport__coverFooter mt-auto">
           {/* {fileSize && (
             <p className="text-caption-c1 text-neutral-400 mb-2">
               File size: {fileSize}
@@ -115,7 +144,7 @@ export default function CardReport({
             iconLeft={<Icon name="download" />}
             target="_blank"
             rel="noopener noreferrer"
-            className="!py-0 !gap-1.5 hover:!text-yellow-500"
+            className="lnCardReport__download !py-0 !gap-1.5 hover:!text-yellow-500"
           >
             Download
           </LinknetLink>

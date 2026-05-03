@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { clearStoredLastPath, resolvePostLoginPath } from "@/lib/authSession";
 
 const LoginPage = () => {
   const { login, isLoading, isAuthenticated, isAuthValidated } = useAuth();
@@ -24,8 +25,8 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isAuthValidated && isAuthenticated) {
-      const returnUrl = searchParams.get('from');
-      const safeReturnUrl = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('/login') ? returnUrl : '/';
+      const safeReturnUrl = resolvePostLoginPath(searchParams.get('from'));
+      clearStoredLastPath();
       router.replace(safeReturnUrl);
     }
   }, [isAuthenticated, isAuthValidated, router, searchParams]);

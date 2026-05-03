@@ -61,7 +61,7 @@ export default function SegmentPicker({
             // Simpan setiap elemen tombol ke dalam array ref
             ref={(el) => (buttonRefs.current[index] = el)}
             onClick={() => onChange && onChange(option.value)}
-            className={`relative z-10 flex-1 px-8 py-2.5 text-body-b4 md:text-body-b2 font-medium transition-colors duration-300 rounded-full outline-none select-none whitespace-nowrap
+            className={`relative z-10 flex-1 px-6 py-2.5 text-body-b4 font-medium transition-colors duration-300 rounded-full outline-none select-none whitespace-nowrap
               ${isActive ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}
             `}
           >

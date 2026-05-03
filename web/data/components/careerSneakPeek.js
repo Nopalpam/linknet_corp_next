@@ -23,7 +23,7 @@ const careerSneakPeek = {
       size: "lg",
       iconLeft: "",
       iconRight: "",
-      href: "/life-at-linknet/career" // Sesuaikan dengan routing halaman karir utamamu
+      href: "/career" // Sesuaikan dengan routing halaman karir utamamu
     }
   ]
 };

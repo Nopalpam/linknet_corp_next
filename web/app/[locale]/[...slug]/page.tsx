@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getPageBySlug, getPublishedSlugs } from '@/lib/cmsApi';
+import { getLocalizedPageTitle, getPageBySlug, getPublicSettings, getPublishedSlugs } from '@/lib/cmsApi';
 import PageRenderer from '@/components/PageRenderer';
 import type { Metadata } from 'next';
 
@@ -13,27 +13,61 @@ interface PageProps {
   }>;
 }
 
+function normalizeCmsSlug(slug: string[]): string {
+  const segments = slug.filter(Boolean);
+
+  // Accept legacy CMS preview/public aliases while storing clean slugs in CMS.
+  if ((segments[0] === 'page' || segments[0] === 'pages') && segments.length > 1) {
+    return segments.slice(1).join('/');
+  }
+
+  return segments.join('/');
+}
+
+function localizedValue(value: any, locale: string, fallback = ''): string {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value[locale] || value.en || value.id || fallback;
+  }
+
+  return value || fallback;
+}
+
 /**
  * Generate metadata from CMS page data
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const slugPath = slug.join('/');
-  const page = await getPageBySlug(slugPath);
+  const { locale, slug } = await params;
+  const slugPath = normalizeCmsSlug(slug);
+  const [page, publicSettings] = await Promise.all([
+    getPageBySlug(slugPath),
+    getPublicSettings(),
+  ]);
 
   if (!page) {
     return { title: 'Page Not Found' };
   }
 
+  const seo = publicSettings.seo || {};
+  const titleSuffix = localizedValue(publicSettings.general_branding?.site?.title_suffix, locale);
+  const isHomepage = slugPath === '' || slugPath === 'homepage' || slugPath === 'home';
+  const localizedPageTitle = getLocalizedPageTitle(page, locale);
+  const baseTitle = page.metaTitle || localizedValue(seo.meta_title, locale) || localizedPageTitle;
+  const title = !page.metaTitle && !isHomepage && titleSuffix && !baseTitle.includes(titleSuffix)
+    ? `${baseTitle} ${titleSuffix}`.trim()
+    : baseTitle;
+  const description = page.metaDescription || localizedValue(seo.meta_description, locale) || undefined;
+  const keywords = page.metaKeywords || seo.meta_keywords || undefined;
+  const thumbnail = page.metaThumbnail || page.ogImage || seo.thumbnail || undefined;
+
   return {
-    title: page.metaTitle || page.title,
-    description: page.metaDescription || undefined,
-    keywords: page.metaKeywords || undefined,
+    title,
+    description,
+    keywords,
     robots: {
       index: !page.noindex,
       follow: !page.nofollow,
     },
-    openGraph: page.ogImage ? { images: [{ url: page.ogImage }] } : undefined,
+    openGraph: thumbnail ? { title, description, images: [{ url: thumbnail }] } : { title, description },
   };
 }
 
@@ -45,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 export default async function CMSPage({ params }: PageProps) {
   const { locale, slug } = await params;
-  const slugPath = slug.join('/');
+  const slugPath = normalizeCmsSlug(slug);
 
   const page = await getPageBySlug(slugPath);
 
@@ -66,5 +100,11 @@ export default async function CMSPage({ params }: PageProps) {
     isVisible: c.isVisible !== false,
   }));
 
-  return <PageRenderer components={components} locale={locale} />;
+  const pageContext = {
+    product: page.product ?? null,
+    promo: page.promo ?? null,
+    source: page.source ?? null,
+  };
+
+  return <PageRenderer components={components} locale={locale} pageContext={pageContext} />;
 }

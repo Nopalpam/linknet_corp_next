@@ -7,6 +7,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', PageController.getPages);
+router.get('/slug/check', PageController.checkSlugAvailability);
 router.get('/:id/history', PageController.getPageHistory);
 router.get('/:id', PageController.getPage);
 router.post('/', PageController.createPage);

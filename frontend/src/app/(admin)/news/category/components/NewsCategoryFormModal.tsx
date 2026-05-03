@@ -20,7 +20,9 @@ export default function NewsCategoryFormModal({
 }: NewsCategoryFormModalProps) {
   const [formData, setFormData] = useState<CreateNewsCategoryData>({
     name_en: "",
+    name_id: "",
     slug: "",
+    description: "",
     position: 0,
     is_active: true,
   });
@@ -32,14 +34,18 @@ export default function NewsCategoryFormModal({
       if (mode === "edit" && category) {
         setFormData({
           name_en: category.name_en,
+          name_id: category.name_id || "",
           slug: category.slug || "",
+          description: category.description || "",
           position: category.position || 0,
           is_active: category.is_active,
         });
       } else {
         setFormData({
           name_en: "",
+          name_id: "",
           slug: "",
+          description: "",
           position: 0,
           is_active: true,
         });
@@ -52,7 +58,7 @@ export default function NewsCategoryFormModal({
     e.preventDefault();
 
     if (!formData.name_en.trim()) {
-      setError("Category name is required");
+      setError("Category name (English) is required");
       return;
     }
 
@@ -102,15 +108,28 @@ export default function NewsCategoryFormModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Category Name <span className="text-red-500">*</span>
+              Category Name (English) <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.name_en}
               onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              placeholder="Enter category name"
+              placeholder="Enter English category name"
               autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Category Name (Indonesia)
+            </label>
+            <input
+              type="text"
+              value={formData.name_id || ""}
+              onChange={(e) => setFormData({ ...formData, name_id: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="Masukkan nama kategori Indonesia"
             />
           </div>
 
@@ -124,6 +143,18 @@ export default function NewsCategoryFormModal({
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               placeholder="e.g. my-category"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Description
+            </label>
+            <textarea
+              value={formData.description || ""}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="min-h-[96px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="Short intro description for the category page"
             />
           </div>
 

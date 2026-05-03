@@ -39,6 +39,13 @@ router.get(
   newsController.getNews
 );
 
+router.get(
+  '/cms/news-slug/check',
+  authMiddleware,
+  requirePermission('news.read'),
+  newsController.checkSlugAvailability
+);
+
 // Get single news by ID (CMS)
 router.get(
   '/cms/news/:id',

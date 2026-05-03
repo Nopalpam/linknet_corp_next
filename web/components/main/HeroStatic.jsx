@@ -56,13 +56,12 @@ export default function Hero({
     <section
         id={sectionId}
         className={`lnSection__heroStatic p-2 pt-0 bg-white
-          bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
           ${configClassName} ${className}`}
         style={sectionStyle}
     >
         {/* Tambahkan heightClass dinamis ke container ini */}
-        <div className={`relative w-full ${heightClass} flex items-center overflow-hidden rounded-[20px] md:rounded-[24px] ${!hasBgImage ? bgColor : ''}`}>
+        <div className={`relative w-full ${heightClass} flex items-center overflow-hidden rounded-[20px] md:rounded-[24px] bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
+          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${!hasBgImage ? bgColor : ''}`}>
 
             {/* ======================================= */}
             {/* 1. BACKGROUND LAYER (Z-INDEX: 0)        */}
@@ -140,7 +139,7 @@ export default function Hero({
 
                     {/* COMPONENT 3: TITLE */}
                     {title && (
-                        <Tag className={`text-headline-h3 font-medium tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-sm' : 'text-black'}`}>
+                        <Tag className={`text-headline-h3 font-bold tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-sm' : 'text-black'}`}>
                             <SplitText
                                 text={title.replace(/<br\s*\/?>/gi, '\n')}
                                 delay={240}

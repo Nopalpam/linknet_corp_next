@@ -57,12 +57,13 @@ function getMobileViewportSnapshot() {
 
 export default function TVHighlightSneekPeak({
   name = 'home',
-  className = ''
+  className = '',
+  cmsData = null
 }) {
   const params = useParams();
   const locale = params?.locale || 'en';
   const swiperRef = useRef(null);
-  const sectionData = TV_HIGHLIGHT_SNEEK_PEAK_DATA[name];
+  const sectionData = cmsData || TV_HIGHLIGHT_SNEEK_PEAK_DATA[name];
   const initialTabValue = sectionData?.config?.initialTab || 'now-showing';
   const initialItems = sectionData?.itemGroups?.[initialTabValue] || [];
   const initialDesktopIndex = Math.floor(initialItems.length / 2);

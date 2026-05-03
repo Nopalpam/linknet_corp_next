@@ -93,11 +93,19 @@ export default function AwardSneakPeek({
   // Fungsi helper untuk mengambil tahun dari format string ISO (misal: 2026-02-23T...)
   const getYear = (isoString) => {
     if (!isoString) return '';
+    if (typeof isoString === 'number') return isoString;
     try {
       return new Date(isoString).getFullYear();
     } catch (e) {
       return isoString;
     }
+  };
+
+  const withLocalePrefix = (href, linkType) => {
+    if (!href || linkType === 'action-modal' || href === '#') return href;
+    if (/^(https?:|mailto:|tel:|#)/.test(href)) return href;
+    if (href.startsWith(`/${locale}/`) || href === `/${locale}`) return href;
+    return `/${locale}${href.startsWith('/') ? href : `/${href}`}`;
   };
 
   return (
@@ -153,7 +161,7 @@ export default function AwardSneakPeek({
             {marqueeItems.map((item, index) => (
               <CardAward
                 key={`${item.id}-${index}`}
-                logo={item.topLogo}
+                logo={item.topLogo || '/assets/icons/badge.svg'}
                 title={item.title}
                 year={getYear(item.date)}
                 className="w-[280px] md:w-[360px] shrink-0 bg-transparent border-none shadow-none hover:shadow-none"
@@ -167,7 +175,10 @@ export default function AwardSneakPeek({
       {/* --- CTA SECTION --- */}
       <div className="container mx-auto px-4 md:px-0 max-w-7xl">
         <CTAList
-          ctaList={ctaList?.map((cta) => ({ ...cta, href: `/${locale}${cta.href}` }))}
+          ctaList={ctaList?.map((cta) => {
+            const linkType = cta.linkType || cta.link_type || 'url';
+            return { ...cta, href: withLocalePrefix(cta.href, linkType) };
+          })}
           align={introData?.align || 'left'}
           className="mt-10 md:mt-16"
           itemClassName="lnGsapAwardItem"

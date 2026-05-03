@@ -11,7 +11,9 @@ export interface Award {
   year: number;
   issuer: string;
   description?: string;
+  topLogo?: string;
   image?: string;
+  link?: string;
   status: 'ACTIVE' | 'INACTIVE';
   position: number;
   isActive: boolean;
@@ -24,7 +26,9 @@ export interface CreateAwardData {
   year: number;
   issuer: string;
   description?: string;
+  topLogo?: string;
   image?: string;
+  link?: string;
   order?: number;
   status?: 'ACTIVE' | 'INACTIVE';
 }

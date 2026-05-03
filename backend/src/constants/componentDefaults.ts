@@ -10,7 +10,7 @@
  * - defaultData: complete default component_data ready to render
  * 
  * Common settings available on all components:
- * - sectionIntro: canonical intro section settings
+ * - introData: canonical intro section settings
  * - config: canonical advanced section config
  */
 
@@ -57,7 +57,12 @@ const DEFAULT_SECTION_CONFIG = {
 function withCommon(data: Record<string, any>): Record<string, any> {
   const {
     intro,
+    introData,
     sectionIntro,
+    ctaList,
+    cta_list,
+    ctaButtons,
+    cta_buttons,
     config,
     custom_id,
     custom_class,
@@ -67,14 +72,27 @@ function withCommon(data: Record<string, any>): Record<string, any> {
     bg_size_class,
     ...rest
   } = data;
+  const ctaSource = ctaList || cta_list || ctaButtons || cta_buttons;
+  const normalizedCtaList = Array.isArray(ctaSource)
+    ? ctaSource.map((cta: Record<string, any>) => ({
+        ...cta,
+        label: cta.label ?? cta.text ?? '',
+        text: cta.text ?? cta.label ?? '',
+        href: cta.href ?? cta.url ?? cta.action ?? '',
+        action: cta.action ?? cta.actionModal ?? cta.action_modal ?? '',
+        iconLeft: cta.iconLeft ?? cta.icon_left ?? '',
+        iconRight: cta.iconRight ?? cta.icon_right ?? cta.icon ?? '',
+      }))
+    : [];
 
   return {
-    sectionIntro: {
+    introData: {
       ...DEFAULT_SECTION_INTRO,
       ...(intro || {}),
       ...(sectionIntro || {}),
+      ...(introData || {}),
     },
-    ...rest,
+    ...(normalizedCtaList.length > 0 ? { ctaList: normalizedCtaList } : {}),
     config: {
       ...DEFAULT_SECTION_CONFIG,
       ...(config || {}),
@@ -85,6 +103,7 @@ function withCommon(data: Record<string, any>): Record<string, any> {
       bgPositionClasses: config?.bgPositionClasses ?? bg_position_classes ?? '',
       bgSizeClass: config?.bgSizeClass ?? bg_size_class ?? '',
     },
+    ...rest,
   };
 }
 
@@ -99,9 +118,11 @@ const TEXT_BLOCK: ComponentTypeDefinition = {
   icon: 'FaAlignLeft',
   category: 'basic',
   defaultData: withCommon({
-    label: '',
-    title: { en: 'Section Title', id: 'Judul Bagian' },
-    description: { en: 'Section description goes here.', id: 'Deskripsi bagian di sini.' },
+    introData: {
+      label: '',
+      title: { en: 'Section Title', id: 'Judul Bagian' },
+      description: { en: 'Section description goes here.', id: 'Deskripsi bagian di sini.' },
+    },
     cta_text: { en: 'Learn More', id: 'Selengkapnya' },
     cta_link: '#',
     text_position: 'left',
@@ -138,6 +159,7 @@ const IMAGE: ComponentTypeDefinition = {
 const HERO_SECTION: ComponentTypeDefinition = {
   type: 'hero_section',
   name: 'Hero Static',
+  componentPath: '@/components/main/HeroStatic',
   description: 'Full-width hero banner with background image, title, and CTA',
   icon: 'FaStar',
   category: 'basic',
@@ -156,6 +178,7 @@ const HERO_SECTION: ComponentTypeDefinition = {
 const SLIDERS_HERO: ComponentTypeDefinition = {
   type: 'sliders_hero',
   name: 'Hero Sliders',
+  componentPath: '@/components/main/HeroSliders',
   description: 'Full-width hero carousel with multiple slides',
   icon: 'FaSlidersH',
   category: 'basic',
@@ -189,14 +212,57 @@ const SLIDERS_HERO: ComponentTypeDefinition = {
 const USP_GRID: ComponentTypeDefinition = {
   type: 'usp_grid',
   name: 'About With USP',
+  componentPath: '@/components/main/AboutWithUSP',
   description: 'Grid of unique selling points with icons',
   icon: 'FaTh',
   category: 'basic',
   defaultData: withCommon({
+    layoutVariant: 'image-on-left',
+    image: {
+      src: '/assets/img/sustainability/young-woman-using-phone-while-sitting-table.jpg',
+      alt: 'Young business woman working at a table',
+    },
+    usp_variant: 'default',
+    is_slider: false,
+    bg_image: '/assets/bg/bg-usp-home.jpg',
+    bg_image_mobile: '',
     items: [
-      { icon: 'globe', title: { en: 'Fast Connection', id: 'Koneksi Cepat' }, description: { en: 'High-speed fiber optic network', id: 'Jaringan fiber optik berkecepatan tinggi' } },
-      { icon: 'shield', title: { en: 'Secure Network', id: 'Jaringan Aman' }, description: { en: 'Enterprise-grade security', id: 'Keamanan tingkat enterprise' } },
-      { icon: 'phone', title: { en: '24/7 Support', id: 'Dukungan 24/7' }, description: { en: 'Round-the-clock customer support', id: 'Dukungan pelanggan sepanjang waktu' } },
+      {
+        iconURL: '/assets/icons/usp/icon-homepass.svg',
+        title: { en: '4M+ Homepasses', id: '4 Juta+ Homepass' },
+        description: { en: 'Spread across more than 47 major cities', id: 'Tersebar di lebih dari 47 kota besar' },
+      },
+      {
+        iconURL: '/assets/icons/usp/icon-business.svg',
+        title: { en: '3 Pillars of Business', id: '3 Pilar Bisnis' },
+        description: { en: 'FiberCo, EnterpriseCo, and MediaCo', id: 'FiberCo, EnterpriseCo, dan MediaCo' },
+      },
+    ],
+    slides_per_view_desktop: 4,
+    slides_per_view_mobile: 1.2,
+    grid_cols_desktop: 4,
+    grid_cols_mobile: 1,
+    cta_list: [
+      {
+        text: { en: 'Get to Know Us', id: 'Kenali Kami' },
+        variant: 'primary',
+        size: 'lg',
+        iconLeft: '',
+        iconRight: 'arrow-right',
+        href: '/about',
+        link_type: 'url',
+        action_modal: '',
+      },
+      {
+        text: { en: 'Contact Us', id: 'Hubungi Kami' },
+        variant: 'secondary-outline',
+        size: 'lg',
+        iconLeft: 'phone',
+        iconRight: '',
+        href: '/contact',
+        link_type: 'url',
+        action_modal: '',
+      },
     ],
   }),
 };
@@ -204,6 +270,7 @@ const USP_GRID: ComponentTypeDefinition = {
 const USP_GRID_SLIDER: ComponentTypeDefinition = {
   type: 'usp_grid_slider',
   name: 'About Values',
+  componentPath: '@/components/main/AboutValues',
   description: 'USP items displayed as a slider/carousel',
   icon: 'FaThList',
   category: 'basic',
@@ -262,6 +329,7 @@ const USP_GRID_SLIDER: ComponentTypeDefinition = {
 const BUSINESS_TAB: ComponentTypeDefinition = {
   type: 'business_tab',
   name: 'Tab Business',
+  componentPath: '@/components/main/TabBusiness',
   description: 'Tabbed content showcasing business segments',
   icon: 'FaBriefcase',
   category: 'basic',
@@ -289,37 +357,10 @@ const BUSINESS_TAB: ComponentTypeDefinition = {
   }),
 };
 
-const TABS_WITH_CARD: ComponentTypeDefinition = {
-  type: 'tabs_with_card',
-  name: 'Business Tab',
-  description: 'Tabbed interface with card grids inside each panel',
-  icon: 'FaFolder',
-  category: 'basic',
-  defaultData: withCommon({
-    title: { en: 'Our Services', id: 'Layanan Kami' },
-    tabs: [
-      { key: 'tab1', label: { en: 'Internet', id: 'Internet' } },
-      { key: 'tab2', label: { en: 'TV Cable', id: 'TV Kabel' } },
-    ],
-    tab_panels: {
-      tab1: {
-        cards: [
-          { title: { en: 'Fiber 50', id: 'Fiber 50' }, description: { en: '50 Mbps speed', id: 'Kecepatan 50 Mbps' }, image: '', link: '#' },
-          { title: { en: 'Fiber 100', id: 'Fiber 100' }, description: { en: '100 Mbps speed', id: 'Kecepatan 100 Mbps' }, image: '', link: '#' },
-        ],
-      },
-      tab2: {
-        cards: [
-          { title: { en: 'Basic Package', id: 'Paket Dasar' }, description: { en: '100+ channels', id: '100+ saluran' }, image: '', link: '#' },
-        ],
-      },
-    },
-  }),
-};
-
 const KEY_HIGHLIGHT: ComponentTypeDefinition = {
   type: 'key_highlight',
   name: 'Key Highlight With Image',
+  componentPath: '@/components/main/KeyHighlightWithImage',
   description: 'Sliding key metrics/statistics with images',
   icon: 'FaChartBar',
   category: 'basic',
@@ -335,6 +376,7 @@ const KEY_HIGHLIGHT: ComponentTypeDefinition = {
 const ABOUT_WITH_MARQUEE: ComponentTypeDefinition = {
   type: 'about_with_marquee',
   name: 'About With Running Photos',
+  componentPath: '@/components/main/AboutWithRunningPhotos',
   description: 'About section with scrolling photo marquee',
   icon: 'FaInfoCircle',
   category: 'basic',
@@ -359,6 +401,7 @@ const ABOUT_WITH_MARQUEE: ComponentTypeDefinition = {
 const JOIN_FIRST_SQUAD: ComponentTypeDefinition = {
   type: 'join_first_squad',
   name: 'Join First Squad',
+  componentPath: '@/components/main/JoinFirstSquad',
   description: 'Career carousel with 3 slides (First Squad, Management Trainee, Intern)',
   icon: 'FaUserPlus',
   category: 'basic',
@@ -445,6 +488,7 @@ const CARD_WITH_HIGHLIGHT_SUMMARY: ComponentTypeDefinition = {
 const HIGHLIGHTING_REAL_INITIATIVES: ComponentTypeDefinition = {
   type: 'highlighting_real_initiatives',
   name: 'Highlighting Real Initiatives',
+  componentPath: '@/components/main/HighlightingRealInitiatives',
   description: 'Showcase CSR/community initiatives with logos',
   icon: 'FaHandHoldingHeart',
   category: 'basic',
@@ -465,6 +509,7 @@ const HIGHLIGHTING_REAL_INITIATIVES: ComponentTypeDefinition = {
 const INFO_CONTACTS: ComponentTypeDefinition = {
   type: 'info_contacts',
   name: 'Info Contact',
+  componentPath: '@/components/main/InfoContact',
   description: 'Contact details with icons (phone, email, address, etc.)',
   icon: 'FaAddressBook',
   category: 'basic',
@@ -481,6 +526,7 @@ const INFO_CONTACTS: ComponentTypeDefinition = {
 const INFORMATION_LIST: ComponentTypeDefinition = {
   type: 'information_list',
   name: 'Information List',
+  componentPath: '@/components/main/InformationList',
   description: 'HTML content sections with related articles and document downloads',
   icon: 'FaListUl',
   category: 'basic',
@@ -503,6 +549,7 @@ const INFORMATION_LIST: ComponentTypeDefinition = {
 const CONTACT_US: ComponentTypeDefinition = {
   type: 'contact_us',
   name: 'Contact Us',
+  componentPath: '@/components/main/ContactUs',
   description: 'Contact form section with title, description, and contact details',
   icon: 'FaEnvelopeOpen',
   category: 'basic',
@@ -539,12 +586,17 @@ const DOCUMENT_LIST: ComponentTypeDefinition = {
 const ACCORDION: ComponentTypeDefinition = {
   type: 'accordion',
   name: 'FAQ',
+  componentPath: '@/components/main/FAQ',
   description: 'Collapsible FAQ/content sections',
   icon: 'FaListAlt',
   category: 'basic',
   defaultData: withCommon({
+    // Override default intro alignment to center (matching FAQ static data)
+    introData: { align: 'center' },
     style: 'default',
     allow_multiple: false,
+    textCTA: { en: 'See More', id: 'Lihat Lebih' },
+    textCTA_collapse: { en: 'Show Less', id: 'Tampilkan Lebih Sedikit' },
     items: [
       { title: { en: 'What is LinkNet?', id: 'Apa itu LinkNet?' }, content: { en: '<p>LinkNet is a leading network provider.</p>', id: '<p>LinkNet adalah penyedia jaringan terkemuka.</p>' }, expanded: false },
       { title: { en: 'How to subscribe?', id: 'Cara berlangganan?' }, content: { en: '<p>Visit our website or contact us.</p>', id: '<p>Kunjungi website kami atau hubungi kami.</p>' }, expanded: false },
@@ -556,6 +608,7 @@ const ACCORDION: ComponentTypeDefinition = {
 const TRADINGVIEW_SYMBOL_OVERVIEW: ComponentTypeDefinition = {
   type: 'tradingview_symbol_overview',
   name: 'TradingView Symbol Overview',
+  componentPath: '@/components/main/StockInformation',
   description: 'TradingView stock chart widget',
   icon: 'FaChartLine',
   category: 'basic',
@@ -579,11 +632,21 @@ const TRADINGVIEW_SYMBOL_OVERVIEW: ComponentTypeDefinition = {
 const NEWS_HIGHLIGHT: ComponentTypeDefinition = {
   type: 'news_highlight',
   name: 'News Featured',
+  componentPath: '@/components/main/NewsFeatured',
   description: 'Featured and grid news articles from database',
   icon: 'FaNewspaper',
   category: 'main',
   defaultData: withCommon({
-    title: { en: 'Latest News', id: 'Berita Terbaru' },
+    source: 'cms_highlights',
+    news_ids: [],
+    featuredNews: [],
+    introData: {
+      as: 'h2',
+      label: { en: 'MEDIA & ACTIVITIES', id: 'MEDIA & AKTIVITAS' },
+      title: { en: 'Latest News', id: 'Berita Terbaru' },
+      description: { en: '', id: '' },
+      align: 'left',
+    },
     featured_count: 1,
     grid_count: 4,
     order: 'latest',
@@ -597,6 +660,7 @@ const NEWS_HIGHLIGHT: ComponentTypeDefinition = {
 const NEWS_LIST: ComponentTypeDefinition = {
   type: 'news_list',
   name: 'News List',
+  componentPath: '@/components/main/NewsList',
   description: 'Paginated news listing from database with filters',
   icon: 'FaList',
   category: 'main',
@@ -623,6 +687,7 @@ const NEWS_LIST: ComponentTypeDefinition = {
 const CAREER_HIGHLIGHT: ComponentTypeDefinition = {
   type: 'career_highlight',
   name: 'Career Sneak Peek',
+  componentPath: '@/components/main/CareerSneakPeek',
   description: 'Featured career opportunities from database',
   icon: 'FaUserTie',
   category: 'main',
@@ -640,11 +705,17 @@ const CAREER_HIGHLIGHT: ComponentTypeDefinition = {
 const CAREER_LIST: ComponentTypeDefinition = {
   type: 'career_list',
   name: 'Career',
+  componentPath: '@/components/main/Career',
   description: 'Full career listing with search and filters',
   icon: 'FaBriefcase',
   category: 'main',
   defaultData: withCommon({
-    title: { en: 'Open Positions', id: 'Posisi Terbuka' },
+    intro: {
+      label: { en: '', id: '' },
+      title: { en: 'Open Positions', id: 'Posisi Terbuka' },
+      description: { en: '', id: '' },
+      align: 'left',
+    },
     show_search: true,
     show_department_filter: true,
     show_location_filter: true,
@@ -657,6 +728,7 @@ const CAREER_LIST: ComponentTypeDefinition = {
 const MANAGEMENT_LIST: ComponentTypeDefinition = {
   type: 'management_list',
   name: 'Management',
+  componentPath: '@/components/main/Management',
   description: 'Board of directors / management team from database',
   icon: 'FaUsers',
   category: 'main',
@@ -673,11 +745,14 @@ const MANAGEMENT_LIST: ComponentTypeDefinition = {
 const ANNOUNCEMENT_LIST: ComponentTypeDefinition = {
   type: 'announcement_list',
   name: 'Announcement List',
+  componentPath: '@/components/main/AnnouncementList',
   description: 'Announcements listing from database with type/section filters',
   icon: 'FaBullhorn',
   category: 'main',
   defaultData: withCommon({
-    title: { en: 'Announcements', id: 'Pengumuman' },
+    introData: {
+      title: { en: 'Announcements', id: 'Pengumuman' },
+    },
     show_type_filter: true,
     show_section_filter: true,
     show_search: true,
@@ -690,11 +765,14 @@ const ANNOUNCEMENT_LIST: ComponentTypeDefinition = {
 const REPORT_LIST: ComponentTypeDefinition = {
   type: 'report_list',
   name: 'Report List',
+  componentPath: '@/components/main/ReportList',
   description: 'Financial and corporate reports from database',
   icon: 'FaFileInvoice',
   category: 'main',
   defaultData: withCommon({
-    title: { en: 'Reports', id: 'Laporan' },
+    introData: {
+      title: { en: 'Reports', id: 'Laporan' },
+    },
     report_type: null,
     show_year_filter: true,
     show_type_filter: true,
@@ -707,15 +785,25 @@ const REPORT_LIST: ComponentTypeDefinition = {
 const AWARDS_LIST: ComponentTypeDefinition = {
   type: 'awards_list',
   name: 'Awards Feed',
+  componentPath: '@/components/main/AwardsFeed',
   description: 'Company awards and achievements from database',
   icon: 'FaTrophy',
   category: 'main',
   defaultData: withCommon({
-    title: { en: 'Awards & Achievements', id: 'Penghargaan & Pencapaian' },
+    intro: {
+      label: { en: 'ACHIEVEMENTS & RECOGNITIONS', id: 'PENGHARGAAN & PENGAKUAN' },
+      title: { en: 'Awards & Achievements', id: 'Penghargaan & Pencapaian' },
+      description: {
+        en: 'Discover the industry recognitions and awards that highlight our commitment to excellence, innovation, and customer satisfaction.',
+        id: 'Temukan berbagai penghargaan industri yang menandai komitmen kami terhadap keunggulan, inovasi, dan kepuasan pelanggan.',
+      },
+      align: 'center',
+    },
     show_year_filter: true,
     show_image: true,
-    layout: 'grid',
+    show_pagination: true,
     columns: 3,
+    per_page: 9,
     order: 'latest',
   }),
 };
@@ -727,6 +815,7 @@ const AWARDS_LIST: ComponentTypeDefinition = {
 const VISION_MISSION: ComponentTypeDefinition = {
   type: 'vision_mission',
   name: 'Vision Mission',
+  componentPath: '@/components/main/VisionMission',
   description: 'Vision and mission grid with alternating image/text blocks',
   icon: 'FaEye',
   category: 'basic',
@@ -748,6 +837,7 @@ const VISION_MISSION: ComponentTypeDefinition = {
 const MAPS_COVERAGE: ComponentTypeDefinition = {
   type: 'maps_coverage',
   name: 'Maps Coverage',
+  componentPath: '@/components/main/MapsCoverage',
   description: 'Interactive Indonesia coverage map with province selection and city search',
   icon: 'FaMapMarkedAlt',
   category: 'basic',
@@ -763,6 +853,7 @@ const MAPS_COVERAGE: ComponentTypeDefinition = {
 const MILESTONE: ComponentTypeDefinition = {
   type: 'milestone',
   name: 'Milestone',
+  componentPath: '@/components/main/Milestone',
   description: 'Company timeline with year-based milestones',
   icon: 'FaStream',
   category: 'basic',
@@ -778,21 +869,34 @@ const MILESTONE: ComponentTypeDefinition = {
 const AWARDS_MARQUEE: ComponentTypeDefinition = {
   type: 'awards_marquee',
   name: 'Award Sneak Peek',
+  componentPath: '@/components/main/AwardSneakPeek',
   description: 'Scrolling marquee of awards and achievements',
   icon: 'FaMedal',
-  category: 'basic',
+  category: 'main',
   defaultData: withCommon({
-    title: { en: 'Awards & Recognition', id: 'Penghargaan & Pengakuan' },
+    intro: {
+      label: { en: 'ACHIEVEMENTS & RECOGNITIONS', id: 'PENGHARGAAN & PENGAKUAN' },
+      title: { en: 'Awards & Recognition', id: 'Penghargaan & Pengakuan' },
+      description: { en: '', id: '' },
+      align: 'center',
+    },
+    award_ids: [],
     cta_text: { en: 'View All', id: 'Lihat Semua' },
     cta_link: '/awards',
-    marquee_speed: 30,
-    marquee_direction: 'left',
+    cta_variant: 'primary',
+    cta_size: 'lg',
+    cta_link_type: 'url',
+    cta_target: '_self',
+    cta_action_modal: '',
+    cta_icon_left: '',
+    cta_icon_right: '',
   }),
 };
 
 const PRODUCT_SHOWCASE: ComponentTypeDefinition = {
   type: 'product_showcase',
   name: 'One Stream',
+  componentPath: '@/components/main/OneStream',
   description: 'Product section with device images, USP cards, and specs/order modals',
   icon: 'FaBox',
   category: 'basic',
@@ -813,6 +917,7 @@ const PRODUCT_SHOWCASE: ComponentTypeDefinition = {
 const USP_STRIP: ComponentTypeDefinition = {
   type: 'usp_strip',
   name: 'USP',
+  componentPath: '@/components/main/USP',
   description: 'Horizontal strip of USP taglines with dividers',
   icon: 'FaGripLines',
   category: 'basic',
@@ -828,6 +933,7 @@ const USP_STRIP: ComponentTypeDefinition = {
 const CLOSING_CTA: ComponentTypeDefinition = {
   type: 'closing_cta',
   name: 'Closing Sentence',
+  componentPath: '@/components/main/ClosingSentence',
   description: 'Full-screen video background CTA section',
   icon: 'FaBullseye',
   category: 'basic',
@@ -844,6 +950,7 @@ const CLOSING_CTA: ComponentTypeDefinition = {
 const VIDEO_SECTION: ComponentTypeDefinition = {
   type: 'video_section',
   name: 'Tvc',
+  componentPath: '@/components/main/Tvc',
   description: 'Scroll-expanding video/image section with play button',
   icon: 'FaPlayCircle',
   category: 'basic',
@@ -857,6 +964,7 @@ const VIDEO_SECTION: ComponentTypeDefinition = {
 const EXTENDABLE_ARTICLE: ComponentTypeDefinition = {
   type: 'extendable_article',
   name: 'Extendable Article',
+  componentPath: '@/components/main/ExtendableArticle',
   description: 'Expandable/collapsible rich text article section with Read More/Show Less toggle',
   icon: 'FaFileAlt',
   category: 'basic',
@@ -875,6 +983,7 @@ const EXTENDABLE_ARTICLE: ComponentTypeDefinition = {
 const STOCK_INFORMATION: ComponentTypeDefinition = {
   type: 'stock_information',
   name: 'Stock Information',
+  componentPath: '@/components/main/StockInformation',
   description: 'Live stock price widget with TradingView chart, information panel, and historical data table',
   icon: 'FaChartLine',
   category: 'basic',
@@ -887,6 +996,7 @@ const STOCK_INFORMATION: ComponentTypeDefinition = {
 const TESTIMONIALS: ComponentTypeDefinition = {
   type: 'testimonials',
   name: 'Testimonials',
+  componentPath: '@/components/main/Testimonials',
   description: 'Client testimonial carousel with company logos, quotes, tags, and auto-advance progress tabs',
   icon: 'FaQuoteRight',
   category: 'basic',
@@ -915,6 +1025,7 @@ const TESTIMONIALS: ComponentTypeDefinition = {
 const FORM_REGISTRATION_ENTERPRISE: ComponentTypeDefinition = {
   type: 'form_registration_enterprise',
   name: 'Form Registration Enterprise',
+  componentPath: '@/components/main/FormRegistrationEnterprise',
   description: 'Form registration section for Enterprise BU',
   icon: 'FaWpforms',
   category: 'basic',
@@ -931,6 +1042,7 @@ const FORM_REGISTRATION_ENTERPRISE: ComponentTypeDefinition = {
 const FORM_REGISTRATION_FIBER: ComponentTypeDefinition = {
   type: 'form_registration_fiber',
   name: 'Form Registration Fiber',
+  componentPath: '@/components/main/FormRegistrationFiber',
   description: 'Form registration section for Fiber BU',
   icon: 'FaWpforms',
   category: 'basic',
@@ -947,6 +1059,7 @@ const FORM_REGISTRATION_FIBER: ComponentTypeDefinition = {
 const FORM_REGISTRATION_MEDIA: ComponentTypeDefinition = {
   type: 'form_registration_media',
   name: 'Form Registration Media',
+  componentPath: '@/components/main/FormRegistrationMedia',
   description: 'Form registration section for Media BU',
   icon: 'FaWpforms',
   category: 'basic',
@@ -963,11 +1076,12 @@ const FORM_REGISTRATION_MEDIA: ComponentTypeDefinition = {
 const COVERAGE_CHECK_FIBER: ComponentTypeDefinition = {
   type: 'coverage_check_fiber',
   name: 'Coverage Check Fiber',
+  componentPath: '@/components/main/CoverageCheckFiber',
   description: 'Inline coverage check and Fiber inquiry section backed by Form Modules',
   icon: 'FaMapMarkedAlt',
   category: 'basic',
   defaultData: withCommon({
-    sectionIntro: {
+    introData: {
       label: { en: 'CHECK COVERAGE', id: 'CEK COVERAGE' },
       title: { en: 'Find Fiber Network from Linknet Fiber in Your Area', id: 'Temukan Jaringan Fiber dari Linknet Fiber di Area Anda' },
       description: { en: 'Check Coverage Availability Now & Discover service options in your location.', id: 'Cek Ketersediaan Coverage Sekarang & Temukan pilihan layanan di lokasi Anda.' },
@@ -1010,13 +1124,143 @@ function syncedMainComponent(
     description: options.description || `${name} component from web/components/main`,
     icon: options.icon || 'FaPuzzlePiece',
     category: options.category || 'basic',
-    defaultData: options.defaultData || withCommon({
+    defaultData: options.defaultData || SYNCED_MAIN_DEFAULTS[type] || withCommon({
       name: 'default',
       title: { en: name, id: name },
       description: { en: '', id: '' },
     }),
   };
 }
+
+const SYNCED_MAIN_DEFAULTS: Record<string, Record<string, any>> = {
+  hero: withCommon({
+    name: 'mission',
+    as: 'h2',
+    parentProduct: {
+      iconImage: '',
+      productName: { en: '', id: '' },
+    },
+    logoSrc: '',
+    logoSquare: false,
+    labelText: { en: 'Our Mission', id: 'Misi Kami' },
+    labelIconSrc: '',
+    title: {
+      en: 'Improving Lives and Supporting Indonesia\'s Digital Growth',
+      id: 'Meningkatkan Kehidupan dan Mendukung Pertumbuhan Digital Indonesia',
+    },
+    description: {
+      en: 'Linknet is dedicated to improving lives and supporting Indonesia\'s digital growth by delivering smart, reliable technology infrastructure.',
+      id: 'Linknet berdedikasi untuk meningkatkan kehidupan dan mendukung pertumbuhan digital Indonesia melalui infrastruktur teknologi yang cerdas dan andal.',
+    },
+    ctaText: { en: 'Get to Know Us', id: 'Kenali Kami' },
+    ctaLink: '/about-us',
+    ctaTarget: '_self',
+    bgColor: 'bg-[#FFB800]',
+    heroSize: 'md',
+    theme: 'light',
+    bgOverlay: false,
+  }),
+  check_coverage: withCommon({
+    name: 'enterprise',
+    introData: {
+      as: 'h2',
+      label: { en: 'CHECK COVERAGE', id: 'CEK COVERAGE' },
+      title: { en: 'Find Fiber Network from Linknet Fiber in Your Area', id: 'Temukan Jaringan Fiber dari Linknet Fiber di Area Anda' },
+      description: { en: 'Check Coverage Availability Now & Discover service options in your location.', id: 'Cek Ketersediaan Coverage Sekarang & Temukan pilihan layanan di lokasi Anda.' },
+      align: 'left',
+    },
+  }),
+  event_hero: withCommon({
+    posterSrc: '',
+    posterAlt: { en: 'Event Poster', id: 'Poster Event' },
+    thumbnailSrc: '',
+    thumbnailMobileSrc: '',
+    badgeText: { en: 'Upcoming', id: 'Akan Datang' },
+    status: 'upcoming',
+    title: { en: 'Event Title', id: 'Judul Event' },
+    location: { en: 'Jakarta, Indonesia', id: 'Jakarta, Indonesia' },
+    dateLabel: { en: 'Sep 14 - Sep 20, 2026', id: '14 Sep - 20 Sep 2026' },
+    timeLabel: { en: '05:00 - 14:00 WIB', id: '05:00 - 14:00 WIB' },
+    ctaText: { en: 'Register', id: 'Daftar' },
+    ctaLink: '#',
+    ctaTarget: '_self',
+    ctaModalPayload: null,
+  }),
+  footer: withCommon({
+    cmsClosingData: null,
+    cmsFooterData: null,
+  }),
+  footer_fiber: withCommon({}),
+  footer_main: withCommon({
+    cmsFooterData: null,
+  }),
+  footer_media: withCommon({}),
+  form_registration: withCommon({}),
+  form_registration_incomplete: withCommon({}),
+  form_registration_success: withCommon({}),
+  hero_sliders_tv_highlight: withCommon({
+    name: 'today-highlight',
+  }),
+  hospitality: withCommon({}),
+  layout_chrome: withCommon({}),
+  maps_coverage_v1: withCommon({
+    name: 'home',
+  }),
+  navbar: withCommon({
+    menuData: [],
+    defaultLocale: 'en',
+  }),
+  navbar_fiber: withCommon({
+    menuData: [],
+    defaultLocale: 'en',
+  }),
+  navbar_media: withCommon({}),
+  navbar_newsroom: {
+    label: { en: 'News', id: 'Berita' },
+    category_sort_by: 'default',
+  },
+  news_teaser: withCommon({
+    name: 'press-release',
+    category_id: '',
+    limit: 6,
+    ctaList: [
+      {
+        text: { en: 'See More', id: 'Lihat Lainnya' },
+        variant: 'secondary-outline',
+        size: 'lg',
+        iconLeft: '',
+        iconRight: '',
+        href: '',
+        link_type: 'url',
+        action_modal: '',
+      },
+    ],
+  }),
+  omni_channel_widget: withCommon({
+    enabled: true,
+    title: { en: 'Let\'s start new chat', id: 'Mulai percakapan baru' },
+    subtitle: { en: 'How can we help you today?', id: 'Apa yang bisa kami bantu hari ini?' },
+    whatsappUrl: 'https://wa.me/628111700700',
+    submitEndpoint: '',
+    sendToSalesForce: false,
+  }),
+  one_stream_plus: withCommon({}),
+  report_grid: withCommon({
+    data: [],
+  }),
+  solutions_services_with_background: withCommon({
+    name: 'enterprise',
+  }),
+  tv_channel_sneak_peek: withCommon({
+    name: 'home',
+  }),
+  tv_highlight_sliders: withCommon({
+    name: 'today-highlight',
+  }),
+  tv_highlight_sneek_peak: withCommon({
+    name: 'home',
+  }),
+};
 
 const SYNCED_MAIN_COMPONENTS: ComponentTypeDefinition[] = [
   syncedMainComponent('hero', 'Hero', '@/components/main/Hero', { icon: 'FaStar' }),
@@ -1051,7 +1295,7 @@ const SYNCED_MAIN_COMPONENTS: ComponentTypeDefinition[] = [
   syncedMainComponent('news_detail', 'News Detail', '@/components/main/NewsDetail', { icon: 'FaNewspaper', category: 'main', defaultData: withCommon({ article: null }) }),
   syncedMainComponent('news_feed', 'News Feed', '@/components/main/NewsFeed', { icon: 'FaNewspaper', category: 'main', defaultData: withCommon({ categorySlug: 'latest' }) }),
   syncedMainComponent('news_related', 'News Related', '@/components/main/NewsRelated', { icon: 'FaNewspaper', defaultData: withCommon({ articles: [] }) }),
-  syncedMainComponent('news_teaser', 'News Teaser', '@/components/main/NewsTeaser', { icon: 'FaNewspaper' }),
+  syncedMainComponent('news_teaser', 'News Teaser', '@/components/main/NewsTeaser', { icon: 'FaNewspaper', category: 'main' }),
   syncedMainComponent('omni_channel_widget', 'Omni Channel Widget', '@/components/main/OmniChannelWidget', { icon: 'FaComments' }),
   syncedMainComponent('one_stream_plus', 'One Stream Plus', '@/components/main/OneStreamPlus', { icon: 'FaBox' }),
   syncedMainComponent('package_list', 'Package List', '@/components/main/PackageList', { icon: 'FaBoxOpen', defaultData: withCommon({ name: 'enterprise' }) }),
@@ -1080,7 +1324,6 @@ export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
   USP_GRID,
   USP_GRID_SLIDER,
   BUSINESS_TAB,
-  TABS_WITH_CARD,
   KEY_HIGHLIGHT,
   ABOUT_WITH_MARQUEE,
   JOIN_FIRST_SQUAD,

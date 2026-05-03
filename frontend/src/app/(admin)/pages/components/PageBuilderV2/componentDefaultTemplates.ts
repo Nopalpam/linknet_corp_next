@@ -8,20 +8,9 @@
  * Text fields use bilingual { en, id } format for localization support.
  */
 
-// ─── Helper ─────────────────────────────────────────────────────────
+import { DEFAULT_SECTION_INTRO } from '../../../../../../../shared/presentation/intro';
 
-const DEFAULT_SECTION_INTRO = {
-  label: { en: '', id: '' },
-  title: { en: '', id: '' },
-  description: { en: '', id: '' },
-  as: 'h2',
-  align: 'left',
-  fluid: false,
-  labelClassName: '',
-  titleClassName: '',
-  descriptionClassName: '',
-  className: '',
-};
+// ─── Helper ─────────────────────────────────────────────────────────
 
 const DEFAULT_SECTION_CONFIG = {
   sectionId: '',
@@ -35,7 +24,12 @@ const DEFAULT_SECTION_CONFIG = {
 function withCommon(data: Record<string, any>): Record<string, any> {
   const {
     intro,
+    introData,
     sectionIntro,
+    ctaList,
+    cta_list,
+    ctaButtons,
+    cta_buttons,
     config,
     custom_id,
     custom_class,
@@ -45,13 +39,27 @@ function withCommon(data: Record<string, any>): Record<string, any> {
     bg_size_class,
     ...rest
   } = data;
+  const ctaSource = ctaList || cta_list || ctaButtons || cta_buttons;
+  const normalizedCtaList = Array.isArray(ctaSource)
+    ? ctaSource.map((cta: Record<string, any>) => ({
+        ...cta,
+        label: cta.label ?? cta.text ?? '',
+        text: cta.text ?? cta.label ?? '',
+        href: cta.href ?? cta.url ?? cta.action ?? '',
+        action: cta.action ?? cta.actionModal ?? cta.action_modal ?? '',
+        iconLeft: cta.iconLeft ?? cta.icon_left ?? '',
+        iconRight: cta.iconRight ?? cta.icon_right ?? cta.icon ?? '',
+      }))
+    : [];
 
   return {
-    sectionIntro: {
+    introData: {
       ...DEFAULT_SECTION_INTRO,
       ...(intro || {}),
       ...(sectionIntro || {}),
+      ...(introData || {}),
     },
+    ...(normalizedCtaList.length > 0 ? { ctaList: normalizedCtaList } : {}),
     ...rest,
     config: {
       ...DEFAULT_SECTION_CONFIG,
@@ -153,7 +161,12 @@ export const slidersHeroDefaults = withCommon({
 // ─── 3. usp_grid / AboutWithUSP (from aboutWithUSP.js) ─────────────
 
 export const uspGridDefaults = withCommon({
-  usp_variant: 'card',
+  layoutVariant: 'image-on-left',
+  image: {
+    src: '/assets/img/sustainability/young-woman-using-phone-while-sitting-table.jpg',
+    alt: 'Young business woman working at a table',
+  },
+  usp_variant: 'default',
   is_slider: false,
   bg_image: '/assets/bg/bg-usp-home.jpg',
   bg_image_mobile: '',
@@ -171,7 +184,7 @@ export const uspGridDefaults = withCommon({
   },
   items: [
     {
-      icon: 'home',
+      iconURL: '/assets/icons/usp/icon-homepass.svg',
       title: { en: '4M+ Homepasses', id: '4 Juta+ Homepass' },
       description: {
         en: 'Spread across more than 47 major cities',
@@ -179,7 +192,7 @@ export const uspGridDefaults = withCommon({
       },
     },
     {
-      icon: 'business',
+      iconURL: '/assets/icons/usp/icon-business.svg',
       title: { en: '3 Pillars of Business', id: '3 Pilar Bisnis' },
       description: {
         en: 'FiberCo, EnterpriseCo, and MediaCo',
@@ -196,13 +209,21 @@ export const uspGridDefaults = withCommon({
       text: { en: 'Get to Know Us', id: 'Kenali Kami' },
       variant: 'primary',
       size: 'lg',
+      iconLeft: '',
+      iconRight: 'arrow-right',
       href: '/about',
+      link_type: 'url',
+      action_modal: '',
     },
     {
       text: { en: 'Contact Us', id: 'Hubungi Kami' },
       variant: 'secondary-outline',
       size: 'lg',
+      iconLeft: 'phone',
+      iconRight: '',
       href: '/contact',
+      link_type: 'url',
+      action_modal: '',
     },
   ],
 });
@@ -472,6 +493,10 @@ export const highlightingRealInitiativesDefaults = withCommon({
       href: '/csr',
       variant: 'secondary-outline',
       size: 'lg',
+      iconLeft: '',
+      iconRight: '',
+      link_type: 'url',
+      action_modal: '',
     },
   ],
 });
@@ -753,22 +778,42 @@ export const milestoneDefaults = withCommon({
 // ─── 15. awards_marquee (from AwardsSneakPeek.js) ──────────────────
 
 export const awardsMarqueeDefaults = withCommon({
-  title: {
-    en: 'Penghargaan yang Menandai Perjalanan Kami',
-    id: 'Penghargaan yang Menandai Perjalanan Kami',
+  intro: {
+    label: { en: 'ACHIEVEMENTS & RECOGNITIONS', id: 'PENGHARGAAN & PENGAKUAN' },
+    title: {
+      en: 'Penghargaan yang Menandai Perjalanan Kami',
+      id: 'Penghargaan yang Menandai Perjalanan Kami',
+    },
+    description: { en: '', id: '' },
+    align: 'center',
   },
+  award_ids: [],
   cta_text: { en: 'View All Awards', id: 'Lihat Semua Penghargaan' },
   cta_link: '/about-us/awards',
-  marquee_speed: 30,
-  marquee_direction: 'left',
+  cta_variant: 'primary',
+  cta_size: 'lg',
+  cta_link_type: 'url',
+  cta_target: '_self',
+  cta_action_modal: '',
+  cta_icon_left: '',
+  cta_icon_right: '',
 });
 
 // ─── 16. news_highlight (from newsFeatured.js) ──────────────────────
 
 export const newsHighlightDefaults = withCommon({
-  title: {
-    en: 'Keep up with what\'s happening at Linknet',
-    id: 'Ikuti perkembangan terbaru di Linknet',
+  source: 'cms_highlights',
+  news_ids: [],
+  featuredNews: [],
+  introData: {
+    as: 'h2',
+    label: { en: 'MEDIA & ACTIVITIES', id: 'MEDIA & AKTIVITAS' },
+    title: {
+      en: 'Keep up with what\'s happening at Linknet',
+      id: 'Ikuti perkembangan terbaru di Linknet',
+    },
+    description: { en: '', id: '' },
+    align: 'left',
   },
   featured_count: 1,
   grid_count: 4,
@@ -777,6 +822,13 @@ export const newsHighlightDefaults = withCommon({
   show_date: true,
   cta_text: { en: 'See More', id: 'Lihat Lainnya' },
   cta_link: '/news',
+  cta_variant: 'primary',
+  cta_size: 'lg',
+  cta_link_type: 'url',
+  cta_target: '_self',
+  cta_action_modal: '',
+  cta_icon_left: '',
+  cta_icon_right: '',
 });
 
 // ─── 17. news_list (from newsFeed.js + newsTeaser.js) ───────────────
@@ -797,6 +849,13 @@ export const newsListDefaults = withCommon({
   layout: 'grid',
   cta_text: { en: 'View All News', id: 'Lihat Semua Berita' },
   cta_link: '/news',
+  cta_variant: 'primary',
+  cta_size: 'lg',
+  cta_link_type: 'url',
+  cta_target: '_self',
+  cta_action_modal: '',
+  cta_icon_left: '',
+  cta_icon_right: '',
 });
 
 // ─── 18. career_highlight (from careerSneakPeek.js) ────────────────
@@ -814,15 +873,27 @@ export const careerHighlightDefaults = withCommon({
   show_department: true,
   show_location: true,
   cta_text: { en: 'Discover More', id: 'Temukan Lebih' },
-  cta_link: '/life-at-linknet/career',
+  cta_link: '/career',
+  cta_variant: 'primary',
+  cta_size: 'lg',
+  cta_link_type: 'url',
+  cta_target: '_self',
+  cta_action_modal: '',
+  cta_icon_left: '',
+  cta_icon_right: '',
 });
 
 // ─── 19. career_list ────────────────────────────────────────────────
 
 export const careerListDefaults = withCommon({
-  title: {
-    en: 'Open Positions',
-    id: 'Posisi Terbuka',
+  intro: {
+    label: { en: '', id: '' },
+    title: {
+      en: 'Open Positions',
+      id: 'Posisi Terbuka',
+    },
+    description: { en: '', id: '' },
+    align: 'left',
   },
   show_search: true,
   show_department_filter: true,
@@ -864,14 +935,23 @@ export const reportListDefaults = withCommon({
 // ─── 22. awards_list (from awardsFeed.js) ───────────────────────────
 
 export const awardsListDefaults = withCommon({
-  title: {
-    en: 'Our Awards & Milestones',
-    id: 'Penghargaan & Pencapaian Kami',
+  intro: {
+    label: { en: 'ACHIEVEMENTS & RECOGNITIONS', id: 'PENGHARGAAN & PENGAKUAN' },
+    title: {
+      en: 'Our Awards & Milestones',
+      id: 'Penghargaan & Pencapaian Kami',
+    },
+    description: {
+      en: 'Discover the industry recognitions and awards that highlight our commitment to excellence, innovation, and customer satisfaction.',
+      id: 'Temukan berbagai penghargaan industri yang menandai komitmen kami terhadap keunggulan, inovasi, dan kepuasan pelanggan.',
+    },
+    align: 'center',
   },
   show_year_filter: true,
   show_image: true,
-  layout: 'grid',
+  show_pagination: true,
   columns: 3,
+  per_page: 9,
   order: 'latest',
 });
 

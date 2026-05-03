@@ -1,17 +1,7 @@
-export type PresentationFieldResolver = (source: Record<string, any> | undefined, field: string) => string;
+import { buildSharedIntroData } from './intro';
+import type { PresentationFieldResolver, SharedIntroData } from './intro';
 
-export type SharedIntroData = {
-  as?: string;
-  label?: string;
-  title?: string;
-  description?: string;
-  align?: string;
-  fluid?: boolean;
-  labelClassName?: string;
-  titleClassName?: string;
-  descriptionClassName?: string;
-  className?: string;
-};
+export type { PresentationFieldResolver, SharedIntroData } from './intro';
 
 export type SharedServiceProduct = {
   id?: string;
@@ -71,52 +61,12 @@ type SolutionsPresentationOptions = {
   introData?: SharedIntroData;
 };
 
-function buildIntroData(
-  data: Record<string, any> | undefined,
-  resolveField: PresentationFieldResolver,
-  introData?: SharedIntroData
-): SharedIntroData {
-  if (introData) {
-    return introData;
-  }
-
-  const introSource = data?.sectionIntro || data?.intro;
-  const hasIntroContent = Boolean(
-    resolveField(introSource, 'label') ||
-    resolveField(introSource, 'title') ||
-    resolveField(introSource, 'description')
-  );
-
-  if (introSource && typeof introSource === 'object' && hasIntroContent) {
-    return {
-      as: typeof introSource.as === 'string' && introSource.as ? introSource.as : 'h2',
-      label: resolveField(introSource, 'label'),
-      title: resolveField(introSource, 'title'),
-      description: resolveField(introSource, 'description'),
-      align: typeof introSource.align === 'string' && introSource.align ? introSource.align : 'left',
-      fluid: Boolean(introSource.fluid),
-      labelClassName: typeof introSource.labelClassName === 'string' ? introSource.labelClassName : '',
-      titleClassName: typeof introSource.titleClassName === 'string' ? introSource.titleClassName : '',
-      descriptionClassName: typeof introSource.descriptionClassName === 'string' ? introSource.descriptionClassName : '',
-      className: typeof introSource.className === 'string' ? introSource.className : '',
-    };
-  }
-
-  return {
-    as: 'h2',
-    label: resolveField(data, 'label') || resolveField(data, 'intro_label'),
-    title: resolveField(data, 'title') || resolveField(data, 'intro_title') || resolveField(data, 'name'),
-    description: resolveField(data, 'description') || resolveField(data, 'intro_description') || resolveField(data, 'content'),
-    align: typeof data?.intro_align === 'string' && data.intro_align ? data.intro_align : 'left',
-  };
-}
-
 export function mapListServicesPresentation(
   data: Record<string, any> | undefined,
   options: SolutionsPresentationOptions
 ): ListServicesPresentation {
   const { resolveField, introData } = options;
-  const normalizedIntro = buildIntroData(data, resolveField, introData);
+  const normalizedIntro = buildSharedIntroData(data, resolveField, introData);
 
   return {
     variant: 'list-services',
@@ -148,7 +98,7 @@ export function mapCardsWithSummaryPresentation(
   options: SolutionsPresentationOptions
 ): CardsWithSummaryPresentation {
   const { resolveField, introData } = options;
-  const normalizedIntro = buildIntroData(data, resolveField, introData);
+  const normalizedIntro = buildSharedIntroData(data, resolveField, introData);
   const highlightSource = data?.highlight && typeof data.highlight === 'object' ? data.highlight : null;
 
   return {

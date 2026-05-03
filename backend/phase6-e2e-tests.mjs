@@ -182,13 +182,12 @@ async function main() {
     'Enterprise Partnership — POST with partnershipType=other (SHOW/REQUIRE conditional)'
   );
 
-  // A3 — enterprise-smb-registration GET
-  // NOTE: Plan doc uses slug "smb-enterprise" — actual DB slug is "enterprise-smb-registration"
-  await testGET('enterprise/enterprise-smb-registration', 'A3', 'Enterprise SMB Registration — GET form definition [slug: enterprise-smb-registration]');
+  // A3 - smb-enterprise GET
+  await testGET('enterprise/smb-enterprise', 'A3', 'SMB Enterprise Registration - GET form definition [slug: smb-enterprise]');
 
-  // A3a — enterprise-smb-registration POST (with ADDRESS_LOOKUP as JSON object)
+  // A3a - smb-enterprise POST (with ADDRESS_LOOKUP as JSON object)
   await testPOST(
-    'enterprise/enterprise-smb-registration',
+    'enterprise/smb-enterprise',
     {
       locale: 'id',
       values: {
@@ -649,8 +648,7 @@ async function main() {
   console.log('══════════════════════════════════════════════════════════');
   console.log('\n  NOTES:');
   console.log('  ⚠️  Items marked WARN are not counted in PASS/FAIL.');
-  console.log('  ⚠️  Slug discrepancy: Plan says "smb-enterprise" → actual DB: "enterprise-smb-registration"');
-  console.log('  ⚠️  Slug discrepancy: Plan says "suggest-enterprise" → actual DB: "enterprise-suggest"');
+  console.log('  ⚠️  Legacy aliases are still accepted for enterprise form_type submissions.');
   console.log('  ⚠️  Server does NOT enforce required fields at API level (frontend-only validation).');
   console.log('  ⚠️  B1b stores submissions with status=STORED unless dispatch logs later mark them failed.');
   console.log('══════════════════════════════════════════════════════════\n');

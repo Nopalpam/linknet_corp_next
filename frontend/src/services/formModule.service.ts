@@ -216,6 +216,8 @@ export interface FormSubmission {
   promoWebsite?: string | null;
   pageWebsite?: string | null;
   sourceWebsite?: string | null;
+  formModuleName?: string | null;
+  formChannel?: string | null;
   leadSource?: string | null;
   primaryName?: string | null;
   primaryEmail?: string | null;
@@ -249,17 +251,22 @@ export interface FormSubmissionListParams {
   search?: string;
   email?: string;
   needs?: string;
+  formChannel?: string;
+  source?: string;
   status?: FormSubmissionStatus;
   datePreset?: FormSubmissionDatePreset;
   dateFrom?: string;
   dateTo?: string;
+  format?: 'csv' | 'xlsx';
   sortBy?: 'receivedAt' | 'createdAt' | 'primaryName' | 'primaryEmail' | 'status';
   sortOrder?: 'asc' | 'desc';
 }
 
 export interface FormSubmissionFilters {
-  needs: string[];
+  needs?: string[];
   needsFieldLabel?: string | null;
+  formChannels?: string[];
+  sources?: string[];
 }
 
 // ================== PAGINATION ==================
@@ -300,10 +307,13 @@ class FormModuleService extends BaseCrudService<FormModule> {
     if (params.search) qs.set('search', params.search);
     if (params.email) qs.set('email', params.email);
     if (params.needs) qs.set('needs', params.needs);
+    if (params.formChannel) qs.set('formChannel', params.formChannel);
+    if (params.source) qs.set('source', params.source);
     if (params.status) qs.set('status', params.status);
     if (params.datePreset) qs.set('datePreset', params.datePreset);
     if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
     if (params.dateTo) qs.set('dateTo', params.dateTo);
+    if (params.format) qs.set('format', params.format);
     if (params.sortBy) qs.set('sortBy', params.sortBy);
     if (params.sortOrder) qs.set('sortOrder', params.sortOrder);
 
@@ -353,13 +363,16 @@ class FormModuleService extends BaseCrudService<FormModule> {
 
   async exportSubmissions(
     formModuleId: string,
-    params: FormSubmissionListParams = {}
+    params: FormSubmissionListParams = {},
+    format: 'csv' | 'xlsx' = 'csv'
   ): Promise<{ blob: Blob; filename: string }> {
-    const queryString = this.buildSubmissionQueryString(params);
+    const queryString = this.buildSubmissionQueryString({ ...params, format });
     const url = `${API_URL}/api/v1${this.baseEndpoint}/${formModuleId}/submissions/export?${queryString}`;
     const response = await this.fetchResponseWithAuth(url, {
       headers: {
-        Accept: 'text/csv',
+        Accept: format === 'xlsx'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'text/csv',
       },
     });
     const blob = await response.blob();
@@ -368,7 +381,7 @@ class FormModuleService extends BaseCrudService<FormModule> {
 
     return {
       blob,
-      filename: filenameMatch?.[1] ?? `form-submissions-${formModuleId}.csv`,
+      filename: filenameMatch?.[1] ?? `form-submissions-${formModuleId}.${format}`,
     };
   }
 

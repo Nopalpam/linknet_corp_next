@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Career, CareerFormData } from "@/services/career.service";
+import CKEditorWrapper from "@/components/ui/ckeditor/CKEditorWrapper";
 
 interface Props {
   initialData?: Career | null;
@@ -315,29 +316,21 @@ export default function CareerForm({ initialData, onSubmit, isSubmitting, mode }
         {langTab === "en" && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Description (English)
-              </label>
-              <textarea
-                name="description"
+              <CKEditorWrapper
                 value={formData.description || ""}
-                onChange={handleChange}
-                rows={6}
+                onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+                label="Description (English)"
                 placeholder="Enter job description in English..."
-                className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-y"
+                minHeight="260px"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Requirements (English)
-              </label>
-              <textarea
-                name="requirements"
+              <CKEditorWrapper
                 value={formData.requirements || ""}
-                onChange={handleChange}
-                rows={6}
+                onChange={(value) => setFormData((prev) => ({ ...prev, requirements: value }))}
+                label="Requirements (English)"
                 placeholder="Enter job requirements in English..."
-                className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-y"
+                minHeight="260px"
               />
             </div>
           </div>
@@ -347,29 +340,21 @@ export default function CareerForm({ initialData, onSubmit, isSubmitting, mode }
         {langTab === "id" && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Deskripsi (Indonesia)
-              </label>
-              <textarea
-                name="descriptionId"
+              <CKEditorWrapper
                 value={formData.descriptionId || ""}
-                onChange={handleChange}
-                rows={6}
+                onChange={(value) => setFormData((prev) => ({ ...prev, descriptionId: value }))}
+                label="Deskripsi (Indonesia)"
                 placeholder="Masukkan deskripsi pekerjaan dalam Bahasa Indonesia..."
-                className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-y"
+                minHeight="260px"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Persyaratan (Indonesia)
-              </label>
-              <textarea
-                name="requirementsId"
+              <CKEditorWrapper
                 value={formData.requirementsId || ""}
-                onChange={handleChange}
-                rows={6}
+                onChange={(value) => setFormData((prev) => ({ ...prev, requirementsId: value }))}
+                label="Persyaratan (Indonesia)"
                 placeholder="Masukkan persyaratan pekerjaan dalam Bahasa Indonesia..."
-                className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-y"
+                minHeight="260px"
               />
             </div>
           </div>

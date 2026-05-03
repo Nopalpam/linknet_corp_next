@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Intro from '../base/section/Intro';
 import CardNews from '../base/cards/CardNews'; // Gunakan CardNews sesuai instruksi
@@ -17,6 +17,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function AwardsFeed({
   name = 'awards-list',
+  cmsData = null,
+  mainData = null,
   className = ""
 }) {
   const router = useRouter();
@@ -28,10 +30,65 @@ export default function AwardsFeed({
   const pageParam = searchParams.get('page');
   const parsedPage = parseInt(pageParam, 10);
   const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const selectedYear = searchParams.get('year') || '';
 
-  const ITEMS_PER_PAGE = 9; // Batas maksimal item per halaman
+  const fallbackData = AWARDS_FEED_DATA[name];
+  const sectionData = cmsData || fallbackData;
+  const mainAwards = mainData?.awards || [];
+  const sourceItems = sectionData?.items || mainAwards || [];
+  const {
+    perPage,
+    showPagination = true,
+    showYearFilter = false,
+    showImage = true,
+    columns = 3,
+    sortOrder = 'latest',
+  } = sectionData || {};
 
-  const sectionData = AWARDS_FEED_DATA[name];
+  const ITEMS_PER_PAGE = Number(perPage) > 0 ? Number(perPage) : 9;
+
+  const yearOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        sourceItems
+          .map((item) => item.year || (item.date ? new Date(item.date).getFullYear() : ''))
+          .filter(Boolean)
+          .map(String)
+      )
+    ).sort((a, b) => Number(b) - Number(a));
+  }, [sourceItems]);
+
+  const sortedItems = useMemo(() => {
+    const items = Array.isArray(sourceItems) ? [...sourceItems] : [];
+    const direction = String(sortOrder).toLowerCase() === 'oldest' ? 1 : -1;
+
+    return items.sort((leftItem, rightItem) => {
+      const leftTime = new Date(leftItem?.date || leftItem?.issueDate || leftItem?.issue_date || 0).getTime();
+      const rightTime = new Date(rightItem?.date || rightItem?.issueDate || rightItem?.issue_date || 0).getTime();
+
+      if (leftTime !== rightTime) {
+        return (leftTime - rightTime) * direction;
+      }
+
+      const leftYear = Number(leftItem?.year || 0);
+      const rightYear = Number(rightItem?.year || 0);
+      if (leftYear !== rightYear) {
+        return (leftYear - rightYear) * direction;
+      }
+
+      const leftPosition = Number(leftItem?.position ?? 0);
+      const rightPosition = Number(rightItem?.position ?? 0);
+      return leftPosition - rightPosition;
+    });
+  }, [sourceItems, sortOrder]);
+
+  const filteredItems = useMemo(() => {
+    if (!selectedYear) return sortedItems;
+    return sortedItems.filter((item) => {
+      const itemYear = item.year || (item.date ? new Date(item.date).getFullYear() : '');
+      return String(itemYear) === selectedYear;
+    });
+  }, [sortedItems, selectedYear]);
 
   // =========================================
   // SETUP ANIMASI GSAP (Initial & Page Change)
@@ -73,11 +130,11 @@ export default function AwardsFeed({
     }, containerRef);
 
     return () => ctx.revert();
-  }, [sectionData, currentPage]); // <-- Dijalankan ulang setiap kali currentPage berubah
+  }, [sectionData, currentPage, selectedYear]); // <-- Dijalankan ulang setiap kali currentPage/filter berubah
 
   if (!sectionData) return null;
 
-  const { config, introData, items } = sectionData;
+  const { config, introData } = sectionData;
   const {
     sectionId = 'awards-feed-section',
     className: configClassName = "",
@@ -93,11 +150,20 @@ export default function AwardsFeed({
   };
 
   // 2. Kalkulasi Data Pagination
-  const totalItems = items ? items.length : 0;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const totalItems = filteredItems ? filteredItems.length : 0;
+  const totalPages = showPagination ? (Math.ceil(totalItems / ITEMS_PER_PAGE) || 1) : 1;
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentItems = items ? items.slice(startIndex, startIndex + ITEMS_PER_PAGE) : [];
+  const currentItems = showPagination
+    ? filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+    : filteredItems;
+  const gridClassMap = {
+    2: 'lg:grid-cols-2',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-4',
+  };
+  const gridColsClass = gridClassMap[Number(columns)] || 'lg:grid-cols-3';
+  const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="400"%3E%3Crect fill="%23f4f4f5" width="600" height="400"/%3E%3C/svg%3E';
 
   // 3. Handler untuk Navigasi Halaman dan Update URL
   const handlePageChange = (page) => {
@@ -113,6 +179,16 @@ export default function AwardsFeed({
         behavior: 'smooth'
       });
     }
+  };
+
+  const handleYearChange = (year) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (year) params.set('year', year);
+    else params.delete('year');
+
+    params.delete('page');
+    router.push(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
   };
 
   // 4. Fungsi Helper untuk membuat nomor halaman
@@ -161,18 +237,33 @@ export default function AwardsFeed({
           </div>
         )}
 
+        {showYearFilter && yearOptions.length > 0 && (
+          <div className="mb-8 flex justify-center lnGsapAwardsIntro">
+            <select
+              value={selectedYear}
+              onChange={(event) => handleYearChange(event.target.value)}
+              className="min-w-[180px] rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 outline-none transition-colors hover:border-neutral-300 focus:border-warning"
+            >
+              <option value="">All Years</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* ========================================= */}
         {/* GRID KARTU AWARDS */}
         {/* ========================================= */}
         {currentItems && currentItems.length > 0 ? (
           // Setup Grid: Mobile 1, Tablet 2, Desktop 3
-          <div className="lnGsapAwardsGrid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-10 md:mb-14">
+          <div className={`lnGsapAwardsGrid grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-6 md:gap-8 mb-10 md:mb-14`}>
             {currentItems.map((item, index) => (
               <div key={item.id || index} className="lnGsapAwardsCard h-full">
                 <CardNews
                   variant="with-logo"
-                  logo={item.topLogo}
-                  image={item.image}
+                  logo={item.topLogo || '/assets/icons/badge.svg'}
+                  image={showImage ? (item.image || fallbackImage) : fallbackImage}
                   title={item.title}
                   desc={item.desc}
                   date={item.date}

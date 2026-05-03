@@ -25,7 +25,7 @@ export const MAIN_FOOTER_DATA = {
           { label: "About Linknet", href: "/about-us" },
           { label: "Management", href: "/management" },
           { label: "Awards", href: "/awards" },
-          { label: "Newsroom", href: "/newsroom" },
+          { label: "News", href: "/news" },
           { label: "Career", href: "/career" },
         ]
       },
@@ -77,7 +77,7 @@ export const MAIN_FOOTER_DATA = {
           { label: "About Linknet", href: "/about-us" },
           { label: "Management", href: "/management" },
           { label: "Awards", href: "/awards" },
-          { label: "Newsroom", href: "/newsroom" },
+          { label: "News", href: "/news" },
           { label: "Career", href: "/career" },
         ]
       },

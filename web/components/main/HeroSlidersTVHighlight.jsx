@@ -96,7 +96,8 @@ function TVHighlightHeroSlide({ slide, onOpenModal }) {
 
 export default function HeroSlidersTVHighlight({
   name = 'today-highlight',
-  className = ''
+  className = '',
+  cmsData = null
 }) {
   const [mainSwiper, setMainSwiper] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -104,7 +105,7 @@ export default function HeroSlidersTVHighlight({
   const [prevEl, setPrevEl] = useState(null);
   const [nextEl, setNextEl] = useState(null);
 
-  const sectionData = HERO_SLIDERS_TV_HIGHLIGHT_DATA[name];
+  const sectionData = cmsData || HERO_SLIDERS_TV_HIGHLIGHT_DATA[name];
   const {
     sectionId,
     className: configClassName = '',

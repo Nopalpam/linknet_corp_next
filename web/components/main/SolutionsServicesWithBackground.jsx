@@ -19,8 +19,9 @@ function cn(...classes) {
 export default function SolutionsServicesWithBackground({
   name = 'enterprise',
   className = '',
+  cmsData = null,
 }) {
-  const data = SOLUTIONS_SERVICES_WITH_BACKGROUND_DATA[name];
+  const data = cmsData || SOLUTIONS_SERVICES_WITH_BACKGROUND_DATA[name];
   const swiperRef = useRef(null);
   const sectionInstanceId = useId().replace(/:/g, '');
   const prevButtonClassName = `lnSolutionsServicesWithBackground__navPrev--${sectionInstanceId}`;

@@ -943,7 +943,7 @@ function buildEnterprisePartnership(): CreateFormModuleInput {
   });
 }
 
-// ─── Form 4: Suggest Enterprise (ROUTING_ONLY) ────────────────────────────────
+// ─── Form 4: Solution Finder (ROUTING_ONLY) ──────────────────────────────────
 
 function buildSuggestEnterprise(): CreateFormModuleInput {
   const slug = 'suggest-enterprise';
@@ -952,7 +952,7 @@ function buildSuggestEnterprise(): CreateFormModuleInput {
   return createFormModuleSchema.parse({
     businessUnit,
     slug,
-    name: 'Suggest Enterprise',
+    name: 'Solution Finder',
     description: 'Routing-only wizard: select industry, business scale, and needs to be redirected to the right Enterprise solution page. No data is stored.',
     category: FormCategory.RECOMMENDATION,
     handlingMode: FormHandlingMode.ROUTING_ONLY,
@@ -1069,6 +1069,119 @@ function buildSuggestEnterprise(): CreateFormModuleInput {
 }
 
 // ─── Form 5: Event Register (Enterprise BU) ───────────────────────────────────
+
+function buildOmniChannel(): CreateFormModuleInput {
+  const slug = 'omni-channel';
+  const businessUnit = BusinessUnit.ENTERPRISE;
+
+  return createFormModuleSchema.parse({
+    businessUnit,
+    slug,
+    name: 'Enterprise Omni Channel',
+    description: 'Omni Channel Widget form with Live Chat and WhatsApp submission flows.',
+    category: FormCategory.INQUIRY,
+    handlingMode: FormHandlingMode.SUBMISSION,
+    status: FormModuleStatus.ACTIVE,
+    schemaVersion: 1,
+    defaultLocale: 'id',
+    publicPath: publicPath(businessUnit, slug),
+    sourceWebsite: 'Enterprise Website',
+    promoWebsite: 'Enterprise Omni Channel',
+    leadSource: 'Website',
+    integrationProvider: FormIntegrationProvider.INTERNAL,
+    submissionSettings: baseSubmissionSettings(slug, {
+      formType: 'Enterprise Omni Channel',
+      sourceComponent: 'Omni Channel Widget',
+      sendToSalesForce: false,
+      salesForceIntegrationStatus: 'pending_external_integration',
+      modes: ['live_chat', 'whatsapp'],
+      primaryFieldPaths: {
+        name: ['firstName', 'lastName'],
+        email: ['email'],
+        phone: ['phone'],
+      },
+    }),
+    definition: {
+      steps: [
+        { key: 'personal', title: 'Personal Data', stepNumber: 1, actionLabel: 'Next' },
+        { key: 'company', title: 'Company Data', stepNumber: 2, actionLabel: 'Next' },
+        { key: 'solutions', title: 'Solutions', stepNumber: 3, actionLabel: 'Submit' },
+      ],
+
+      fields: [
+        field(FormFieldType.TEXT, 'firstName', 'First Name', 'personal', 1, { isRequired: true, placeholder: 'First name' }),
+        field(FormFieldType.TEXT, 'lastName', 'Last Name', 'personal', 2, { isRequired: true, placeholder: 'Last name' }),
+        field(FormFieldType.EMAIL, 'email', 'Company Email', 'personal', 3, { isRequired: true, placeholder: 'your@company.com' }),
+        field(FormFieldType.PHONE, 'phone', 'Phone Number', 'personal', 4, { isRequired: true, placeholder: '08xx-xxxx-xxxx' }),
+        field(FormFieldType.SELECT, 'department', 'Department', 'personal', 5, { isRequired: true, placeholder: 'Select department' }),
+        field(FormFieldType.SELECT, 'roleTitle', 'Your Role / Title', 'personal', 6, { isRequired: true, placeholder: 'Select role' }),
+
+        field(FormFieldType.TEXT, 'companyName', 'Company Name', 'company', 1, { isRequired: true, placeholder: 'Company name' }),
+        field(FormFieldType.SELECT, 'businessIndustry', 'Business Industry', 'company', 2, { isRequired: true, placeholder: 'Select industry' }),
+        field(FormFieldType.SELECT, 'province', 'Province', 'company', 3, { isRequired: true, placeholder: 'Select province' }),
+        field(FormFieldType.SELECT, 'city', 'City / Regency', 'company', 4, { isRequired: true, placeholder: 'Select city' }),
+        field(FormFieldType.SELECT, 'zip', 'ZIP Code', 'company', 5, { isRequired: true, placeholder: 'Select ZIP code' }),
+        field(FormFieldType.TEXTAREA, 'detailAddress', 'Detail Address', 'company', 6, { isRequired: true, placeholder: 'Full address detail' }),
+
+        field(FormFieldType.CHECKBOX_GROUP, 'solutions', 'Choose a Solutions', 'solutions', 1, { isRequired: true }),
+        field(FormFieldType.HIDDEN, 'channel', 'Channel', 'solutions', 2, { defaultValue: 'live_chat', isSystem: true }),
+        field(FormFieldType.HIDDEN, 'sourceInput', 'Source Input', 'solutions', 3, { defaultValue: 'start_conversation', isSystem: true }),
+        field(FormFieldType.HIDDEN, 'sendToSalesForce', 'Send to Sales Force', 'solutions', 4, { defaultValue: false, isSystem: true }),
+      ],
+
+      options: [
+        ...DEPARTMENT_OPTIONS('department'),
+        ...JOB_LEVEL_OPTIONS('roleTitle'),
+        ...INDUSTRY_OPTIONS('businessIndustry'),
+        ...PROVINCE_OPTIONS('province'),
+        ...CITY_OPTIONS('city'),
+        option('zip', '17113', '17113 - Mustika Jaya', 0, { metadata: { city: 'Kota Bekasi' } }),
+        option('zip', '17114', '17114 - Mustikasari', 1, { metadata: { city: 'Kota Bekasi' } }),
+        option('zip', '40111', '40111', 2, { metadata: { city: 'Kota Bandung' } }),
+        option('zip', '40112', '40112', 3, { metadata: { city: 'Kota Bandung' } }),
+        option('zip', '16111', '16111', 4, { metadata: { city: 'Kota Bogor' } }),
+        option('zip', '12110', '12110', 5, { metadata: { city: 'Jakarta Selatan' } }),
+        option('zip', '12120', '12120', 6, { metadata: { city: 'Jakarta Selatan' } }),
+        option('zip', '10110', '10110', 7, { metadata: { city: 'Jakarta Pusat' } }),
+        option('zip', '14110', '14110', 8, { metadata: { city: 'Jakarta Utara' } }),
+        option('zip', '50111', '50111', 9, { metadata: { city: 'Kota Semarang' } }),
+        option('zip', '57111', '57111', 10, { metadata: { city: 'Kota Solo' } }),
+        option('zip', '60111', '60111', 11, { metadata: { city: 'Kota Surabaya' } }),
+        option('zip', '65111', '65111', 12, { metadata: { city: 'Kota Malang' } }),
+        option('zip', '15111', '15111', 13, { metadata: { city: 'Kota Tangerang' } }),
+        option('zip', '42411', '42411', 14, { metadata: { city: 'Kota Cilegon' } }),
+        option('solutions', 'cloud', 'Cloud', 0),
+        option('solutions', 'corporate_tv', 'Corporate TV', 1),
+        option('solutions', 'data_center', 'Data Center', 2),
+        option('solutions', 'data_comm', 'Data Communication', 3),
+        option('solutions', 'internet', 'Internet', 4),
+        option('solutions', 'iot', 'IoT', 5),
+        option('channel', 'live_chat', 'Live Chat', 0, { isDefault: true }),
+        option('channel', 'whatsapp', 'WhatsApp', 1),
+        option('sourceInput', 'start_conversation', 'Live Chat', 0, { isDefault: true }),
+        option('sourceInput', 'whatsapp', 'WhatsApp', 1),
+      ],
+
+      rules: [],
+
+      responseConfigs: [
+        response(
+          'success-omni-channel',
+          FormResponseType.SUCCESS,
+          '/{locale}/enterprise/form/success',
+          0,
+          {
+            isDefault: true,
+            label: 'Omni Channel inquiry submitted',
+            queryTemplate: { name: '{firstName}', needs: 'Omni Channel' },
+          },
+        ),
+      ],
+
+      integrationConfigs: [],
+    },
+  });
+}
 
 function buildEventRegisterEnterprise(): CreateFormModuleInput {
   const slug = 'event-register';
@@ -1325,12 +1438,25 @@ export async function seedEnterpriseforms(prismaClient?: PrismaClient): Promise<
     buildSmbEnterprise(),
     buildEnterprisePartnership(),
     buildSuggestEnterprise(),
+    buildOmniChannel(),
     buildEventRegisterEnterprise(),
   ];
 
   const result: SeedResult = { created: 0, updated: 0, skipped: 0 };
 
   console.log('\n🏢 Seeding Enterprise form modules...');
+
+  await client.formModule.updateMany({
+    where: {
+      businessUnit: BusinessUnit.ENTERPRISE,
+      slug: 'enterprise-smb-registration',
+      deletedAt: null,
+    },
+    data: {
+      status: FormModuleStatus.ARCHIVED,
+      deletedAt: new Date(),
+    },
+  });
 
   for (const seed of seeds) {
     const label = `ENTERPRISE/${seed.slug}`;

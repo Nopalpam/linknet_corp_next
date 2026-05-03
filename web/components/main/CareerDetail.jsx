@@ -273,7 +273,7 @@ export default function CareerDetail({
             </div>
             <div className="flex justify-center">
             <LinknetLink 
-                href={`/${locale}/life-at-linknet/career`} 
+                href={`/${locale}/career`} 
                 variant='secondary-outline'
                 size='lg'
                 className="transition-colors">

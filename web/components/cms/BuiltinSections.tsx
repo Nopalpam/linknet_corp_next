@@ -2,6 +2,7 @@
 
 import Icon from '@/components/base/Icon';
 import SectionIntro from '@/components/base/section/Intro';
+import CTAList from '@/components/base/section/CTAList';
 
 /**
  * Built-in generic CMS section components.
@@ -15,18 +16,32 @@ import SectionIntro from '@/components/base/section/Intro';
 
 // ─── TextBlock ──────────────────────────────────────────────────────
 
-export function TextBlock({ label, title, description, className }: {
+export function TextBlock({ label, title, description, introData, ctaList = [], className }: {
   label?: string;
   title?: string;
   description?: string;
+  introData?: IntroData;
+  ctaList?: Array<Record<string, any>>;
   className?: string;
 }) {
+  const resolvedIntroData = resolveIntroData(introData, title, description);
+
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">
-        {label && <span className="text-caption-c1 text-warning font-bold uppercase">{label}</span>}
-        {title && <h2 className="text-headline-h2">{title}</h2>}
-        {description && <p className="text-body-b4 text-secondary">{description}</p>}
+        <SectionIntro
+          as={resolvedIntroData.as || 'h2'}
+          label={resolvedIntroData.label || label || ''}
+          title={resolvedIntroData.title || ''}
+          description={resolvedIntroData.description || ''}
+          align={resolvedIntroData.align || 'left'}
+        />
+        <CTAList
+          ctaList={ctaList}
+          align={resolvedIntroData.align || 'left'}
+          className="mt-6"
+          defaultSize="lg"
+        />
       </div>
     </section>
   );
@@ -78,7 +93,16 @@ export function DocumentList({ title, documents, className }: {
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">
-        {title && <h2 className="text-headline-h2 mb-6">{title}</h2>}
+        {title && (
+          <SectionIntro
+            as="h2"
+            label=""
+            title={title}
+            description=""
+            align="left"
+            className="mb-6"
+          />
+        )}
         {Array.isArray(documents) && documents.map((doc, i) => (
           <div key={i} className="flex items-center gap-3 py-3 border-b border-gray-200">
             <span className="text-body-b4">{doc.title || doc.filename}</span>
@@ -170,9 +194,9 @@ function ServicesListSection({
       <div className="container">
         <SectionIntro
           as={introData.as || 'h2'}
-          label={introData.label}
-          title={introData.title}
-          description={introData.description}
+          label={introData.label || ''}
+          title={introData.title || ''}
+          description={introData.description || ''}
           align={introData.align || 'left'}
           className="!w-full"
         />
@@ -273,10 +297,10 @@ function CardsWithSummarySection({
         <div className={`grid gap-8 lg:gap-10 ${hasHighlight ? 'xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start' : ''}`}>
           <div>
             <SectionIntro
-              as={introData.as || 'h2'}
-              label={introData.label}
-              title={introData.title}
-              description={introData.description}
+             as={introData.as || 'h2'}
+              label={introData.label || ''}
+              title={introData.title || ''}
+              description={introData.description || ''}
               align={introData.align || 'left'}
               className="!w-full"
             />
@@ -421,8 +445,13 @@ export function GenericSection({ title, description, className, variant, introDa
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">
-        {title && <h2 className="text-headline-h2">{title}</h2>}
-        {description && <p className="text-body-b4 text-secondary">{description}</p>}
+        <SectionIntro
+          as={resolvedIntroData.as || 'h2'}
+          label={resolvedIntroData.label || ''}
+          title={resolvedIntroData.title || ''}
+          description={resolvedIntroData.description || ''}
+          align={resolvedIntroData.align || 'left'}
+        />
       </div>
     </section>
   );
@@ -437,7 +466,16 @@ export function AnnouncementList({ title, className }: {
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">
-        {title && <h2 className="text-headline-h2 mb-6">{title}</h2>}
+        {title && (
+          <SectionIntro
+            as="h2"
+            label=""
+            title={title}
+            description=""
+            align="left"
+            className="mb-6"
+          />
+        )}
         <p className="text-body-b4 text-secondary">Announcements</p>
       </div>
     </section>
@@ -453,7 +491,16 @@ export function TradingViewWidget({ title, className }: {
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">
-        {title && <h2 className="text-headline-h2 mb-4">{title}</h2>}
+        {title && (
+          <SectionIntro
+            as="h2"
+            label=""
+            title={title}
+            description=""
+            align="left"
+            className="mb-4"
+          />
+        )}
         <p className="text-body-b4 text-secondary">Stock overview widget</p>
       </div>
     </section>

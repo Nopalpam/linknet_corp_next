@@ -445,7 +445,7 @@ function buildEnterpriseSuggestModule(): CreateFormModuleInput {
   return createFormModuleSchema.parse({
     businessUnit,
     slug,
-    name: 'Enterprise Solution Recommender',
+    name: 'Enterprise Solution Finder',
     description: 'Routing-only wizard to suggest the next enterprise solution page.',
     category: FormCategory.RECOMMENDATION,
     handlingMode: FormHandlingMode.ROUTING_ONLY,
@@ -597,6 +597,137 @@ function buildEventRegistrationModule(businessUnit: BusinessUnit, titlePrefix: s
         }),
       ],
       integrationConfigs: baseIntegrationConfigs(businessUnit, slug, `${titlePrefix} Event Registration`),
+    },
+  });
+}
+
+function buildEnterpriseOmniChannelModule(): CreateFormModuleInput {
+  const slug = 'omni-channel';
+  const businessUnit = BusinessUnit.ENTERPRISE;
+
+  return createFormModuleSchema.parse({
+    businessUnit,
+    slug,
+    name: 'Omni Channel',
+    description: 'Omni Channel chat and WhatsApp lead capture form for Enterprise prospects.',
+    category: FormCategory.INQUIRY,
+    handlingMode: FormHandlingMode.SUBMISSION,
+    status: FormModuleStatus.ACTIVE,
+    schemaVersion: 1,
+    defaultLocale: 'id',
+    publicPath: publicPath(businessUnit, slug),
+    sourceWebsite: 'Linknet Enterprise Website',
+    promoWebsite: 'Enterprise Omni Channel',
+    leadSource: 'Website',
+    integrationProvider: FormIntegrationProvider.NOOP,
+    submissionSettings: baseSubmissionSettings(slug, {
+      salesForceReady: true,
+      salesForceStatus: 'pending_configuration',
+      primaryFieldPaths: {
+        name: ['firstName', 'lastName'],
+        email: ['email'],
+        phone: ['phone'],
+      },
+      locationFields: {
+        province: 'province',
+        city: 'city',
+        zip: 'zip',
+      },
+    }),
+    definition: {
+      steps: [
+        { key: 'contact-profile', title: 'Contact Profile', stepNumber: 1 },
+        { key: 'company-location', title: 'Company & Location', stepNumber: 2 },
+        { key: 'solution-interest', title: 'Solution Interest', stepNumber: 3 },
+      ],
+      fields: [
+        field(FormFieldType.TEXT, 'firstName', 'First Name', 'contact-profile', 1, { isRequired: true }),
+        field(FormFieldType.TEXT, 'lastName', 'Last Name', 'contact-profile', 2, { isRequired: true }),
+        field(FormFieldType.EMAIL, 'email', 'Company Email', 'contact-profile', 3, { isRequired: true }),
+        field(FormFieldType.PHONE, 'phone', 'Phone Number', 'contact-profile', 4, { isRequired: true }),
+        field(FormFieldType.SELECT, 'department', 'Department', 'contact-profile', 5, { isRequired: true }),
+        field(FormFieldType.SELECT, 'roleTitle', 'Role / Title', 'contact-profile', 6, { isRequired: true }),
+        field(FormFieldType.TEXT, 'companyName', 'Company Name', 'company-location', 1, { isRequired: true }),
+        field(FormFieldType.SELECT, 'businessIndustry', 'Business Industry', 'company-location', 2, { isRequired: true }),
+        field(FormFieldType.SELECT, 'province', 'Province', 'company-location', 3, {
+          isRequired: true,
+          uiConfig: { dataSource: 'indonesiaLocations.provinces' },
+        }),
+        field(FormFieldType.SELECT, 'city', 'City / Regency', 'company-location', 4, {
+          isRequired: true,
+          uiConfig: {
+            dataSource: 'indonesiaLocations.cities',
+            dependsOn: 'province',
+          },
+        }),
+        field(FormFieldType.TEXT, 'zip', 'ZIP Code', 'company-location', 5, {
+          isRequired: true,
+          placeholder: 'Enter ZIP code',
+        }),
+        field(FormFieldType.TEXTAREA, 'detailAddress', 'Detail Address', 'company-location', 6, { isRequired: true }),
+        field(FormFieldType.MULTI_SELECT, 'solutions', 'Solutions', 'solution-interest', 1, { isRequired: true }),
+        field(FormFieldType.HIDDEN, 'channel', 'Channel', 'solution-interest', 2),
+        field(FormFieldType.HIDDEN, 'sourceInput', 'Source Input', 'solution-interest', 3),
+        field(FormFieldType.HIDDEN, 'sendToSalesForce', 'Send to Sales Force', 'solution-interest', 4),
+      ],
+      options: [
+        option('department', 'management', 'Management', 0),
+        option('department', 'it', 'IT Services', 1),
+        option('department', 'finance', 'Finance', 2),
+        option('department', 'operations', 'Operations', 3),
+        option('roleTitle', 'manager', 'Manager', 0),
+        option('roleTitle', 'staff', 'Staff / Executive', 1),
+        option('roleTitle', 'director', 'Director', 2),
+        option('roleTitle', 'clevel', 'C-Level', 3),
+        option('businessIndustry', 'finance', 'Financial Service', 0),
+        option('businessIndustry', 'manufacturing', 'Manufacturing', 1),
+        option('businessIndustry', 'retail', 'Retail & Commerce', 2),
+        option('businessIndustry', 'tech', 'Technology', 3),
+        option('solutions', 'cloud', 'Cloud', 0),
+        option('solutions', 'corporate_tv', 'Corporate TV', 1),
+        option('solutions', 'data_center', 'Data Center', 2),
+        option('solutions', 'data_comm', 'Data Communication', 3),
+        option('solutions', 'internet', 'Internet', 4),
+        option('solutions', 'iot', 'IoT', 5),
+      ],
+      rules: [],
+      responseConfigs: [
+        response('salesforce-success', FormResponseType.SUCCESS, '/{locale}/enterprise/form/success', 0, {
+          matchCondition: { sendToSalesForce: true },
+          queryTemplate: {
+            name: '{firstName}',
+            needs: 'sales-inquiry',
+            sf: '1',
+            source: '{channel}',
+          },
+        }),
+        response('default-success', FormResponseType.SUCCESS, '/{locale}/enterprise/form/success', 1, {
+          isDefault: true,
+          queryTemplate: {
+            name: '{firstName}',
+            needs: 'sales-inquiry',
+          },
+        }),
+      ],
+      integrationConfigs: [
+        {
+          key: 'salesforce-future',
+          provider: FormIntegrationProvider.NOOP,
+          dispatchMode: FormDispatchMode.ASYNC,
+          mappingConfig: {
+            provider: 'SalesForce',
+            status: 'pending_configuration',
+            businessUnit,
+            formSlug: slug,
+            formName: 'Omni Channel',
+          },
+          headersConfig: {
+            'x-form-module': slug,
+            'x-form-business-unit': businessUnit,
+          },
+          isActive: true,
+        },
+      ],
     },
   });
 }
@@ -839,9 +970,9 @@ function buildMediaRegistrationModule(): CreateFormModuleInput {
 function buildFormModuleSeeds(): CreateFormModuleInput[] {
   return [
     buildEnterpriseConsultationModule(),
-    buildEnterpriseSmbModule(),
     buildEnterprisePartnershipModule(),
     buildEnterpriseSuggestModule(),
+    buildEnterpriseOmniChannelModule(),
     buildEventRegistrationModule(BusinessUnit.ENTERPRISE, 'Enterprise'),
     buildFiberRegistrationModule(),
     buildFiberInquiryModule(),

@@ -16,6 +16,7 @@ const badgeToneMap = {
 export default function CardTVHighlight({
   badge = 'Coming Soon',
   image,
+  posterImageLandscape,
   bgImageVertical,
   title = 'MIKE BREWER: BORN DEALER',
   year = '2025',
@@ -93,7 +94,7 @@ export default function CardTVHighlight({
       </div>
 
       <div className={cx(
-        'lnCardTVHighlight__content CardTVHightlight_content flex flex-1 flex-col gap-2 px-2 pb-2 pt-2.5 md:px-2 md:pt-2.5',
+        'lnCardTVHighlight__content CardTVHightlight_content flex flex-1 flex-col gap-1 px-2 pb-2 pt-2.5 md:px-2 md:pt-2.5',
         contentClassName
       )}>
         <div className="lnCardTVHighlight__header CardTVHightlight_header flex items-start justify-between gap-2">
@@ -106,7 +107,7 @@ export default function CardTVHighlight({
 
           {(channelLogo || channelName) && (
             <div className={cx(
-              'lnCardTVHighlight__channel CardTVHightlight_channel flex min-h-[24px] max-w-[72px] shrink-0 items-center justify-end pt-1 md:max-w-[78px]',
+              'lnCardTVHighlight__channel CardTVHightlight_channel flex shrink-0 items-center justify-end pt-1',
               channelWrapClassName
             )}>
               {channelLogo ? (
@@ -115,7 +116,7 @@ export default function CardTVHighlight({
                   alt={channelName || `${title} channel`}
                   loading="lazy"
                   className={cx(
-                    'lnCardTVHighlight__channelLogo CardTVHightlight_channelLogo max-h-[16px] w-auto object-contain md:max-h-[18px]',
+                    'lnCardTVHighlight__channelLogo CardTVHightlight_channelLogo h-[16px] w-auto object-contain md:h-[44px]',
                     channelLogoClassName
                   )}
                 />
@@ -162,6 +163,7 @@ export default function CardTVHighlight({
             year,
             category,
             rating,
+            posterImageLandscape,
             bgImageVertical,
             posterImage,
             synopsis,

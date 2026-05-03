@@ -1,4 +1,4 @@
-// src/app/[locale]/newsroom/layout.jsx
+// src/app/[locale]/life-at-linknet/layout.jsx
 
 
 export default function CareerLayout({ children }) {

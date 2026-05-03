@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
+import { buildLoginRedirectUrl, clearStoredLastPath, resolvePostLoginPath } from "@/lib/authSession";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -12,7 +13,7 @@ export const useProtectedRoute = () => {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/login");
+      router.replace(buildLoginRedirectUrl());
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -29,7 +30,9 @@ export const usePublicRoute = () => {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/");
+      const returnUrl = resolvePostLoginPath();
+      clearStoredLastPath();
+      router.replace(returnUrl);
     }
   }, [isAuthenticated, isLoading, router]);
 

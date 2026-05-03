@@ -40,7 +40,27 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+function getSubmissionSetting(module: FormModuleDetail, key: string) {
+  const settings = module.submissionSettings;
+
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return undefined;
+  }
+
+  return (settings as Record<string, unknown>)[key];
+}
+
 export default function OverviewTab({ module }: OverviewTabProps) {
+  const sendToSalesForce = getSubmissionSetting(module, "sendToSalesForce");
+  const salesForceIntegrationStatus = getSubmissionSetting(
+    module,
+    "salesForceIntegrationStatus"
+  );
+  const hasSalesForceIntegrationStatus =
+    salesForceIntegrationStatus !== undefined &&
+    salesForceIntegrationStatus !== null &&
+    salesForceIntegrationStatus !== "";
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       <Row label="Name">{module.name}</Row>
@@ -78,9 +98,19 @@ export default function OverviewTab({ module }: OverviewTabProps) {
           </code>
         </Row>
       )}
+      <Row label="Page Context Promo">{module.promoWebsite || "-"}</Row>
+      <Row label="Page Context Source">{module.sourceWebsite || "-"}</Row>
       {module.leadSource && <Row label="Lead Source">{module.leadSource}</Row>}
       {module.integrationProvider && (
         <Row label="Integration Provider">{module.integrationProvider}</Row>
+      )}
+      {sendToSalesForce !== undefined && (
+        <Row label="Send to Sales Force">
+          {sendToSalesForce === true ? "Yes" : "No"}
+        </Row>
+      )}
+      {hasSalesForceIntegrationStatus && (
+        <Row label="Sales Force Status">{String(salesForceIntegrationStatus)}</Row>
       )}
       <Row label="Steps">{module.steps.length}</Row>
       <Row label="Fields">{module.fields.length}</Row>

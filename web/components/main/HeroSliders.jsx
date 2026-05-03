@@ -17,6 +17,23 @@ import 'swiper/css/thumbs';
 
 const AUTOPLAY_DELAY = 6000;
 
+function getSlideKey(slide, index, prefix = 'slide') {
+  const keyCandidate =
+    slide?.id ||
+    slide?.key ||
+    slide?.config?.id ||
+    slide?.config?.heroName ||
+    slide?.config?.tabTitle ||
+    slide?.indicator_label ||
+    slide?.title;
+
+  if (typeof keyCandidate === 'string' || typeof keyCandidate === 'number') {
+    return `${prefix}-${keyCandidate}`;
+  }
+
+  return `${prefix}-${index}`;
+}
+
 export default function HeroSliders({
   name = 'home',
   cmsSlides = null,
@@ -105,8 +122,8 @@ export default function HeroSliders({
             onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
           className="z-10"
         >
-          {slides.map((slide) => (
-            <SwiperSlide key={slide.id}>
+          {slides.map((slide, index) => (
+            <SwiperSlide key={getSlideKey(slide, index, 'hero')}>
               <Hero name={slide.config?.heroName} data={slide} />
             </SwiperSlide>
           ))}
@@ -152,7 +169,7 @@ export default function HeroSliders({
 
               return (
                 <button
-                  key={slide.id}
+                  key={getSlideKey(slide, index, 'pagination')}
                   type="button"
                   aria-label={`Go to slide ${index + 1}`}
                   onClick={() => mainSwiper && mainSwiper.slideToLoop(index)}
@@ -186,7 +203,7 @@ export default function HeroSliders({
 
               return (
                   <SwiperSlide
-                      key={slide.id}
+                      key={getSlideKey(slide, index, 'thumb')}
                       onClick={() => mainSwiper && mainSwiper.slideToLoop(index)}
                       style={{ transition: 'flex 0.25s ease' }}
                       className={`

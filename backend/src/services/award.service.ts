@@ -14,6 +14,7 @@ interface AwardData {
   description?: string;
   descriptionId?: string;
   descriptionEn?: string;
+  topLogo?: string;
   image?: string;
   link?: string;
   order?: number;
@@ -109,6 +110,7 @@ export class AwardService {
           description: data.description,
           descriptionId: data.descriptionId,
           descriptionEn: data.descriptionEn,
+          topLogo: data.topLogo,
           image: data.image,
           link: data.link,
           position,
@@ -131,6 +133,7 @@ export class AwardService {
           description: data.description,
           descriptionId: data.descriptionId,
           descriptionEn: data.descriptionEn,
+          topLogo: data.topLogo,
           image: data.image,
           link: data.link,
           position: order,
@@ -193,6 +196,7 @@ export class AwardService {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.descriptionId !== undefined && { descriptionId: data.descriptionId }),
         ...(data.descriptionEn !== undefined && { descriptionEn: data.descriptionEn }),
+        ...(data.topLogo !== undefined && { topLogo: data.topLogo }),
         ...(data.image !== undefined && { image: data.image }),
         ...(data.link !== undefined && { link: data.link }),
         ...(data.order !== undefined && { position: data.order }),

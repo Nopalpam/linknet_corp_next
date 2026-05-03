@@ -52,6 +52,7 @@ export default function SubmissionDetailModal({
 }: SubmissionDetailModalProps) {
   const [submission, setSubmission] = useState<FormSubmission | null>(null);
   const [moduleFields, setModuleFields] = useState<FormField[]>([]);
+  const [moduleName, setModuleName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -97,9 +98,11 @@ export default function SubmissionDetailModal({
       ]);
       setSubmission(submissionData);
       setModuleFields(moduleData.fields ?? []);
+      setModuleName(moduleData.name ?? "");
     } catch {
       setSubmission(null);
       setModuleFields([]);
+      setModuleName("");
     } finally {
       setLoading(false);
     }
@@ -217,13 +220,13 @@ export default function SubmissionDetailModal({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Promo</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Page Context Promo</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   {submission.promoWebsite ?? "â€”"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Source</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Page Context Source</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   {submission.sourceWebsite ?? "â€”"}
                 </p>
@@ -232,6 +235,18 @@ export default function SubmissionDetailModal({
                 <p className="text-xs text-gray-500 dark:text-gray-400">Page URL</p>
                 <p className="truncate text-sm text-gray-700 dark:text-gray-300">
                   {submission.pageWebsite ?? submission.sourcePath ?? "â€”"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Form Module Name</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {submission.formModuleName ?? moduleName ?? "â€”"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Form Channel</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {submission.formChannel ?? "â€”"}
                 </p>
               </div>
               <div>

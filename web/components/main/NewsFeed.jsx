@@ -7,19 +7,33 @@ import Button from '../base/Button';
 import Icon from '../base/Icon';
 import CardNews from '../base/cards/CardNews'; // Sesuaikan path
 
-// Import Master Data & Component Data
-import { NEWS_LIST } from '../../data/components/newsList';
-import { NEWS_CATEGORIES } from '../../data/components/newsCategory';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 export default function NewsFeed({
   categorySlug,
+  cmsCategory,
+  cmsNews = null,
+  mainData = null,
   className = ""
 }) {
   const params = useParams();
   const locale = params.locale || 'en';
 
-  // 1. Ambil data kategori langsung dari NEWS_CATEGORIES
-  const categoryData = NEWS_CATEGORIES[categorySlug];
+  const categoryData = cmsCategory
+    ? {
+        id: cmsCategory.slug || categorySlug,
+        label: cmsCategory.name_en || categorySlug,
+        title: cmsCategory.name_en || categorySlug,
+        desc: cmsCategory.description || '',
+        slug: cmsCategory.slug || categorySlug,
+      }
+    : {
+        id: categorySlug || 'latest',
+        label: categorySlug === 'latest' ? 'Latest' : categorySlug,
+        title: categorySlug === 'latest' ? 'Latest News' : categorySlug,
+        desc: '',
+        slug: categorySlug || 'latest',
+      };
 
   if (!categoryData) {
     return (
@@ -30,26 +44,50 @@ export default function NewsFeed({
   }
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [databaseNews, setDatabaseNews] = useState(cmsNews || mainData?.news || []);
+  const [isLoading, setIsLoading] = useState(false);
   const itemsPerPage = 12; // Batas maksimum data per halaman
+
+  React.useEffect(() => {
+    const initialNews = cmsNews || mainData?.news || [];
+    if (initialNews.length > 0) {
+      setDatabaseNews(initialNews);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchNews = async () => {
+      setIsLoading(true);
+      try {
+        const endpoint = categorySlug && categorySlug !== 'latest'
+          ? `${API_BASE_URL}/public/news/category/${encodeURIComponent(categorySlug)}?limit=100`
+          : `${API_BASE_URL}/public/news?limit=100`;
+        const res = await fetch(endpoint);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setDatabaseNews(json.data || []);
+      } catch (error) {
+        console.error('Error fetching news feed:', error);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    fetchNews();
+    return () => {
+      cancelled = true;
+    };
+  }, [categorySlug, cmsNews, mainData]);
 
   // 2. Filter dan Urutkan SEMUA Data
   // 2. Filter dan Urutkan SEMUA Data
 const filteredNews = useMemo(() => {
-  // a. Ambil semua yang aktif
-  let filtered = NEWS_LIST.filter(news => news.status === 'active');
-
-  // b. Filter berdasarkan kategori
-  // PERBAIKAN: Jika slug adalah "latest", jangan lakukan filter kategori (tampilkan semua)
-  if (categorySlug && categorySlug !== "latest") {
-    filtered = filtered.filter(news => {
-      const currentSlug = typeof news.category === 'object' ? news.category?.slug : news.category;
-      return currentSlug === categorySlug;
-    });
+  if (databaseNews.length > 0) {
+    return [...databaseNews].sort((a, b) => new Date(b.news_date || b.newsDate || b.created_at || 0) - new Date(a.news_date || a.newsDate || a.created_at || 0));
   }
 
-  // c. Urutkan dari yang paling baru
-  return [...filtered].sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
-}, [categorySlug]);
+  return [];
+}, [categorySlug, databaseNews]);
 
   // Hitung jumlah keseluruhan halaman
   const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
@@ -113,23 +151,28 @@ const filteredNews = useMemo(() => {
         </div>
 
         {/* 2. NEWS GRID ATAU EMPTY STATE */}
-        {displayNews.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center min-h-[300px]">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : displayNews.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 min-h-[100px]">
             {displayNews.map((news) => {
               // Ambil label yang benar untuk Badge/Pill dari CardNews
-              const catSlug = typeof news.category === 'object' ? news.category?.slug : news.category;
-              const badgeLabel = NEWS_CATEGORIES[catSlug]?.label || (typeof news.category === 'object' ? news.category?.label : news.category);
+              const cmsCat = news.news_categories || news.category;
+              const badgeLabel = cmsCat?.name_en || (typeof news.category === 'object' ? news.category?.label : news.category);
+              const title = locale === 'id' && news.title_id ? news.title_id : (news.title_en || news.title);
 
               return (
                 <CardNews
                   key={news.id}
                   variant="default"
-                  image={news.image}
+                  image={news.news_thumbnail || news.image}
                   badgeText={badgeLabel}
-                  title={news.title}
-                  author={news.author}
-                  date={news.newsDate} // Pastikan field ini sesuai dengan data kamu
-                  href={`/${locale}/newsroom/${news.slug}`}
+                  title={title}
+                  author={news.author || 'Linknet'}
+                  date={news.news_date || news.newsDate}
+                  href={`/${locale}/news/${news.slug}`}
                 />
               );
             })}

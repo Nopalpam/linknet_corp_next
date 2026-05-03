@@ -29,7 +29,7 @@ export default function useIndonesiaLocationOptions({ city, finalLevel = 'zip', 
   useEffect(() => {
     let isActive = true;
 
-    if (!normalizedProvince || !normalizedCity) {
+    if (finalLevel === 'none' || !normalizedProvince || !normalizedCity) {
       setFinalOptions([]);
       return () => {
         isActive = false;

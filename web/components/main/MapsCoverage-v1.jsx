@@ -197,6 +197,7 @@ function animateHorizontalScroll(element, targetLeft, duration = 700, onFrameIdC
 export default function MapsCoverageV1({
   name,
   className = '',
+  cmsData = null,
 }) {
   const sectionRef = useRef(null);
   const mapViewportRef = useRef(null);
@@ -207,7 +208,7 @@ export default function MapsCoverageV1({
   const [searchQuery, setSearchQuery] = useState('');
   const [mapViewportWidth, setMapViewportWidth] = useState(0);
 
-  const sectionData = MAPS_COVERAGE_DATA[name];
+  const sectionData = cmsData || MAPS_COVERAGE_DATA[name];
   const { colors, businessUnits, provinceMap } = MAP_REGIONS_DATA;
 
   const mapModel = useMemo(

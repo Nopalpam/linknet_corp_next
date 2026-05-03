@@ -79,41 +79,63 @@ function localizeField(
   locale: string
 ): string {
   const value = item[field];
-  // If it's a multilingual object {en, id}, use t()
-  if (value && typeof value === 'object') return t(value);
-  // If it's a string, check for _id suffix field for Indonesian
-  if (typeof value === 'string') {
-    if (locale === 'id') {
-      const idValue = item[`${field}_id`];
-      if (idValue && typeof idValue === 'string') return idValue;
+  if (value && typeof value === 'object') {
+    const localizedValue = t(value);
+    if (localizedValue || (field !== 'title' && field !== 'description')) {
+      return localizedValue;
     }
+  }
+
+  const introSource = item?.introData || item?.sectionIntro || item?.intro;
+  const shouldFallbackToIntro = (
+    field === 'title' ||
+    field === 'description'
+  ) && (
+    value == null ||
+    (typeof value === 'string' && !value.trim())
+  ) && introSource && typeof introSource === 'object' && !Array.isArray(introSource);
+
+  if (shouldFallbackToIntro) {
+    const introValue = introSource[field];
+    if (introValue && typeof introValue === 'object') return t(introValue);
+    if (typeof introValue === 'string') return introValue;
+  }
+
+  if (locale === 'id' && typeof item[`${field}_id`] === 'string' && item[`${field}_id`]) {
+    return item[`${field}_id`];
+  }
+
+  if (locale === 'en' && typeof item[`${field}_en`] === 'string' && item[`${field}_en`]) {
+    return item[`${field}_en`];
+  }
+
+  if (typeof value === 'string') {
     return value;
   }
-  return t(value);
+
+  return value == null ? '' : String(value);
 }
 
-/**
- * Extract intro data from CMS component data.
- * Handles both nested (data.intro.title) and flat (data.intro_title) formats.
- */
 function extractIntro(
   data: Record<string, any>,
   t: (f: any) => string,
   locale: string
-): Record<string, any> | undefined {
-  const introSource = data.sectionIntro || data.intro;
+) {
+  const introSource = data?.introData || data?.sectionIntro || data?.intro;
   const hasIntroContent = Boolean(
-    t(introSource?.label) ||
-    t(introSource?.title) ||
-    t(introSource?.description)
+    introSource && typeof introSource === 'object' && (
+      localizeField(introSource, 'label', t, locale) ||
+      localizeField(introSource, 'title', t, locale) ||
+      localizeField(introSource, 'description', t, locale)
+    )
   );
 
   if (introSource && typeof introSource === 'object' && hasIntroContent) {
     return {
       as: introSource.as || 'h2',
-      label: t(introSource.label),
-      title: t(introSource.title),
-      description: t(introSource.description),
+      label: localizeField(introSource, 'label', t, locale),
+      title: localizeField(introSource, 'title', t, locale),
+      description: localizeField(introSource, 'description', t, locale),
       align: introSource.align || 'left',
       fluid: Boolean(introSource.fluid),
       labelClassName: introSource.labelClassName || '',
@@ -123,18 +145,17 @@ function extractIntro(
     };
   }
 
-  // Format B: nested intro object
-  if (data.intro) {
+  if (data?.intro && typeof data.intro === 'object') {
     return {
-      as: 'h2',
+      as: data.intro.as || 'h2',
       label: t(data.intro.label),
       title: t(data.intro.title),
       description: t(data.intro.description),
       align: data.intro.align || 'left',
     };
   }
-  // Format A: flat intro_title, intro_label, intro_description
-  const hasIntro = data.intro_title || data.intro_label || data.intro_description;
+
+  const hasIntro = data?.intro_title || data?.intro_label || data?.intro_description;
   if (hasIntro) {
     return {
       as: 'h2',
@@ -144,7 +165,108 @@ function extractIntro(
       align: data.intro_align || 'left',
     };
   }
+
   return undefined;
+}
+
+function normalizeLinkType(data: Record<string, any>): string {
+  if (data.cta_link_type || data.button_link_type || data.link_type || data.linkType) {
+    return data.cta_link_type || data.button_link_type || data.link_type || data.linkType;
+  }
+  return data.cta_action || data.button_action || data.action || data.cta_action_modal || data.button_action_modal || data.action_modal || data.actionModal
+    ? 'action-modal'
+    : 'url';
+}
+
+function normalizeCtaItem(
+  cta: Record<string, any>,
+  t?: (f: any) => string,
+  index = 0
+): Record<string, any> {
+  const labelSource = cta.label ?? cta.text ?? cta.button_text ?? cta.cta_text ?? '';
+  const label = t ? t(labelSource) : labelSource;
+  const href = cta.href ?? cta.url ?? cta.action ?? cta.cta_link ?? cta.button_link ?? '#';
+  const linkType = cta.linkType || cta.link_type || (cta.action || cta.action_modal || cta.actionModal ? 'action-modal' : 'url');
+
+  return {
+    ...cta,
+    id: cta.id || `cta-${index}`,
+    label,
+    text: label,
+    href,
+    action: cta.action || cta.actionModal || cta.action_modal || '',
+    variant: cta.variant || 'primary',
+    size: cta.size || 'lg',
+    iconLeft: cta.iconLeft || cta.icon_left || '',
+    iconRight: cta.iconRight || cta.icon_right || cta.icon || '',
+    linkType,
+    link_type: linkType,
+    actionModal: cta.actionModal || cta.action_modal || cta.action || '',
+    action_modal: cta.action_modal || cta.actionModal || cta.action || '',
+    target: cta.target || '_self',
+  };
+}
+
+function getRawCtaList(data: Record<string, any>): Record<string, any>[] {
+  const ctaList = data.ctaList || data.cta_list || data.ctaButtons || data.cta_buttons || data.buttons;
+  if (Array.isArray(ctaList)) return ctaList;
+
+  const single = mapSingleCta(data, (field) => {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object') return field.id || field.en || field.label || '';
+    return String(field);
+  });
+
+  return single ? [single] : [];
+}
+
+function mapSingleCta(
+  data: Record<string, any>,
+  t: (f: any) => string,
+  textKeys: string[] = ['cta_label', 'button_label', 'label', 'cta_text', 'button_text', 'textCTA', 'ctaText'],
+  linkKeys: string[] = ['cta_href', 'button_href', 'href', 'cta_link', 'button_link', 'button_url', 'cta_url', 'ctaLink', 'action']
+): Record<string, any> | null {
+  const textSource = textKeys.map((key) => data[key]).find((value) => t(value));
+  const text = t(textSource);
+
+  if (!text) return null;
+
+  const href = linkKeys.map((key) => data[key]).find((value) => typeof value === 'string' && value) || '#';
+
+  return {
+    label: text,
+    text,
+    href,
+    action: data.cta_action || data.button_action || data.action || data.cta_action_modal || data.button_action_modal || data.action_modal || data.actionModal || '',
+    variant: data.cta_variant || data.button_variant || data.variant || 'primary',
+    size: data.cta_size || data.button_size || data.size || 'lg',
+    iconLeft: data.cta_icon_left || data.button_icon_left || data.iconLeft || data.icon_left || '',
+    iconRight: data.cta_icon_right || data.button_icon_right || data.iconRight || data.icon_right || data.icon || '',
+    linkType: normalizeLinkType(data),
+    actionModal: data.cta_action_modal || data.button_action_modal || data.action_modal || data.actionModal || data.cta_action || data.button_action || data.action || '',
+    target: data.cta_target || data.button_target || data.target || '_self',
+  };
+}
+
+function mapAwardItem(award: Record<string, any>, t: (f: any) => string, locale: string) {
+  const title = locale === 'id'
+    ? award.titleId || award.title_id || award.title
+    : award.titleEn || award.title_en || award.title;
+  const desc = locale === 'id'
+    ? award.descriptionId || award.description_id || award.description
+    : award.descriptionEn || award.description_en || award.description;
+
+  return {
+    id: award.id,
+    topLogo: award.topLogo || award.logo || '',
+    image: award.image || '',
+    title: t(title),
+    desc: t(desc),
+    date: award.date || award.issueDate || award.issue_date || (award.year ? `${award.year}-01-01` : ''),
+    url: award.url || award.link || '#',
+    year: award.year,
+  };
 }
 
 function backgroundPositionToClasses(position: string | undefined): string {
@@ -161,15 +283,79 @@ function backgroundPositionToClasses(position: string | undefined): string {
 export function normalizeComponentData(data: Record<string, any> | undefined): Record<string, any> {
   const source = data || {};
   const config = source.config && typeof source.config === 'object' ? source.config : {};
+  const introData = source.introData || source.sectionIntro || source.intro;
+  const rawCtaList = getRawCtaList(source);
+  const ctaList = rawCtaList.map((cta, index) => normalizeCtaItem(cta, undefined, index));
+  const introTitle = introData && typeof introData === 'object' ? introData.title : undefined;
+  const introDescription = introData && typeof introData === 'object' ? introData.description : undefined;
 
   return {
     ...source,
+    ...(introData ? { introData } : {}),
+    ...(ctaList.length > 0 ? { ctaList } : {}),
+    ...(source.title === undefined && introTitle !== undefined ? { title: introTitle } : {}),
+    ...(source.description === undefined && introDescription !== undefined ? { description: introDescription } : {}),
     custom_id: source.custom_id ?? config.sectionId ?? '',
     custom_class: source.custom_class ?? config.className ?? '',
     bg_image: source.bg_image ?? config.bgImage ?? '',
     bg_image_mobile: source.bg_image_mobile ?? config.bgImageMobile ?? '',
     bg_position_classes: source.bg_position_classes ?? config.bgPositionClasses ?? '',
     bg_size_class: source.bg_size_class ?? config.bgSizeClass ?? '',
+  };
+}
+
+function optionalString(value: any): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function resolveCmsData(data: Record<string, any>): Record<string, any> {
+  const explicitCmsData = data.cmsData || data.cms_data;
+
+  if (explicitCmsData && typeof explicitCmsData === 'object' && !Array.isArray(explicitCmsData)) {
+    return explicitCmsData;
+  }
+
+  return data;
+}
+
+function hasRenderableCmsValue(value: any): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number' || typeof value === 'boolean') return true;
+  if (Array.isArray(value)) return value.some((entry) => hasRenderableCmsValue(entry));
+  if (typeof value === 'object') return Object.values(value).some((entry) => hasRenderableCmsValue(entry));
+  return false;
+}
+
+function hasRenderableCmsData(data: Record<string, any>): boolean {
+  return Object.entries(data).some(([key, value]) => {
+    if (['name', 'custom_id', 'custom_class'].includes(key)) return false;
+    return hasRenderableCmsValue(value);
+  });
+}
+
+function passCmsData(
+  data: Record<string, any>,
+  styleProps: Record<string, any> = {},
+  extraProps: Record<string, any> = {},
+  t?: (f: any) => string,
+  locale = 'id'
+): Record<string, any> {
+  const resolvedData = resolveCmsData(data);
+  const introData = extractIntro(resolvedData, t || createLocalizer(locale), locale);
+  const ctaList = getRawCtaList(resolvedData).map((cta, index) => normalizeCtaItem(cta, t, index));
+  const normalizedData = {
+    ...resolvedData,
+    ...(introData ? { introData } : {}),
+    ...(ctaList.length > 0 ? { ctaList } : {}),
+  };
+  const cmsData = hasRenderableCmsData(normalizedData) ? normalizedData : null;
+
+  return {
+    data: normalizedData,
+    cmsData,
+    ...extraProps,
+    ...styleProps,
   };
 }
 
@@ -182,7 +368,6 @@ const AboutWithUSP = dynamic(() => import('@/components/main/AboutWithUSP'));
 const AboutValues = dynamic(() => import('@/components/main/AboutValues'));
 const AboutWithRunningPhotos = dynamic(() => import('@/components/main/AboutWithRunningPhotos'));
 const TabBusiness = dynamic(() => import('@/components/main/TabBusiness'));
-const BusinessTab = dynamic(() => import('@/components/main/BusinessTab'));
 const MapsCoverage = dynamic(() => import('@/components/main/MapsCoverage'));
 const NewsFeatured = dynamic(() => import('@/components/main/NewsFeatured'));
 const NewsTeaser = dynamic(() => import('@/components/main/NewsTeaser'));
@@ -306,7 +491,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: HeroSliders,
     mapProps: ({ data, t, styleProps }) => ({
       cmsSlides: Array.isArray(data.slides) 
-        ? data.slides.map((slide: any) => ({
+        ? data.slides.map((slide: any, index: number) => ({
+            id: slide.id || `cms-hero-slide-${index}`,
             image: slide.image || undefined,
             image_mobile: slide.image_mobile || undefined,
             title: t(slide.title),
@@ -315,6 +501,10 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             button_link: slide.button_link || '#',
             pill_text: t(slide.pill_text),
             indicator_label: t(slide.indicator_label),
+            config: {
+              ...(slide.config && typeof slide.config === 'object' ? slide.config : {}),
+              tabTitle: t(slide.config?.tabTitle) || t(slide.indicator_label) || t(slide.title),
+            },
             theme: slide.theme || data.theme || 'dark',
           }))
         : null,
@@ -337,6 +527,20 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
       return {
         cmsData: {
+          config: {
+            ...(data.config && typeof data.config === 'object' ? data.config : {}),
+            layoutVariant: presentation.layoutVariant,
+            image: presentation.image,
+            usp: {
+              ...(data.config?.usp && typeof data.config.usp === 'object' ? data.config.usp : {}),
+              variant: presentation.uspVariant,
+              isSlider: presentation.isSlider,
+              slidesPerViewDesktop: presentation.slidesPerViewDesktop,
+              slidesPerViewMobile: presentation.slidesPerViewMobile,
+              gridColsDesktop: presentation.gridColsDesktop,
+              gridColsMobile: presentation.gridColsMobile,
+            },
+          },
           uspVariant: presentation.uspVariant,
           bgColor: presentation.bgColor,
           isSlider: presentation.isSlider,
@@ -421,34 +625,6 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     },
   },
 
-  tabs_with_card: {
-    component: BusinessTab,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      introData: extractIntro(data, t, locale) || (data.title ? { as: 'h2', title: t(data.title), align: 'left' } : undefined),
-      tabs: Array.isArray(data.tabs)
-        ? data.tabs.map((tab: any, idx: number) => {
-            const tabKey = tab.key || tab.id || `tab-${idx}`;
-            // Support both formats: cards inside tab OR in tab_panels
-            const rawCards = Array.isArray(tab.cards) ? tab.cards : (data.tab_panels?.[tabKey]?.cards || []);
-            return {
-              id: tabKey,
-              label: localizeField(tab, 'label', t, locale),
-              cards: rawCards.map((card: any, cIdx: number) => ({
-                id: `${tabKey}-card-${cIdx}`,
-                iconSrc: card.icon || undefined,
-                title: localizeField(card, 'title', t, locale),
-                description: localizeField(card, 'description', t, locale),
-                ctaText: localizeField(card, 'button_text', t, locale),
-                ctaLink: card.button_url || card.button_link || card.link || '#',
-                image: card.image || undefined,
-              })),
-            };
-          })
-        : [],
-      ...styleProps,
-    }),
-  },
-
   // ── Highlights / Features ───────────────────────────────────────
 
   key_highlight: {
@@ -496,14 +672,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         partnerLogos: Array.isArray(data.community_logos)
           ? data.community_logos.map((logo: any) => (typeof logo === 'string' ? logo : logo.url || undefined))
           : [],
-        ctaList: Array.isArray(data.cta_list)
-          ? data.cta_list.map((cta: any) => ({
-              text: t(cta.text),
-              href: cta.href || '#',
-              variant: cta.variant || 'primary',
-              size: cta.size || 'lg',
-            }))
-          : [],
+        ctaList: getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index)),
       },
       ...styleProps,
     }),
@@ -582,6 +751,10 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   career_highlight: {
     component: CareerSneakPeek,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      ...passCmsData(data, styleProps, { name: data.name || 'home', mainData: data.mainData || null }, t, locale),
+      locale,
+    }),
   },
 
   career_list: {
@@ -592,6 +765,48 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   news_highlight: {
     component: NewsFeatured,
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const ctaList = getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index));
+      const introData = extractIntro(data, t, locale) || {
+        as: 'h2',
+        title: localizeField(data, 'title', t, locale),
+        align: data.intro_align || 'left',
+      };
+
+      return {
+        cmsData: {
+          ...data,
+          source: data.source || data.data_source || 'cms_highlights',
+          introData,
+          ctaList,
+        },
+        mainData: data.mainData || null,
+        ...styleProps,
+      };
+    },
+  },
+
+  news_featured: {
+    component: NewsFeatured,
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const ctaList = getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index));
+      const introData = extractIntro(data, t, locale) || {
+        as: 'h2',
+        title: localizeField(data, 'title', t, locale),
+        align: data.intro_align || 'left',
+      };
+
+      return {
+        cmsData: {
+          ...data,
+          source: data.source || data.data_source || 'cms_highlights',
+          introData,
+          ctaList,
+        },
+        mainData: data.mainData || null,
+        ...styleProps,
+      };
+    },
   },
 
   news_list: {
@@ -613,14 +828,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         searchPlaceholder: t(data.search_placeholder) || (locale === 'id' ? 'Cari berita...' : 'Search news...'),
         searchButtonText: t(data.search_button_text) || (locale === 'id' ? 'Cari' : 'Search'),
         category: data.category_id || null,
-        ctaList: data.cta_text
-          ? [{
-              text: t(data.cta_text),
-              href: data.cta_link || '#',
-              variant: 'primary',
-              size: 'lg',
-            }]
-          : [],
+        ctaList: getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index)),
       },
       mainData: data.mainData || null,
       ...styleProps,
@@ -631,17 +839,42 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   management_list: {
     component: Management,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      cmsData: {
+        ...data,
+        introData: extractIntro(data, t, locale) || {
+          as: 'h2',
+          label: '',
+          title: localizeField(data, 'title', t, locale),
+          description: localizeField(data, 'description', t, locale),
+          align: data.intro_align || 'left',
+        },
+      },
+      mainData: data.mainData || null,
+      locale,
+      ...styleProps,
+    }),
   },
 
   // ── Reports ─────────────────────────────────────────────────────
 
   report_list: {
     component: ReportList,
-    mapProps: ({ data, styleProps }) => ({
-      name: 'financial-statement',
-      showTypeFilter: true,
-      showStatusFilter: true,
-      showYearFilter: true,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      cmsData: {
+        ...data,
+        introData: extractIntro(data, t, locale) || {
+          as: 'h2',
+          label: '',
+          title: localizeField(data, 'title', t, locale),
+          description: localizeField(data, 'description', t, locale),
+          align: data.intro_align || 'left',
+        },
+      },
+      name: data.name || data.report_type || 'financial-statement',
+      showTypeFilter: data.show_type_filter !== false,
+      showStatusFilter: data.show_status_filter !== false,
+      showYearFilter: data.show_year_filter !== false,
       mainData: data.mainData || null,
       ...styleProps,
     }),
@@ -651,52 +884,106 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   awards_list: {
     component: AwardsFeed,
-    mapProps: ({ styleProps }) => ({ name: 'awards-list', ...styleProps }),
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const awards = Array.isArray(data.mainData?.awards)
+        ? data.mainData.awards
+        : (Array.isArray(data.items) ? data.items : []);
+
+      return {
+        name: data.name || 'awards-list',
+        cmsData: {
+          config: data.config || {},
+          introData: extractIntro(data, t, locale) || {
+            as: 'h2',
+            label: localizeField(data, 'intro_label', t, locale),
+            title: localizeField(data, 'title', t, locale),
+            description: localizeField(data, 'description', t, locale),
+            align: data.intro_align || 'center',
+          },
+          items: awards.map((award: any) => mapAwardItem(award, t, locale)),
+          perPage: data.per_page || data.max_data || 9,
+          showPagination: data.show_pagination !== false,
+          showYearFilter: data.show_year_filter !== false,
+          showImage: data.show_image !== false,
+          sortOrder: data.order || data.sort_order || 'latest',
+          columns: data.columns || 3,
+        },
+        mainData: data.mainData || null,
+        ...styleProps,
+      };
+    },
   },
 
   awards_marquee: {
     component: AwardSneakPeek,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        introData: extractIntro(data, t, locale) || {
-          as: 'h2',
-          label: '',
-          title: t(data.title),
-          description: '',
-          align: 'left',
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const selectedAwardIds = Array.isArray(data.award_ids || data.awardIds)
+        ? data.award_ids || data.awardIds
+        : [];
+      const allAwards = Array.isArray(data.mainData?.awards)
+        ? data.mainData.awards
+        : (Array.isArray(data.items) ? data.items : []);
+      const sourceAwards = selectedAwardIds
+        .map((id: string) => allAwards.find((award: any) => String(award.id) === String(id)))
+        .filter(Boolean);
+      const ctaList = getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index));
+
+      return {
+        cmsData: {
+          config: data.config || {},
+          introData: extractIntro(data, t, locale) || {
+            as: 'h2',
+            label: '',
+            title: t(data.title),
+            description: '',
+            align: 'left',
+          },
+          items: sourceAwards.map((award: any) => mapAwardItem(award, t, locale)),
+          ctaList,
         },
-        ctaList: data.cta_text
-          ? [{
-              text: t(data.cta_text),
-              href: data.cta_link || '#',
-              variant: 'primary',
-              size: 'lg',
-            }]
-          : [],
-      },
-      ...styleProps,
-    }),
+        ...styleProps,
+      };
+    },
   },
 
   // ── Other sections ──────────────────────────────────────────────
 
   accordion: {
     component: FAQ,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: data.items ? {
+    mapProps: ({ data, t, styleProps, locale }) => {
+      // extractIntro handles sectionIntro (CMS storage format via withCommon),
+      // falling back to nested intro or flat intro_* fields.
+      const introData = extractIntro(data, t, locale) || {
+        as: 'h2',
         label: localizeField(data, 'label', t, locale) || localizeField(data, 'intro_label', t, locale),
         title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
         description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
-        items: Array.isArray(data.items)
-          ? data.items.map((item: any, idx: number) => ({
-              id: `faq-${idx}`,
-              question: t(item.title),
-              answer: t(item.content),
-            }))
-          : [],
-      } : null,
-      ...styleProps,
-    }),
+        align: data.align || data.intro_align || 'center',
+      };
+
+      // Support CMS format (title/content multilingual objects) and
+      // legacy static format (question/answer flat strings).
+      const rawItems = Array.isArray(data.items) ? data.items : [];
+      const rawFaqList = Array.isArray(data.faqList) ? data.faqList : [];
+      const sourceList = rawItems.length > 0 ? rawItems : rawFaqList;
+
+      const faqList = sourceList.map((item: any, idx: number) => ({
+        id: item.id || `faq-${idx}`,
+        question: t(item.title) || item.question || '',
+        answer: t(item.content) || item.answer || '',
+      }));
+
+      return {
+        cmsData: {
+          introData,
+          faqList,
+          config: data.config || {},
+          textCTA: t(data.textCTA) || t(data.cta_text) || 'See More',
+          textCTA_collapse: t(data.textCTA_collapse) || t(data.cta_text_collapse) || 'Show Less',
+        },
+        ...styleProps,
+      };
+    },
   },
 
   vision_mission: {
@@ -825,21 +1112,15 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: ClosingSentence,
     mapProps: ({ data, t, styleProps, locale }) => ({
       cmsData: {
-        introData: {
+        introData: extractIntro(data, t, locale) || {
           overline: localizeField(data, 'overline', t, locale),
           title: localizeField(data, 'title', t, locale),
           description: localizeField(data, 'description', t, locale),
         },
-        ctaButtons: Array.isArray(data.cta_buttons)
-          ? data.cta_buttons.map((cta: any) => ({
-              text: t(cta.text),
-              variant: cta.variant || 'secondary-outline',
-              size: cta.size || 'lg',
-              href: cta.href || data.cta_link || '#',
-            }))
-          : data.cta_text
-            ? [{ text: t(data.cta_text), variant: 'secondary-outline', size: 'lg', href: data.cta_link || '#' }]
-            : [],
+        ctaList: getRawCtaList(data).map((cta, index) => ({
+          ...normalizeCtaItem(cta, t, index),
+          variant: cta.variant || 'secondary-outline',
+        })),
       },
       ...styleProps,
     }),
@@ -918,9 +1199,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   text_block: {
     component: TextBlock,
     mapProps: ({ data, t, locale }) => ({
-      label: localizeField(data, 'label', t, locale) || localizeField(data, 'intro_label', t, locale),
-      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
-      description: localizeField(data, 'description', t, locale) || localizeField(data, 'intro_description', t, locale),
+      introData: extractIntro(data, t, locale),
+      ctaList: getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index)),
       className: data?.custom_class || '',
     }),
   },
@@ -985,10 +1265,19 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   announcement_list: {
     component: AnnouncementListCMS,
-    mapProps: ({ data, t, locale }) => ({
-      title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      cmsData: {
+        ...data,
+        introData: extractIntro(data, t, locale) || {
+          as: 'h2',
+          label: '',
+          title: localizeField(data, 'title', t, locale) || localizeField(data, 'intro_title', t, locale),
+          description: localizeField(data, 'description', t, locale),
+          align: data.intro_align || 'left',
+        },
+      },
       mainData: data.mainData || null,
-      className: data?.custom_class || '',
+      ...styleProps,
     }),
   },
 
@@ -1114,7 +1403,41 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
 
   // Synced one-to-one registrations from web/components/main
-  hero: { component: Hero },
+  hero: {
+    component: Hero,
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const config = data.config && typeof data.config === 'object' ? data.config : {};
+      const parentProduct = data.parentProduct || data.parent_product || null;
+
+      return {
+        name: data.name || undefined,
+        data: {
+          ...data,
+          config: {
+            sectionId: config.sectionId || data.custom_id || '',
+            className: config.className || data.custom_class || '',
+            bgImage: config.bgImage || data.bg_image || '',
+            bgImageMobile: config.bgImageMobile || data.bg_image_mobile || '',
+            bgPositionClasses: config.bgPositionClasses || data.bg_position_classes || '',
+            bgSizeClass: config.bgSizeClass || data.bg_size_class || '',
+            theme: config.theme || data.theme || 'light',
+            bgOverlay: typeof config.bgOverlay === 'boolean' ? config.bgOverlay : Boolean(data.bgOverlay || data.bg_overlay),
+          },
+          parentProduct: parentProduct ? {
+            iconImage: parentProduct.iconImage || parentProduct.icon_image || '',
+            productName: t(parentProduct.productName || parentProduct.product_name),
+          } : undefined,
+          labelText: localizeField(data, 'labelText', t, locale) || localizeField(data, 'label_text', t, locale),
+          title: localizeField(data, 'title', t, locale),
+          description: localizeField(data, 'description', t, locale),
+          ctaText: localizeField(data, 'ctaText', t, locale) || localizeField(data, 'cta_text', t, locale),
+          ctaLink: data.ctaLink || data.cta_link || '#',
+          ctaTarget: data.ctaTarget || data.cta_target || '_self',
+        },
+        ...styleProps,
+      };
+    },
+  },
   career_detail: {
     component: CareerDetail,
     mapProps: ({ data, styleProps }) => ({
@@ -1123,10 +1446,30 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       ...styleProps,
     }),
   },
-  check_coverage: { component: CheckCoverage },
+  check_coverage: {
+    component: CheckCoverage,
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const cmsData = data.cmsData || data.cms_data || data;
+      const introData = cmsData.introData || extractIntro(cmsData, t, locale);
+
+      return {
+        name: data.name || 'enterprise',
+        cmsData: {
+          ...cmsData,
+          introData: introData ? {
+            ...introData,
+            label: t(introData.label),
+            title: t(introData.title),
+            description: t(introData.description),
+          } : undefined,
+        },
+        ...styleProps,
+      };
+    },
+  },
   content_highlights: {
     component: ContentHighlights,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'home', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
   },
   event_content: {
     component: EventContent,
@@ -1136,7 +1479,36 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: EventDetail,
     mapProps: ({ data, locale }) => ({ event: data.event || data.item || null, locale }),
   },
-  event_hero: { component: EventHero },
+  event_hero: {
+    component: EventHero,
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const config = data.config && typeof data.config === 'object' ? data.config : {};
+
+      return {
+        config: {
+          sectionId: config.sectionId || data.custom_id || '',
+          className: config.className || data.custom_class || '',
+          bgImage: config.bgImage || data.bg_image || '',
+          bgImageMobile: config.bgImageMobile || data.bg_image_mobile || '',
+        },
+        posterSrc: optionalString(data.posterSrc || data.poster_src),
+        posterAlt: localizeField(data, 'posterAlt', t, locale) || localizeField(data, 'poster_alt', t, locale) || 'Event Poster',
+        thumbnailSrc: optionalString(data.thumbnailSrc || data.thumbnail_src),
+        thumbnailMobileSrc: optionalString(data.thumbnailMobileSrc || data.thumbnail_mobile_src),
+        badgeText: localizeField(data, 'badgeText', t, locale) || localizeField(data, 'badge_text', t, locale),
+        status: data.status || 'upcoming',
+        title: localizeField(data, 'title', t, locale),
+        location: localizeField(data, 'location', t, locale),
+        dateLabel: localizeField(data, 'dateLabel', t, locale) || localizeField(data, 'date_label', t, locale),
+        timeLabel: localizeField(data, 'timeLabel', t, locale) || localizeField(data, 'time_label', t, locale),
+        ctaText: localizeField(data, 'ctaText', t, locale) || localizeField(data, 'cta_text', t, locale),
+        ctaLink: data.ctaLink || data.cta_link || '#',
+        ctaTarget: data.ctaTarget || data.cta_target || '_self',
+        ctaModalPayload: data.ctaModalPayload || data.cta_modal_payload || null,
+        ...styleProps,
+      };
+    },
+  },
   event_registration_form: {
     component: EventRegistrationForm,
     mapProps: ({ data }) => ({ event: data.event || data.item || null }),
@@ -1157,54 +1529,125 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: EventsList,
     mapProps: ({ data, locale }) => ({ events: data.events || data.mainData || [], locale }),
   },
-  footer: { component: Footer },
+  footer: {
+    component: Footer,
+    mapProps: ({ data, styleProps }) => ({
+      cmsClosingData: data.cmsClosingData || data.cms_closing_data || null,
+      cmsFooterData: data.cmsFooterData || data.cms_footer_data || null,
+      ...styleProps,
+    }),
+  },
   footer_fiber: { component: FooterFiber },
-  footer_main: { component: FooterMain },
+  footer_main: {
+    component: FooterMain,
+    mapProps: ({ data, styleProps }) => ({
+      cmsFooterData: data.cmsFooterData || data.cms_footer_data || null,
+      ...styleProps,
+    }),
+  },
   footer_media: { component: FooterMedia },
   form_registration: { component: FormRegistration },
   form_registration_incomplete: { component: FormRegistrationIncomplete },
   form_registration_success: { component: FormRegistrationSuccess },
-  hero_sliders_tv_highlight: { component: HeroSlidersTVHighlight },
+  hero_sliders_tv_highlight: {
+    component: HeroSlidersTVHighlight,
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'today-highlight' }, t, locale),
+  },
   hospitality: { component: Hospitality },
   layout_chrome: { component: LayoutChrome },
   list_report_home: {
     component: ListReportHome,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'home', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
   },
   logo_running: {
     component: LogoRunning,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'default', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'default' }, t, locale),
   },
   logo_running_with_border: {
     component: LogoRunningWithBorder,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'default', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'default' }, t, locale),
   },
-  maps_coverage_v1: { component: MapsCoverageV1 },
-  navbar: { component: Navbar },
-  navbar_fiber: { component: NavbarFiber },
+  maps_coverage_v1: {
+    component: MapsCoverageV1,
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
+  },
+  navbar: {
+    component: Navbar,
+    mapProps: ({ data }) => ({
+      menuData: data.menuData || data.menu_data || undefined,
+      defaultLocale: data.defaultLocale || data.default_locale || 'en',
+    }),
+  },
+  navbar_fiber: {
+    component: NavbarFiber,
+    mapProps: ({ data }) => ({
+      menuData: data.menuData || data.menu_data || undefined,
+      defaultLocale: data.defaultLocale || data.default_locale || 'en',
+    }),
+  },
   navbar_media: { component: NavbarMedia },
-  navbar_newsroom: { component: NavbarNewsroom },
+  navbar_newsroom: {
+    component: NavbarNewsroom,
+    mapProps: ({ data, t }) => ({
+      label: t(data.label) || 'News',
+      categorySortBy: data.category_sort_by || data.categorySortBy || 'default',
+    }),
+  },
   news_detail: {
     component: NewsDetail,
     mapProps: ({ data }) => ({ article: data.article || data.item || null }),
   },
   news_feed: {
     component: NewsFeed,
-    mapProps: ({ data, styleProps }) => ({ categorySlug: data.categorySlug || data.category_slug || 'latest', ...styleProps }),
+    mapProps: ({ data, styleProps }) => ({
+      categorySlug: data.categorySlug || data.category_slug || 'latest',
+      mainData: data.mainData || null,
+      ...styleProps,
+    }),
   },
   news_related: {
     component: NewsRelated,
     mapProps: ({ data, styleProps }) => ({ articles: data.articles || data.items || [], ...styleProps }),
   },
-  news_teaser: { component: NewsTeaser },
+  news_teaser: {
+    component: NewsTeaser,
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const cmsData = data.cmsData || data.cms_data || data;
+      const introData = extractIntro(cmsData, t, locale);
+      const ctaList = getRawCtaList(cmsData).map((cta, index) => normalizeCtaItem(cta, t, index));
+
+      return {
+        name: data.name || 'press-release',
+        cmsData: {
+          ...cmsData,
+          ...(introData ? { introData } : {}),
+          ctaList,
+        },
+        mainData: data.mainData || null,
+        locale,
+        ...styleProps,
+      };
+    },
+  },
   omni_channel_widget: {
     component: OmniChannelWidget,
-    mapProps: ({ data, styleProps }) => ({ cmsData: data.cmsData || data, ...styleProps }),
+    mapProps: ({ data, t, styleProps }) => {
+      const cmsData = data.cmsData || data;
+
+      return {
+        cmsData: {
+          ...cmsData,
+          title: t(cmsData.title),
+          subtitle: t(cmsData.subtitle),
+        },
+        ...styleProps,
+      };
+    },
   },
   one_stream_plus: { component: OneStreamPlus },
   package_list: {
     component: PackageList,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'enterprise', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'enterprise' }, t, locale),
   },
   report_grid: {
     component: ReportGrid,
@@ -1220,24 +1663,36 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   solution_services_home: {
     component: SolutionServicesHome,
-    mapProps: ({ data, styleProps }) => ({
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      ...passCmsData(data, styleProps, {}, t, locale),
       name: data.name || 'home',
       hideTabs: data.hideTabs || data.hide_tabs || false,
-      ...styleProps,
     }),
   },
   solutions_filtered: {
     component: SolutionsFiltered,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'enterprise', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'enterprise' }, t, locale),
   },
-  solutions_services_with_background: { component: SolutionsServicesWithBackground },
+  solutions_services_with_background: {
+    component: SolutionsServicesWithBackground,
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'enterprise' }, t, locale),
+  },
   tv_channel_list: {
     component: TVChannelList,
-    mapProps: ({ data, styleProps }) => ({ name: data.name || 'enterprise', ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'enterprise' }, t, locale),
   },
-  tv_channel_sneak_peek: { component: TVChannelSneakPeek },
-  tv_highlight_sliders: { component: TVHighlightSliders },
-  tv_highlight_sneek_peak: { component: TVHighlightSneekPeak },
+  tv_channel_sneak_peek: {
+    component: TVChannelSneakPeek,
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
+  },
+  tv_highlight_sliders: {
+    component: TVHighlightSliders,
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'today-highlight' }, t, locale),
+  },
+  tv_highlight_sneek_peak: {
+    component: TVHighlightSneekPeak,
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
+  },
 };
 
 // ─── Registry helpers ────────────────────────────────────────────────

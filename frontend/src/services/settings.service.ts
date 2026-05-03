@@ -33,7 +33,7 @@ class SettingsService extends BaseService {
    * Get public settings
    */
   async getPublicSettings(): Promise<{ data: Record<string, string> }> {
-    return this.fetchWithAuth(this.getApiUrl('/public'));
+    return this.fetchWithAuth(this.getApiUrl('/settings/public'));
   }
 
   /**

@@ -7,6 +7,7 @@ import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { buildLoginRedirectUrl } from "@/lib/authSession";
 
 export default function AdminLayout({
   children,
@@ -14,16 +15,16 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const { isAuthenticated, isAuthValidated, isLoading } = useAuth();
+  const { isAuthenticated, isAuthValidated, isLoading, isSessionWarningOpen } = useAuth();
   const router = useRouter();
 
   // ✅ CRITICAL: Block rendering if not authenticated
   useEffect(() => {
-    if (isAuthValidated && !isLoading && !isAuthenticated) {
+    if (isAuthValidated && !isLoading && !isAuthenticated && !isSessionWarningOpen) {
       console.warn('🔴 Not authenticated - redirecting to login');
-      router.replace('/login');
+      router.replace(buildLoginRedirectUrl());
     }
-  }, [isAuthenticated, isAuthValidated, isLoading, router]);
+  }, [isAuthenticated, isAuthValidated, isLoading, isSessionWarningOpen, router]);
 
   // ✅ CRITICAL: Don't render CMS if not authenticated
   if (!isAuthValidated || isLoading || !isAuthenticated) {

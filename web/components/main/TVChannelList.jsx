@@ -15,9 +15,10 @@ function cn(...classes) {
 
 export default function TVChannelList({
   name = 'enterprise',
-  className = ''
+  className = '',
+  cmsData = null
 }) {
-  const sectionData = TV_CHANNEL_LIST_DATA[name];
+  const sectionData = cmsData || TV_CHANNEL_LIST_DATA[name];
   const {
     config = {},
     introData,

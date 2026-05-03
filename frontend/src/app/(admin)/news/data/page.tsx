@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { newsService, newsCategoryService, News, NewsCategory } from "@/services/news.service";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import NewsTable from "./components/NewsTable";
-import NewsFormModal from "./components/NewsFormModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 
 export default function NewsDataPage() {
   const toast = useToast();
+  const router = useRouter();
   const [newsList, setNewsList] = useState<News[]>([]);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,11 +25,8 @@ export default function NewsDataPage() {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
 
-  // Modal states
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<News | null>(null);
-  const [formMode, setFormMode] = useState<"create" | "edit">("create");
 
   // Fetch categories for filter/dropdown
   useEffect(() => {
@@ -81,28 +79,16 @@ export default function NewsDataPage() {
   }, [searchQuery, filterStatus, filterCategory]);
 
   const handleCreate = () => {
-    setFormMode("create");
-    setSelectedNews(null);
-    setIsFormModalOpen(true);
+    router.push("/cms/news/create");
   };
 
   const handleEdit = (news: News) => {
-    setFormMode("edit");
-    setSelectedNews(news);
-    setIsFormModalOpen(true);
+    router.push(`/cms/news/edit/${news.id}`);
   };
 
   const handleDelete = (news: News) => {
     setSelectedNews(news);
     setIsDeleteModalOpen(true);
-  };
-
-  const handleFormSubmit = async (success: boolean, message?: string) => {
-    setIsFormModalOpen(false);
-    if (success) {
-      toast.success(message || (formMode === "create" ? "News created" : "News updated"));
-      await fetchNews();
-    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -211,15 +197,6 @@ export default function NewsDataPage() {
           </div>
         )}
       </div>
-
-      <NewsFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        onSuccess={handleFormSubmit}
-        mode={formMode}
-        news={selectedNews}
-        categories={categories}
-      />
 
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}

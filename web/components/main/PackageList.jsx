@@ -35,10 +35,11 @@ function HighlightItem({ icon, text }) {
 export default function PackageList({
   name = 'enterprise',
   className = '',
+  cmsData = null,
   slidesPerViewMobile = 1.1,
   slidesPerViewDesktop = 3,
 }) {
-  const sectionData = PACKAGE_LIST_DATA[name];
+  const sectionData = cmsData || PACKAGE_LIST_DATA[name];
   const { openModal } = useModalFormRegistrationEnterpriseSMB();
 
   const [coverageMode, setCoverageMode] = useState(COVERAGE_MODE.SEARCH);

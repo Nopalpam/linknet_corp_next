@@ -32,6 +32,7 @@ import {
   isRegisteredType,
 } from './registry';
 import { pagesService } from '@/services/pages.service';
+import { DEFAULT_SECTION_INTRO } from '../../../../../../../shared/presentation/intro';
 
 // =============================================================================
 // INITIAL STATE
@@ -46,19 +47,6 @@ const initialState: PageState = {
   isSaving: false,
   isLoading: true,
   error: null,
-};
-
-const DEFAULT_SECTION_INTRO = {
-  label: { en: '', id: '' },
-  title: { en: '', id: '' },
-  description: { en: '', id: '' },
-  as: 'h2',
-  align: 'left',
-  fluid: false,
-  labelClassName: '',
-  titleClassName: '',
-  descriptionClassName: '',
-  className: '',
 };
 
 const DEFAULT_SECTION_CONFIG = {
@@ -93,11 +81,21 @@ function deepMergeDefaults(defaults: Record<string, any>, value: Record<string, 
 }
 
 function normalizeSectionIntro(settings: Record<string, any>) {
-  return {
+  const introData = {
     ...DEFAULT_SECTION_INTRO,
     ...(settings.intro || {}),
     ...(settings.sectionIntro || {}),
+    ...(settings.introData || {}),
   };
+
+  if (!hasRenderableValue(introData.title) && hasRenderableValue(settings.title)) {
+    introData.title = settings.title;
+  }
+  if (!hasRenderableValue(introData.description) && hasRenderableValue(settings.description)) {
+    introData.description = settings.description;
+  }
+
+  return introData;
 }
 
 function normalizeSectionConfig(settings: Record<string, any>) {
@@ -113,9 +111,108 @@ function normalizeSectionConfig(settings: Record<string, any>) {
   };
 }
 
+const CTA_LIST_KEYS = ['ctaList', 'cta_list', 'ctaButtons', 'cta_buttons', 'buttons'];
+const SINGLE_BUTTON_TEXT_KEYS = ['cta_label', 'button_label', 'cta_text', 'button_text', 'textCTA', 'ctaText'];
+const SINGLE_BUTTON_LINK_KEYS = ['cta_href', 'button_href', 'cta_link', 'button_link', 'button_url', 'cta_url', 'ctaLink'];
+const LEGACY_SINGLE_BUTTON_FIELD_KEYS = new Set([
+  ...SINGLE_BUTTON_TEXT_KEYS,
+  ...SINGLE_BUTTON_LINK_KEYS,
+  'cta_variant',
+  'button_variant',
+  'cta_size',
+  'button_size',
+  'cta_link_type',
+  'button_link_type',
+  'cta_target',
+  'button_target',
+  'cta_action',
+  'button_action',
+  'cta_action_modal',
+  'button_action_modal',
+  'cta_icon_left',
+  'button_icon_left',
+  'cta_icon_right',
+  'button_icon_right',
+]);
+
+function hasRenderableValue(value: any): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number' || typeof value === 'boolean') return true;
+  if (Array.isArray(value)) return value.some((entry) => hasRenderableValue(entry));
+  if (typeof value === 'object') return Object.values(value).some((entry) => hasRenderableValue(entry));
+  return false;
+}
+
+function valuesMatch(left: any, right: any): boolean {
+  if (!hasRenderableValue(left) || !hasRenderableValue(right)) return false;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function normalizeLegacyCta(settings: Record<string, any>) {
+  const label = settings.cta_label ?? settings.button_label ?? settings.cta_text ?? settings.button_text ?? settings.textCTA ?? settings.ctaText ?? '';
+  const href = settings.cta_href ?? settings.button_href ?? settings.cta_link ?? settings.button_link ?? settings.button_url ?? settings.cta_url ?? settings.ctaLink ?? '';
+  const action = settings.cta_action ?? settings.button_action ?? settings.cta_action_modal ?? settings.button_action_modal ?? '';
+
+  return {
+    label,
+    text: label,
+    href,
+    action,
+    variant: settings.cta_variant ?? settings.button_variant ?? 'primary',
+    size: settings.cta_size ?? settings.button_size ?? 'lg',
+    link_type: settings.cta_link_type ?? settings.button_link_type ?? 'url',
+    target: settings.cta_target ?? settings.button_target ?? '_self',
+    action_modal: settings.cta_action_modal ?? settings.button_action_modal ?? '',
+    iconLeft: settings.cta_icon_left ?? settings.button_icon_left ?? '',
+    iconRight: settings.cta_icon_right ?? settings.button_icon_right ?? '',
+  };
+}
+
+function canonicalizeComponentSettings(settings: Record<string, any>) {
+  const next = { ...(settings || {}) };
+  const introSource = next.introData || next.sectionIntro || next.intro;
+
+  if (introSource && typeof introSource === 'object' && !Array.isArray(introSource)) {
+    next.introData = normalizeSectionIntro(next);
+
+    if ('title' in next && (!hasRenderableValue(next.title) || !hasRenderableValue(next.introData.title) || valuesMatch(next.title, next.introData.title))) {
+      delete next.title;
+    }
+    if ('description' in next && (!hasRenderableValue(next.description) || !hasRenderableValue(next.introData.description) || valuesMatch(next.description, next.introData.description))) {
+      delete next.description;
+    }
+
+    delete next.sectionIntro;
+    delete next.intro;
+  }
+
+  const ctaListKey = CTA_LIST_KEYS.find((key) => Array.isArray(next[key]));
+  if (ctaListKey) {
+    next.ctaList = next[ctaListKey];
+  } else if (
+    SINGLE_BUTTON_TEXT_KEYS.some((key) => hasRenderableValue(next[key])) ||
+    SINGLE_BUTTON_LINK_KEYS.some((key) => hasRenderableValue(next[key]))
+  ) {
+    const legacyCta = normalizeLegacyCta(next);
+    if (hasRenderableValue(legacyCta.label) || hasRenderableValue(legacyCta.href) || hasRenderableValue(legacyCta.action)) {
+      next.ctaList = [legacyCta];
+    }
+  }
+
+  for (const key of CTA_LIST_KEYS) {
+    if (key !== 'ctaList') delete next[key];
+  }
+  for (const key of Object.keys(next)) {
+    if (LEGACY_SINGLE_BUTTON_FIELD_KEYS.has(key)) delete next[key];
+  }
+
+  return next;
+}
+
 function normalizeComponentSettings(settings: Record<string, any>, defaults: Record<string, any> | null) {
   const rest = { ...(settings || {}) };
-  const hasSectionIntro = Boolean(settings?.sectionIntro || settings?.intro);
+  const hasSectionIntro = Boolean(settings?.introData || settings?.sectionIntro || settings?.intro);
   const hasSectionConfig = Boolean(
     settings?.config ||
     settings?.custom_id ||
@@ -131,6 +228,7 @@ function normalizeComponentSettings(settings: Record<string, any>, defaults: Rec
   );
 
   delete rest.intro;
+  delete rest.introData;
   delete rest.sectionIntro;
   delete rest.custom_id;
   delete rest.custom_class;
@@ -147,13 +245,14 @@ function normalizeComponentSettings(settings: Record<string, any>, defaults: Rec
   };
 
   if (hasSectionIntro || !defaults) {
-    migrated.sectionIntro = normalizeSectionIntro(settings || {});
+    migrated.introData = normalizeSectionIntro(settings || {});
   }
   if (hasSectionConfig || !defaults) {
     migrated.config = normalizeSectionConfig(settings || {});
   }
 
-  return defaults ? deepMergeDefaults(defaults, migrated) : migrated;
+  const merged = defaults ? deepMergeDefaults(defaults, migrated) : migrated;
+  return canonicalizeComponentSettings(merged);
 }
 
 // =============================================================================
@@ -202,7 +301,7 @@ function pageBuilderReducer(
         id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: action.componentType,
         order: action.index ?? state.components.length,
-        settings: { ...defaultSettings },
+        settings: canonicalizeComponentSettings(defaultSettings),
         isVisible: true,
       };
 

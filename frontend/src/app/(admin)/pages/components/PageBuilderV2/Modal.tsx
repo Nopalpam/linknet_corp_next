@@ -43,6 +43,10 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
   const { state, saveComponents, clearError, addComponent, moveComponent } = usePageBuilder();
   const { isDirty, isSaving, error } = state;
 
+  // Success toast state
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const saveSuccessTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // DnD state
   const [activeDragLabel, setActiveDragLabel] = useState<string | null>(null);
 
@@ -100,16 +104,19 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
     onClose();
   }, [isDirty, onClose]);
 
-  // Handle save
+  // Handle save — keep modal open, show success toast
   const handleSave = useCallback(async () => {
     try {
       await saveComponents();
       onSaveSuccess();
-      onClose();
+      // Show success toast for 3 seconds, do NOT close modal
+      setSaveSuccess(true);
+      if (saveSuccessTimerRef.current) clearTimeout(saveSuccessTimerRef.current);
+      saveSuccessTimerRef.current = setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       // Error is already set in state
     }
-  }, [saveComponents, onSaveSuccess, onClose]);
+  }, [saveComponents, onSaveSuccess]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -168,6 +175,18 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
+          )}
+
+          {/* Save success toast */}
+          {saveSuccess && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                Saved successfully
+              </span>
             </div>
           )}
 

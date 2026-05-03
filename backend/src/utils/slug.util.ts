@@ -38,6 +38,7 @@ export const ensureUniquePageSlug = async (
         ...(excludePageId && { id: { not: excludePageId } }),
         deletedAt: null,
       },
+      select: { id: true },
     });
 
     if (!existing) {

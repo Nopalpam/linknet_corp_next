@@ -29,6 +29,7 @@ import {
   BUSINESS_SCALE_OPTIONS,
   INDUSTRY_OPTIONS,
 } from '@/data/constants/suggestEnterprise';
+import { submitEnterpriseForm } from '@/lib/formsApi';
 
 const ModalFormSuggestEnterpriseContext = createContext({
   openModal: () => {},
@@ -46,6 +47,20 @@ const STEP_ITEMS = [
   { step: 2, label: 'Business Scale' },
   { step: 3, label: 'Needs' },
 ];
+
+function resolveSubmissionContext(initialPayload = {}) {
+  const url =
+    initialPayload.context?.url ||
+    (typeof window !== 'undefined' ? window.location.href : undefined) ||
+    initialPayload.Page_Website__c;
+
+  return {
+    product: initialPayload.context?.product || initialPayload.Product,
+    promo: initialPayload.context?.promo || initialPayload.Promo_Website__c,
+    source: initialPayload.context?.source || initialPayload.Source_Website__c,
+    url,
+  };
+}
 
 function useModalAnimation(onAfterClose) {
   const overlayRef = useRef(null);
@@ -126,7 +141,7 @@ function useHasMounted() {
   );
 }
 
-function SuggestEnterpriseContent({ onClose }) {
+function SuggestEnterpriseContent({ onClose, initialPayload = {} }) {
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || 'id';
@@ -136,6 +151,7 @@ function SuggestEnterpriseContent({ onClose }) {
   const [selectedIndustry, setSelectedIndustry] = useState(ALL_INDUSTRY_VALUE);
   const [selectedScale, setSelectedScale] = useState(ALL_SCALE_VALUE);
   const [selectedNeeds, setSelectedNeeds] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const deferredIndustrySearch = useDeferredValue(industrySearch);
 
@@ -196,7 +212,7 @@ function SuggestEnterpriseContent({ onClose }) {
     goToStep(currentStep - 1);
   }, [currentStep, goToStep]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const query = new URLSearchParams();
 
     if (selectedIndustry && selectedIndustry !== ALL_INDUSTRY_VALUE) {
@@ -211,10 +227,30 @@ function SuggestEnterpriseContent({ onClose }) {
       query.append('needs', need);
     });
 
+    setIsSubmitting(true);
+
+    try {
+      await submitEnterpriseForm('suggest_enterprise', {
+        locale,
+        fields: {
+          selectedIndustry,
+          selectedScale,
+          selectedNeeds,
+        },
+        context: resolveSubmissionContext(initialPayload),
+        groups: [],
+        files: [],
+      });
+    } catch (error) {
+      console.error('[ModalFormSuggestEnterprise] Failed to store solution finder submission:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+
     const queryString = query.toString();
     router.push(`/${locale}/solutions${queryString ? `?${queryString}` : ''}`);
     onClose();
-  }, [locale, onClose, router, selectedIndustry, selectedNeeds, selectedScale]);
+  }, [initialPayload, locale, onClose, router, selectedIndustry, selectedNeeds, selectedScale]);
 
   const renderIndustryStep = () => (
     <div className="flex flex-col gap-8">
@@ -338,14 +374,14 @@ function SuggestEnterpriseContent({ onClose }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/icons/lamp-colors.svg"
-              alt="Suggest Enterprise"
+              alt="Solution Finder"
               className="h-6 w-6 shrink-0 rounded-full object-cover"
             />
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close suggest enterprise modal"
+            aria-label="Close solution finder modal"
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
           >
             <Icon name="close" style={{ '--icon-size': '24px' }} />
@@ -367,7 +403,7 @@ function SuggestEnterpriseContent({ onClose }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/icons/lamp-colors.svg"
-              alt="Suggest Enterprise"
+              alt="Solution Finder"
               className="h-6 w-6 shrink-0 rounded-full object-cover"
             />
           </div>
@@ -383,7 +419,7 @@ function SuggestEnterpriseContent({ onClose }) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close suggest enterprise modal"
+            aria-label="Close solution finder modal"
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center justify-self-end rounded-full text-black transition-colors duration-200 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
           >
             <Icon name="close" style={{ '--icon-size': '24px' }} />
@@ -419,9 +455,10 @@ function SuggestEnterpriseContent({ onClose }) {
             variant="warning"
             size="lg"
             onClick={currentStep === STEP_ITEMS.length ? handleSubmit : handleNext}
+            disabled={isSubmitting}
             className="!rounded-full !px-8 md:!px-12"
           >
-            {currentStep === STEP_ITEMS.length ? 'Find a Solutions' : 'Next'}
+            {currentStep === STEP_ITEMS.length ? (isSubmitting ? 'Saving...' : 'Find Solutions') : 'Next'}
           </Button>
         </div>
       </footer>
@@ -429,7 +466,7 @@ function SuggestEnterpriseContent({ onClose }) {
   );
 }
 
-function ModalFormSuggestEnterprise({ onAfterClose }) {
+function ModalFormSuggestEnterprise({ onAfterClose, initialPayload }) {
   const { overlayRef, panelRef, animateOut } = useModalAnimation(onAfterClose);
 
   useEscapeKey(animateOut);
@@ -439,7 +476,7 @@ function ModalFormSuggestEnterprise({ onAfterClose }) {
       ref={overlayRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Suggest enterprise solutions"
+      aria-label="Solution Finder"
       className="fixed inset-0 z-[var(--z-modal)] bg-black/40"
       suppressHydrationWarning
     >
@@ -454,7 +491,7 @@ function ModalFormSuggestEnterprise({ onAfterClose }) {
         className="lnModalForm__panel absolute left-1/2 top-1/2 flex w-[850px] max-w-[calc(100vw-24px)] max-h-[90vh] md:max-h-[650px] -translate-x-1/2 -translate-y-1/2 overflow-hidden bg-transparent will-change-transform"
         suppressHydrationWarning
       >
-        <SuggestEnterpriseContent onClose={animateOut} />
+        <SuggestEnterpriseContent onClose={animateOut} initialPayload={initialPayload} />
       </div>
     </div>,
     document.body
@@ -467,21 +504,24 @@ export function useModalFormSuggestEnterprise() {
 
 export default function ModalFormSuggestEnterpriseProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [modalPayload, setModalPayload] = useState({});
   const hasMounted = useHasMounted();
 
-  const openModal = useCallback(() => {
+  const openModal = useCallback((payload = {}) => {
+    setModalPayload(payload);
     setIsOpen(true);
   }, []);
 
   const closeModal = useCallback(() => {
     setIsOpen(false);
+    setModalPayload({});
   }, []);
 
   return (
     <ModalFormSuggestEnterpriseContext.Provider value={{ openModal, closeModal }}>
       {children}
       {hasMounted && isOpen ? (
-        <ModalFormSuggestEnterprise onAfterClose={closeModal} />
+        <ModalFormSuggestEnterprise onAfterClose={closeModal} initialPayload={modalPayload} />
       ) : null}
     </ModalFormSuggestEnterpriseContext.Provider>
   );

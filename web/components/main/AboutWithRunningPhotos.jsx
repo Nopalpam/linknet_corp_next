@@ -95,6 +95,11 @@ export default function AboutWithRunningPhotos({
             {duplicatedPhotos.map((photo, index) => {
               // Ambil rotasi secara bergantian berdasarkan index
               const rotateClass = rotations[index % rotations.length];
+              // Support both plain string and CMS object { url, alt }
+              const photoUrl = typeof photo === 'object' && photo !== null ? photo.url : photo;
+              const photoAlt = typeof photo === 'object' && photo !== null
+                ? (photo.alt || `Linknet Activity ${index + 1}`)
+                : `Linknet Activity ${index + 1}`;
 
               return (
                 <div
@@ -105,8 +110,8 @@ export default function AboutWithRunningPhotos({
                   <div className="bg-white p-2 pb-8 md:p-3 md:pb-12 shadow-lg rounded-sm w-[240px] md:w-[320px]">
                     <div className="w-full aspect-[4/3] bg-neutral-100 overflow-hidden">
                       <img
-                        src={photo}
-                        alt={`Linknet Activity ${index}`}
+                        src={photoUrl}
+                        alt={photoAlt}
                         className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-500"
                         loading="lazy"
                       />

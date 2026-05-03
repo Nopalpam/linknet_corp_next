@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 import SearchFilterBar from '@/components/base/SearchFilterBar';
 import ReportListPart from '@/components/main/ReportListPart';
+import Intro from '@/components/base/section/Intro';
 import { REPORT_LIST_DATA } from '@/data/components/reportList';
 
 function transformMainData(mainData) {
@@ -49,9 +50,12 @@ export default function ReportListPage({
 
   // Kategori data yang ingin diambil
   name = "financial-statement",
+  cmsData = null,
   mainData = null,
   className = '',
 }) {
+  const source = cmsData || {};
+  const introData = source.introData || source.sectionIntro || source.intro || null;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -62,16 +66,19 @@ export default function ReportListPage({
     bgImageMobile = '',
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
-  } = REPORT_LIST_DATA.config || {};
+  } = { ...(REPORT_LIST_DATA.config || {}), ...(source.config || {}) };
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
   const rawData = useMemo(() => {
-    const transformed = transformMainData(mainData);
-    return transformed && transformed.length > 0 ? transformed : (REPORT_LIST_DATA[name] || []);
-  }, [mainData, name]);
+    const transformed = transformMainData(mainData || source.mainData);
+    const cmsItems = source.items || source.list || source.reports;
+    if (transformed && transformed.length > 0) return transformed;
+    if (Array.isArray(cmsItems) && cmsItems.length > 0) return cmsItems;
+    return REPORT_LIST_DATA[name] || [];
+  }, [mainData, source, name]);
 
   // 1. Ambil state currentPage dari URL Parameter (?page=x)
   const pageParam = searchParams.get('page');
@@ -235,9 +242,22 @@ export default function ReportListPage({
     >
       <div className="container">
 
+        {introData && (introData.label || introData.title || introData.description) && (
+          <div className="mb-8 md:mb-10">
+            <Intro
+              as={introData.as || 'h2'}
+              label={introData.label}
+              title={introData.title}
+              description={introData.description}
+              align={introData.align || 'left'}
+            />
+          </div>
+        )}
+
         {/* ========================================= */}
         {/* GLOBAL SEARCH & FILTER BAR */}
         {/* ========================================= */}
+        {source.show_search !== false && (
         <div className="mb-4">
           <SearchFilterBar
             searchPlaceholder="Search document titles..."
@@ -248,6 +268,7 @@ export default function ReportListPage({
             onFilterChange={handleFilterChange}
           />
         </div>
+        )}
 
         {/* ========================================= */}
         {/* LIST RENDERER (PAGINATED) */}

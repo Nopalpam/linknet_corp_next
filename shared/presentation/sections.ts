@@ -1,5 +1,6 @@
 import type { SharedCtaItem } from './content';
-import type { PresentationFieldResolver, SharedIntroData } from './solutions';
+import { buildSharedIntroData } from './intro';
+import type { PresentationFieldResolver, SharedIntroData } from './intro';
 
 type SectionPresentationOptions = {
   resolveField: PresentationFieldResolver;
@@ -17,6 +18,11 @@ export type UspGridPresentation = {
   introData: SharedIntroData;
   uspVariant: string;
   isSlider: boolean;
+  layoutVariant: string;
+  image?: {
+    src?: string;
+    alt?: string;
+  };
   bgColor: string;
   bgImage?: string;
   bgImageMobile?: string;
@@ -48,46 +54,6 @@ export type BusinessTabPresentation = {
   items: SharedBusinessTabItem[];
 };
 
-function buildIntroData(
-  data: Record<string, any> | undefined,
-  resolveField: PresentationFieldResolver,
-  introData?: SharedIntroData
-): SharedIntroData {
-  if (introData) {
-    return introData;
-  }
-
-  const introSource = data?.sectionIntro || data?.intro;
-  const hasIntroContent = Boolean(
-    resolveField(introSource, 'label') ||
-    resolveField(introSource, 'title') ||
-    resolveField(introSource, 'description')
-  );
-
-  if (introSource && typeof introSource === 'object' && hasIntroContent) {
-    return {
-      as: typeof introSource.as === 'string' && introSource.as ? introSource.as : 'h2',
-      label: resolveField(introSource, 'label'),
-      title: resolveField(introSource, 'title'),
-      description: resolveField(introSource, 'description'),
-      align: typeof introSource.align === 'string' && introSource.align ? introSource.align : 'left',
-      fluid: Boolean(introSource.fluid),
-      labelClassName: typeof introSource.labelClassName === 'string' ? introSource.labelClassName : '',
-      titleClassName: typeof introSource.titleClassName === 'string' ? introSource.titleClassName : '',
-      descriptionClassName: typeof introSource.descriptionClassName === 'string' ? introSource.descriptionClassName : '',
-      className: typeof introSource.className === 'string' ? introSource.className : '',
-    };
-  }
-
-  return {
-    as: 'h2',
-    label: resolveField(data, 'label') || resolveField(data, 'intro_label'),
-    title: resolveField(data, 'title') || resolveField(data, 'intro_title') || resolveField(data, 'name'),
-    description: resolveField(data, 'description') || resolveField(data, 'intro_description') || resolveField(data, 'content'),
-    align: typeof data?.intro_align === 'string' && data.intro_align ? data.intro_align : 'left',
-  };
-}
-
 function mapCtaList(
   ctaItems: any,
   resolveField: PresentationFieldResolver,
@@ -96,10 +62,20 @@ function mapCtaList(
   return Array.isArray(ctaItems)
     ? ctaItems.map((cta: Record<string, any>, index: number) => ({
         id: cta.id || `${prefix}-cta-${index}`,
-        text: resolveField(cta, 'text'),
-        href: (typeof cta.href === 'string' && cta.href) || (typeof cta.url === 'string' && cta.url) || '#',
+        label: resolveField(cta, 'label') || resolveField(cta, 'text'),
+        text: resolveField(cta, 'label') || resolveField(cta, 'text'),
+        href: (typeof cta.href === 'string' && cta.href) || (typeof cta.url === 'string' && cta.url) || (typeof cta.action === 'string' && cta.action) || '#',
         variant: typeof cta.variant === 'string' ? cta.variant : 'primary',
         size: typeof cta.size === 'string' ? cta.size : 'lg',
+        icon: typeof cta.icon === 'string' ? cta.icon : '',
+        iconLeft: typeof cta.iconLeft === 'string' ? cta.iconLeft : (typeof cta.icon_left === 'string' ? cta.icon_left : ''),
+        iconRight: typeof cta.iconRight === 'string' ? cta.iconRight : (typeof cta.icon_right === 'string' ? cta.icon_right : ''),
+        linkType: typeof cta.linkType === 'string'
+          ? cta.linkType
+          : (typeof cta.link_type === 'string' ? cta.link_type : (typeof cta.action === 'string' && cta.action ? 'action-modal' : 'url')),
+        action: typeof cta.action === 'string' ? cta.action : '',
+        actionModal: typeof cta.actionModal === 'string' ? cta.actionModal : (typeof cta.action_modal === 'string' ? cta.action_modal : (typeof cta.action === 'string' ? cta.action : '')),
+        target: typeof cta.target === 'string' ? cta.target : undefined,
       }))
     : [];
 }
@@ -111,9 +87,22 @@ export function mapUspGridPresentation(
   const { resolveField, introData } = options;
 
   return {
-    introData: buildIntroData(data, resolveField, introData),
-    uspVariant: typeof data?.usp_variant === 'string' && data.usp_variant ? data.usp_variant : 'card',
-    isSlider: data?.is_slider !== undefined ? Boolean(data.is_slider) : false,
+    introData: buildSharedIntroData(data, resolveField, introData),
+    uspVariant: typeof data?.config?.usp?.variant === 'string' && data.config.usp.variant
+      ? data.config.usp.variant
+      : (typeof data?.usp_variant === 'string' && data.usp_variant ? data.usp_variant : 'default'),
+    isSlider: data?.config?.usp?.isSlider !== undefined
+      ? Boolean(data.config.usp.isSlider)
+      : (data?.is_slider !== undefined ? Boolean(data.is_slider) : false),
+    layoutVariant: typeof data?.config?.layoutVariant === 'string' && data.config.layoutVariant
+      ? data.config.layoutVariant
+      : (typeof data?.layoutVariant === 'string' && data.layoutVariant
+        ? data.layoutVariant
+        : (typeof data?.layout_variant === 'string' && data.layout_variant ? data.layout_variant : 'default')),
+    image: {
+      src: typeof data?.config?.image?.src === 'string' ? data.config.image.src : (typeof data?.image?.src === 'string' ? data.image.src : ''),
+      alt: typeof data?.config?.image?.alt === 'string' ? data.config.image.alt : (typeof data?.image?.alt === 'string' ? data.image.alt : ''),
+    },
     bgColor: typeof data?.bg_color === 'string' ? data.bg_color : '',
     bgImage: typeof data?.config?.bgImage === 'string' && data.config.bgImage ? data.config.bgImage : (typeof data?.bg_image === 'string' && data.bg_image ? data.bg_image : undefined),
     bgImageMobile: typeof data?.config?.bgImageMobile === 'string' && data.config.bgImageMobile ? data.config.bgImageMobile : (typeof data?.bg_image_mobile === 'string' && data.bg_image_mobile ? data.bg_image_mobile : undefined),
@@ -122,16 +111,19 @@ export function mapUspGridPresentation(
     uspList: Array.isArray(data?.items)
       ? data.items.map((item: Record<string, any>, index: number) => ({
           id: item.id || `usp-item-${index}`,
-          iconURL: typeof item.icon === 'string' ? item.icon : undefined,
+          iconURL: (typeof item.iconURL === 'string' && item.iconURL)
+            || (typeof item.iconUrl === 'string' && item.iconUrl)
+            || (typeof item.icon_url === 'string' && item.icon_url)
+            || (typeof item.icon === 'string' ? item.icon : undefined),
           title: resolveField(item, 'title'),
           description: resolveField(item, 'description'),
         }))
       : [],
-    ctaList: mapCtaList(data?.cta_list, resolveField, 'usp-grid'),
-    slidesPerViewDesktop: data?.slides_per_view_desktop ?? 4,
-    slidesPerViewMobile: data?.slides_per_view_mobile ?? 1.2,
-    gridColsDesktop: data?.grid_cols_desktop ?? 4,
-    gridColsMobile: data?.grid_cols_mobile ?? 1,
+    ctaList: mapCtaList(data?.cta_list || data?.ctaList, resolveField, 'usp-grid'),
+    slidesPerViewDesktop: data?.config?.usp?.slidesPerViewDesktop ?? data?.slides_per_view_desktop ?? 4,
+    slidesPerViewMobile: data?.config?.usp?.slidesPerViewMobile ?? data?.slides_per_view_mobile ?? 1.2,
+    gridColsDesktop: data?.config?.usp?.gridColsDesktop ?? data?.grid_cols_desktop ?? 4,
+    gridColsMobile: data?.config?.usp?.gridColsMobile ?? data?.grid_cols_mobile ?? 1,
   };
 }
 
@@ -142,7 +134,7 @@ export function mapBusinessTabPresentation(
   const { resolveField, introData } = options;
 
   return {
-    introData: buildIntroData(data, resolveField, introData),
+    introData: buildSharedIntroData(data, resolveField, introData),
     items: Array.isArray(data?.tabs)
       ? data.tabs.map((tab: Record<string, any>, index: number) => ({
           id: tab.id || `tab-${index}`,

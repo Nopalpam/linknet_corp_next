@@ -6,17 +6,28 @@ const prisma = new PrismaClient();
 const pageListSelect = {
   id: true,
   title: true,
+  titleEn: true,
+  titleId: true,
   slug: true,
   template: true,
   metaTitle: true,
   metaDescription: true,
   metaKeywords: true,
+  metaThumbnail: true,
   ogImage: true,
+  product: true,
+  promo: true,
+  source: true,
+  noindex: true,
+  nofollow: true,
+  showNavbar: true,
+  showFooter: true,
   status: true,
   publishedAt: true,
   createdAt: true,
   updatedAt: true,
   createdBy: { select: { id: true, firstName: true, lastName: true } },
+  updatedBy: { select: { id: true, firstName: true, lastName: true, email: true, username: true } },
   _count: { select: { components: true } },
 } satisfies Prisma.PageSelect;
 
@@ -37,10 +48,7 @@ const pageDetailSelect = {
   },
 } satisfies Prisma.PageSelect;
 
-const normalizePageResponse = <T extends Record<string, unknown>>(page: T) => ({
-  ...page,
-  updatedBy: null,
-});
+const normalizePageResponse = <T extends Record<string, unknown>>(page: T) => page;
 
 const parsePageStatus = (status?: string): PageStatus | undefined => {
   if (!status) return undefined;
@@ -48,6 +56,15 @@ const parsePageStatus = (status?: string): PageStatus | undefined => {
     ? (status as PageStatus)
     : undefined;
 };
+
+const normalizeSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 
 export class PageService {
   /**
@@ -83,55 +100,125 @@ export class PageService {
    * Get page by ID with components
    */
   async getPageById(id: string) {
-    const page = await prisma.page.findUnique({
-      where: { id },
+    const page = await prisma.page.findFirst({
+      where: { id, deletedAt: null },
       select: pageDetailSelect,
     });
     if (!page) throw new AppError('Page not found', 404);
     return normalizePageResponse(page);
   }
 
-  async getPageHistory(id: string, limit = 50) {
-    const page = await prisma.page.findUnique({
-      where: { id },
+  async getPageHistory(id: string, page = 1, perPage = 10) {
+    const pageRecord = await prisma.page.findFirst({
+      where: { id, deletedAt: null },
       select: { id: true },
     });
 
-    if (!page) throw new AppError('Page not found', 404);
+    if (!pageRecord) throw new AppError('Page not found', 404);
 
-    return await prisma.logActivity.findMany({
-      where: {
-        module: 'pages',
-        recordId: id,
-        deletedAt: null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            username: true,
-            firstName: true,
-            lastName: true,
+    const where = {
+      module: 'pages',
+      recordId: id,
+      deletedAt: null,
+    };
+
+    const safePerPage = Math.min(Math.max(perPage, 1), 100);
+    const safePage = Math.max(page, 1);
+
+    const [total, data] = await Promise.all([
+      prisma.logActivity.count({ where }),
+      prisma.logActivity.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
           },
         },
+        orderBy: { createdAt: 'desc' },
+        skip: (safePage - 1) * safePerPage,
+        take: safePerPage,
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: safePage,
+        perPage: safePerPage,
+        totalPages: Math.ceil(total / safePerPage),
       },
-      orderBy: { createdAt: 'desc' },
-      take: Math.min(Math.max(limit, 1), 100),
+    };
+  }
+
+  async checkSlugAvailability(slug: string, excludeId?: string) {
+    const normalizedSlug = normalizeSlug(slug);
+    if (!normalizedSlug) throw new AppError('Slug is required', 400);
+
+    const existing = await prisma.page.findFirst({
+      where: {
+        slug: normalizedSlug,
+        deletedAt: null,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true, slug: true },
     });
+
+    return {
+      slug: normalizedSlug,
+      available: !existing,
+    };
   }
 
   /**
    * Get page by Slug for public rendering
    */
   async getPageBySlug(slug: string) {
-    const page = await prisma.page.findUnique({
-      where: { slug },
-      include: {
+    const page = await prisma.page.findFirst({
+      where: { slug, deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        titleEn: true,
+        titleId: true,
+        slug: true,
+        template: true,
+        metaTitle: true,
+        metaDescription: true,
+        metaKeywords: true,
+        metaThumbnail: true,
+        ogImage: true,
+        product: true,
+        promo: true,
+        source: true,
+        noindex: true,
+        nofollow: true,
+        showNavbar: true,
+        showFooter: true,
+        status: true,
+        publishedAt: true,
+        createdAt: true,
+        updatedAt: true,
         components: {
           where: { isVisible: true },
-          orderBy: { order: 'asc' }
-        }
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            pageId: true,
+            type: true,
+            data: true,
+            order: true,
+            isVisible: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       }
     });
     return page;
@@ -142,19 +229,32 @@ export class PageService {
    */
   async createPage(userId: string, data: any) {
     // Validate slug uniqueness
-    const existing = await prisma.page.findUnique({ where: { slug: data.slug } });
+    const existing = await prisma.page.findUnique({
+      where: { slug: data.slug },
+      select: { id: true },
+    });
     if (existing) throw new AppError('Slug already exists', 400);
 
     return await prisma.page.create({
       data: {
         title: data.title,
+        titleEn: data.titleEn ?? data.title,
+        titleId: data.titleId,
         slug: data.slug,
         status: data.status || PageStatus.DRAFT,
         template: data.template || PageTemplate.DEFAULT,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         metaKeywords: data.metaKeywords,
+        metaThumbnail: data.metaThumbnail,
         ogImage: data.ogImage,
+        product: data.product,
+        promo: data.promo,
+        source: data.source,
+        noindex: data.noindex ?? false,
+        nofollow: data.nofollow ?? false,
+        showNavbar: data.showNavbar ?? true,
+        showFooter: data.showFooter ?? true,
         publishedAt: data.status === PageStatus.PUBLISHED ? new Date() : null,
         createdById: userId,
       },
@@ -165,10 +265,13 @@ export class PageService {
   /**
    * Update page metadata
    */
-  async updatePage(id: string, data: any) {
+  async updatePage(id: string, data: any, userId?: string) {
     // Check slug uniqueness if changed
     if (data.slug) {
-        const existing = await prisma.page.findUnique({ where: { slug: data.slug } });
+        const existing = await prisma.page.findUnique({
+          where: { slug: data.slug },
+          select: { id: true },
+        });
         if (existing && existing.id !== id) throw new AppError('Slug already exists', 400);
     }
 
@@ -176,14 +279,25 @@ export class PageService {
       where: { id },
       data: {
         title: data.title,
+        titleEn: data.titleEn,
+        titleId: data.titleId,
         slug: data.slug,
         status: data.status,
         template: data.template,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         metaKeywords: data.metaKeywords,
+        metaThumbnail: data.metaThumbnail,
         ogImage: data.ogImage,
+        product: data.product,
+        promo: data.promo,
+        source: data.source,
+        noindex: data.noindex,
+        nofollow: data.nofollow,
+        showNavbar: data.showNavbar,
+        showFooter: data.showFooter,
         publishedAt: data.status === PageStatus.PUBLISHED ? new Date() : data.status === PageStatus.DRAFT ? null : undefined,
+        updatedById: userId,
         updatedAt: new Date()
       },
       select: pageDetailSelect,
@@ -194,7 +308,10 @@ export class PageService {
    * Delete page
    */
   async deletePage(id: string) {
-    return await prisma.page.delete({ where: { id } });
+    return await prisma.page.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   /**
@@ -211,7 +328,10 @@ export class PageService {
    */
   async savePageComponents(pageId: string, components: any[]) {
     // Verify page exists
-    const page = await prisma.page.findUnique({ where: { id: pageId } });
+    const page = await prisma.page.findUnique({
+      where: { id: pageId },
+      select: { id: true },
+    });
     if (!page) throw new AppError('Page not found', 404);
 
     console.log('📦 Saving page components:', {

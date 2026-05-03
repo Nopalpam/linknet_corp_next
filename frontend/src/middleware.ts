@@ -17,7 +17,7 @@ const PUBLIC_ROUTES = [
  * Token validity is handled in AuthContext via the backend.
  */
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   const token = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
   const isAuthenticated = !!token;
@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
 
   if (!isAuthenticated && !isPublicRoute) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
+    loginUrl.searchParams.set('from', `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);
   }
 

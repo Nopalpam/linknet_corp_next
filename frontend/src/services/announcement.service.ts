@@ -5,6 +5,11 @@
  */
 
 import { BaseService } from './base.service';
+import {
+  createSessionExpiredError,
+  dispatchSessionExpired,
+  isUnauthorizedOrExpired,
+} from "@/lib/sessionExpired";
 
 // ============================================
 // TYPES
@@ -408,6 +413,11 @@ class AnnouncementService extends BaseService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+      if (isUnauthorizedOrExpired(response.status, errorData)) {
+        dispatchSessionExpired({ status: response.status, error: errorData, url: this.getApiUrl('/filemanager/upload') });
+        throw createSessionExpiredError(errorData);
+      }
+
       throw new Error(errorData.message || 'Upload failed');
     }
 

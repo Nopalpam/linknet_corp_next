@@ -3,6 +3,12 @@
  * Provides generic methods for CRUD operations with server-side pagination
  */
 
+import {
+  createSessionExpiredError,
+  dispatchSessionExpired,
+  isUnauthorizedOrExpired,
+} from "@/lib/sessionExpired";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // ✅ FIX: Use same token key as BaseService
@@ -124,6 +130,11 @@ export class BaseCrudService<T> {
         statusText: response.statusText,
         error: error
       });
+      if (isUnauthorizedOrExpired(response.status, error)) {
+        dispatchSessionExpired({ status: response.status, error, url });
+        throw createSessionExpiredError(error);
+      }
+
       // Handle nested backend error format: { error: { code, message } }
       const message =
         error.message ||

@@ -29,7 +29,7 @@ import CoverageCheckInput, {
   COVERAGE_MODE,
   resolveManualLabels,
 } from "../forms/CoverageCheckInput";
-import { useFormSubmission } from '@/components/hooks/useFormSubmission';
+import { submitEnterpriseForm } from '@/lib/formsApi';
 import "swiper/css";
 
 const ModalFormRegistrationEnterpriseSMBContext = createContext({
@@ -165,6 +165,7 @@ const INITIAL_MODAL_PAYLOAD = {
   internetService: "",
   site_id: "",
   address: "",
+  context: undefined,
 };
 
 const FORM_ERROR_MESSAGES = {
@@ -185,6 +186,20 @@ const FORM_ERROR_MESSAGES = {
 
 function createInitialForm(overrides = {}) {
   return { ...INITIAL_FORM, ...overrides };
+}
+
+function resolveSubmissionContext(initialPayload = {}) {
+  const url =
+    initialPayload.context?.url ||
+    (typeof window !== 'undefined' ? window.location.href : undefined) ||
+    initialPayload.Page_Website__c;
+
+  return {
+    product: initialPayload.context?.product || initialPayload.Product,
+    promo: initialPayload.context?.promo || initialPayload.Promo_Website__c,
+    source: initialPayload.context?.source || initialPayload.Source_Website__c,
+    url,
+  };
 }
 
 function buildInstallationAddress(form, coverageMode) {
@@ -1001,17 +1016,15 @@ function RegistrationFormContent({ onClose, initialPayload }) {
   const router = useRouter();
   const locale = params?.locale || 'id';
 
-  const { submit } = useFormSubmission('enterprise', 'enterprise-smb-registration');
-
   const handleActualSubmit = useCallback(
-    async (form) => submit({
+    async (form) => submitEnterpriseForm('smb_enterprise', {
       locale,
-      sourcePath: typeof window !== 'undefined' ? window.location.pathname : undefined,
-      values: form,
+      fields: form,
+      context: resolveSubmissionContext(initialPayload),
       groups: [],
       files: [],
     }),
-    [locale, submit],
+    [initialPayload, locale],
   );
 
   const {
@@ -1177,6 +1190,11 @@ export default function ModalFormRegistrationEnterpriseSMBProvider({ children })
       internetService: payload.internetService || "",
       site_id: payload.site_id || "",
       address: payload.address || "",
+      Product: payload.Product,
+      Promo_Website__c: payload.Promo_Website__c,
+      Page_Website__c: payload.Page_Website__c,
+      Source_Website__c: payload.Source_Website__c,
+      context: payload.context,
     });
     setIsOpen(true);
   }, []);

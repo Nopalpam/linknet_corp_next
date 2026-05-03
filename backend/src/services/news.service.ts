@@ -3,6 +3,7 @@ import { AppError } from '../types/error.types';
 import slugify from 'slugify';
 import { sanitizeHtmlContent } from '../utils/htmlSanitizer';
 import { v4 as uuidv4 } from 'uuid';
+import { SettingsService } from './settings.service';
 
 const prisma = new PrismaClient();
 
@@ -21,18 +22,23 @@ export interface NewsQueryParams {
 export interface CreateNewsData {
   title_en: string;
   title_id?: string;
+  slug?: string;
   news_date: Date | string;
   news_thumbnail?: string;
   excerpt_en?: string;
   excerpt_id?: string;
   content_en: string;
   content_id?: string;
-  news_link?: string;
+  author?: string;
   category_id?: string;
+  meta_title?: string;
+  meta_description?: string;
   meta_keywords?: string;
   custom_css?: string;
   custom_js?: string;
   status?: string;
+  visibility?: string;
+  published_at?: Date | string | null;
 }
 
 export interface UpdateNewsData extends Partial<CreateNewsData> {}
@@ -88,6 +94,93 @@ const NEWS_SORT_FIELD_MAP: Record<string, string> = {
   status: 'status',
 };
 
+function normalizeSlug(value: string) {
+  return slugify(value, { lower: true, strict: true, trim: true });
+}
+
+function coalesceText(value?: string | null, fallback?: string | null) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (trimmed) return trimmed;
+  const fallbackTrimmed = typeof fallback === 'string' ? fallback.trim() : '';
+  return fallbackTrimmed || null;
+}
+
+async function getConfiguredTimezone() {
+  const timezone = await SettingsService.getSettingValue('timezone');
+  return typeof timezone === 'string' && timezone.trim() ? timezone.trim() : 'Asia/Jakarta';
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const zonedUtc = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second)
+  );
+
+  return zonedUtc - date.getTime();
+}
+
+function localDateTimeToUtc(value: string, timeZone: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return new Date(value);
+
+  const [, year, month, day, hour, minute, second = '0'] = match;
+  const localAsUtc = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second)
+  );
+  let utcDate = new Date(localAsUtc - getTimeZoneOffsetMs(new Date(localAsUtc), timeZone));
+  const correctedOffset = getTimeZoneOffsetMs(utcDate, timeZone);
+  utcDate = new Date(localAsUtc - correctedOffset);
+  return utcDate;
+}
+
+function parseScheduledDate(value: Date | string | null | undefined, timeZone: string) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(trimmed)) {
+    return new Date(trimmed);
+  }
+
+  return localDateTimeToUtc(trimmed, timeZone);
+}
+
+async function getDatabaseNow() {
+  const rows = await prisma.$queryRaw<{ now: Date }[]>`SELECT CURRENT_TIMESTAMP AS now`;
+  return rows[0]?.now || new Date();
+}
+
+function publicNewsWhere(now: Date): Prisma.newsWhereInput {
+  return {
+    status: 'PUBLISHED',
+    visibility: 'PUBLIC',
+    deleted_at: null,
+    AND: [{ OR: [{ published_at: null }, { published_at: { lte: now } }] }],
+  };
+}
+
 export class NewsService {
   // Get news with pagination (CMS)
   async getNews(params: NewsQueryParams) {
@@ -127,7 +220,7 @@ export class NewsService {
         where,
         include: {
           news_categories: {
-            select: { id: true, name_en: true, slug: true },
+            select: { id: true, name_en: true, name_id: true, slug: true },
           },
         },
         skip,
@@ -162,10 +255,7 @@ export class NewsService {
     const sortBy = NEWS_SORT_FIELD_MAP[rawSortBy] || 'news_date';
     const skip = (page - 1) * limit;
 
-    const where: Prisma.newsWhereInput = {
-      status: 'PUBLISHED',
-      deleted_at: null,
-    };
+    const where: Prisma.newsWhereInput = publicNewsWhere(await getDatabaseNow());
 
     if (category_id !== undefined) {
       where.category_id = category_id;
@@ -187,7 +277,7 @@ export class NewsService {
         where,
         include: {
           news_categories: {
-            select: { id: true, name_en: true, slug: true },
+            select: { id: true, name_en: true, name_id: true, slug: true },
           },
         },
         skip,
@@ -219,9 +309,9 @@ export class NewsService {
     }
 
     const skip = (page - 1) * limit;
+    const now = await getDatabaseNow();
     const where: Prisma.newsWhereInput = {
-      status: 'PUBLISHED',
-      deleted_at: null,
+      ...publicNewsWhere(now),
       category_id: category.id,
     };
 
@@ -230,7 +320,7 @@ export class NewsService {
         where,
         include: {
           news_categories: {
-            select: { id: true, name_en: true, slug: true },
+            select: { id: true, name_en: true, name_id: true, slug: true },
           },
         },
         skip,
@@ -253,12 +343,18 @@ export class NewsService {
 
   // Get highlighted news
   async getHighlightedNews(limit = 5) {
+    const now = await getDatabaseNow();
     const highlights = await prisma.news_highlights.findMany({
+      where: {
+        news: {
+          is: publicNewsWhere(now),
+        },
+      },
       include: {
         news: {
           include: {
             news_categories: {
-              select: { id: true, name_en: true, slug: true },
+              select: { id: true, name_en: true, name_id: true, slug: true },
             },
           },
         },
@@ -267,9 +363,7 @@ export class NewsService {
       take: limit,
     });
 
-    return serializeHighlights(
-      highlights.filter((h: any) => h.news.status === 'PUBLISHED')
-    );
+    return serializeHighlights(highlights);
   }
 
   // Get single news by ID (CMS)
@@ -298,7 +392,15 @@ export class NewsService {
       },
     });
 
-    if (!newsItem || newsItem.status !== 'PUBLISHED') {
+    const now = await getDatabaseNow();
+    const publishedAt = newsItem?.published_at ? new Date(newsItem.published_at).getTime() : null;
+    if (
+      !newsItem ||
+      newsItem.status !== 'PUBLISHED' ||
+      newsItem.visibility !== 'PUBLIC' ||
+      newsItem.deleted_at ||
+      (publishedAt !== null && publishedAt > now.getTime())
+    ) {
       throw new AppError('News not found', 404);
     }
 
@@ -307,6 +409,26 @@ export class NewsService {
     }
 
     return serializeNews(newsItem);
+  }
+
+  async checkSlugAvailability(slug: string, excludeId?: string) {
+    const normalizedSlug = normalizeSlug(slug);
+    if (!normalizedSlug) {
+      throw new AppError('Slug is required', 400);
+    }
+
+    const existing = await prisma.news.findFirst({
+      where: {
+        slug: normalizedSlug,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true, slug: true },
+    });
+
+    return {
+      slug: normalizedSlug,
+      available: !existing,
+    };
   }
 
   // Track news view
@@ -343,6 +465,7 @@ export class NewsService {
 
   // Create news
   async createNews(data: CreateNewsData, userId: string) {
+    const timezone = await getConfiguredTimezone();
     if (data.category_id) {
       const category = await prisma.news_categories.findUnique({
         where: { id: data.category_id },
@@ -352,7 +475,11 @@ export class NewsService {
       }
     }
 
-    const baseSlug = slugify(data.title_en, { lower: true, strict: true });
+    const requestedSlug = data.slug || data.title_en;
+    const baseSlug = normalizeSlug(requestedSlug);
+    if (!baseSlug) {
+      throw new AppError('Slug is required', 400);
+    }
     let slug = baseSlug;
     let counter = 1;
 
@@ -362,24 +489,37 @@ export class NewsService {
     }
 
     const now = new Date();
+    const publishedAt = data.published_at
+      ? parseScheduledDate(data.published_at, timezone)
+      : data.status === 'DRAFT'
+        ? null
+        : now;
+    const newsDate = data.news_date
+      ? new Date(data.news_date)
+      : publishedAt || now;
     const newsItem = await prisma.news.create({
       data: {
         id: uuidv4(),
         title_en: data.title_en,
         title_id: data.title_id,
         slug,
-        news_date: new Date(data.news_date),
+        news_date: newsDate,
         news_thumbnail: data.news_thumbnail,
         excerpt_en: data.excerpt_en ? sanitizeHtmlContent(data.excerpt_en) : undefined,
         excerpt_id: data.excerpt_id ? sanitizeHtmlContent(data.excerpt_id) : undefined,
         content_en: sanitizeHtmlContent(data.content_en),
         content_id: data.content_id ? sanitizeHtmlContent(data.content_id) : undefined,
-        news_link: data.news_link,
+        author: data.author,
         category_id: data.category_id || '',
+        meta_title: coalesceText(data.meta_title, data.title_en),
+        meta_description: coalesceText(data.meta_description, data.excerpt_en),
+        meta_desc: coalesceText(data.meta_description, data.excerpt_en),
         meta_keywords: data.meta_keywords,
         custom_css: data.custom_css,
         custom_js: data.custom_js,
         status: (data.status as any) ?? 'PUBLISHED',
+        visibility: data.visibility || 'PUBLIC',
+        published_at: publishedAt,
         created_by_id: userId,
         updated_by_id: userId,
         created_at: now,
@@ -395,6 +535,7 @@ export class NewsService {
 
   // Update news
   async updateNews(id: string, data: UpdateNewsData, userId: string) {
+    const timezone = await getConfiguredTimezone();
     const existingNews = await prisma.news.findUnique({
       where: { id },
     });
@@ -413,8 +554,11 @@ export class NewsService {
     }
 
     let slug = existingNews.slug;
-    if (data.title_en && data.title_en !== existingNews.title_en) {
-      const baseSlug = slugify(data.title_en, { lower: true, strict: true });
+    if (data.slug !== undefined || (data.title_en && data.title_en !== existingNews.title_en)) {
+      const baseSlug = normalizeSlug(data.slug || data.title_en || existingNews.title_en);
+      if (!baseSlug) {
+        throw new AppError('Slug is required', 400);
+      }
       slug = baseSlug;
       let counter = 1;
 
@@ -431,7 +575,8 @@ export class NewsService {
     const newsItem = await prisma.news.update({
       where: { id },
       data: {
-        ...(data.title_en !== undefined && { title_en: data.title_en, slug }),
+        ...(data.title_en !== undefined && { title_en: data.title_en }),
+        ...((data.slug !== undefined || data.title_en !== undefined) && { slug }),
         ...(data.title_id !== undefined && { title_id: data.title_id }),
         ...(data.news_date !== undefined && { news_date: new Date(data.news_date) }),
         ...(data.news_thumbnail !== undefined && { news_thumbnail: data.news_thumbnail }),
@@ -439,12 +584,19 @@ export class NewsService {
         ...(data.excerpt_id !== undefined && { excerpt_id: data.excerpt_id ? sanitizeHtmlContent(data.excerpt_id) : null }),
         ...(data.content_en !== undefined && { content_en: sanitizeHtmlContent(data.content_en) }),
         ...(data.content_id !== undefined && { content_id: data.content_id ? sanitizeHtmlContent(data.content_id) : null }),
-        ...(data.news_link !== undefined && { news_link: data.news_link }),
+        ...(data.author !== undefined && { author: data.author }),
         ...(data.category_id !== undefined && { category_id: data.category_id || '' }),
+        ...(data.meta_title !== undefined && { meta_title: coalesceText(data.meta_title, data.title_en ?? existingNews.title_en) }),
+        ...(data.meta_description !== undefined && {
+          meta_description: coalesceText(data.meta_description, data.excerpt_en ?? existingNews.excerpt_en),
+          meta_desc: coalesceText(data.meta_description, data.excerpt_en ?? existingNews.excerpt_en),
+        }),
         ...(data.meta_keywords !== undefined && { meta_keywords: data.meta_keywords }),
         ...(data.custom_css !== undefined && { custom_css: data.custom_css }),
         ...(data.custom_js !== undefined && { custom_js: data.custom_js }),
         ...(data.status !== undefined && { status: data.status as any }),
+        ...(data.visibility !== undefined && { visibility: data.visibility }),
+        ...(data.published_at !== undefined && { published_at: parseScheduledDate(data.published_at, timezone) }),
         updated_by_id: userId,
         updated_at: new Date(),
       },

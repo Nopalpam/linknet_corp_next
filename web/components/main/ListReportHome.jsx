@@ -21,13 +21,14 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function ListReportHome({
   name,
-  className = ""
+  className = "",
+  cmsData = null
 }) {
   const [activeTab, setActiveTab] = useState('');
   const containerRef = useRef(null); // Ref untuk scope GSAP
 
   // Ambil data berdasarkan key 'name'
-  const sectionData = LIST_REPORT_HOME_DATA[name];
+  const sectionData = cmsData || LIST_REPORT_HOME_DATA[name];
 
   // Set default tab yang aktif saat komponen pertama kali di-render
   useEffect(() => {

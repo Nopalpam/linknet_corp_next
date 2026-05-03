@@ -25,6 +25,10 @@ function cn(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
+function normalizeImageSrc(src) {
+  return typeof src === 'string' && src.trim() ? src.trim() : null;
+}
+
 export default function EventHero({
   config,
   posterSrc = '',
@@ -51,9 +55,14 @@ export default function EventHero({
     bgImageMobile: configBgImageMobile = '',
   } = config || {};
 
-  const resolvedThumbnailDesktop = configBgImageDesktop || thumbnailSrc;
+  const resolvedThumbnailDesktop =
+    normalizeImageSrc(configBgImageDesktop) || normalizeImageSrc(thumbnailSrc);
   const resolvedThumbnailMobile =
-    configBgImageMobile || thumbnailMobileSrc || resolvedThumbnailDesktop;
+    normalizeImageSrc(configBgImageMobile) ||
+    normalizeImageSrc(thumbnailMobileSrc) ||
+    resolvedThumbnailDesktop;
+  const resolvedPosterSrc =
+    normalizeImageSrc(posterSrc) || resolvedThumbnailDesktop || resolvedThumbnailMobile;
 
   const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.ongoing;
   const statusLabel = badgeText || statusConfig.label;
@@ -124,11 +133,17 @@ export default function EventHero({
             <div className="flex w-full flex-col items-center gap-7 text-center md:max-w-[750px] md:flex-row md:items-start md:text-left">
               <div className="shrink-0">
                 <div className="overflow-hidden aspect-[300/373] w-[200px] rounded-[12px] shadow-md md:rounded-[12px]">
-                  <img
-                    src={posterSrc || resolvedThumbnailDesktop || resolvedThumbnailMobile}
-                    alt={posterAlt}
-                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                  />
+                  {resolvedPosterSrc ? (
+                    <img
+                      src={resolvedPosterSrc}
+                      alt={posterAlt}
+                      className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-white/12 text-center text-body-b5 font-medium text-white/80">
+                      {posterAlt}
+                    </div>
+                  )}
                 </div>
               </div>
 

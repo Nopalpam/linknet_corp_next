@@ -1,0 +1,48 @@
+﻿key,group,type,label,value,is_public,is_system,options,description
+contact_address,contact,STRING,Contact Address,"""Jakarta, Indonesia""",t,t,"",Primary office address
+contact_email,contact,STRING,Contact Email,"""info@linknet.co.id""",t,t,"",Primary contact email address
+contact_phone,contact,STRING,Contact Phone,"""+62 21 1500 900""",t,t,"",Primary contact phone number
+social_media,contact,JSON,Social Media Links,"{""twitter"": ""https://twitter.com/linknet"", ""youtube"": ""https://youtube.com/@linknet"", ""facebook"": ""https://facebook.com/linknet"", ""linkedin"": ""https://linkedin.com/company/linknet"", ""instagram"": ""https://instagram.com/linknet""}",t,t,"",Social media URLs
+cookies_accept_label,cookies,STRING,Accept Button Label,"""Accept""",t,f,"",Label for the accept button
+cookies_icon_url,cookies,STRING,Cookie Icon URL,"""""",t,f,"",URL for the cookie icon image (optional)
+cookies_description,cookies,STRING,Cookie Popup Description,"""This website uses cookies to ensure you get the best experience on our website. By continuing to browse, you agree to our use of cookies.""",t,f,"",Description text for cookie consent popup
+cookies_title,cookies,STRING,Cookie Popup Title,"""We use cookies""",t,f,"",Title text for cookie consent popup
+cookies_enabled,cookies,BOOLEAN,Enable Cookie Consent Popup,true,t,f,"",Show cookie consent popup to visitors
+cookies_more_info_label,cookies,STRING,More Info Button Label,"""More Info""",t,f,"",Label for the more info link
+cookies_more_info_url,cookies,STRING,More Info URL,"""/privacy-policy""",t,f,"",URL for the more info link
+from_email,email,STRING,From Email,"""noreply@linknet.co.id""",f,t,"",Default sender email address
+from_name,email,STRING,From Name,"""LinkNet Corporation""",f,t,"",Default sender name
+smtp_host,email,STRING,SMTP Host,"""smtp.gmail.com""",f,t,"",SMTP server hostname
+smtp_password,email,STRING,SMTP Password,"""""",f,t,"",SMTP authentication password (will be encrypted)
+smtp_port,email,NUMBER,SMTP Port,587,f,t,"",SMTP server port (usually 587 or 465)
+smtp_user,email,STRING,SMTP Username,"""""",f,t,"",SMTP authentication username
+enable_comments,features,BOOLEAN,Enable Comments,true,f,t,"",Allow comments on news/blog posts
+enable_registration,features,BOOLEAN,Enable Registration,true,f,t,"",Allow new user registrations
+enable_2fa,features,BOOLEAN,Enable Two-Factor Authentication,false,f,t,"",Allow users to enable 2FA for their accounts
+maintenance_mode,features,BOOLEAN,Maintenance Mode,false,f,t,"",Put the site in maintenance mode
+closing_description,footer,STRING,Closing Description,"""Empowering businesses and communities with reliable, high-speed connectivity solutions.""",t,t,"",Description text for closing CTA section
+closing_overline,footer,STRING,Closing Overline,"""Discover Linknet""",t,t,"",Overline text for closing CTA section
+closing_title,footer,STRING,Closing Title,"""Your Trusted Digital Infrastructure Partner""",t,t,"",Title text for closing CTA section
+footer_address,footer,STRING,Footer Address,"""Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25. Jakarta 12930, Indonesia.""",t,t,"",Company address displayed in the footer
+footer_copyright,footer,STRING,Footer Copyright,"""Copyright © 1996 - 2025 PT Link Net Tbk. All Right Reserved.""",t,t,"",Copyright text displayed at the bottom of the footer
+footer_email,footer,STRING,Footer Email,"""corporate.secretary@linknet.co.id""",t,t,"",Contact email displayed in the footer
+footer_logo,footer,IMAGE,Footer Logo,"""/assets/logos/linknet-logo.svg""",t,t,"",Logo displayed in the footer area
+footer_phone,footer,STRING,Footer Phone,"""021-29536800""",t,t,"",Contact phone displayed in the footer
+footer_slogan,footer,STRING,Footer Slogan,"""We LINK the nation for better lives""",t,t,"",Tagline displayed below the footer logo
+footer_socials,footer,JSON,Footer Social Links,"[{""href"": ""https://instagram.com/linkaboratory"", ""iconName"": ""instagram""}, {""href"": ""https://youtube.com/@linknet"", ""iconName"": ""youtube""}]",t,t,"","Social media links with icon names (JSON array of {iconName, href})"
+date_format,general,SELECT,Date Format,"""DD/MM/YYYY""",f,t,"{""options"": [""DD/MM/YYYY"", ""MM/DD/YYYY"", ""YYYY-MM-DD"", ""DD-MM-YYYY""]}",Default date format
+site_description,general,STRING,Site Description,"""Leading Internet Service Provider in Indonesia""",t,t,"",Short description of your website
+site_favicon,general,IMAGE,Site Favicon,"""/images/favicon.ico""",t,t,"",Upload your site favicon (16x16 or 32x32)
+site_logo,general,IMAGE,Site Logo,"""/images/logo.png""",t,t,"",Upload your site logo
+site_name,general,STRING,Site Name,"""LinkNet Corporation""",t,t,"",The name of your website
+timezone,general,SELECT,Timezone,"""Asia/Jakarta""",t,t,"{""options"": [""Asia/Jakarta"", ""Asia/Singapore"", ""UTC"", ""America/New_York"", ""Europe/London""]}",Default timezone for the website
+news_about_content,news,STRING,News About Content,"""<p>PT Link Net Tbk (&quot;Linknet&quot;, Kode Emiten: LINK), bagian dari Axiata Group, berkomitmen untuk meningkatkan kualitas hidup masyarakat dan mendukung pertumbuhan digital Indonesia melalui penyediaan infrastruktur teknologi yang cerdas dan andal.</p><p>Dengan mengusung tujuan &quot;We LINK the nation for better lives&quot;, Linknet senantiasa menempatkan pelanggan sebagai prioritas utama, mendorong inovasi dan kolaborasi, serta berkomitmen untuk terus melakukan perbaikan berkelanjutan.</p>""",t,t,"",HTML content for company information on news detail pages
+news_about_title,news,STRING,News About Title,"""Tentang Linknet""",t,t,"",Heading for company information on news detail pages
+news_media_contacts,news,JSON,News Media Contacts,"[{""name"": ""Annisa Kameila"", ""email"": ""annisa.kameila@linknet.co.id"", ""phone"": ""0878 7873 4852"", ""position"": ""Corporate Communication Specialist""}]",t,t,"","Array of media contacts shown on news detail pages. Add multiple contacts as objects with name, position, phone, and email."
+news_media_contacts_title,news,STRING,News Media Contacts Title,"""Kontak Media""",t,t,"",Heading for media contacts on news detail pages
+page_preview_base_url,pages,STRING,Page Preview Base URL,"""http://localhost:3001""",f,t,"","Base URL for previewing public pages (e.g., https://example.com). The page slug will be appended automatically."
+page_preview_path_template,pages,STRING,Page Preview Path Template,"""/{slug}""",f,t,"",URL path template for page preview. Use {slug} as placeholder. Example: /pages/{slug} or /{slug}
+google_analytics_id,seo,STRING,Google Analytics ID,"""""",f,t,"","Google Analytics tracking ID (e.g., G-XXXXXXXXXX)"
+meta_description,seo,STRING,Meta Description,"""LinkNet Corporation provides high-speed internet services across Indonesia with reliable connectivity and excellent customer support.""",t,t,"",Default meta description for SEO
+meta_keywords,seo,STRING,Meta Keywords,"""internet, ISP, indonesia, broadband, fiber, connectivity""",t,t,"",Default meta keywords for SEO
+meta_title,seo,STRING,Meta Title,"""LinkNet Corporation - Leading ISP in Indonesia""",t,t,"",Default meta title for SEO

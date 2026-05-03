@@ -4,6 +4,11 @@
  */
 
 import axios from 'axios';
+import {
+  createSessionExpiredError,
+  dispatchSessionExpired,
+  isUnauthorizedOrExpired,
+} from "@/lib/sessionExpired";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const API_PREFIX = '/api/v1';
@@ -27,6 +32,25 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const data = error.response?.data;
+
+    if (status && isUnauthorizedOrExpired(status, data)) {
+      dispatchSessionExpired({
+        status,
+        error: data,
+        url: error.config?.url,
+      });
+      return Promise.reject(createSessionExpiredError(data));
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export interface UserRole {
   id: string;

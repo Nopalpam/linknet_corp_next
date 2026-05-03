@@ -12,12 +12,38 @@ import { managementCategories } from '../../data/components/managementCategory';
 // Import Components
 import CardManagement from '../base/cards/CardManagement';
 import ModalManagement from '../base/modals/ModalManagement'; // IMPORT MODAL BARU DI SINI
+import Intro from '../base/section/Intro';
 
 // Import Hooks
 import { useModalRegistry } from '../hooks/useModalRegistry';
 
-export default function Management({ config = {}, className = '' }) {
-  const [activeTab, setActiveTab] = useState(managementCategories[0].id);
+export default function Management({ cmsData = null, data = null, mainData = null, config = {}, className = '' }) {
+  const source = cmsData || data || {};
+  const sourceMainData = mainData || source.mainData || {};
+  const introData = source.introData || source.sectionIntro || source.intro || null;
+  const categories = useMemo(() => {
+    const cmsCategories = sourceMainData.categories || source.categories;
+    if (!Array.isArray(cmsCategories) || cmsCategories.length === 0) return managementCategories;
+
+    return cmsCategories.map((category) => ({
+      id: category.id,
+      label: category.label || category.name || category.title || '',
+    }));
+  }, [sourceMainData.categories, source.categories]);
+  const items = useMemo(() => {
+    const cmsItems = sourceMainData.managements || source.items || source.managements;
+    if (!Array.isArray(cmsItems) || cmsItems.length === 0) return managementData;
+
+    return cmsItems.map((item) => ({
+      id: item.id || item.slug || item.name,
+      name: item.name || item.full_name || '',
+      role: item.role || item.position || item.title || '',
+      categoryId: item.categoryId || item.category_id || item.management_category_id || item.managementCategory?.id,
+      imgSrc: item.imgSrc || item.image || item.photo || item.photo_url || item.thumbnail || '',
+      about: item.about || item.description || item.bio || '',
+    }));
+  }, [sourceMainData.managements, source.items, source.managements]);
+  const [activeTab, setActiveTab] = useState(categories[0]?.id || '');
   const [selectedManager, setSelectedManager] = useState(null);
 
   const { openModal, closeModal, isModalOpen } = useModalRegistry();
@@ -29,7 +55,7 @@ export default function Management({ config = {}, className = '' }) {
     bgImageMobile = '',
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
-  } = config || {};
+  } = { ...(source.config || {}), ...(config || {}) };
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
@@ -38,8 +64,14 @@ export default function Management({ config = {}, className = '' }) {
   const gridRef = useRef(null);
 
   const filteredData = useMemo(() => {
-    return managementData.filter((item) => item.categoryId === activeTab);
-  }, [activeTab]);
+    return items.filter((item) => item.categoryId === activeTab);
+  }, [activeTab, items]);
+
+  useEffect(() => {
+    if (!categories.some((category) => category.id === activeTab)) {
+      setActiveTab(categories[0]?.id || '');
+    }
+  }, [activeTab, categories]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -79,6 +111,18 @@ export default function Management({ config = {}, className = '' }) {
         ${configClassName} ${className}`}
       style={sectionStyle}
     >
+
+      {introData && (introData.label || introData.title || introData.description) && (
+        <div className="mb-8">
+          <Intro
+            as={introData.as || 'h2'}
+            label={introData.label}
+            title={introData.title}
+            description={introData.description}
+            align={introData.align || 'left'}
+          />
+        </div>
+      )}
 
       {/* --- TAB NAVIGATION --- */}
       <div className="mb-4">

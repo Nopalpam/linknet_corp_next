@@ -1,5 +1,7 @@
 'use client';
 
+import { resolveIntroTextValue } from '../../../../shared/presentation/intro';
+
 export default function SectionIntro({ 
   label, 
   title, 
@@ -12,6 +14,9 @@ export default function SectionIntro({
   descriptionClassName = "",
   className = "" 
 }) {
+  const safeLabel = resolveIntroTextValue(label);
+  const safeTitle = resolveIntroTextValue(title);
+  const safeDescription = resolveIntroTextValue(description);
   
   // Mapping class berdasarkan alignment
   const alignClasses = {
@@ -30,20 +35,20 @@ export default function SectionIntro({
       style={isCenter ? { textAlign: '-webkit-center' } : {}}
     >
       <div className={`lnIntro__content flex flex-col ${isCenter ? 'w-full' : (fluid ? '' : 'max-w-[800px]')} ${alignClasses[align]}`}>
-        {label && (
+        {safeLabel && (
           <div className={`lnIntro__label text-caption-c1 font-bold uppercase text-warning tracking-wider leading-none ${labelClassName}`}>
-            {label}
+            {safeLabel}
           </div>
         )}
 
         {/* Dynamic Heading Tag */}
         <Tag className={`lnIntro__title text-headline-h3 md:text-headline-h3 font-bold text-black mt-3 leading-tight ${titleClassName}`}>
-          {title}
+          {safeTitle}
         </Tag>
 
-        {description && (
+        {safeDescription && (
           <p className={`lnIntro__desc text-body-b4 mt-4 font-regular text-secondary leading-relaxed ${isCenter ? 'mx-auto md:w-[80%]' : 'md:w-[80%]'} ${descriptionClassName}`}>
-            {description}
+            {safeDescription}
           </p>
         )}
       </div>

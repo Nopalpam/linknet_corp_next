@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { authService } from "@/services/auth.service";
 import { useRouter } from "next/navigation";
+import { buildLoginRedirectUrl } from "@/lib/authSession";
 
 const MfaSetupPage = () => {
   const { user, isAuthenticated, isAuthValidated, isLoading: authLoading } = useAuth();
@@ -27,7 +28,7 @@ const MfaSetupPage = () => {
   // Redirect if not authenticated
   useEffect(() => {
     if (isAuthValidated && !authLoading && !isAuthenticated) {
-      router.replace("/login");
+      router.replace(buildLoginRedirectUrl());
     }
   }, [isAuthenticated, isAuthValidated, authLoading, router]);
 

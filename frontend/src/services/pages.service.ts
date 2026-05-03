@@ -8,18 +8,23 @@ import { BaseService } from './base.service';
 export interface Page {
   id: string;
   title: string;
+  titleEn?: string;
+  titleId?: string;
   slug: string;
   status: 'DRAFT' | 'PUBLISHED';
   template?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  metaThumbnail?: string;
   ogImage?: string;
   product?: string;
   promo?: string;
   source?: string;
   noindex?: boolean;
   nofollow?: boolean;
+  showNavbar?: boolean;
+  showFooter?: boolean;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -27,6 +32,8 @@ export interface Page {
     id: string;
     firstName: string;
     lastName: string;
+    email?: string;
+    username?: string;
   };
   updatedBy?: {
     id: string;
@@ -62,34 +69,44 @@ export interface PageComponent {
 
 export interface CreatePageData {
   title: string;
+  titleEn?: string;
+  titleId?: string;
   slug?: string;
   status?: 'DRAFT' | 'PUBLISHED';
   template?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  metaThumbnail?: string;
   ogImage?: string;
   product?: string;
   promo?: string;
   source?: string;
   noindex?: boolean;
   nofollow?: boolean;
+  showNavbar?: boolean;
+  showFooter?: boolean;
 }
 
 export interface UpdatePageData {
   title?: string;
+  titleEn?: string;
+  titleId?: string;
   slug?: string;
   status?: 'DRAFT' | 'PUBLISHED';
   template?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  metaThumbnail?: string;
   ogImage?: string;
   product?: string;
   promo?: string;
   source?: string;
   noindex?: boolean;
   nofollow?: boolean;
+  showNavbar?: boolean;
+  showFooter?: boolean;
 }
 
 export interface PageHistoryLog {
@@ -154,8 +171,25 @@ class PagesService extends BaseService {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}`));
   }
 
-  async getPageHistory(id: string): Promise<{ success: boolean; data: PageHistoryLog[] }> {
-    return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}/history`));
+  async getPageHistory(
+    id: string,
+    params?: { page?: number; per_page?: number },
+  ): Promise<{
+    success: boolean;
+    data: PageHistoryLog[];
+    meta: { total: number; page: number; perPage: number; totalPages: number };
+  }> {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.per_page) query.set('per_page', String(params.per_page));
+    const qs = query.toString();
+    return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}/history${qs ? `?${qs}` : ''}`));
+  }
+
+  async checkSlug(slug: string, excludeId?: string): Promise<{ success: boolean; data: { slug: string; available: boolean } }> {
+    const query = new URLSearchParams({ slug });
+    if (excludeId) query.set('excludeId', excludeId);
+    return this.fetchWithAuth(this.getApiUrl(`/cms/pages/slug/check?${query.toString()}`));
   }
 
   /**

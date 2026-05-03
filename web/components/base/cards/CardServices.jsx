@@ -71,7 +71,7 @@ function CardServicesInner({
             )}
 
             {badgeLabel && (
-              <span className="lnCardServices__badgeLabel text-body-b5 font-bold text-white">
+              <span className="lnCardServices__badgeLabel text-body-b5 font-medium text-white">
                 {badgeLabel}
               </span>
             )}
@@ -81,13 +81,13 @@ function CardServicesInner({
         <div className={cn('lnCardServices__body flex items-end justify-between gap-6', contentClassName)}>
           <div className="lnCardServices__copy max-w-[440px]">
             {title && (
-              <h3 className="lnCardServices__title text-headline-h3 text-white">
+              <h3 className="lnCardServices__title text-headline-h4 text-white">
                 {title}
               </h3>
             )}
 
             {subtitle && (
-              <p className="lnCardServices__subtitle mt-2.5 text-body-b4 font-regular text-white line-clamp-2">
+              <p className="lnCardServices__subtitle mt-2.5 text-body-b5 font-regular text-white line-clamp-2">
                 {subtitle}
               </p>
             )}

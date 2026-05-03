@@ -6,17 +6,32 @@
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+let labelBankStore: Record<string, string> = {};
+
+function encodeSlugPath(slug: string): string {
+  return slug
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+}
 
 export interface CMSPageData {
   id: string;
   title: string;
+  titleEn?: string;
+  titleId?: string;
   slug: string;
   template?: string;
   status: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  metaThumbnail?: string;
   ogImage?: string;
+  product?: string | null;
+  promo?: string | null;
+  source?: string | null;
   noindex?: boolean;
   nofollow?: boolean;
   components: CMSComponentData[];
@@ -60,7 +75,7 @@ export interface CMSMenuItem {
  */
 export async function getPageBySlug(slug: string): Promise<CMSPageData | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/pages/${encodeURIComponent(slug)}`, {
+    const res = await fetch(`${API_BASE_URL}/pages/${encodeSlugPath(slug)}`, {
       cache: 'no-store',
     });
 
@@ -169,5 +184,106 @@ export async function getPublicSettings(): Promise<Record<string, any>> {
     return json.data || {};
   } catch {
     return {};
+  }
+}
+
+export async function getPublicLabels(locale = 'id'): Promise<Record<string, string>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/public/labels?lang=${encodeURIComponent(locale)}`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return {};
+
+    const json = await res.json();
+    labelBankStore = json.data || {};
+    return labelBankStore;
+  } catch {
+    return {};
+  }
+}
+
+export function setLabelBank(labels: Record<string, string> | null | undefined) {
+  labelBankStore = labels || {};
+}
+
+export function getLabel(labelId: string, fallback?: string): string;
+export function getLabel(labels: Record<string, string> | null | undefined, labelId: string, fallback?: string): string;
+export function getLabel(
+  labelsOrLabelId: Record<string, string> | string | null | undefined,
+  labelIdOrFallback = '',
+  fallback = ''
+): string {
+  if (typeof labelsOrLabelId === 'string') {
+    return labelBankStore[labelsOrLabelId] || labelIdOrFallback || '';
+  }
+
+  return labelsOrLabelId?.[labelIdOrFallback] || fallback || '';
+}
+
+export function getLocalizedPageTitle(page: Pick<CMSPageData, 'title' | 'titleEn' | 'titleId'>, locale?: string): string {
+  if (locale === 'en') return page.titleEn || page.title || page.titleId || '';
+  if (locale === 'id') return page.titleId || page.title || page.titleEn || '';
+  return page.title || page.titleEn || page.titleId || '';
+}
+
+export async function getPublicNews(params: Record<string, string | number | undefined> = {}): Promise<any> {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        query.set(key, String(value));
+      }
+    });
+
+    const queryString = query.toString();
+    const res = await fetch(`${API_BASE_URL}/public/news${queryString ? `?${queryString}` : ''}`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function getPublicNewsBySlug(slug: string, options: { track?: boolean } = {}): Promise<any | null> {
+  try {
+    const query = options.track === false ? '?track=false' : '';
+    const res = await fetch(`${API_BASE_URL}/public/news/${encodeURIComponent(slug)}${query}`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    return json.data || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getPublicNewsByCategory(categorySlug: string, params: Record<string, string | number | undefined> = {}): Promise<any> {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        query.set(key, String(value));
+      }
+    });
+
+    const queryString = query.toString();
+    const res = await fetch(
+      `${API_BASE_URL}/public/news/category/${encodeURIComponent(categorySlug)}${queryString ? `?${queryString}` : ''}`,
+      { cache: 'no-store' }
+    );
+
+    if (!res.ok) return null;
+
+    return await res.json();
+  } catch {
+    return null;
   }
 }

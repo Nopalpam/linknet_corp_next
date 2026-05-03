@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import gsap from 'gsap';
 import { navItems as enterpriseNavItems } from '../../data/navDataEnterprise';
 import { navItems as corporateNavItems } from '../../data/navData';
@@ -63,10 +63,11 @@ function transformMenuData(cmsMenus, locale) {
     });
 }
 
-export default function Navbar({ menuData, defaultLocale = 'en' }) {
+export default function Navbar({ menuData, defaultLocale = 'id' }) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const navItems = transformMenuData(menuData, locale) || enterpriseNavItems;
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -116,18 +117,29 @@ export default function Navbar({ menuData, defaultLocale = 'en' }) {
   const isNavPage = activeMobileSubMenu && !isLangPage;
   const isDesktopFocusActive = Boolean(activeDropdown || isSearchOpen);
   const hasSearchQuery = searchQuery.trim().length > 0;
+
   const switchLocale = (newLocale) => {
-    const segments = pathname.split('/');
-
-    if (segments[1] === 'en' || segments[1] === 'id') {
-      segments.splice(1, 1);
+    if (newLocale === locale) {
+      setActiveDropdown(null);
+      setIsDrawerOpen(false);
+      return;
     }
 
-    if (newLocale !== defaultLocale) {
-      segments.splice(1, 0, newLocale);
+    const segments = pathname.split('/').filter(Boolean);
+
+    if (segments[0] === 'en' || segments[0] === 'id') {
+      segments.shift();
     }
 
-    router.push(segments.join('/') || '/');
+    segments.unshift(newLocale);
+
+    const nextPath = `/${segments.join('/')}`.replace(/\/+$/, '') || '/';
+    const queryString = searchParams.toString();
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; samesite=lax`;
+    router.replace(queryString ? `${nextPath}?${queryString}` : nextPath);
+    router.refresh();
+    setActiveDropdown(null);
+    setIsDrawerOpen(false);
   };
 
   const languageOptions = [

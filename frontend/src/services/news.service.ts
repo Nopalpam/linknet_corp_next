@@ -4,6 +4,11 @@
  */
 
 import { BaseCrudService, PaginatedResponse } from './baseCrud.service';
+import {
+  createSessionExpiredError,
+  dispatchSessionExpired,
+  isUnauthorizedOrExpired,
+} from "@/lib/sessionExpired";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -38,18 +43,23 @@ export interface News {
   excerpt_id?: string;
   content_en: string;
   content_id?: string;
-  news_link?: string;
+  author?: string;
   view_count: number;
   view_count_unique: number;
+  meta_title?: string;
+  meta_description?: string;
+  meta_desc?: string;
   meta_keywords?: string;
   custom_css?: string;
   custom_js?: string;
   status: string; // 'DRAFT' | 'PUBLISHED'
+  visibility?: string; // 'PUBLIC' | 'PRIVATE'
+  published_at?: string | null;
   created_by_id?: string;
   updated_by_id?: string;
   created_at: string;
   updated_at: string;
-  category?: { id: string; name_en: string; slug: string };
+  category?: { id: string; name_en: string; name_id?: string; slug: string };
   readingTime?: number;
 }
 
@@ -78,18 +88,23 @@ export interface UpdateNewsCategoryData extends Partial<CreateNewsCategoryData> 
 export interface CreateNewsData {
   title_en: string;
   title_id?: string;
+  slug?: string;
   news_date: string;
   news_thumbnail?: string;
   excerpt_en?: string;
   excerpt_id?: string;
   content_en: string;
   content_id?: string;
-  news_link?: string;
+  author?: string;
   category_id?: string;
+  meta_title?: string;
+  meta_description?: string;
   meta_keywords?: string;
   custom_css?: string;
   custom_js?: string;
   status?: string;
+  visibility?: string;
+  published_at?: string | null;
 }
 
 export interface UpdateNewsData extends Omit<Partial<CreateNewsData>, 'category_id'> {
@@ -216,6 +231,11 @@ class NewsContentService extends BaseCrudService<News> {
     });
   }
 
+  async checkSlug(slug: string, excludeId?: string): Promise<{ data: { slug: string; available: boolean } }> {
+    const query = this.buildQueryString({ slug, excludeId });
+    return this.fetchWithAuth(`${API_URL}/api/v1/cms/news-slug/check?${query}`);
+  }
+
   /** Override delete */
   async delete(id: string): Promise<any> {
     return this.fetchWithAuth(`${API_URL}/api/v1${this.baseEndpoint}/${id}`, {
@@ -246,6 +266,11 @@ class NewsHighlightService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'An error occurred' }));
+      if (isUnauthorizedOrExpired(response.status, error)) {
+        dispatchSessionExpired({ status: response.status, error, url });
+        throw createSessionExpiredError(error);
+      }
+
       throw new Error(error.message || `HTTP error! status: ${response.status}`);
     }
 

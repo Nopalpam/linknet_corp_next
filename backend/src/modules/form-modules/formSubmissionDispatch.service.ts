@@ -358,12 +358,15 @@ export class FormSubmissionDispatchService {
       status: file.status,
     }));
     const requestPayload = this.asObject(log.requestPayload) ?? {};
+    const formInfo = this.resolveSubmissionFormInfo(log.submission);
 
     return {
       submissionId: log.submission.id,
       businessUnit: log.submission.businessUnit,
       formSlug: log.submission.formSlug,
-      formName: log.submission.formModule.name,
+      formName: formInfo.moduleName,
+      formModuleName: formInfo.moduleName,
+      formChannel: formInfo.channel,
       sourceWebsite: log.submission.sourceWebsite,
       promoWebsite: log.submission.promoWebsite,
       leadSource: log.submission.leadSource,
@@ -378,6 +381,53 @@ export class FormSubmissionDispatchService {
       rawSubmission: requestPayload,
       ...(mappingConfig ?? {}),
     };
+  }
+
+  private resolveSubmissionFormInfo(submission: DispatchLogRecord['submission']) {
+    const persistedInfo = submission as typeof submission & {
+      formModuleName?: string | null;
+      formChannel?: string | null;
+    };
+
+    const valueByPath = new Map(
+      submission.values.map((value) => [value.fieldPath, this.normalizeJsonValue(value.value)]),
+    );
+    const rawChannel =
+      persistedInfo.formChannel ??
+      this.pickSubmissionString(valueByPath, ['formChannel', 'form_channel', 'channel', 'sourceInput']);
+
+    return {
+      moduleName: persistedInfo.formModuleName ?? submission.formModule.name,
+      channel: this.normalizeFormChannel(rawChannel),
+    };
+  }
+
+  private pickSubmissionString(source: Map<string, unknown>, keys: string[]) {
+    for (const key of keys) {
+      const value = source.get(key);
+
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return undefined;
+  }
+
+  private normalizeFormChannel(channel?: string | null) {
+    if (!channel) return undefined;
+
+    const normalized = channel.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+    if (normalized === 'live_chat' || normalized === 'start_conversation') {
+      return 'Live Chat';
+    }
+
+    if (normalized === 'whatsapp' || normalized === 'whats_app') {
+      return 'WhatsApp';
+    }
+
+    return channel.trim() || undefined;
   }
 
   private async finalizeDispatch(
