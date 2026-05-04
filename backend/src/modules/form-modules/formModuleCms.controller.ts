@@ -13,6 +13,7 @@ import {
   formSubmissionIdParamSchema,
   formSubmissionQuerySchema,
   updateFormModuleSchema,
+  updateSubmissionReviewStatusSchema,
 } from './formModule.validation';
 import { FormModuleService } from './formModule.service';
 
@@ -220,6 +221,52 @@ export const retryFormModuleSubmissionDispatches = [
     } catch (error) {
       if (error instanceof ZodError) {
         throw new ValidationError('Invalid form submission id');
+      }
+
+      throw error;
+    }
+  }),
+];
+
+export const updateFormModuleSubmissionStatus = [
+  requirePermission(Permission.FORM_MODULES_UPDATE),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    try {
+      const params = formSubmissionIdParamSchema.parse(req.params);
+      const body = updateSubmissionReviewStatusSchema.parse(req.body);
+
+      const updated = await prisma.formSubmission.update({
+        where: {
+          id: params.submissionId,
+          formModuleId: params.id,
+        },
+        data: {
+          reviewStatus: body.reviewStatus,
+        },
+        select: {
+          id: true,
+          reviewStatus: true,
+          updatedAt: true,
+        },
+      });
+
+      const warnings: string[] = [];
+      if (body.reviewStatus === 'APPROVED') {
+        warnings.push('BRIM integration is not yet available. Status set to APPROVED but dispatch was not triggered.');
+      }
+
+      res.json({
+        success: true,
+        message: 'Review status updated successfully',
+        data: updated,
+        warnings,
+        meta: {
+          actorId: req.user?.id ?? null,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new ValidationError('Invalid review status value');
       }
 
       throw error;

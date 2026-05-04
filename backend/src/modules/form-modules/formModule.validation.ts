@@ -313,6 +313,10 @@ export const formSubmissionIdParamSchema = z.object({
   submissionId: z.string().uuid(),
 });
 
+export const updateSubmissionReviewStatusSchema = z.object({
+  reviewStatus: z.enum(['HOLD', 'REJECTED', 'APPROVED']),
+});
+
 export type CreateFormModuleInput = z.infer<typeof createFormModuleSchema>;
 export type FormModuleDefinitionInput = z.infer<typeof formModuleDefinitionSchema>;
 export type FormModuleQueryInput = z.infer<typeof formModuleQuerySchema>;
@@ -320,3 +324,4 @@ export type FormSubmissionQueryInput = z.infer<typeof formSubmissionQuerySchema>
 export type PublicFormModuleParamsInput = z.infer<typeof publicFormModuleParamsSchema>;
 export type PublicFormSubmissionInput = z.infer<typeof publicFormSubmissionSchema>;
 export type UpdateFormModuleInput = z.infer<typeof updateFormModuleSchema>;
+export type UpdateSubmissionReviewStatusInput = z.infer<typeof updateSubmissionReviewStatusSchema>;

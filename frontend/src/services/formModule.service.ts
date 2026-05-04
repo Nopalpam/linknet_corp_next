@@ -15,6 +15,7 @@ export type FormCategory = 'REGISTRATION' | 'INQUIRY' | 'PARTNERSHIP' | 'RECOMME
 export type FormHandlingMode = 'SUBMISSION' | 'ROUTING_ONLY';
 export type FormModuleStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 export type FormSubmissionStatus = 'STORED' | 'FAILED';
+export type FormSubmissionReviewStatus = 'HOLD' | 'REJECTED' | 'APPROVED';
 export type FormSubmissionDatePreset =
   | 'today'
   | 'yesterday'
@@ -223,6 +224,7 @@ export interface FormSubmission {
   primaryEmail?: string | null;
   primaryPhone?: string | null;
   status: FormSubmissionStatus;
+  reviewStatus?: FormSubmissionReviewStatus | null;
   receivedAt: string;
   processedAt?: string | null;
   createdAt: string;
@@ -395,6 +397,19 @@ class FormModuleService extends BaseCrudService<FormModule> {
     const url = `${API_URL}/api/v1${this.baseEndpoint}/${formModuleId}/submissions/${submissionId}/retry-dispatch`;
     const res = await this.fetchWithAuth(url, { method: 'POST' });
     return res.data;
+  }
+
+  async updateSubmissionReviewStatus(
+    formModuleId: string,
+    submissionId: string,
+    reviewStatus: FormSubmissionReviewStatus,
+  ): Promise<{ id: string; reviewStatus: string; updatedAt: string; warnings?: string[] }> {
+    const url = `${API_URL}/api/v1${this.baseEndpoint}/${formModuleId}/submissions/${submissionId}/status`;
+    const res = await this.fetchWithAuth(url, {
+      method: 'PATCH',
+      body: JSON.stringify({ reviewStatus }),
+    });
+    return { ...res.data, warnings: res.warnings ?? [] };
   }
 }
 

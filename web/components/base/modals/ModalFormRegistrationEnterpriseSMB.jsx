@@ -20,8 +20,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import FormStepper, { FormStep } from "../forms/FormStepper";
 import Input from "../forms/Input";
 import Select from "../forms/Select";
-import Textarea from "../forms/Textarea";
-import Checkbox from "../forms/Checkbox";
 import { RadioCard, RadioCardDate } from "../forms/Radio";
 import FieldReadOnly from "../forms/FieldReadOnly";
 import Button from "../Button";
@@ -155,8 +153,6 @@ const INITIAL_FORM = {
   jobTitle: "",
   companyEmail: "",
   phoneNumber: "",
-  isBillingSameAsInstallation: false,
-  billingAddress: "",
   installDate: "",
   installTimeSlot: "",
 };
@@ -179,7 +175,6 @@ const FORM_ERROR_MESSAGES = {
   companyEmailFormat: "Format email tidak valid.",
   phoneNumber: "Nomor telepon wajib diisi.",
   phoneNumberFormat: "Format nomor telepon tidak valid.",
-  billingAddress: "Alamat penagihan wajib diisi.",
   installDate: "Tanggal instalasi wajib dipilih.",
   installTimeSlot: "Slot waktu wajib dipilih.",
 };
@@ -222,19 +217,6 @@ function buildInstallationAddress(form, coverageMode) {
   }
 
   return [form.address, form.addressDetail].filter(Boolean).join(", ");
-}
-
-function withSyncedBillingAddress(prevForm, patch, coverageMode) {
-  const nextForm = { ...prevForm, ...patch };
-
-  if (!nextForm.isBillingSameAsInstallation) {
-    return patch;
-  }
-
-  return {
-    ...patch,
-    billingAddress: buildInstallationAddress(nextForm, coverageMode),
-  };
 }
 
 function getStepSummaryItems(step, form, coverageMode) {
@@ -282,11 +264,6 @@ function getStepSummaryItems(step, form, coverageMode) {
         {
           label: "No HP",
           value: form.phoneNumber,
-        },
-        {
-          label: "Alamat Penagihan",
-          value: form.billingAddress,
-          className: "sm:col-span-2",
         },
       ];
     case 3:
@@ -399,10 +376,6 @@ function validatePersonalStep(form) {
     errors.phoneNumber = FORM_ERROR_MESSAGES.phoneNumber;
   } else if (!PHONE_REGEX.test(form.phoneNumber)) {
     errors.phoneNumber = FORM_ERROR_MESSAGES.phoneNumberFormat;
-  }
-
-  if (!form.billingAddress.trim()) {
-    errors.billingAddress = FORM_ERROR_MESSAGES.billingAddress;
   }
 
   return errors;
@@ -555,7 +528,6 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [stepErrors, setStepErrors] = useState({});
   const [navDirection, setNavDirection] = useState("forward");
-  const [billingAddressInputKey, setBillingAddressInputKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const onSubmitAsyncRef = useRef(onSubmitAsync);
@@ -566,41 +538,20 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
   }, []);
 
   const updateForm = useCallback(
-    (patch, nextCoverageMode = coverageMode) => {
-      setForm((prev) => ({
-        ...prev,
-        ...withSyncedBillingAddress(prev, patch, nextCoverageMode),
-      }));
+    (patch) => {
+      setForm((prev) => ({ ...prev, ...patch }));
     },
-    [coverageMode]
+    []
   );
 
   const handleCoverageModeChange = useCallback((mode) => {
     setCoverageMode(mode);
-    if (form.isBillingSameAsInstallation) {
-      updateForm({}, mode);
-      setBillingAddressInputKey((prev) => prev + 1);
-    }
-  }, [form.isBillingSameAsInstallation, updateForm]);
+  }, []);
 
   const handleFieldChange = useCallback(
     (field) => (event) => {
       updateForm({ [field]: event.target.value });
       clearErrors([field]);
-    },
-    [clearErrors, updateForm]
-  );
-
-  const handleBillingSyncChange = useCallback(
-    (event) => {
-      const checked = event.target.checked;
-
-      updateForm({
-        isBillingSameAsInstallation: checked,
-        billingAddress: checked ? undefined : "",
-      });
-      setBillingAddressInputKey((prev) => prev + 1);
-      clearErrors(["billingAddress"]);
     },
     [clearErrors, updateForm]
   );
@@ -613,9 +564,6 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
       }, {});
 
       updateForm(patch);
-      if (form.isBillingSameAsInstallation) {
-        setBillingAddressInputKey((prev) => prev + 1);
-      }
 
       const resolvedErrorKeys = MANUAL_FIELDS
         .filter(([key]) => manualData[key])
@@ -623,18 +571,15 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
 
       clearErrors(resolvedErrorKeys);
     },
-    [clearErrors, form.isBillingSameAsInstallation, updateForm]
+    [clearErrors, updateForm]
   );
 
   const handleAddressSelect = useCallback(
     ({ site_id, address }) => {
       updateForm({ site_id, address });
-      if (form.isBillingSameAsInstallation) {
-        setBillingAddressInputKey((prev) => prev + 1);
-      }
       clearErrors(["address"]);
     },
-    [clearErrors, form.isBillingSameAsInstallation, updateForm]
+    [clearErrors, updateForm]
   );
 
   const handleAddressReset = useCallback(() => {
@@ -647,11 +592,8 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
       manualZip: "",
       manualDetailAddress: "",
     });
-    if (form.isBillingSameAsInstallation) {
-      setBillingAddressInputKey((prev) => prev + 1);
-    }
     setStepErrors({});
-  }, [form.isBillingSameAsInstallation, updateForm]);
+  }, [updateForm]);
 
   const handleTimeSlot = useCallback(
     (slot) => {
@@ -724,10 +666,8 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
     submitAttempted,
     stepErrors,
     navDirection,
-    billingAddressInputKey,
     handleCoverageModeChange,
     handleFieldChange,
-    handleBillingSyncChange,
     handleManualDataChange,
     handleAddressSelect,
     handleAddressReset,
@@ -810,9 +750,7 @@ function Step1Summary({ form, coverageMode }) {
 
 function Step2Body({
   form,
-  billingAddressInputKey,
   onChange,
-  onBillingSyncChange,
   submitAttempted,
 }) {
   return (
@@ -879,27 +817,6 @@ function Step2Body({
           submitAttempted={submitAttempted}
         />
       </div>
-
-      <Checkbox
-        id="isBillingSameAsInstallation"
-        label="Alamat Penagihan sama dengan Alamat Pemasangan"
-        checked={form.isBillingSameAsInstallation}
-        onChange={onBillingSyncChange}
-        className="!bg-white !px-2 !pb-1"
-      />
-
-      <Textarea
-        id="billingAddress"
-        key={`billingAddress-${billingAddressInputKey}`}
-        label="Alamat Penagihan"
-        required
-        data-error={FORM_ERROR_MESSAGES.billingAddress}
-        rows={4}
-        value={form.billingAddress}
-        onChange={onChange("billingAddress")}
-        submitAttempted={submitAttempted}
-        disabled={form.isBillingSameAsInstallation}
-      />
     </div>
   );
 }
@@ -1035,10 +952,8 @@ function RegistrationFormContent({ onClose, initialPayload }) {
     submitAttempted,
     stepErrors,
     navDirection,
-    billingAddressInputKey,
     handleCoverageModeChange,
     handleFieldChange,
-    handleBillingSyncChange,
     handleManualDataChange,
     handleAddressSelect,
     handleAddressReset,
@@ -1097,9 +1012,7 @@ function RegistrationFormContent({ onClose, initialPayload }) {
         return (
           <Step2Body
             form={form}
-            billingAddressInputKey={billingAddressInputKey}
             onChange={handleFieldChange}
-            onBillingSyncChange={handleBillingSyncChange}
             submitAttempted={submitAttempted}
           />
         );

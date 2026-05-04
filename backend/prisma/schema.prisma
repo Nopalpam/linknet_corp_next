@@ -755,6 +755,7 @@ model FormSubmission {
   eventName       String?               @map("event_name")
   rawPayload      Json?                 @map("raw_payload")
   responseContext Json?                 @map("response_context")
+  reviewStatus    String?               @map("review_status") @default("HOLD")
   receivedAt      DateTime              @default(now()) @map("received_at")
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")

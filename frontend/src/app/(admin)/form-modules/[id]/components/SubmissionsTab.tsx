@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useToast } from "@/context/ToastContext";
-import { getFormSubmissionStatusMeta } from "@/lib/formSubmissionStatus";
+import { getFormSubmissionStatusMeta, getFormSubmissionReviewStatusMeta } from "@/lib/formSubmissionStatus";
 import {
   FormSubmission,
   FormSubmissionDatePreset,
@@ -438,6 +438,9 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
                 Status
               </th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Status Review
+              </th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Received
               </th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
@@ -488,6 +491,16 @@ export default function SubmissionsTab({ formModuleId }: SubmissionsTabProps) {
                     >
                       {statusMeta.label}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const reviewMeta = getFormSubmissionReviewStatusMeta(sub.reviewStatus);
+                      return (
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${reviewMeta.className}`}>
+                          {reviewMeta.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {formatDate(sub.receivedAt)}

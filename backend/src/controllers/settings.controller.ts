@@ -94,7 +94,7 @@ export class SettingsController {
           : setting.value;
 
       if (key.includes('.')) {
-        this.setNestedValue(settingsMap, key, value);
+        SettingsController.setNestedValue(settingsMap, key, value);
       } else {
         settingsMap[key] = value;
       }
@@ -148,7 +148,7 @@ export class SettingsController {
 
       res.json({
         success: true,
-        data: this.normalizePublicSettings(settings),
+        data: SettingsController.normalizePublicSettings(settings),
       });
     } catch (error) {
       console.error('Error getting public settings:', error);

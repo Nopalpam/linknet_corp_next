@@ -10,6 +10,7 @@ import {
   getFormModules,
   retryFormModuleSubmissionDispatches,
   updateFormModule,
+  updateFormModuleSubmissionStatus,
 } from './formModuleCms.controller';
 
 const router = Router();
@@ -25,5 +26,6 @@ router.get('/:id/submissions', getFormModuleSubmissions);
 router.get('/:id/submissions/export', exportFormModuleSubmissions);
 router.get('/:id/submissions/:submissionId', getFormModuleSubmissionById);
 router.post('/:id/submissions/:submissionId/retry-dispatch', retryFormModuleSubmissionDispatches);
+router.patch('/:id/submissions/:submissionId/status', updateFormModuleSubmissionStatus);
 
 export default router;

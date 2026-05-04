@@ -3,12 +3,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   canRetryFormSubmission,
+  getFormSubmissionReviewStatusMeta,
   getFormSubmissionStatusMeta,
 } from "@/lib/formSubmissionStatus";
 import {
   FormDispatchLog,
   FormField,
   FormSubmission,
+  FormSubmissionReviewStatus,
   FormSubmissionValue,
   formModuleService,
 } from "@/services/formModule.service";
@@ -55,6 +57,10 @@ export default function SubmissionDetailModal({
   const [moduleName, setModuleName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const [selectedReviewStatus, setSelectedReviewStatus] = useState<FormSubmissionReviewStatus>('HOLD');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusUpdateWarning, setStatusUpdateWarning] = useState<string | null>(null);
+  const [statusUpdateError, setStatusUpdateError] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const formatSubmissionValue = (value?: FormSubmissionValue | null) => {
@@ -97,6 +103,7 @@ export default function SubmissionDetailModal({
         formModuleService.getFormModuleById(formModuleId),
       ]);
       setSubmission(submissionData);
+      setSelectedReviewStatus((submissionData.reviewStatus as FormSubmissionReviewStatus) ?? 'HOLD');
       setModuleFields(moduleData.fields ?? []);
       setModuleName(moduleData.name ?? "");
     } catch {
@@ -134,11 +141,34 @@ export default function SubmissionDetailModal({
     }
   };
 
+  const handleUpdateReviewStatus = async () => {
+    if (!submission) return;
+    try {
+      setUpdatingStatus(true);
+      setStatusUpdateWarning(null);
+      setStatusUpdateError(null);
+      const result = await formModuleService.updateSubmissionReviewStatus(
+        formModuleId,
+        submissionId,
+        selectedReviewStatus,
+      );
+      setSubmission((prev) => prev ? { ...prev, reviewStatus: selectedReviewStatus } : prev);
+      if (result.warnings && result.warnings.length > 0) {
+        setStatusUpdateWarning(result.warnings[0]);
+      }
+    } catch {
+      setStatusUpdateError('Gagal memperbarui status. Silakan coba lagi.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === overlayRef.current) onClose();
   };
 
   const statusMeta = submission ? getFormSubmissionStatusMeta(submission.status) : null;
+  const reviewStatusMeta = getFormSubmissionReviewStatusMeta(submission?.reviewStatus);
 
   return (
     <div
@@ -503,6 +533,50 @@ export default function SubmissionDetailModal({
                 </div>
               </section>
             )}
+
+            {/* Review Status Card */}
+            <div className="rounded-lg border-2 border-yellow-400 bg-yellow-50 p-4 dark:border-yellow-500 dark:bg-yellow-900/10">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-yellow-800 dark:text-yellow-400">
+                Status Review
+              </h3>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Status saat ini:</span>
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${reviewStatusMeta.className}`}
+                >
+                  {reviewStatusMeta.label}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedReviewStatus}
+                  onChange={(e) => setSelectedReviewStatus(e.target.value as FormSubmissionReviewStatus)}
+                  disabled={updatingStatus}
+                  className="rounded-md border border-yellow-300 bg-white px-3 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-50 dark:border-yellow-600 dark:bg-gray-800 dark:text-gray-200"
+                >
+                  <option value="HOLD">Hold</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="APPROVED">Approve (BRIM)</option>
+                </select>
+                <button
+                  onClick={handleUpdateReviewStatus}
+                  disabled={updatingStatus}
+                  className="rounded-md bg-yellow-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 dark:bg-yellow-600 dark:hover:bg-yellow-700"
+                >
+                  {updatingStatus ? 'Menyimpan…' : 'Update Status'}
+                </button>
+              </div>
+              {statusUpdateWarning && (
+                <p className="mt-2 text-xs text-yellow-700 dark:text-yellow-400">
+                  ⚠ {statusUpdateWarning}
+                </p>
+              )}
+              {statusUpdateError && (
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                  {statusUpdateError}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
