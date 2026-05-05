@@ -34,9 +34,9 @@ export const HERO_SLIDERS_DATA = {
         labelIconSrc: "",
         title: "Improving Lives and Supporting Indonesia's Digital Growth",
         description: "Linknet is dedicated to improving lives and supporting Indonesia's digital growth by delivering smart",
-        ctaText: "Get to Know Us",
-        ctaLink: "/about-us",
-        ctaTarget: "_self",
+        ctaList: [
+          { text: "Get to Know Us", href: "/about-us", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
       {
         id: 2,
@@ -54,8 +54,9 @@ export const HERO_SLIDERS_DATA = {
         labelText: "Our Vision",
         title: "Connecting 4 Million Homes, On Track to 8.4 Million by 2027",
         description: "Link Net Continues to Expand Its Digital Footprint for a Closer, More Connected Future.",
-        ctaText: "Get to Know Us",
-        ctaLink: "/promo",
+        ctaList: [
+          { text: "Get to Know Us", href: "/promo", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
       {
         id: 3,
@@ -73,8 +74,9 @@ export const HERO_SLIDERS_DATA = {
         labelText: "We're Hiring",
         title: "Let’s Join Management Trainee Generation 6",
         description: "Link Net Management Trainee Program is a comprehensive program that enables the organization",
-        ctaText: "Apply Now",
-        ctaLink: "/apply",
+        ctaList: [
+          { text: "Apply Now", href: "/apply", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
     ],
   },
@@ -113,9 +115,9 @@ export const HERO_SLIDERS_DATA = {
         labelIconSrc: "",
         title: "Build to Suit FTTH Network for Reliable Business Connectivity",
         description: "Develop fiber optic network infrastructure based on each client's specific location and needs, ensuring fast and stable internet connectivity.",
-        ctaText: "Consult Now",
-        ctaLink: "/about-us",
-        ctaTarget: "_self",
+        ctaList: [
+          { text: "Consult Now", href: "/about-us", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
       {
         id: 2,
@@ -133,8 +135,9 @@ export const HERO_SLIDERS_DATA = {
         labelText: "Our Vision",
         title: "Connecting 4 Million Homes, On Track to 8.4 Million by 2027",
         description: "Link Net Continues to Expand Its Digital Footprint for a Closer, More Connected Future.",
-        ctaText: "Get to Know Us",
-        ctaLink: "/promo",
+        ctaList: [
+          { text: "Get to Know Us", href: "/promo", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
       {
         id: 3,
@@ -156,8 +159,9 @@ export const HERO_SLIDERS_DATA = {
         labelText: "",
         title: "Connect Faster with Linknet NAP Services",
         description: "Achieve efficient data exchange and superior performance through reliable, high-speed network interconnection.",
-        ctaText: "Consult Now",
-        ctaLink: "/apply",
+        ctaList: [
+          { text: "Consult Now", href: "/apply", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
     ],
   },
@@ -196,9 +200,9 @@ export const HERO_SLIDERS_DATA = {
         labelIconSrc: "",
         title: "Your Gateway to Quality Content and Smarter Media",
         description: "Premium entertainment and media solutions that bring the best content directly to your home and business.",
-        ctaText: "Consult Now",
-        ctaLink: "/contact",
-        ctaTarget: "_self",
+        ctaList: [
+          { text: "Consult Now", href: "/contact", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
       {
         id: 2,
@@ -220,8 +224,9 @@ export const HERO_SLIDERS_DATA = {
         labelText: "",
         title: "Flexible OTT Solutions to Power Your Business and Home Entertainment",
         description: "Driving business transformation and delivering world-class viewing experiences through premium, next-generation OTT solutions.",
-        ctaText: "Consult Now",
-        ctaLink: "/product-services/hospitality-entertainment",
+        ctaList: [
+          { text: "Consult Now", href: "/product-services/hospitality-entertainment", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
       {
         id: 3,
@@ -243,8 +248,9 @@ export const HERO_SLIDERS_DATA = {
         labelText: "",
         title: "Turn reach into measurable value with media advertising placements",
         description: "Connect brands with relevant audiences through high-visibility inventory, contextual placements, and campaign-ready distribution.",
-        ctaText: "Consult Now",
-        ctaLink: "/product-services/media-advertising",
+        ctaList: [
+          { text: "Consult Now", href: "/product-services/media-advertising", target: "_self", variant: "secondary-outline--white", size: "lg" }
+        ],
       },
     ],
   },

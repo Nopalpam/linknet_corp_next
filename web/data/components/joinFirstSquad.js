@@ -23,8 +23,9 @@ export const JOIN_FIRST_SQUAD_DATA = {
         roleTitle: "First Squad",
         headline: "Are You Ready to Become First Squad At Linknet?",
         desc: "At Linknet, First Squad will contribute in providing the best experience for all of our customers. Let's join a company that sees potential and supports the development of every individual in it.",
-        ctaText: "Join as a First Squad",
-        ctaUrl: "#first-squad"
+        ctaList: [
+          { text: "Join as a First Squad", href: "#first-squad", target: "_self", variant: "secondary-outline", size: "lg" }
+        ]
       },
       {
         id: 2,
@@ -33,8 +34,9 @@ export const JOIN_FIRST_SQUAD_DATA = {
         roleTitle: "Management Trainee",
         headline: "Management Trainee Program at Linknet",
         desc: "Every year, Linknet recruits the best graduates through the Management Trainee (MT) program. MT will be equipped with a comprehensive program and receive the best development program to prepare MT as future leader at PT Link Net Tbk.",
-        ctaText: "Join as a Management Trainee",
-        ctaUrl: "#management-trainee"
+        ctaList: [
+          { text: "Join as a Management Trainee", href: "#management-trainee", target: "_self", variant: "secondary-outline", size: "lg" }
+        ]
       },
       {
         id: 3,
@@ -43,8 +45,9 @@ export const JOIN_FIRST_SQUAD_DATA = {
         roleTitle: "First Squad Intern",
         headline: "Get Ready to Be First Squad Intern, Now!",
         desc: "Start your career journey as a First Squad Intern at Linknet. By becoming a First Squad Intern, you will have the opportunity to learn, contribute and develop your knowledge professionally as a preparation for your career journey ahead.",
-        ctaText: "See Internship Openings",
-        ctaUrl: "#first-squad-intern"
+        ctaList: [
+          { text: "See Internship Openings", href: "#first-squad-intern", target: "_self", variant: "secondary-outline", size: "lg" }
+        ]
       }
     ]
   }

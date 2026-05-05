@@ -153,16 +153,34 @@ export default function JoinFirstSquad({
           <p className="text-body-b4 text-neutral-500 leading-relaxed mt-4 mb-8">
             {activeItem.desc}
           </p>
-          <div className="flex justify-center">
-            <LinknetLink
-              variant="secondary-outline"
-              size="lg"
-              href={activeItem.ctaUrl}
-              className="rounded-full px-8 bg-white"
-            >
-              {activeItem.ctaText}
-            </LinknetLink>
-          </div>
+          {/* CTA: prefer ctaList array, fall back to legacy ctaText/ctaUrl */}
+          {Array.isArray(activeItem.ctaList) && activeItem.ctaList.length > 0 ? (
+            <div className="flex justify-center flex-wrap gap-3">
+              {activeItem.ctaList.map((cta, index) => (
+                <LinknetLink
+                  key={cta.id || index}
+                  variant={cta.variant || "secondary-outline"}
+                  size={cta.size || "lg"}
+                  href={cta.href || cta.url || '#'}
+                  target={cta.target || '_self'}
+                  className="rounded-full px-8 bg-white"
+                >
+                  {cta.text || cta.label}
+                </LinknetLink>
+              ))}
+            </div>
+          ) : activeItem.ctaText ? (
+            <div className="flex justify-center">
+              <LinknetLink
+                variant="secondary-outline"
+                size="lg"
+                href={activeItem.ctaUrl || '#'}
+                className="rounded-full px-8 bg-white"
+              >
+                {activeItem.ctaText}
+              </LinknetLink>
+            </div>
+          ) : null}
         </div>
 
       </div>

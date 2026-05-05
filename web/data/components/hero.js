@@ -21,9 +21,9 @@ export const HERO_DATA = {
     theme: "light",
     title: "Improving Lives and Supporting Indonesia's Digital Growth",
     description: "Linknet is dedicated to improving lives and supporting Indonesia's digital growth by delivering smart",
-    ctaText: "Get to Know Us",
-    ctaLink: "/about-us",
-    ctaTarget: "_self", // Default target, bisa disesuaikan
+    ctaList: [
+      { text: "Get to Know Us", href: "/about-us", target: "_self", variant: "secondary-outline--white", size: "lg" }
+    ],
     bgOverlay: false,
   },
 
@@ -49,8 +49,9 @@ export const HERO_DATA = {
     title: "Improving Lives and Supporting Indonesia's Digital Growth",
     description: "Linknet is dedicated to improving lives and supporting Indonesia's digital growth by delivering smart",
     bgOverlay: false,
-    ctaText: "Get to Know Us",
-    ctaLink: "/about-us",
+    ctaList: [
+      { text: "Get to Know Us", href: "/about-us", target: "_self", variant: "secondary-outline--white", size: "lg" }
+    ],
   },
 
   // Slide 2
@@ -71,8 +72,9 @@ export const HERO_DATA = {
     title: "Connecting 4 Million Homes, On Track to 8.4 Million by 2027",
     description: "Link Net Continues to Expand Its Digital Footprint for a Closer, More Connected Future.",
     bgOverlay: false,
-    ctaText: "Get to Know Us",
-    ctaLink: "/promo",
+    ctaList: [
+      { text: "Get to Know Us", href: "/promo", target: "_self", variant: "secondary-outline--white", size: "lg" }
+    ],
   },
 
   // Slide 3
@@ -92,8 +94,9 @@ export const HERO_DATA = {
     title: "Let’s Join Management Trainee Generation 6",
     description: "Link Net Management Trainee Program is a comprehensive program that enables the organization",
     bgOverlay: false,
-    ctaText: "Apply Now",
-    ctaLink: "/apply",
+    ctaList: [
+      { text: "Apply Now", href: "/apply", target: "_self", variant: "secondary-outline--white", size: "lg" }
+    ],
   },
 
   news: {
@@ -113,8 +116,9 @@ export const HERO_DATA = {
     title: "Let’s Join Management Trainee Generation 6",
     description: "Link Net Management Trainee Program is a comprehensive program that enables the organization",
     bgOverlay: false,
-    ctaText: "Apply Now",
-    ctaLink: "/apply",
+    ctaList: [
+      { text: "Apply Now", href: "/apply", target: "_self", variant: "secondary-outline--white", size: "lg" }
+    ],
   },
   life_at_linknet: {
     config: {
@@ -133,8 +137,7 @@ export const HERO_DATA = {
     title: "Let's Discover the Possibilities Together!",
     description: "",
     bgOverlay: true,
-    ctaText: "",
-    ctaLink: "",
+    ctaList: [],
   },
   career: {
     config: {
@@ -153,8 +156,7 @@ export const HERO_DATA = {
     title: "Be a Part In Our Journey to Discover the Possibilities Together",
     description: "We believe in your potential. This is the right time for you to step up your skills and discover endless possibilities.",
     bgOverlay: true,
-    ctaText: "",
-    ctaLink: "",
+    ctaList: [],
   }
 
 

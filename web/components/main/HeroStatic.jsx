@@ -13,9 +13,10 @@ export default function Hero({
     labelIconSrc = "",
     title = "",
     description = "",
-    ctaText = "Get to Know Us",
-    ctaLink = "https://google.com",
-    ctaTarget = "_blank",
+    ctaText = "",
+    ctaLink = "#",
+    ctaTarget = "_self",
+    ctaList,
     bgImageDesktop = "",
     bgImageMobile = "",
     bgColor = "bg-[#FFB800]",
@@ -25,6 +26,10 @@ export default function Hero({
     className,
     note
 }) {
+  // Normalize CTA list: prefer ctaList array, fall back to single ctaText/ctaLink
+  const normalizedCtaList = Array.isArray(ctaList) && ctaList.length > 0
+    ? ctaList
+    : (ctaText ? [{ text: ctaText, href: ctaLink, target: ctaTarget }] : []);
   const {
     sectionId,
     className: configClassName = "",
@@ -171,18 +176,21 @@ export default function Hero({
                         </div>
                     )}
 
-                    {/* COMPONENT 5: CTA BUTTON (LINK) */}
-                    {ctaText && (
-                        <div className="mt-4">
-                            <LinknetLink
-                                href={ctaLink}
-                                variant={isDark ? "secondary-outline--white" : "secondary-outline--black"}
-                                size="lg"
-                                target={ctaTarget}
-                                className="transition-all duration-300 group flex"
-                            >
-                                <span>{ctaText}</span>
-                            </LinknetLink>
+                    {/* COMPONENT 5: CTA BUTTONS (ctaList with fallback to ctaText/ctaLink) */}
+                    {normalizedCtaList.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-3">
+                            {normalizedCtaList.map((cta, index) => (
+                                <LinknetLink
+                                    key={cta.id || index}
+                                    href={cta.href || cta.url || '#'}
+                                    variant={cta.variant || (isDark ? "secondary-outline--white" : "secondary-outline--black")}
+                                    size={cta.size || "lg"}
+                                    target={cta.target || '_self'}
+                                    className="transition-all duration-300 group flex"
+                                >
+                                    <span>{cta.text || cta.label}</span>
+                                </LinknetLink>
+                            ))}
                         </div>
                     )}
 

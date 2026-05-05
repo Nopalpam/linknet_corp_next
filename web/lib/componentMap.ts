@@ -489,24 +489,37 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   sliders_hero: {
     component: HeroSliders,
-    mapProps: ({ data, t, styleProps }) => ({
+    mapProps: ({ data, t, locale, styleProps }) => ({
       cmsSlides: Array.isArray(data.slides) 
-        ? data.slides.map((slide: any, index: number) => ({
-            id: slide.id || `cms-hero-slide-${index}`,
-            image: slide.image || undefined,
-            image_mobile: slide.image_mobile || undefined,
-            title: t(slide.title),
-            description: t(slide.description),
-            button_text: t(slide.button_text),
-            button_link: slide.button_link || '#',
-            pill_text: t(slide.pill_text),
-            indicator_label: t(slide.indicator_label),
-            config: {
-              ...(slide.config && typeof slide.config === 'object' ? slide.config : {}),
-              tabTitle: t(slide.config?.tabTitle) || t(slide.indicator_label) || t(slide.title),
-            },
-            theme: slide.theme || data.theme || 'dark',
-          }))
+        ? data.slides.map((slide: any, index: number) => {
+            const rawCtaList = getRawCtaList(slide);
+            // Fall back to button_text/button_link if no ctaList found
+            const ctaList = rawCtaList.length > 0
+              ? rawCtaList.map((cta, idx) => normalizeCtaItem(cta, t, idx))
+              : (t(slide.button_text) ? [normalizeCtaItem({ text: t(slide.button_text), href: slide.button_link || '#', target: '_self' }, t, 0)] : []);
+            return {
+              id: slide.id || `cms-hero-slide-${index}`,
+              image: slide.image || undefined,
+              image_mobile: slide.image_mobile || undefined,
+              introData: extractIntro(slide, t, locale) || {
+                label: t(slide.pill_text),
+                title: t(slide.title),
+                description: t(slide.description),
+                as: 'h2',
+                align: 'left',
+              },
+              // backward-compat flat fields
+              labelText: t(slide.pill_text),
+              title: t(slide.title),
+              description: t(slide.description),
+              ctaList,
+              config: {
+                ...(slide.config && typeof slide.config === 'object' ? slide.config : {}),
+                tabTitle: t(slide.config?.tabTitle) || t(slide.indicator_label) || t(slide.title),
+              },
+              theme: slide.theme || data.theme || 'dark',
+            };
+          })
         : null,
       autoplay: data.autoplay !== false,
       autoplaySpeed: data.autoplay_speed || null,
@@ -733,16 +746,21 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           align: 'left',
         },
         items: Array.isArray(data.slides)
-          ? data.slides.map((slide: any, idx: number) => ({
-              id: `squad-${idx}`,
-              image: slide.image || undefined,
-              roleLabel: '',
-              roleTitle: t(slide.title),
-              headline: '',
-              desc: t(slide.description),
-              ctaText: t(slide.cta_text),
-              ctaUrl: slide.cta_link || '#',
-            }))
+          ? data.slides.map((slide: any, idx: number) => {
+              const rawCtaList = getRawCtaList(slide);
+              const ctaList = rawCtaList.length > 0
+                ? rawCtaList.map((cta, i) => normalizeCtaItem(cta, t, i))
+                : (t(slide.cta_text) ? [normalizeCtaItem({ text: t(slide.cta_text), href: slide.cta_link || '#', target: '_self', variant: 'secondary-outline', size: 'lg' }, t, 0)] : []);
+              return {
+                id: `squad-${idx}`,
+                image: slide.image || undefined,
+                roleLabel: '',
+                roleTitle: t(slide.title),
+                headline: '',
+                desc: t(slide.description),
+                ctaList,
+              };
+            })
           : [],
       },
       ...styleProps,
@@ -1408,6 +1426,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     mapProps: ({ data, t, locale, styleProps }) => {
       const config = data.config && typeof data.config === 'object' ? data.config : {};
       const parentProduct = data.parentProduct || data.parent_product || null;
+      const introData = extractIntro(data, t, locale) || {
+        as: data.as || 'h2',
+        label: localizeField(data, 'labelText', t, locale) || localizeField(data, 'label_text', t, locale),
+        title: localizeField(data, 'title', t, locale),
+        description: localizeField(data, 'description', t, locale),
+        align: 'left',
+      };
+      const ctaList = getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index));
 
       return {
         name: data.name || undefined,
@@ -1427,12 +1453,12 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             iconImage: parentProduct.iconImage || parentProduct.icon_image || '',
             productName: t(parentProduct.productName || parentProduct.product_name),
           } : undefined,
-          labelText: localizeField(data, 'labelText', t, locale) || localizeField(data, 'label_text', t, locale),
-          title: localizeField(data, 'title', t, locale),
-          description: localizeField(data, 'description', t, locale),
-          ctaText: localizeField(data, 'ctaText', t, locale) || localizeField(data, 'cta_text', t, locale),
-          ctaLink: data.ctaLink || data.cta_link || '#',
-          ctaTarget: data.ctaTarget || data.cta_target || '_self',
+          introData,
+          ctaList: ctaList.length > 0 ? ctaList : undefined,
+          // backward-compat flat fields (for static data consumers)
+          labelText: introData.label || '',
+          title: introData.title || '',
+          description: introData.description || '',
         },
         ...styleProps,
       };

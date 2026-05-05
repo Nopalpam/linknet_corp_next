@@ -79,16 +79,28 @@ export default function Hero({
     logoSquare,
     labelText = "",
     labelIconSrc = "",
+    introData,
     title = "",
     description = "",
-    ctaText = "Get to Know Us",
-    ctaLink = "https://google.com",
-    ctaTarget = "_blank",
+    ctaText = "",
+    ctaLink = "#",
+    ctaTarget = "_self",
+    ctaList,
     bgColor = "bg-[#FFB800]",
     heroSize = "md",
     theme: topLevelTheme = "light",
     bgOverlay: topLevelBgOverlay = false,
   } = data;
+
+  // Resolve intro fields: prefer introData object, fall back to flat fields
+  const resolvedLabel = introData?.label || labelText;
+  const resolvedTitle = introData?.title || title;
+  const resolvedDescription = introData?.description || description;
+
+  // Normalize CTA list: prefer ctaList array, fall back to single ctaText/ctaLink
+  const normalizedCtaList = Array.isArray(ctaList) && ctaList.length > 0
+    ? ctaList
+    : (ctaText ? [{ text: ctaText, href: ctaLink, target: ctaTarget }] : []);
 
   const badgeIcon = parentProduct?.iconImage || legacyBadgeIcon;
   const badgeLabel = parentProduct?.productName || legacyBadgeLabel;
@@ -174,7 +186,7 @@ export default function Hero({
                     )}
 
                     {/* COMPONENT 2: LABEL PILL */}
-                    {(labelText || labelIconSrc) && (
+                    {(resolvedLabel || labelIconSrc) && (
                         <div className="lnGsapHeroItem inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-[2px] border border-neutral-900/5"> {/* Class GSAP */}
                         {labelIconSrc && (
                             <img
@@ -183,9 +195,9 @@ export default function Hero({
                             className="w-4 h-auto rounded-[1px] shadow-sm"
                             />
                         )}
-                        {labelText && (
+                        {resolvedLabel && (
                             <span className={`text-caption-c1 font-medium tracking-wide ${isDark ? 'text-white' : 'text-black'}`}>
-                                {labelText}
+                                {resolvedLabel}
                             </span>
                         )}
                         </div>
@@ -215,10 +227,10 @@ export default function Hero({
                         </div>
                     )}
 
-                    {title && (
+                    {resolvedTitle && (
                         <Tag className={`text-headline-h4 md:text-headline-h3 font-bold tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-md' : 'text-black'}`}>
                             <SplitText
-                                text={title.replace(/<br\s*\/?>/gi, '\n')}
+                                text={typeof resolvedTitle === 'string' ? resolvedTitle.replace(/<br\s*\/?>/gi, '\n') : ''}
                                 delay={240}
                                 duration={0.5}
                                 ease="power3.out"
@@ -233,26 +245,29 @@ export default function Hero({
                     )}
 
                     {/* COMPONENT 4: DESCRIPTION */}
-                    {description && (
+                    {resolvedDescription && (
                         <div className="lnGsapHeroItem flex items-start gap-3 max-w-[95%] md:max-w-[85%]"> {/* Class GSAP */}
                             <p className={`text-body-b5 md:text-body-b5 font-regular ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-                                {description}
+                                {resolvedDescription}
                             </p>
                         </div>
                     )}
 
-                    {/* COMPONENT 5: CTA BUTTON (LINK) */}
-                    {ctaText && (
-                        <div className="mt-4 lnGsapHeroItem"> {/* Class GSAP */}
-                            <LinknetLink
-                                href={ctaLink}
-                                variant={isDark ? "secondary-outline--white" : "secondary-outline--black"}
-                                size="lg"
-                                target={ctaTarget}
-                                className="transition-all duration-300 group flex"
-                            >
-                                <span>{ctaText}</span>
-                            </LinknetLink>
+                    {/* COMPONENT 5: CTA BUTTONS (ctaList with fallback to ctaText/ctaLink) */}
+                    {normalizedCtaList.length > 0 && (
+                        <div className="mt-4 lnGsapHeroItem flex flex-wrap gap-3"> {/* Class GSAP */}
+                            {normalizedCtaList.map((cta, index) => (
+                                <LinknetLink
+                                    key={cta.id || index}
+                                    href={cta.href || cta.url || '#'}
+                                    variant={cta.variant || (isDark ? "secondary-outline--white" : "secondary-outline--black")}
+                                    size={cta.size || "lg"}
+                                    target={cta.target || '_self'}
+                                    className="transition-all duration-300 group flex"
+                                >
+                                    <span>{cta.text || cta.label}</span>
+                                </LinknetLink>
+                            ))}
                         </div>
                     )}
 

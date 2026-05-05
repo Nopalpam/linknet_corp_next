@@ -36,8 +36,12 @@ function TVHighlightHeroSlide({ slide, onOpenModal }) {
     synopsis,
     logoSrc,
     heroImage,
-    ctaText = 'View Detail'
+    ctaList,
+    ctaText: legacyCtaText = 'View Detail'
   } = slide;
+
+  // Resolve button label from ctaList first, then fall back to legacy ctaText
+  const ctaLabel = ctaList?.[0]?.text || ctaList?.[0]?.label || legacyCtaText;
 
   return (
     <div className="bg-white p-2 pt-0">
@@ -83,7 +87,7 @@ function TVHighlightHeroSlide({ slide, onOpenModal }) {
                   onClick={() => onOpenModal(slide)}
                   className="min-w-[170px] justify-center"
                 >
-                  {ctaText}
+                  {ctaLabel}
                 </Button>
               </div>
             </div>

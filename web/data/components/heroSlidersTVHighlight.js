@@ -29,7 +29,9 @@ export const HERO_SLIDERS_TV_HIGHLIGHT_DATA = {
       heroImage: TV_HIGHLIGHT_HERO_IMAGE_MAP[item.id] || item.bgImageVertical || item.posterImage,
       logoSrc: item.channelLogo,
       genre: item.genre || item.rating || '',
-      ctaText: 'View Detail'
+      ctaList: [
+        { text: 'View Detail', variant: 'secondary-outline--white', size: 'lg' }
+      ]
     }))
   }
 };
