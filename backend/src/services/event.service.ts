@@ -15,10 +15,12 @@ const DEFAULT_ORGANIZER = {
 const RELATED_NEWS_SELECT = {
   id: true,
   title_en: true,
+  title_id: true,
   slug: true,
   news_date: true,
   news_thumbnail: true,
   excerpt_en: true,
+  excerpt_id: true,
   status: true,
   deleted_at: true,
 } as const;
@@ -73,6 +75,7 @@ const PUBLIC_EVENT_DETAIL_INCLUDE: Prisma.eventsInclude = {
 };
 
 export type EventPublicState = 'upcoming' | 'ongoing' | 'ended';
+export type EventLocale = 'en' | 'id';
 
 export interface EventQueryParams {
   page?: number;
@@ -80,16 +83,21 @@ export interface EventQueryParams {
   search?: string;
   status?: string;
   state?: EventPublicState;
+  locale?: EventLocale;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
 
 export interface CreateEventData {
   title: string;
+  title_id?: string;
   hero_title?: string;
+  hero_title_id?: string;
   slug?: string;
   excerpt?: string;
+  excerpt_id?: string;
   content: string;
+  content_id?: string;
   cover_image?: string;
   location?: string;
   venue?: string;
@@ -220,6 +228,14 @@ function normalizeArticleIds(articleIds?: string[]) {
   );
 }
 
+function normalizeLocale(locale?: string): EventLocale {
+  return locale === 'id' ? 'id' : 'en';
+}
+
+function localizedValue(primary: string | null | undefined, localized: string | null | undefined, locale?: string) {
+  return normalizeLocale(locale) === 'id' && localized ? localized : primary;
+}
+
 function isRegistrationOpen(item: {
   status: string;
   start_date: Date;
@@ -244,25 +260,27 @@ function isRegistrationOpen(item: {
   return now <= item.registration_end_at && now <= effectiveEndDate;
 }
 
-function serializeRelatedNews(newsItem: any) {
+function serializeRelatedNews(newsItem: any, locale?: string) {
   if (!newsItem) {
     return null;
   }
 
   return {
     id: newsItem.id,
-    title: newsItem.title_en,
+    title: localizedValue(newsItem.title_en, newsItem.title_id, locale),
     title_en: newsItem.title_en,
+    title_id: newsItem.title_id,
     slug: newsItem.slug,
     news_date: newsItem.news_date,
     news_thumbnail: newsItem.news_thumbnail,
-    excerpt: newsItem.excerpt_en,
+    excerpt: localizedValue(newsItem.excerpt_en, newsItem.excerpt_id, locale),
     excerpt_en: newsItem.excerpt_en,
+    excerpt_id: newsItem.excerpt_id,
     status: newsItem.status,
   };
 }
 
-function serializeEvent(item: any) {
+function serializeEvent(item: any, locale?: string) {
   if (!item) {
     return item;
   }
@@ -270,7 +288,7 @@ function serializeEvent(item: any) {
   const publicState = derivePublicState(item.start_date, item.end_date);
   const dateAliases = buildDateAliases(item.start_date, item.end_date);
   const relatedNews = (item.event_news_relations || [])
-    .map((relation: any) => serializeRelatedNews(relation.news))
+    .map((relation: any) => serializeRelatedNews(relation.news, locale))
     .filter(Boolean);
   const articleIds = relatedNews.map((article: any) => article.id);
   const organizer = {
@@ -292,11 +310,28 @@ function serializeEvent(item: any) {
         directionsLink: directionQuery ? createDirectionUrl(directionQuery) : null,
       }
     : null;
+  const title = localizedValue(item.title, item.title_id, locale) || item.title;
+  const heroTitle = localizedValue(item.hero_title || item.title, item.hero_title_id || item.title_id, locale) || title;
+  const excerpt = localizedValue(item.excerpt, item.excerpt_id, locale);
+  const content = localizedValue(item.content, item.content_id, locale) || item.content;
 
   return {
     ...item,
-    hero_title: item.hero_title || item.title,
-    heroTitle: item.hero_title || item.title,
+    title,
+    title_en: item.title,
+    title_id: item.title_id,
+    hero_title: heroTitle,
+    hero_title_en: item.hero_title || item.title,
+    hero_title_id: item.hero_title_id,
+    heroTitle,
+    heroTitleEn: item.hero_title || item.title,
+    heroTitleId: item.hero_title_id,
+    excerpt,
+    excerpt_en: item.excerpt,
+    excerpt_id: item.excerpt_id,
+    content,
+    content_en: item.content,
+    content_id: item.content_id,
     image: item.cover_image || null,
     poster_image: item.cover_image || null,
     posterImage: item.cover_image || null,
@@ -335,8 +370,8 @@ function serializeEvent(item: any) {
   };
 }
 
-function serializeEventList(items: any[]) {
-  return items.map(serializeEvent);
+function serializeEventList(items: any[], locale?: string) {
+  return items.map((item) => serializeEvent(item, locale));
 }
 
 async function generateUniqueSlug(input: string, fallback: string, excludeId?: string) {
@@ -362,8 +397,25 @@ async function generateUniqueSlug(input: string, fallback: string, excludeId?: s
   }
 }
 
+async function checkSlug(slug: string, excludeId?: string) {
+  const normalizedSlug = normalizeSlug(slug, slug);
+
+  const existing = await prisma.events.findFirst({
+    where: {
+      slug: normalizedSlug,
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { id: true, slug: true },
+  });
+
+  return {
+    slug: normalizedSlug,
+    available: !existing,
+  };
+}
+
 function buildStateWhere(state?: EventPublicState): Prisma.eventsWhereInput | undefined {
-  if (!state) {
+  if (!state || !['upcoming', 'ongoing', 'ended'].includes(state)) {
     return undefined;
   }
 
@@ -461,9 +513,12 @@ function normalizeMaxRegisterParticipants(value?: number | null) {
 function buildSearchWhere(search: string): Prisma.eventsWhereInput[] {
   return [
     { title: { contains: search, mode: 'insensitive' } },
+    { title_id: { contains: search, mode: 'insensitive' } },
     { hero_title: { contains: search, mode: 'insensitive' } },
+    { hero_title_id: { contains: search, mode: 'insensitive' } },
     { slug: { contains: search, mode: 'insensitive' } },
     { excerpt: { contains: search, mode: 'insensitive' } },
+    { excerpt_id: { contains: search, mode: 'insensitive' } },
     { location: { contains: search, mode: 'insensitive' } },
     { venue: { contains: search, mode: 'insensitive' } },
     { organizer_name: { contains: search, mode: 'insensitive' } },
@@ -478,6 +533,7 @@ export class EventService {
       search,
       status,
       state,
+      locale,
       sortBy: rawSortBy = 'updated_at',
       sortOrder = 'desc',
     } = params;
@@ -510,7 +566,7 @@ export class EventService {
     ]);
 
     return {
-      data: serializeEventList(items),
+      data: serializeEventList(items, locale),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -526,6 +582,7 @@ export class EventService {
       limit = 12,
       search,
       state,
+      locale,
       sortBy: rawSortBy = 'start_date',
       sortOrder = 'asc',
     } = params;
@@ -541,6 +598,7 @@ export class EventService {
       where.OR = [
         ...buildSearchWhere(search),
         { content: { contains: search, mode: 'insensitive' } },
+        { content_id: { contains: search, mode: 'insensitive' } },
         { address: { contains: search, mode: 'insensitive' } },
       ];
     }
@@ -562,7 +620,7 @@ export class EventService {
     ]);
 
     return {
-      data: serializeEventList(items),
+      data: serializeEventList(items, locale),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -585,7 +643,7 @@ export class EventService {
     return serializeEvent(item);
   }
 
-  async getEventBySlug(slug: string) {
+  async getEventBySlug(slug: string, locale?: string) {
     const item = await prisma.events.findUnique({
       where: { slug },
       include: PUBLIC_EVENT_DETAIL_INCLUDE,
@@ -595,7 +653,16 @@ export class EventService {
       throw new AppError('Event not found', 404);
     }
 
-    return serializeEvent(item);
+    return serializeEvent(item, locale);
+  }
+
+  async checkSlugAvailability(slug: string, excludeId?: string) {
+    const normalizedSlug = normalizeSlug(slug, slug);
+    if (!normalizedSlug) {
+      throw new AppError('Slug is required', 400);
+    }
+
+    return checkSlug(normalizedSlug, excludeId);
   }
 
   async createEvent(data: CreateEventData) {
@@ -614,10 +681,14 @@ export class EventService {
       data: {
         id: uuidv4(),
         title: data.title.trim(),
+        title_id: sanitizeOptionalText(data.title_id),
         hero_title: sanitizeOptionalText(data.hero_title),
+        hero_title_id: sanitizeOptionalText(data.hero_title_id),
         slug,
         excerpt: sanitizeOptionalHtml(data.excerpt),
+        excerpt_id: sanitizeOptionalHtml(data.excerpt_id),
         content: sanitizeHtmlContent(data.content.trim()),
+        content_id: sanitizeOptionalHtml(data.content_id),
         cover_image: sanitizeOptionalText(data.cover_image),
         location: sanitizeOptionalText(data.location),
         venue: sanitizeOptionalText(data.venue),
@@ -691,10 +762,14 @@ export class EventService {
         where: { id },
         data: {
           ...(data.title !== undefined ? { title: data.title.trim() } : {}),
+          ...(data.title_id !== undefined ? { title_id: sanitizeOptionalText(data.title_id) } : {}),
           ...(data.hero_title !== undefined ? { hero_title: sanitizeOptionalText(data.hero_title) } : {}),
+          ...(data.hero_title_id !== undefined ? { hero_title_id: sanitizeOptionalText(data.hero_title_id) } : {}),
           ...(data.slug !== undefined ? { slug } : {}),
           ...(data.excerpt !== undefined ? { excerpt: sanitizeOptionalHtml(data.excerpt) } : {}),
+          ...(data.excerpt_id !== undefined ? { excerpt_id: sanitizeOptionalHtml(data.excerpt_id) } : {}),
           ...(data.content !== undefined ? { content: sanitizeHtmlContent(data.content.trim()) } : {}),
+          ...(data.content_id !== undefined ? { content_id: sanitizeOptionalHtml(data.content_id) } : {}),
           ...(data.cover_image !== undefined ? { cover_image: sanitizeOptionalText(data.cover_image) } : {}),
           ...(data.location !== undefined ? { location: sanitizeOptionalText(data.location) } : {}),
           ...(data.venue !== undefined ? { venue: sanitizeOptionalText(data.venue) } : {}),

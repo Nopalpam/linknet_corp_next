@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Icon from '../Icon';
-import { formatEventDateLabel } from '@/data/components/eventList';
+import { formatEventDateLabel } from '@/lib/eventFormatters';
 
 const STATUS_STYLES = {
   upcoming: {
@@ -56,12 +56,18 @@ function CardEventContent({
         </div>
 
         <div className="lnCardEvent__thumbnail aspect-[300/373] w-full overflow-hidden bg-neutral-100">
-          <img
-            src={image}
-            alt={title}
-            className="lnCardEvent__image h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
+          {image ? (
+            <img
+              src={image}
+              alt={title}
+              className="lnCardEvent__image h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-neutral-100 text-caption-c1 font-semibold uppercase tracking-wider text-neutral-500">
+              Event
+            </div>
+          )}
         </div>
       </div>
 

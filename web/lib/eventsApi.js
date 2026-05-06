@@ -34,9 +34,13 @@ export async function getEvents(params = {}) {
   }
 }
 
-export async function getEventBySlug(slug) {
+export async function getEventBySlug(slug, params = {}) {
   try {
-    const res = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(slug)}`, {
+    const queryString = buildQueryString(params);
+    const url = queryString
+      ? `${API_BASE_URL}/events/${encodeURIComponent(slug)}?${queryString}`
+      : `${API_BASE_URL}/events/${encodeURIComponent(slug)}`;
+    const res = await fetch(url, {
       next: { revalidate: 60 },
     });
 

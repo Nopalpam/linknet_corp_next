@@ -45,7 +45,7 @@ const COMMON_FIELD_KEYS = ['config', 'custom_id', 'custom_class', 'bg_type', 'bg
 /** Keys that belong to the CONTENT group */
 const CONTENT_KEYS = ['title', 'subtitle', 'heading', 'subheading', 'description', 'content', 'text', 'label', 'name', 'caption', 'alt', 'excerpt', 'summary', 'body', 'quote', 'author', 'source', 'placeholder', 'badge', 'tag', 'category'];
 /** Keys that belong to the LAYOUT group */
-const LAYOUT_KEYS = ['theme', 'size', 'layout', 'alignment', 'text_position', 'columns', 'gap', 'padding', 'margin', 'width', 'height', 'max_width', 'max_items', 'per_page', 'order', 'direction', 'position', 'variant', 'style', 'display', 'grid', 'spacing', 'rows', 'cols', 'show_', 'hide_', 'is_', 'enable_', 'visible'];
+const LAYOUT_KEYS = ['theme', 'size', 'layout', 'alignment', 'text_position', 'columns', 'gap', 'padding', 'margin', 'width', 'height', 'max_width', 'max_items', 'per_page', 'itemsPerRow', 'items_per_row', 'limit', 'state', 'order', 'direction', 'position', 'variant', 'style', 'display', 'grid', 'spacing', 'rows', 'cols', 'show_', 'hide_', 'is_', 'enable_', 'visible'];
 /** Keys that belong to the BUTTON group. Button Settings must only expose CTA lists. */
 const CTA_LIST_KEYS = ['ctaList', 'cta_list', 'ctaButtons', 'cta_buttons', 'buttons'];
 const BUTTON_KEYS = CTA_LIST_KEYS;
@@ -57,6 +57,8 @@ const TYPE_HIDDEN_FIELDS: Record<string, string[]> = {
   awards_list: ['layout', 'title'],
   awards_marquee: ['title', 'marquee_speed', 'marquee_direction'],
   career_list: ['title'],
+  event_related: ['currentEvent', 'current_event', 'events', 'items', 'list'],
+  events_list: ['events', 'items', 'list', 'mainData', 'main_data'],
   news_highlight: ['title'],
   news_featured: ['title'],
   news_teaser: ['categorySlug', 'category_slug'],
@@ -79,6 +81,9 @@ const FIELD_HELPERS: Record<string, string> = {
   per_page: 'Number of items per page for pagination',
   order: 'Sort order for displayed items',
   news_ids: 'Pilih beberapa berita dari database. Urutan pilihan di bawah ini akan dipakai di public.',
+  itemsPerRow: 'Number of event cards per row on desktop.',
+  showPagination: 'Show frontend pagination controls when more CMS events are available.',
+  state: 'Filter events by public state from CMS.',
   columns: 'Number of columns in the grid layout',
   gap: 'Spacing between grid items (in pixels or CSS units)',
   alt: 'Alternative text for accessibility (screen readers)',
@@ -1548,7 +1553,13 @@ function renderField(
     return { element: <SelectField key={key} {...fieldProps} options={['lnHero__medium', 'lnHero__small']} />, wide: false };
   }
   if (key === 'order') {
-    return { element: <SelectField key={key} {...fieldProps} options={['latest', 'oldest', 'alphabetical']} />, wide: false };
+    const options = componentType === 'event_related'
+      ? ['latest', 'newest', 'random']
+      : ['latest', 'oldest', 'alphabetical'];
+    return { element: <SelectField key={key} {...fieldProps} options={options} />, wide: false };
+  }
+  if (key === 'state' && (componentType === 'events_list' || componentType === 'event_related')) {
+    return { element: <SelectField key={key} {...fieldProps} options={['all', 'upcoming', 'ongoing', 'ended']} />, wide: false };
   }
   if (key === 'source' || key === 'data_source') {
     return { element: <SelectField key={key} {...fieldProps} options={['cms_highlights', 'selected_news', 'manual']} />, wide: false };

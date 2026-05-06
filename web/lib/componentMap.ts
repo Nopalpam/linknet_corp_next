@@ -1509,8 +1509,17 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: EventHero,
     mapProps: ({ data, t, locale, styleProps }) => {
       const config = data.config && typeof data.config === 'object' ? data.config : {};
+      const introData = extractIntro(data, t, locale) || {
+        as: 'h1',
+        label: 'FIND YOUR NEXT EXPERIENCE',
+        title: 'Discover & Promote Upcoming Event',
+        description: '',
+        align: 'left',
+      };
 
       return {
+        variant: data.variant || data.source || 'event_grid',
+        introData,
         config: {
           sectionId: config.sectionId || data.custom_id || '',
           className: config.className || data.custom_class || '',
@@ -1541,9 +1550,17 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   event_related: {
     component: EventRelated,
-    mapProps: ({ data, styleProps }) => ({
+    mapProps: ({ data, t, locale, styleProps }) => ({
       currentEvent: data.currentEvent || data.current_event || null,
-      events: data.events || [],
+      events: null,
+      type: (data.type as string) || (data.order as string) || 'latest',
+      state: (data.state as string) || 'all',
+      limit: Number(data.limit) || 4,
+      introData: extractIntro(data, t, locale) || {
+        as: 'h2',
+        title: locale === 'id' ? 'Event Lainnya' : 'Other Events',
+        align: 'left',
+      },
       ...styleProps,
     }),
   },
@@ -1553,7 +1570,16 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   events_list: {
     component: EventsList,
-    mapProps: ({ data, locale }) => ({ events: data.events || data.mainData || [], locale }),
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      events: null,
+      state: (data.state as string) || 'all',
+      limit: Number(data.limit) || 12,
+      itemsPerRow: Number(data.itemsPerRow || data.items_per_row) || 3,
+      showPagination: data.showPagination !== false && data.pagination !== false,
+      introData: extractIntro(data, t, locale),
+      locale,
+      ...styleProps,
+    }),
   },
   footer: {
     component: Footer,

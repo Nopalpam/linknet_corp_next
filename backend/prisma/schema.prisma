@@ -1081,10 +1081,14 @@ model news_views {
 model events {
   id                        String                              @id
   title                     String
+  title_id                  String?
   hero_title                String?
+  hero_title_id             String?
   slug                      String                              @unique
   excerpt                   String?
+  excerpt_id                String?
   content                   String
+  content_id                String?
   cover_image               String?
   location                  String?
   venue                     String?

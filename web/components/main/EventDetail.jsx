@@ -1,6 +1,7 @@
 import EventHero from '@/components/main/EventHero';
 import EventContent from '@/components/main/EventContent';
 import EventRelated from '@/components/main/EventRelated';
+import EventRelatedNews from '@/components/main/EventRelatedNews';
 import { formatEventDateLabel, formatEventTimeLabel } from '@/lib/eventFormatters';
 
 function normalizeEvent(event) {
@@ -10,7 +11,7 @@ function normalizeEvent(event) {
   const organizer = event.organizer || {};
   const coverImage = event.cover_image || event.coverImage || event.thumbnailImage || event.thumbnail_image || '';
   const posterImage = event.posterImage || event.poster_image || event.poster || coverImage;
-  const status = event.status || event.public_state || event.state || 'ongoing';
+  const status = event.public_state || event.state || event.status || 'ongoing';
   const heroLocation =
     event.heroLocation ||
     event.hero_location ||
@@ -50,11 +51,12 @@ function normalizeEvent(event) {
       mapEmbedUrl: locationSection.mapEmbedUrl || locationSection.map_embed_url || '',
       directionsLink: locationSection.directionsLink || locationSection.directions_link || '#',
     },
+    relatedNews: event.relatedNews || event.related_news || [],
     relatedEvents: event.relatedEvents || event.related_events || [],
   };
 }
 
-export default function EventDetail({ event, locale = 'en' }) {
+export default function EventDetail({ event, relatedEvents = [], locale = 'en' }) {
   if (!event) return null;
   const normalizedEvent = normalizeEvent(event);
   const isRegistrationOpen =
@@ -84,7 +86,10 @@ export default function EventDetail({ event, locale = 'en' }) {
       />
 
       <EventContent event={normalizedEvent} />
-      <EventRelated currentEvent={normalizedEvent} events={normalizedEvent.relatedEvents} />
+      <EventRelated currentEvent={normalizedEvent} events={relatedEvents.length > 0 ? relatedEvents : normalizedEvent.relatedEvents} />
+      {normalizedEvent.relatedNews.length > 0 ? (
+        <EventRelatedNews articles={normalizedEvent.relatedNews} locale={locale} />
+      ) : null}
     </>
   );
 }

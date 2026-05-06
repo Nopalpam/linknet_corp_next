@@ -8,8 +8,7 @@ import Button from '@/components/base/Button';
 import LinknetLink from '@/components/base/Link';
 import Icon from '@/components/base/Icon';
 import { useModalFormEventRegister } from '@/components/base/modals/ModalFormEventRegister';
-import { formatEventDateLabel, formatEventTimeLabel, formatEventTimestamp } from '@/data/components/eventList';
-import { NEWS_LIST } from '@/data/components/newsList';
+import { formatEventDateLabel, formatEventTimeLabel, formatEventTimestamp } from '@/lib/eventFormatters';
 
 const COLLAPSED_HEIGHT = 500;
 
@@ -136,10 +135,8 @@ export default function EventContent({ event }) {
   const organizer = event.organizer || {};
   const locationSection = event.locationSection || {};
   const isEnded = event.status === 'ended';
-  const relatedArticle = Array.isArray(event?.articleIds)
-    ? event.articleIds
-        .map((id) => NEWS_LIST.find((item) => item.id === id && item.status === 'active'))
-        .find(Boolean) || null
+  const relatedArticle = Array.isArray(event?.relatedNews) && event.relatedNews.length > 0
+    ? event.relatedNews[0]
     : null;
 
   const handleToggleExpand = () => {
@@ -188,7 +185,7 @@ export default function EventContent({ event }) {
                       className="block shrink-0 overflow-hidden rounded-[16px]"
                     >
                       <img
-                        src={relatedArticle.image}
+                        src={relatedArticle.news_thumbnail}
                         alt={relatedArticle.title}
                         className="h-[72px] w-[72px] object-cover"
                       />
@@ -202,7 +199,7 @@ export default function EventContent({ event }) {
                         {relatedArticle.title}
                       </Link>
                       <p className="mt-1 text-body-b5 font-regular text-secondary">
-                        {formatArticleDate(relatedArticle.newsDate)}
+                        {formatArticleDate(relatedArticle.news_date)}
                       </p>
                     </div>
                   </div>

@@ -1,135 +1,214 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 
 import CardEvent from '@/components/base/cards/CardEvent';
 import LinknetLink from '@/components/base/Link';
-import { EVENT_LIST } from '@/data/components/eventList';
+import Intro from '@/components/base/section/Intro';
 
-const MAX_ITEMS = 4;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const VALID_STATES = ['all', 'upcoming', 'ongoing', 'ended'];
 
-const STATUS_PRIORITY = {
-  ongoing: 0,
-  upcoming: 1,
-  ended: 2,
+function normalizeState(state) {
+  if (state === 'past') return 'ended';
+  return VALID_STATES.includes(state) ? state : 'all';
+}
+
+function toApiState(state) {
+  const normalized = normalizeState(state);
+  return normalized === 'all' ? null : normalized;
+}
+
+function shuffleArray(arr) {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function eventMatchesState(event, state) {
+  const normalized = normalizeState(state);
+  if (normalized === 'all') return true;
+  return normalizeState(event.public_state || event.state || event.status) === normalized;
+}
+
+function sortEventsByType(events, type) {
+  switch (type) {
+    case 'random':
+      return shuffleArray(events);
+    case 'newest':
+      return [...events].sort((a, b) => {
+        const aDate = new Date(a.created_at || a.createdAt || 0);
+        const bDate = new Date(b.created_at || b.createdAt || 0);
+        return bDate - aDate;
+      });
+    case 'latest':
+    default:
+      return [...events].sort((a, b) => {
+        const aDate = new Date(a.start_date || a.startDate || a.event_date || a.date || 0);
+        const bDate = new Date(b.start_date || b.startDate || b.event_date || b.date || 0);
+        return bDate - aDate;
+      });
+  }
+}
+
+const DEFAULT_INTRO = {
+  as: 'h2',
+  title: 'Other Events',
+  align: 'left',
 };
 
-function getEventPrimaryDate(event) {
-  const value = event?.startDate || event?.date || event?.endDate;
-
-  if (!value) return null;
-
-  const parsedDate = new Date(value);
-
-  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
-}
-
-function sortEventsByPriority(a, b) {
-  const statusDiff = (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
-
-  if (statusDiff !== 0) return statusDiff;
-
-  const firstDate = getEventPrimaryDate(a);
-  const secondDate = getEventPrimaryDate(b);
-
-  if (firstDate && secondDate) {
-    return firstDate - secondDate;
-  }
-
-  if (firstDate) return -1;
-  if (secondDate) return 1;
-
-  return 0;
-}
-
-export default function EventRelated({ currentEvent, events, className = '' }) {
+/**
+ * EventRelated
+ *
+ * Displays related events on an event detail page.
+ *
+ * Props:
+ *   currentEvent  — the event currently being viewed (used to exclude from list)
+ *   events        — array of candidate events to pick from
+ *   type          — 'latest' | 'newest' | 'random'  (default: 'latest')
+ *   limit         — max items to display             (default: 4)
+ *   introData     — Intro section config from page builder (label/title/description)
+ *   className     — optional extra CSS classes
+ */
+export default function EventRelated({
+  currentEvent,
+  events = null,
+  type = 'latest',
+  state = 'all',
+  limit = 4,
+  introData,
+  className = '',
+}) {
   const params = useParams();
   const locale = params?.locale || 'en';
+  const needsFetch = events === null || events === undefined;
+  const normalizedState = normalizeState(state);
+  const [clientEvents, setClientEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(needsFetch);
 
-  const relatedEvents = useMemo(() => {
-    if (!currentEvent) return [];
+  useEffect(() => {
+    if (!needsFetch) return undefined;
 
-    const sourceEvents = Array.isArray(events) && events.length > 0 ? events : EVENT_LIST;
-    const allActiveEvents = sourceEvents.filter(
-      (event) => event.publishStatus !== 'inactive' && event.status !== 'draft' && event.id !== currentEvent.id
-    );
+    let cancelled = false;
+    const qp = new URLSearchParams();
+    qp.set('limit', String(Math.max(Number(limit) + 1, 6)));
+    qp.set('sortBy', type === 'newest' ? 'created_at' : 'start_date');
+    qp.set('sortOrder', 'desc');
+    qp.set('locale', String(locale));
 
-    const prioritizedEvents = [];
-    const otherEvents = [];
+    const apiState = toApiState(normalizedState);
+    if (apiState) qp.set('state', apiState);
 
-    allActiveEvents
-      .slice()
-      .sort(sortEventsByPriority)
-      .forEach((event) => {
-        if (event.status === 'ongoing' || event.status === 'upcoming') {
-          prioritizedEvents.push(event);
-          return;
-        }
-
-        otherEvents.push(event);
+    setIsLoading(true);
+    fetch(`${API_BASE_URL}/events?${qp.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!cancelled) setClientEvents(json?.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setClientEvents([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
       });
 
-    if (prioritizedEvents.length >= MAX_ITEMS) {
-      return prioritizedEvents.slice(0, MAX_ITEMS);
-    }
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, limit, needsFetch, normalizedState, type]);
 
-    return [...prioritizedEvents, ...otherEvents.slice(0, MAX_ITEMS - prioritizedEvents.length)];
-  }, [currentEvent, events]);
+  const relatedEvents = useMemo(() => {
+    const sourceEvents = needsFetch ? clientEvents : (Array.isArray(events) ? events : []);
 
-  if (!relatedEvents.length) return null;
+    // Exclude current event by id and slug
+    const filtered = sourceEvents.filter(
+      (event) =>
+        event.publishStatus !== 'inactive' &&
+        event.status !== 'draft' &&
+        event.status !== 'DRAFT' &&
+        eventMatchesState(event, normalizedState) &&
+        (!currentEvent?.id || event.id !== currentEvent.id) &&
+        (!currentEvent?.slug || event.slug !== currentEvent.slug),
+    );
+
+    const sorted = sortEventsByType(filtered, type);
+    // Show as many as available up to limit
+    return sorted.slice(0, limit);
+  }, [clientEvents, currentEvent?.id, currentEvent?.slug, events, limit, needsFetch, normalizedState, type]);
+
+  const resolvedIntro = introData || DEFAULT_INTRO;
+
+  // Fallback when no related events found
+  if (isLoading) {
+    return null;
+  }
+
+  if (!relatedEvents.length) {
+    return (
+      <section className={`py-12 ${className}`}>
+        <div className="container">
+          <div className="mb-6">
+            <Intro {...resolvedIntro} />
+          </div>
+          <p className="text-body-b4 text-secondary">No related events</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className={`overflow-hidden relative ${className}`}>
+    <section className={`overflow-hidden relative py-12 md:py-16 ${className}`}>
       <div className="container">
-        <div className="">
-          <div className="mb-4 md:mb-8">
-            <h2 className="text-headline-h4 font-bold text-black">Other Events</h2>
-          </div>
+        <div className="mb-6 md:mb-10">
+          <Intro {...resolvedIntro} />
+        </div>
 
-          <Swiper
-            slidesPerView={2}
-            spaceBetween={12}
-            breakpoints={{
-              768: {
-                slidesPerView: 3,
-                spaceBetween: 20,
-              },
-              1200: {
-                slidesPerView: 4,
-                spaceBetween: 24,
-              },
-            }}
-            className="!overflow-visible"
+        <Swiper
+          slidesPerView={2}
+          spaceBetween={12}
+          breakpoints={{
+            768: {
+              slidesPerView: 3,
+              spaceBetween: 20,
+            },
+            1200: {
+              slidesPerView: Math.min(4, relatedEvents.length),
+              spaceBetween: 24,
+            },
+          }}
+          className="!overflow-visible"
+        >
+          {relatedEvents.map((event) => (
+            <SwiperSlide key={event.id} className="!h-auto">
+              <CardEvent
+                href={`/${locale}/events/${event.slug}`}
+                image={event.image || event.cover_image || event.thumbnailImage}
+                title={event.title}
+                date={event.date}
+                startDate={event.startDate || event.start_date}
+                endDate={event.endDate || event.end_date}
+                location={event.location || event.venue}
+                status={event.public_state || event.state || event.status}
+                className="!max-w-none w-full h-full"
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        <div className="mt-10 flex justify-center md:mt-12">
+          <LinknetLink
+            href={`/${locale}/events`}
+            variant="secondary-outline"
+            size="lg"
           >
-            {relatedEvents.map((event) => (
-              <SwiperSlide key={event.id} className="!h-auto">
-                <CardEvent
-                  href={`/${locale}/events/${event.slug}`}
-                  image={event.image || event.cover_image || event.thumbnailImage}
-                  title={event.title}
-                  date={event.date}
-                  startDate={event.startDate || event.start_date}
-                  endDate={event.endDate || event.end_date}
-                  location={event.location || event.venue}
-                  status={event.status || event.public_state || event.state}
-                  className="!max-w-none w-full h-full"
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
-
-          <div className="mt-10 flex justify-center md:mt-12">
-            <LinknetLink
-              href={`/${locale}/events`}
-              variant="secondary-outline"
-              size="lg"
-            >
-              Discover More Event
-            </LinknetLink>
-          </div>
+            Discover More Event
+          </LinknetLink>
         </div>
       </div>
     </section>

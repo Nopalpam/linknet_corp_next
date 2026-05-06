@@ -50,43 +50,43 @@ const menuSections: MenuSection[] = [
   {
     label: "Main Components",
     items: [
-      // {
-      //   icon: <BoxCubeIcon />,
-      //   name: "Awards",
-      //   path: "/awards",
-      // },
-      // {
-      //   icon: <TableIcon />,
-      //   name: "Management",
-      //   path: "/management",
-      // },
-      // {
-      //   icon: <ListIcon />,
-      //   name: "Reports",
-      //   subItems: [
-      //     { name: "Report Types", path: "/reports/report-types" },
-      //     { name: "Report Sections", path: "/reports/report-sections" },
-      //     { name: "Report Items", path: "/reports/report-items" },
-      //   ],
-      // },
-      // {
-      //   icon: <ListIcon />,
-      //   name: "Announcements",
-      //   subItems: [
-      //     { name: "Announcements Types", path: "/announcements/announcement-types" },
-      //     { name: "Announcements Sections", path: "/announcements/announcement-sections" },
-      //     { name: "Announcements Items", path: "/announcements/announcement-items" },
-      //   ],
-      // },
-      // {
-      //   icon: <CalenderIcon />,
-      //   name: "Announcement",
-      //   subItems: [
-      //     { name: "Announcement Type", path: "/announcement/type" },
-      //     { name: "Announcement Section", path: "/announcement/section" },
-      //     { name: "Announcement Item", path: "/announcement/item" },
-      //   ],
-      // },
+      {
+        icon: <BoxCubeIcon />,
+        name: "Awards",
+        path: "/awards",
+      },
+      {
+        icon: <TableIcon />,
+        name: "Management",
+        path: "/management",
+      },
+      {
+        icon: <ListIcon />,
+        name: "Reports",
+        subItems: [
+          { name: "Report Types", path: "/reports/report-types" },
+          { name: "Report Sections", path: "/reports/report-sections" },
+          { name: "Report Items", path: "/reports/report-items" },
+        ],
+      },
+      {
+        icon: <ListIcon />,
+        name: "Announcements",
+        subItems: [
+          { name: "Announcements Types", path: "/announcements/announcement-types" },
+          { name: "Announcements Sections", path: "/announcements/announcement-sections" },
+          { name: "Announcements Items", path: "/announcements/announcement-items" },
+        ],
+      },
+      {
+        icon: <CalenderIcon />,
+        name: "Announcement",
+        subItems: [
+          { name: "Announcement Type", path: "/announcement/type" },
+          { name: "Announcement Section", path: "/announcement/section" },
+          { name: "Announcement Item", path: "/announcement/item" },
+        ],
+      },
       {
         icon: <PageIcon />,
         name: "News",
@@ -101,11 +101,11 @@ const menuSections: MenuSection[] = [
         name: "Events",
         path: "/events",
       },
-      // {
-      //   icon: <BoxCubeIcon />,
-      //   name: "Career",
-      //   path: "/careers",
-      // },
+      {
+        icon: <BoxCubeIcon />,
+        name: "Career",
+        path: "/careers",
+      },
       {
         icon: <TableIcon />,
         name: "Contact Us Data Bank",
@@ -136,8 +136,8 @@ const menuSections: MenuSection[] = [
         name: "Form Registration",
         subItems: [
           { name: "Enterprise Forms", path: "/form-modules/enterprise" },
-          // { name: "Fiber Forms", path: "/form-modules/fiber" },
-          // { name: "Media Forms", path: "/form-modules/media" },
+          { name: "Fiber Forms", path: "/form-modules/fiber" },
+          { name: "Media Forms", path: "/form-modules/media" },
           // { name: "All Submissions", path: "/form-modules/submissions" },
         ],
       },

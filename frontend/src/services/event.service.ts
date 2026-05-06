@@ -36,11 +36,19 @@ export interface EventLocationSection {
 export interface EventItem {
   id: string;
   title: string;
+  title_en?: string;
+  title_id?: string | null;
   hero_title?: string | null;
+  hero_title_en?: string | null;
+  hero_title_id?: string | null;
   heroTitle?: string | null;
   slug: string;
   excerpt?: string | null;
+  excerpt_en?: string | null;
+  excerpt_id?: string | null;
   content: string;
+  content_en?: string;
+  content_id?: string | null;
   cover_image?: string | null;
   image?: string | null;
   location?: string | null;
@@ -90,10 +98,14 @@ export interface EventItem {
 
 export interface CreateEventData {
   title: string;
+  title_id?: string;
   hero_title?: string;
+  hero_title_id?: string;
   slug?: string;
   excerpt?: string;
+  excerpt_id?: string;
   content: string;
+  content_id?: string;
   cover_image?: string;
   location?: string;
   venue?: string;
@@ -180,6 +192,11 @@ class EventService extends BaseCrudService<EventItem> {
 
   async getBySlug(slug: string): Promise<{ data: EventItem }> {
     return this.fetchWithAuth(`${API_URL}/api/v1/events/${slug}`);
+  }
+
+  async checkSlug(slug: string, excludeId?: string): Promise<{ data: { slug: string; available: boolean } }> {
+    const query = this.buildQueryString({ slug, excludeId });
+    return this.fetchWithAuth(`${API_URL}/api/v1/cms/events-slug/check?${query}`);
   }
 
   async createEvent(data: CreateEventData): Promise<{ data: EventItem; message: string }> {

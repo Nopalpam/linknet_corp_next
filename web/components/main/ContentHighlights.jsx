@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
@@ -14,7 +14,8 @@ import Icon from '../base/Icon';
 
 import { CONTENT_HIGHLIGHT_DATA } from '@/data/components/contentHighlight';
 import { NEWS_LIST } from '@/data/components/newsList';
-import { EVENT_LIST } from '@/data/components/eventList';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 const TAB_OPTIONS = [
   { label: 'Insight', value: 'business-insight' },
@@ -33,7 +34,7 @@ const VIEW_ALL_CONFIG = {
   },
   event: {
     label: 'View All Event',
-    href: '/event',
+    href: '/events',
   },
 };
 
@@ -67,6 +68,7 @@ export default function ContentHighlights({
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+  const [eventItems, setEventItems] = useState([]);
 
   const { config, introData } = sectionData;
   const {
@@ -82,9 +84,32 @@ export default function ContentHighlights({
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    const qp = new URLSearchParams({
+      limit: '5',
+      sortBy: 'start_date',
+      sortOrder: 'desc',
+      locale: String(locale),
+    });
+
+    fetch(`${API_BASE_URL}/events?${qp.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!cancelled) setEventItems(json?.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setEventItems([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
   const contentByTab = useMemo(() => {
     const activeNews = NEWS_LIST.filter((item) => item.status === 'active');
-    const activeEvents = EVENT_LIST.filter((item) => item.publishStatus === 'active');
+    const activeEvents = eventItems.filter((item) => item.publishStatus !== 'draft' && item.status !== 'DRAFT');
 
     return {
       'business-insight': sortByDateDesc(
@@ -97,10 +122,10 @@ export default function ContentHighlights({
       ).slice(0, 5),
       event: sortByDateDesc(
         activeEvents,
-        (item) => item.startDate || item.date || item.endDate
+        (item) => item.start_date || item.startDate || item.date || item.end_date || item.endDate
       ).slice(0, 5),
     };
-  }, []);
+  }, [eventItems]);
 
   const activeItems = contentByTab[activeTab] || [];
   const activeViewAll = VIEW_ALL_CONFIG[activeTab] || VIEW_ALL_CONFIG['business-insight'];
@@ -200,14 +225,14 @@ export default function ContentHighlights({
                     <div className="h-full">
                       {activeTab === 'event' ? (
                         <CardEvent
-                          href={withLocale(`/event/${item.slug}`, locale)}
-                          image={item.image}
+                          href={withLocale(`/events/${item.slug}`, locale)}
+                          image={item.cover_image || item.image || item.thumbnailImage}
                           title={item.title}
                           date={item.date}
-                          startDate={item.startDate}
-                          endDate={item.endDate}
-                          location={item.location}
-                          status={item.status}
+                          startDate={item.start_date || item.startDate}
+                          endDate={item.end_date || item.endDate}
+                          location={item.location || item.venue}
+                          status={item.public_state || item.state || item.status}
                           className="!max-w-none w-full h-full"
                         />
                       ) : (

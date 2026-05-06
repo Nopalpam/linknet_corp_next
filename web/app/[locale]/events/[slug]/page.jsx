@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import EventDetail from '@/components/main/EventDetail';
-import { getEventBySlug } from '@/lib/eventsApi';
+import { getEventBySlug, getEvents } from '@/lib/eventsApi';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const event = await getEventBySlug(slug);
+  const event = await getEventBySlug(slug, { locale });
 
   if (!event) {
     return {
@@ -32,5 +32,8 @@ export default async function EventDetailPage({ params }) {
     notFound();
   }
 
-  return <EventDetail event={event} locale={locale} />;
+  const { data: allEvents } = await getEvents({ limit: 20, locale });
+  const relatedEvents = (allEvents || []).filter((e) => e.slug !== slug);
+
+  return <EventDetail event={event} relatedEvents={relatedEvents} locale={locale} />;
 }

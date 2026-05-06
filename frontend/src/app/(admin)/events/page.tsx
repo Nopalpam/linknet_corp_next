@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { useToast } from "@/context/ToastContext";
 import { EventItem, eventService } from "@/services/event.service";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
-import EventFormModal from "./components/EventFormModal";
 import EventRegistrationsModal from "./components/EventRegistrationsModal";
 import EventsTable from "./components/EventsTable";
 
 export default function EventsPage() {
   const toast = useToast();
+  const router = useRouter();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,11 +20,9 @@ export default function EventsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-  const [formMode, setFormMode] = useState<"create" | "edit">("create");
 
   const itemsPerPage = 10;
 
@@ -66,15 +65,11 @@ export default function EventsPage() {
   }, [searchQuery, filterStatus]);
 
   const handleCreate = () => {
-    setFormMode("create");
-    setSelectedEvent(null);
-    setIsFormModalOpen(true);
+    router.push("/events/create");
   };
 
   const handleEdit = (event: EventItem) => {
-    setFormMode("edit");
-    setSelectedEvent(event);
-    setIsFormModalOpen(true);
+    router.push(`/events/edit/${event.id}`);
   };
 
   const handleDelete = (event: EventItem) => {
@@ -85,14 +80,6 @@ export default function EventsPage() {
   const handleRegistrations = (event: EventItem) => {
     setSelectedEvent(event);
     setIsRegistrationsModalOpen(true);
-  };
-
-  const handleFormSubmit = async (success: boolean, message?: string) => {
-    setIsFormModalOpen(false);
-    if (success) {
-      toast.success(message || (formMode === "create" ? "Event created" : "Event updated"));
-      await fetchEvents();
-    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -190,14 +177,6 @@ export default function EventsPage() {
           </div>
         ) : null}
       </div>
-
-      <EventFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        onSuccess={handleFormSubmit}
-        mode={formMode}
-        event={selectedEvent}
-      />
 
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}

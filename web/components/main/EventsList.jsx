@@ -1,111 +1,294 @@
-import Link from 'next/link';
+'use client';
 
-function formatDateRange(startDate, endDate) {
-  const start = new Date(startDate);
-  if (Number.isNaN(start.getTime())) {
-    return '';
-  }
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-  const startLabel = start.toLocaleString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+import CardEvent from '@/components/base/cards/CardEvent';
+import Intro from '@/components/base/section/Intro';
 
-  if (!endDate) {
-    return startLabel;
-  }
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const VALID_STATES = ['all', 'upcoming', 'ongoing', 'ended'];
 
-  const end = new Date(endDate);
-  if (Number.isNaN(end.getTime())) {
-    return startLabel;
-  }
-
-  const endLabel = end.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  return `${startLabel} - ${endLabel}`;
+function normalizeState(state) {
+  if (state === 'past') return 'ended';
+  return VALID_STATES.includes(state) ? state : 'all';
 }
 
-export default function EventsList({ events = [], locale = 'en' }) {
-  if (!events.length) {
-    return (
-      <section className="bg-white py-16 md:py-24">
-        <div className="container mx-auto px-4 md:px-0">
-          <div className="rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-16 text-center">
-            <p className="text-body-b3 font-medium text-black">No events available</p>
-            <p className="mt-2 text-body-b5 text-secondary">Published events will appear here once they are ready.</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+function toApiState(state) {
+  const normalized = normalizeState(state);
+  return normalized === 'all' ? null : normalized;
+}
+
+function getEventDate(event) {
+  const raw = event.start_date || event.startDate || event.event_date || event.date;
+  const parsed = raw ? new Date(raw) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+}
+
+function getEventEndDate(event) {
+  const raw = event.end_date || event.endDate;
+  const parsed = raw ? new Date(raw) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+}
+
+function getStateFromDate(event) {
+  const explicit = event.public_state || event.state;
+  if (explicit) return normalizeState(explicit);
+
+  const start = getEventDate(event);
+  if (!start) return 'ended';
+
+  const now = new Date();
+  const end = getEventEndDate(event) || new Date(start);
+  end.setHours(23, 59, 59, 999);
+
+  if (now < start) return 'upcoming';
+  if (now <= end) return 'ongoing';
+  return 'ended';
+}
+
+function filterByState(events, state) {
+  const normalized = normalizeState(state);
+  if (normalized === 'all') return events;
+  return events.filter((event) => getStateFromDate(event) === normalized);
+}
+
+function getGridClass(itemsPerRow) {
+  const normalized = Math.min(Math.max(Number(itemsPerRow) || 3, 1), 4);
+
+  if (normalized === 1) return 'grid-cols-1';
+  if (normalized === 2) return 'grid-cols-1 md:grid-cols-2';
+  if (normalized === 4) return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4';
+  return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
+}
+
+function EmptyState({ state }) {
+  const normalized = normalizeState(state);
+  const message = normalized === 'upcoming'
+    ? 'No upcoming events at the moment.'
+    : normalized === 'ongoing'
+      ? 'No ongoing events at the moment.'
+      : normalized === 'ended'
+        ? 'No ended events found.'
+        : 'Published events will appear here once they are ready.';
 
   return (
-    <section className="bg-white py-16 md:py-24">
-      <div className="container mx-auto px-4 md:px-0">
-        <div className="mb-10 max-w-3xl">
-          <span className="mb-3 inline-flex rounded-full bg-yellow-100 px-3 py-1 text-caption-c1 font-semibold uppercase tracking-[0.24em] text-yellow-800">
-            Events
-          </span>
-          <h1 className="text-headline-h4 text-black">Events</h1>
-          <p className="mt-3 text-body-b4 text-secondary">
-            Upcoming and published events from Link Net, rendered through the dedicated CMS event API.
-          </p>
-        </div>
+    <div className="rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-16 text-center">
+      <p className="text-body-b3 font-medium text-black">No events available</p>
+      <p className="mt-2 text-body-b5 text-secondary">{message}</p>
+    </div>
+  );
+}
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {events.map((event) => (
-            <Link
-              key={event.id}
-              href={`/${locale}/events/${event.slug}`}
-              className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
+function SkeletonGrid({ itemsPerRow }) {
+  return (
+    <div className={`grid gap-6 ${getGridClass(itemsPerRow)}`}>
+      {Array.from({ length: Math.min((Number(itemsPerRow) || 3) * 2, 8) }).map((_, i) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <div key={i} className="animate-pulse overflow-hidden rounded-[20px] bg-neutral-100">
+          <div className="aspect-[300/373] bg-neutral-200" />
+          <div className="space-y-3 p-6">
+            <div className="h-4 w-3/5 rounded bg-neutral-200" />
+            <div className="h-6 w-full rounded bg-neutral-200" />
+            <div className="h-4 w-4/5 rounded bg-neutral-200" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  if (!totalPages || totalPages <= 1) return null;
+
+  const pages = Array.from({ length: totalPages })
+    .map((_, index) => index + 1)
+    .filter((page) => (
+      page === 1 ||
+      page === totalPages ||
+      Math.abs(page - currentPage) <= 1
+    ));
+
+  return (
+    <nav className="mt-10 flex items-center justify-center gap-2" aria-label="Events pagination">
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage <= 1}
+        className="rounded-full border border-neutral-300 px-4 py-2 text-body-b5 font-medium text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Previous
+      </button>
+
+      {pages.map((page, index) => {
+        const previous = pages[index - 1];
+        const showGap = previous && page - previous > 1;
+
+        return (
+          <span key={page} className="flex items-center gap-2">
+            {showGap ? <span className="text-body-b5 text-secondary">...</span> : null}
+            <button
+              type="button"
+              onClick={() => onPageChange(page)}
+              className={`h-10 w-10 rounded-full text-body-b5 font-medium transition ${
+                page === currentPage
+                  ? 'bg-black text-white'
+                  : 'border border-neutral-300 text-black hover:border-black'
+              }`}
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100">
-                {event.cover_image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={event.cover_image}
-                    alt={event.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-neutral-200 via-neutral-100 to-white text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">
-                    Event
-                  </div>
-                )}
-                <div className="absolute left-4 top-4">
-                  <span className="rounded-full bg-black/75 px-3 py-1 text-caption-c1 font-semibold uppercase tracking-[0.18em] text-white">
-                    {event.public_state || 'event'}
-                  </span>
-                </div>
-              </div>
+              {page}
+            </button>
+          </span>
+        );
+      })}
 
-              <div className="space-y-4 p-6">
-                <div>
-                  <p className="text-body-b5 font-medium text-secondary">{formatDateRange(event.start_date, event.end_date)}</p>
-                  <h2 className="mt-2 text-body-b2 font-bold text-black">{event.title}</h2>
-                </div>
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage >= totalPages}
+        className="rounded-full border border-neutral-300 px-4 py-2 text-body-b5 font-medium text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+      </button>
+    </nav>
+  );
+}
 
-                {event.excerpt ? (
-                  <p className="line-clamp-3 text-body-b5 text-secondary">{event.excerpt.replace(/<[^>]*>/g, ' ')}</p>
-                ) : null}
+export default function EventsList({
+  events: eventsProp = null,
+  pagination: paginationProp = null,
+  state = 'all',
+  limit = 12,
+  itemsPerRow = 3,
+  showPagination = true,
+  introData,
+  locale: localeProp,
+  className = '',
+}) {
+  const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const locale = localeProp || params?.locale || 'en';
+  const normalizedState = normalizeState(state);
+  const pageFromUrl = Number(searchParams?.get('page')) || 1;
+  const needsFetch = eventsProp === null || eventsProp === undefined;
 
-                <span className="inline-flex items-center text-body-b5 font-semibold text-black">
-                  View detail
-                  <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                </span>
-              </div>
-            </Link>
-          ))}
+  const [currentPage, setCurrentPage] = useState(paginationProp?.currentPage || pageFromUrl || 1);
+  const [clientEvents, setClientEvents] = useState([]);
+  const [clientPagination, setClientPagination] = useState(null);
+  const [isLoading, setIsLoading] = useState(needsFetch);
+
+  useEffect(() => {
+    if (!needsFetch) return undefined;
+
+    let cancelled = false;
+    const qp = new URLSearchParams();
+    qp.set('page', String(currentPage));
+    qp.set('limit', String(limit));
+    qp.set('sortBy', 'start_date');
+    qp.set('sortOrder', 'asc');
+    qp.set('locale', String(locale));
+
+    const apiState = toApiState(normalizedState);
+    if (apiState) qp.set('state', apiState);
+
+    setIsLoading(true);
+    fetch(`${API_BASE_URL}/events?${qp.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (cancelled) return;
+        setClientEvents(json?.data || []);
+        setClientPagination(json?.pagination || null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setClientEvents([]);
+          setClientPagination(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, limit, locale, needsFetch, normalizedState]);
+
+  useEffect(() => {
+    setCurrentPage(paginationProp?.currentPage || pageFromUrl || 1);
+  }, [pageFromUrl, paginationProp?.currentPage]);
+
+  const events = useMemo(() => {
+    if (needsFetch) return clientEvents;
+    return filterByState(eventsProp || [], normalizedState).slice(0, limit);
+  }, [clientEvents, eventsProp, limit, needsFetch, normalizedState]);
+
+  const pagination = needsFetch ? clientPagination : paginationProp;
+  const totalPages = pagination?.totalPages || 1;
+  const activePage = pagination?.currentPage || currentPage;
+  const resolvedIntro = introData || {
+    as: 'h2',
+    label: 'FIND YOUR NEXT EXPERIENCE',
+    title: 'Discover & Promote Upcoming Event',
+    description: '',
+    align: 'left',
+  };
+
+  const handlePageChange = (page) => {
+    if (page === activePage) return;
+
+    if (needsFetch) {
+      setCurrentPage(page);
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams?.toString());
+    nextParams.set('page', String(page));
+    nextParams.set('limit', String(limit));
+    if (normalizedState === 'all') {
+      nextParams.delete('state');
+    } else {
+      nextParams.set('state', normalizedState);
+    }
+
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
+
+  return (
+    <section className={`bg-white py-16 md:py-24 ${className}`.trim()}>
+      <div className="container mx-auto px-4 md:px-0">
+        <div className="mb-10">
+          <Intro {...resolvedIntro} />
         </div>
+
+        {isLoading ? (
+          <SkeletonGrid itemsPerRow={itemsPerRow} />
+        ) : !events.length ? (
+          <EmptyState state={normalizedState} />
+        ) : (
+          <div className={`grid gap-6 ${getGridClass(itemsPerRow)}`}>
+            {events.map((event) => (
+              <CardEvent
+                key={event.id}
+                href={`/${locale}/events/${event.slug}`}
+                image={event.cover_image || event.image || event.thumbnailImage}
+                title={event.title}
+                date={event.date}
+                startDate={event.start_date || event.startDate}
+                endDate={event.end_date || event.endDate}
+                location={event.location || event.venue}
+                status={event.public_state || event.state || event.status}
+                className="!max-w-none"
+              />
+            ))}
+          </div>
+        )}
+
+        {showPagination && !isLoading ? (
+          <Pagination currentPage={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
+        ) : null}
       </div>
     </section>
   );

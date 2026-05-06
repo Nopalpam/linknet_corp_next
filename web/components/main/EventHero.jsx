@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import LinknetLink from '@/components/base/Link';
 import Button from '@/components/base/Button';
 import Icon from '@/components/base/Icon';
+import Intro from '@/components/base/section/Intro';
 import { useModalFormEventRegister } from '@/components/base/modals/ModalFormEventRegister';
 
 const STATUS_CONFIG = {
@@ -30,6 +31,8 @@ function normalizeImageSrc(src) {
 }
 
 export default function EventHero({
+  variant = 'detail',
+  introData = null,
   config,
   posterSrc = '',
   posterAlt = 'Event Poster',
@@ -79,13 +82,34 @@ export default function EventHero({
     openModal(ctaModalPayload);
   }, [ctaModalPayload, isEnded, openModal, shouldOpenModal]);
 
+  if (variant === 'event_grid' || variant === 'grid' || variant === 'lnEventGrid__hero') {
+    const resolvedIntro = introData || {
+      as: 'h1',
+      label: 'FIND YOUR NEXT EXPERIENCE',
+      title: 'Discover & Promote Upcoming Event',
+      description: '',
+      align: 'left',
+    };
+
+    return (
+      <section
+        id={sectionId}
+        className={cn('lnEventGrid__hero bg-white pb-8 pt-12 md:pb-10 md:pt-16', configClassName, className)}
+      >
+        <div className="container mx-auto px-4 md:px-0">
+          <Intro {...resolvedIntro} />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       id={sectionId}
       className={cn('bg-white p-2 pt-0', configClassName, className)}
     >
       <div className="relative w-full overflow-hidden rounded-[20px] md:rounded-[24px]">
-        <div className="relative [85vh] md:h-[72vh] md:min-h-0">
+        <div className="relative h-[85vh] md:h-[72vh] md:min-h-0">
           {hasBackground && (
             <>
               {resolvedThumbnailDesktop && (

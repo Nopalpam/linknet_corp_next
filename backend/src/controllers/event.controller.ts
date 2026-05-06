@@ -17,6 +17,7 @@ function parseQueryParams(query: Request['query'], defaults: { page: number; lim
     search: query.search as string | undefined,
     status: query.status as string | undefined,
     state: query.state as EventPublicState | undefined,
+    locale: query.locale === 'id' ? 'id' : 'en',
     sortBy: (query.sortBy as string) || defaults.sortBy,
     sortOrder: (query.sortOrder as 'asc' | 'desc') || defaults.sortOrder,
   };
@@ -110,10 +111,14 @@ export class EventController {
     try {
       const {
         title,
+        title_id,
         hero_title,
+        hero_title_id,
         slug,
         excerpt,
+        excerpt_id,
         content,
+        content_id,
         cover_image,
         location,
         venue,
@@ -146,10 +151,14 @@ export class EventController {
 
       const data: CreateEventData = {
         title: title.trim(),
+        ...(title_id !== undefined ? { title_id: String(title_id) } : {}),
         ...(hero_title !== undefined ? { hero_title: String(hero_title) } : {}),
+        ...(hero_title_id !== undefined ? { hero_title_id: String(hero_title_id) } : {}),
         ...(slug !== undefined ? { slug: String(slug).trim() } : {}),
         ...(excerpt !== undefined ? { excerpt: String(excerpt) } : {}),
+        ...(excerpt_id !== undefined ? { excerpt_id: String(excerpt_id) } : {}),
         content: String(content),
+        ...(content_id !== undefined ? { content_id: String(content_id) } : {}),
         ...(cover_image !== undefined ? { cover_image: String(cover_image) } : {}),
         ...(location !== undefined ? { location: String(location) } : {}),
         ...(venue !== undefined ? { venue: String(venue) } : {}),
@@ -191,10 +200,14 @@ export class EventController {
 
       const {
         title,
+        title_id,
         hero_title,
+        hero_title_id,
         slug,
         excerpt,
+        excerpt_id,
         content,
+        content_id,
         cover_image,
         location,
         venue,
@@ -223,10 +236,14 @@ export class EventController {
 
       const data: UpdateEventData = {
         ...(title !== undefined ? { title: String(title).trim() } : {}),
+        ...(title_id !== undefined ? { title_id: String(title_id) } : {}),
         ...(hero_title !== undefined ? { hero_title: String(hero_title) } : {}),
+        ...(hero_title_id !== undefined ? { hero_title_id: String(hero_title_id) } : {}),
         ...(slug !== undefined ? { slug: String(slug).trim() } : {}),
         ...(excerpt !== undefined ? { excerpt: String(excerpt) } : {}),
+        ...(excerpt_id !== undefined ? { excerpt_id: String(excerpt_id) } : {}),
         ...(content !== undefined ? { content: String(content) } : {}),
+        ...(content_id !== undefined ? { content_id: String(content_id) } : {}),
         ...(cover_image !== undefined ? { cover_image: String(cover_image) } : {}),
         ...(location !== undefined ? { location: String(location) } : {}),
         ...(venue !== undefined ? { venue: String(venue) } : {}),
@@ -303,7 +320,25 @@ export class EventController {
         throw new AppError('Slug is required', 400);
       }
 
-      const data = await eventService.getEventBySlug(slug);
+      const data = await eventService.getEventBySlug(slug, req.query.locale as string | undefined);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async checkSlugAvailability(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { slug, excludeId } = req.query;
+      if (!slug || typeof slug !== 'string' || !slug.trim()) {
+        throw new AppError('Slug is required', 400);
+      }
+
+      const data = await eventService.checkSlugAvailability(
+        slug,
+        typeof excludeId === 'string' ? excludeId : undefined
+      );
+
       res.json({ success: true, data });
     } catch (error) {
       next(error);

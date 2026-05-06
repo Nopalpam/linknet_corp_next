@@ -18,6 +18,13 @@ for (const adminBase of ['/cms/events', '/admin/events']) {
   );
 
   router.get(
+    `${adminBase}-slug/check`,
+    authMiddleware,
+    requirePermission('events.read'),
+    eventController.checkSlugAvailability
+  );
+
+  router.get(
     `${adminBase}/:id`,
     authMiddleware,
     requirePermission('events.read'),
