@@ -1,6 +1,65 @@
 import { PrismaClient, UrlRedirect } from '@prisma/client';
+import { AppError } from '../types/error.types';
 
 const prisma = new PrismaClient();
+const VALID_REDIRECT_STATUS_CODES = [301, 302, 307, 308];
+
+const getAllowedRedirectHosts = (): string[] =>
+  (process.env.ALLOWED_REDIRECT_HOSTS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((host) => {
+      try {
+        return new URL(host.trim()).hostname.toLowerCase();
+      } catch {
+        return host.trim().toLowerCase();
+      }
+    })
+    .filter(Boolean);
+
+const validateSourceUrl = (fromUrl: string): string => {
+  if (!fromUrl.startsWith('/') || fromUrl.startsWith('//') || /[\r\n]/.test(fromUrl)) {
+    throw new AppError('Source URL must be a relative application path', 400, 'VALIDATION_ERROR');
+  }
+
+  return fromUrl;
+};
+
+const validateTargetUrl = (toUrl: string): string => {
+  if (/[\r\n]/.test(toUrl)) {
+    throw new AppError('Target URL is invalid', 400, 'VALIDATION_ERROR');
+  }
+
+  if (toUrl.startsWith('/') && !toUrl.startsWith('//')) {
+    return toUrl;
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(toUrl);
+  } catch {
+    throw new AppError('Target URL is invalid', 400, 'VALIDATION_ERROR');
+  }
+
+  if (!['https:', 'http:'].includes(parsedUrl.protocol)) {
+    throw new AppError('Target URL protocol is not allowed', 400, 'VALIDATION_ERROR');
+  }
+
+  const allowedHosts = getAllowedRedirectHosts();
+  if (allowedHosts.length === 0 || !allowedHosts.includes(parsedUrl.hostname.toLowerCase())) {
+    throw new AppError('Target URL host is not allowed', 400, 'VALIDATION_ERROR');
+  }
+
+  return parsedUrl.toString();
+};
+
+const validateStatusCode = (statusCode?: number): number => {
+  const normalizedStatusCode = statusCode || 301;
+  if (!VALID_REDIRECT_STATUS_CODES.includes(normalizedStatusCode)) {
+    throw new AppError('Redirect status code is not allowed', 400, 'VALIDATION_ERROR');
+  }
+
+  return normalizedStatusCode;
+};
 
 /**
  * URL Redirect Service
@@ -97,10 +156,14 @@ export class UrlRedirectService {
     statusCode?: number;
     isActive?: boolean;
   }): Promise<UrlRedirect> {
+    const fromUrl = validateSourceUrl(data.fromUrl);
+    const toUrl = validateTargetUrl(data.toUrl);
+    const statusCode = validateStatusCode(data.statusCode);
+
     // Check if fromUrl already exists
     const existing = await prisma.urlRedirect.findFirst({
       where: {
-        fromUrl: data.fromUrl,
+        fromUrl,
         deletedAt: null,
       },
     });
@@ -111,9 +174,9 @@ export class UrlRedirectService {
 
     return prisma.urlRedirect.create({
       data: {
-        fromUrl: data.fromUrl,
-        toUrl: data.toUrl,
-        statusCode: data.statusCode || 301,
+        fromUrl,
+        toUrl,
+        statusCode,
         isActive: data.isActive !== undefined ? data.isActive : true,
       },
     });
@@ -140,11 +203,18 @@ export class UrlRedirectService {
       throw new Error('Redirect not found');
     }
 
+    const updateData = {
+      ...data,
+      ...(data.fromUrl && { fromUrl: validateSourceUrl(data.fromUrl) }),
+      ...(data.toUrl && { toUrl: validateTargetUrl(data.toUrl) }),
+      ...(data.statusCode && { statusCode: validateStatusCode(data.statusCode) }),
+    };
+
     // Check for duplicate fromUrl if it's being changed
-    if (data.fromUrl && data.fromUrl !== existing.fromUrl) {
+    if (updateData.fromUrl && updateData.fromUrl !== existing.fromUrl) {
       const duplicate = await prisma.urlRedirect.findFirst({
         where: {
-          fromUrl: data.fromUrl,
+          fromUrl: updateData.fromUrl,
           deletedAt: null,
           id: { not: id },
         },
@@ -157,7 +227,7 @@ export class UrlRedirectService {
 
     return prisma.urlRedirect.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

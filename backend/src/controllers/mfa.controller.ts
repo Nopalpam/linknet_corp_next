@@ -7,6 +7,8 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import mfaService from '../services/mfa.service';
+import { setAuthCookies } from '../utils/authCookie.util';
+import { buildAuthTokenResponse } from '../utils/authResponse.util';
 
 /**
  * Setup MFA for authenticated user
@@ -244,13 +246,19 @@ export const mfaVerify = async (req: AuthRequest, res: Response): Promise<void> 
     });
     const permissions = Array.from(permissionSet);
 
+    // MBSS2.0-035: New MFA-authenticated login replaces older sessions.
+    await prisma.refreshToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    const { token: refreshToken, tokenId } = generateRefreshToken(user.id);
     const accessToken = generateAccessToken({
       id: user.id,
       email: user.email,
       roles: roleSlugsList,
       permissions,
+      sessionId: tokenId,
     });
-    const { token: refreshToken, tokenId } = generateRefreshToken(user.id);
 
     // Store refresh token
     await prisma.refreshToken.create({
@@ -280,6 +288,8 @@ export const mfaVerify = async (req: AuthRequest, res: Response): Promise<void> 
       },
     });
 
+    setAuthCookies(res, accessToken, refreshToken);
+
     res.status(200).json({
       success: true,
       message: 'MFA verification successful',
@@ -296,8 +306,8 @@ export const mfaVerify = async (req: AuthRequest, res: Response): Promise<void> 
           permissions,
           mfaEnabled: user.mfaEnabled,
         },
-        accessToken,
-        refreshToken,
+        securityNotice: 'Authorized use only. All activity is monitored and logged by PT Link Net Tbk.',
+        ...buildAuthTokenResponse(accessToken, refreshToken),
       },
     });
   } catch (error) {

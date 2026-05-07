@@ -25,6 +25,8 @@ spec:
       key: database-url
     - objectName: jwt-secret
       key: jwt-secret
+    - objectName: jwt-refresh-secret
+      key: jwt-refresh-secret
     # Add more secrets as needed
     # - objectName: api-key
     #   key: api-key
@@ -48,6 +50,10 @@ spec:
           objectVersion: ""
         - |
           objectName: jwt-secret
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: jwt-refresh-secret
           objectType: secret
           objectVersion: ""
         # Add more secrets as needed
@@ -89,6 +95,10 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: linknetcorp-backend-sa
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       
       containers:
       - name: backend
@@ -97,6 +107,12 @@ spec:
         ports:
         - containerPort: 5000
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
         
         # Environment variables from ConfigMap
         envFrom:
@@ -115,6 +131,11 @@ spec:
             secretKeyRef:
               name: linknetcorp-backend-secrets
               key: jwt-secret
+        - name: JWT_REFRESH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: jwt-refresh-secret
         
         # Azure Key Vault URL for runtime secret fetching
         - name: AZURE_KEY_VAULT_URL

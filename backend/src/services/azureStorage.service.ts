@@ -12,6 +12,8 @@ const isConfiguredValue = (value?: string): value is string => {
   return normalizedValue.length > 0 && !normalizedValue.startsWith('<FILL:');
 };
 
+const allowPublicBlobAccess = (): boolean => process.env.AZURE_BLOB_PUBLIC_ACCESS === 'true';
+
 interface UploadOptions {
   folder: string;
   filename?: string;
@@ -83,9 +85,11 @@ class AzureStorageService {
     // Create container if it doesn't exist
     const exists = await containerClient.exists();
     if (!exists) {
-      await containerClient.create({
-        access: 'blob', // Public read access for blobs
-      });
+      await containerClient.create(
+        allowPublicBlobAccess()
+          ? { access: 'blob' }
+          : undefined
+      );
     }
 
     return containerClient;

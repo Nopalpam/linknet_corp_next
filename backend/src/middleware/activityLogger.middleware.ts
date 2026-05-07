@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logActivity, LogActivityData } from '../services/activityLogger.service';
+import { redactSensitiveData } from '../utils/dataRedaction.util';
 
 // Extend Express Request to include original body
 declare global {
@@ -168,19 +169,20 @@ export function autoLogActivity(options: {
       metadata: {
         method: req.method,
         path: req.path,
-        query: req.query,
+        query: redactSensitiveData(req.query),
+        requestId: req.requestId,
       },
     };
 
     // For UPDATE/DELETE operations, capture old data
     if (action === 'update' || action === 'delete') {
       // Store original data if available (should be fetched by controller)
-      logData.oldData = (req as any).originalRecord;
+      logData.oldData = redactSensitiveData((req as any).originalRecord);
     }
 
     // For CREATE/UPDATE operations, capture new data
     if (action === 'create' || action === 'update') {
-      logData.newData = req.body;
+      logData.newData = redactSensitiveData(req.body);
     }
 
     // Store log data in request for controller to update
@@ -196,7 +198,7 @@ export function autoLogActivity(options: {
 
       // For UPDATE operations, capture new data from response
       if (action === 'update' && data?.data) {
-        logData.newData = data.data;
+        logData.newData = redactSensitiveData(data.data);
       }
 
       // Add response time to metadata
@@ -239,14 +241,15 @@ export async function manualLog(
     action,
     module,
     recordId,
-    oldData,
-    newData,
+    oldData: redactSensitiveData(oldData),
+    newData: redactSensitiveData(newData),
     description,
     ipAddress,
     userAgent,
     metadata: {
       method: req.method,
       path: req.path,
+      requestId: req.requestId,
     },
   });
 }

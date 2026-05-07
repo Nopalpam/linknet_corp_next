@@ -17,6 +17,7 @@ const ApiResponse = {
 };
 
 const prisma = new PrismaClient();
+const ALLOW_AUDIT_LOG_DELETION = process.env.ALLOW_AUDIT_LOG_DELETION === 'true';
 
 /**
  * Get paginated activity logs with filters
@@ -181,6 +182,11 @@ export async function getActivityLogById(req: Request, res: Response, next: Next
  */
 export async function deleteActivityLog(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    if (!ALLOW_AUDIT_LOG_DELETION) {
+      res.status(403).json(ApiResponse.error('Audit log deletion is disabled by security policy'));
+      return;
+    }
+
     const { id } = req.params;
 
     const log = await prisma.logActivity.findUnique({
@@ -211,6 +217,11 @@ export async function deleteActivityLog(req: Request, res: Response, next: NextF
  */
 export async function cleanupOldLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    if (!ALLOW_AUDIT_LOG_DELETION) {
+      res.status(403).json(ApiResponse.error('Audit log cleanup is disabled by security policy'));
+      return;
+    }
+
     const { days = 90 } = req.body;
 
     const cutoffDate = new Date();

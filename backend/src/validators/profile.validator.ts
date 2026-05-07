@@ -4,6 +4,11 @@ import { body } from 'express-validator';
  * Validation rules for updating profile
  */
 export const updateProfileValidation = [
+  body('currentPassword')
+    .trim()
+    .notEmpty()
+    .withMessage('Current password is required to update profile details'),
+
   body('firstName')
     .optional()
     .trim()
@@ -60,7 +65,13 @@ export const changePasswordValidation = [
     .withMessage('New password is required')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .matches(/[A-Z]/)
+    .withMessage('Password must contain at least 1 uppercase letter')
+    .matches(/[a-z]/)
+    .withMessage('Password must contain at least 1 lowercase letter')
+    .matches(/[0-9]/)
+    .withMessage('Password must contain at least 1 number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/)
     .withMessage('Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character')
     .custom(async (value, { req }) => {
       if (value && req.user) {

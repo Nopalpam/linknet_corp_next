@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { hashPassword, comparePassword } from '../utils/password.util';
+import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.util';
 import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
   hashRefreshToken,
   generatePasswordResetToken,
+  hashPasswordResetToken,
   getRefreshTokenExpiry,
   getPasswordResetTokenExpiry
 } from '../utils/jwt.util';
@@ -15,6 +16,8 @@ import {
   sendPasswordResetEmail
 } from '../utils/email.util';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { clearAuthCookies, setAuthCookies } from '../utils/authCookie.util';
+import { buildAuthTokenResponse } from '../utils/authResponse.util';
 
 const prisma = new PrismaClient();
 
@@ -286,14 +289,21 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
     const permissions = Array.from(permissionSet);
 
-    // Generate tokens with roles and permissions
-    const accessToken = generateAccessToken({ 
-      id: user.id, 
+    // MBSS2.0-035: Enforce a single active session per user.
+    // A new login revokes older refresh tokens; protected requests also validate
+    // the access token sessionId against the active refresh token record.
+    await prisma.refreshToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    const { token: refreshToken, tokenId } = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken({
+      id: user.id,
       email: user.email,
       roles: roleSlugsList,
-      permissions 
+      permissions,
+      sessionId: tokenId,
     });
-    const { token: refreshToken, tokenId } = generateRefreshToken(user.id);
 
     // Store hashed refresh token in database
     await prisma.refreshToken.create({
@@ -323,6 +333,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    setAuthCookies(res, accessToken, refreshToken);
+
     res.status(200).json({
       success: true,
       message: requiresPasswordChange 
@@ -347,8 +359,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           passwordAgeDays: passwordAge,
           mfaEnabled: userMfaEnabled,
         },
-        accessToken,
-        refreshToken
+        securityNotice: 'Authorized use only. All activity is monitored and logged by PT Link Net Tbk.',
+        ...buildAuthTokenResponse(accessToken, refreshToken),
       }
     });
   } catch (error) {
@@ -366,9 +378,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
  */
 export const logout = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.body.refreshToken || req.cookies?.refresh_token;
 
     if (!refreshToken) {
+      clearAuthCookies(res);
       res.status(400).json({
         success: false,
         message: 'Refresh token is required'
@@ -383,6 +396,8 @@ export const logout = async (req: AuthRequest, res: Response): Promise<void> => 
     const result = await prisma.refreshToken.deleteMany({
       where: { tokenHash }
     });
+
+    clearAuthCookies(res);
 
     res.status(200).json({
       success: true,
@@ -419,6 +434,8 @@ export const logoutAll = async (req: AuthRequest, res: Response): Promise<void> 
       where: { userId: req.user.userId }
     });
 
+    clearAuthCookies(res);
+
     res.status(200).json({
       success: true,
       message: 'Successfully logged out from all devices',
@@ -441,7 +458,17 @@ export const logoutAll = async (req: AuthRequest, res: Response): Promise<void> 
  */
 export const refreshAccessToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.body.refreshToken || req.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      clearAuthCookies(res);
+      res.status(401).json({
+        success: false,
+        message: 'Refresh token is required',
+        code: 'TOKEN_REQUIRED'
+      });
+      return;
+    }
 
     // Verify refresh token
     let decoded;
@@ -523,16 +550,15 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
       ur => ur.role.rolePermissions.map(rp => rp.permission.slug)
     );
 
-    // Generate new access token with roles and permissions
-    const newAccessToken = generateAccessToken({ 
-      id: decoded.userId, 
-      email: storedToken.user.email,
-      roles,
-      permissions
-    });
-
     // REFRESH TOKEN ROTATION: Generate new refresh token and invalidate old one
     const { token: newRefreshToken, tokenId: newTokenId } = generateRefreshToken(decoded.userId);
+    const newAccessToken = generateAccessToken({
+      id: decoded.userId,
+      email: storedToken.user.email,
+      roles,
+      permissions,
+      sessionId: newTokenId,
+    });
 
     // Delete old refresh token and create new one in a transaction
     await prisma.$transaction([
@@ -549,12 +575,13 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
       })
     ]);
 
+    setAuthCookies(res, newAccessToken, newRefreshToken);
+
     res.status(200).json({
       success: true,
       message: 'Tokens refreshed successfully',
       data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken // Return new refresh token
+        ...buildAuthTokenResponse(newAccessToken, newRefreshToken),
       }
     });
   } catch (error) {
@@ -595,7 +622,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     await prisma.passwordResetToken.create({
       data: {
         email,
-        token: resetToken,
+        token: hashPasswordResetToken(resetToken),
         expiresAt: getPasswordResetTokenExpiry()
       }
     });
@@ -634,7 +661,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
     // Find reset token
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token }
+      where: { token: hashPasswordResetToken(token) }
     });
 
     if (!resetToken) {
@@ -672,6 +699,15 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       res.status(400).json({
         success: false,
         message: 'User not found'
+      });
+      return;
+    }
+
+    const passwordStrength = validatePasswordStrength(password, user.email, user.username);
+    if (!passwordStrength.isValid) {
+      res.status(400).json({
+        success: false,
+        message: passwordStrength.errors[0] || 'Password does not meet policy requirements'
       });
       return;
     }
@@ -747,6 +783,8 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     await prisma.refreshToken.deleteMany({
       where: { userId: user.id }
     });
+
+    clearAuthCookies(res);
 
     res.status(200).json({
       success: true,

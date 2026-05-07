@@ -282,7 +282,12 @@ async function main() {
   // ============================================
   console.log('👤 Creating users...');
 
-  const hashedPassword = await bcrypt.hash('Admin123!', 10);
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin123!';
+  if (process.env.NODE_ENV === 'production' && !process.env.SEED_ADMIN_PASSWORD) {
+    throw new Error('SEED_ADMIN_PASSWORD is required when running seed in production');
+  }
+
+  const hashedPassword = await bcrypt.hash(seedPassword, 10);
 
   // Super Admin
   let superAdmin = await prisma.user.findFirst({
@@ -1372,8 +1377,8 @@ async function main() {
   console.log('🎉 Database seeding completed successfully!');
   console.log('');
   console.log('📋 Summary:');
-  console.log('   - Super Admin: admin@example.com / Admin123!');
-  console.log('   - Editor: editor@example.com / Admin123!');
+  console.log('   - Super Admin: admin@example.com / configured seed password');
+  console.log('   - Editor: editor@example.com / configured seed password');
   console.log('   - Roles: Super Admin, Admin, Editor, User');
   console.log(`   - Permissions: ${permissions.length} permissions created`);
   console.log(`   - Settings: ${settingsData.length} settings created`);

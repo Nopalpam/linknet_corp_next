@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
+import { publicRateLimiter } from '../middleware/rateLimiter.middleware';
 import {
   getVisitorStats,
   getVisitorChartData,
@@ -11,12 +14,12 @@ import {
 const router = Router();
 
 // Public route - track visit from public website (no auth required)
-router.post('/public/track-visit', trackVisit);
+router.post('/public/track-visit', publicRateLimiter, trackVisit);
 
 // CMS Dashboard routes (auth required)
-router.get('/cms/dashboard/visitors', authMiddleware, getVisitorStats);
-router.get('/cms/dashboard/visitors/chart', authMiddleware, getVisitorChartData);
-router.get('/cms/dashboard/content', authMiddleware, getContentOverview);
-router.get('/cms/dashboard/recent-activity', authMiddleware, getRecentActivity);
+router.get('/cms/dashboard/visitors', authMiddleware, requirePermission(Permission.LOG_ACTIVITY_READ, Permission.SETTINGS_READ), getVisitorStats);
+router.get('/cms/dashboard/visitors/chart', authMiddleware, requirePermission(Permission.LOG_ACTIVITY_READ, Permission.SETTINGS_READ), getVisitorChartData);
+router.get('/cms/dashboard/content', authMiddleware, requirePermission(Permission.PAGES_READ, Permission.NEWS_READ, Permission.SETTINGS_READ), getContentOverview);
+router.get('/cms/dashboard/recent-activity', authMiddleware, requirePermission(Permission.LOG_ACTIVITY_READ), getRecentActivity);
 
 export default router;

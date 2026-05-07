@@ -8,6 +8,7 @@ import path from 'path';
 
 // Import validators and services
 import { validateEnvironmentAtStartup } from '@middleware/environmentValidator';
+import { initializeAccountLifecycleJobs } from '@services/accountLifecycle.service';
 import { initializeTokenCleanupJobs } from '@services/tokenCleanup.service';
 import { closeActivityLogQueue } from '@services/activityLogger.service';
 import { initializeFormSubmissionDispatchJobs } from './modules/form-modules/formSubmissionDispatch.service';
@@ -22,6 +23,11 @@ import {
   notFoundHandler,
 } from '@middleware/errorHandler.middleware';
 import { autoLogActivity } from '@middleware/activityLogger.middleware';
+import {
+  noStoreForSensitiveRoutes,
+  securityHeadersMiddleware,
+} from '@middleware/securityHeaders.middleware';
+import { csrfProtectionMiddleware } from '@middleware/csrf.middleware';
 import { logInfo } from '@utils/logger';
 
 // Validate environment at startup
@@ -29,6 +35,7 @@ validateEnvironmentAtStartup();
 
 // Initialize express app
 const app: Application = express();
+app.disable('x-powered-by');
 
 // Port configuration
 const PORT = process.env.PORT || 5000;
@@ -44,6 +51,7 @@ app.use(httpsRedirectMiddleware);
 
 // Security middleware
 app.use(helmet());
+app.use(securityHeadersMiddleware);
 
 // Request ID tracking (must be early in the chain)
 app.use(requestIdMiddleware);
@@ -82,6 +90,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parser
 app.use(cookieParser());
+app.use('/api', csrfProtectionMiddleware);
 
 // Compression middleware
 app.use(compression());
@@ -98,8 +107,6 @@ app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: NODE_ENV,
   });
 });
 
@@ -107,9 +114,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     message: 'LinkNet Corp API Server',
-    version: process.env.API_VERSION || '1.0.0',
     status: 'running',
-    environment: NODE_ENV,
     endpoints: {
       health: '/health',
       api: process.env.API_PREFIX || '/api/v1',
@@ -118,6 +123,7 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 // Rate limiting for API routes
+app.use('/api', noStoreForSensitiveRoutes);
 app.use('/api', generalRateLimiter);
 
 // Activity logging middleware (after rate limiting, before routes)
@@ -298,6 +304,7 @@ app.listen(PORT, () => {
 
   // Initialize token cleanup cron jobs
   initializeTokenCleanupJobs();
+  initializeAccountLifecycleJobs();
   initializeFormSubmissionDispatchJobs();
 
   console.log(`

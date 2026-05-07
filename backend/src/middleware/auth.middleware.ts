@@ -4,6 +4,15 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const getRequestAccessToken = (req: Request): string | undefined => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+
+  return req.cookies?.auth_token;
+};
+
 /**
  * Extend Express Request to include user with roles and permissions
  */
@@ -12,6 +21,7 @@ export interface AuthRequest extends Request {
     id: string;
     userId: string; // Keep for backward compatibility
     email: string;
+    username?: string;
     roles?: string[];
     permissions?: string[];
   };
@@ -27,10 +37,10 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
+    // Get token from Authorization header or HttpOnly cookie
+    const token = getRequestAccessToken(req);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       res.status(401).json({
         success: false,
         message: 'Unauthorized - No token provided',
@@ -38,8 +48,6 @@ export const authMiddleware = async (
       });
       return;
     }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Verify token
     let decoded: AccessTokenPayload;
@@ -65,7 +73,9 @@ export const authMiddleware = async (
       select: {
         id: true,
         email: true,
+        username: true,
         status: true,
+        lockedAt: true,
         deletedAt: true
       }
     });
@@ -88,11 +98,48 @@ export const authMiddleware = async (
       return;
     }
 
+    if (user.lockedAt) {
+      res.status(403).json({
+        success: false,
+        message: 'Account is locked',
+        code: 'ACCOUNT_LOCKED'
+      });
+      return;
+    }
+
+    if (!decoded.sessionId) {
+      res.status(401).json({
+        success: false,
+        message: 'Session validation required',
+        code: 'TOKEN_SESSION_REQUIRED'
+      });
+      return;
+    }
+
+    const activeSession = await prisma.refreshToken.findFirst({
+      where: {
+        userId: user.id,
+        tokenId: decoded.sessionId,
+        expiresAt: { gt: new Date() }
+      },
+      select: { id: true }
+    });
+
+    if (!activeSession) {
+      res.status(401).json({
+        success: false,
+        message: 'Session has expired or was replaced by a newer login',
+        code: 'SESSION_INVALID'
+      });
+      return;
+    }
+
     // Attach user to request with roles and permissions
     req.user = {
       id: user.id,
       userId: user.id, // Keep for backward compatibility
       email: user.email,
+      username: user.username,
       roles: decoded.roles || [],
       permissions: decoded.permissions || []
     };
@@ -101,7 +148,7 @@ export const authMiddleware = async (
   } catch (error) {
     res.status(401).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Unauthorized',
+      message: 'Unauthorized',
       code: 'AUTH_ERROR'
     });
   }
@@ -118,16 +165,14 @@ export const guestMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
+    // Get token from Authorization header or HttpOnly cookie
+    const token = getRequestAccessToken(req);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       // No token, user is guest - allow access
       next();
       return;
     }
-
-    const token = authHeader.substring(7);
 
     try {
       // Verify token
@@ -138,12 +183,24 @@ export const guestMiddleware = async (
         where: { id: decoded.userId },
         select: {
           id: true,
+          username: true,
           status: true,
           deletedAt: true
         }
       });
 
-      if (user && !user.deletedAt && user.status === 'ACTIVE') {
+      const activeSession = user && decoded.sessionId
+        ? await prisma.refreshToken.findFirst({
+            where: {
+              userId: user.id,
+              tokenId: decoded.sessionId,
+              expiresAt: { gt: new Date() },
+            },
+            select: { id: true },
+          })
+        : null;
+
+      if (user && !user.deletedAt && user.status === 'ACTIVE' && activeSession) {
         // User is authenticated - send response indicating they should be redirected
         res.status(200).json({
           success: true,
@@ -177,11 +234,9 @@ export const optionalAuthMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    const token = getRequestAccessToken(req);
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-
+    if (token) {
       try {
         const decoded = verifyAccessToken(token);
 
@@ -190,16 +245,29 @@ export const optionalAuthMiddleware = async (
           select: {
             id: true,
             email: true,
+            username: true,
             status: true,
             deletedAt: true
           }
         });
 
-        if (user && !user.deletedAt && user.status === 'ACTIVE') {
+        const activeSession = user && decoded.sessionId
+          ? await prisma.refreshToken.findFirst({
+              where: {
+                userId: user.id,
+                tokenId: decoded.sessionId,
+                expiresAt: { gt: new Date() },
+              },
+              select: { id: true },
+            })
+          : null;
+
+        if (user && !user.deletedAt && user.status === 'ACTIVE' && activeSession) {
           req.user = {
             id: user.id,
             userId: user.id,
             email: user.email,
+            username: user.username,
             roles: decoded.roles || [],
             permissions: decoded.permissions || []
           };

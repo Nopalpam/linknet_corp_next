@@ -45,6 +45,11 @@ const ENV_VARS: EnvVarConfig[] = [
     description: 'PostgreSQL database connection URL',
     validator: (value) => value.startsWith('postgresql://') || value.startsWith('postgres://'),
   },
+  {
+    name: 'DB_SSL',
+    required: false,
+    description: 'Set true when database TLS is enforced outside the connection URL',
+  },
 
   // CORS Configuration
   {
@@ -59,19 +64,83 @@ const ENV_VARS: EnvVarConfig[] = [
     defaultValue: 'true',
     description: 'Allow credentials in CORS',
   },
+  {
+    name: 'FORCE_HTTPS_ALLOWED_HOSTS',
+    required: false,
+    description: 'Comma-separated hosts allowed for HTTPS redirects',
+  },
+  {
+    name: 'ALLOWED_REDIRECT_HOSTS',
+    required: false,
+    description: 'Comma-separated external hosts allowed for application redirects',
+  },
+  {
+    name: 'AUTH_COOKIE_DOMAIN',
+    required: false,
+    description: 'Optional parent domain for HttpOnly auth cookies',
+  },
+  {
+    name: 'AUTH_RETURN_TOKENS_IN_BODY',
+    required: false,
+    defaultValue: 'false',
+    description: 'Return access/refresh tokens in JSON body for non-browser clients only',
+    validator: (value) => ['true', 'false'].includes(value),
+  },
+  {
+    name: 'HEALTH_CHECK_TOKEN',
+    required: false,
+    description: 'Header token required for detailed operational endpoints in production',
+  },
+  {
+    name: 'ALLOW_INTERNAL_DIAGNOSTICS',
+    required: false,
+    defaultValue: 'false',
+    description: 'Allow private-IP access to detailed diagnostics in production',
+    validator: (value) => ['true', 'false'].includes(value),
+  },
 
   // JWT Configuration
   {
-    name: 'JWT_SECRET',
-    required: true,
-    description: 'Secret key for JWT signing',
+    name: 'JWT_ACCESS_SECRET',
+    required: false,
+    description: 'Secret key for JWT access token signing',
     validator: (value) => value.length >= 32,
+  },
+  {
+    name: 'JWT_SECRET',
+    required: false,
+    description: 'Legacy secret key for JWT signing',
+    validator: (value) => value.length >= 32,
+  },
+  {
+    name: 'JWT_ACCESS_EXPIRE',
+    required: false,
+    defaultValue: '15m',
+    description: 'JWT access token expiration time',
   },
   {
     name: 'JWT_EXPIRES_IN',
     required: false,
+    defaultValue: '15m',
+    description: 'Legacy JWT token expiration time',
+  },
+  {
+    name: 'JWT_REFRESH_SECRET',
+    required: true,
+    description: 'Secret key for JWT refresh token signing',
+    validator: (value) => value.length >= 32,
+  },
+  {
+    name: 'JWT_REFRESH_EXPIRE',
+    required: false,
     defaultValue: '7d',
-    description: 'JWT token expiration time',
+    description: 'Refresh token expiration time',
+  },
+  {
+    name: 'JWT_REFRESH_EXPIRES_IN',
+    required: false,
+    defaultValue: '7d',
+    description: 'Legacy refresh token expiration time',
   },
 
   // Rate Limiting
@@ -88,6 +157,51 @@ const ENV_VARS: EnvVarConfig[] = [
     defaultValue: '100',
     description: 'Maximum requests per window',
     validator: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0,
+  },
+  {
+    name: 'PUBLIC_FORM_RATE_LIMIT_MAX',
+    required: false,
+    defaultValue: '20',
+    description: 'Maximum public form submissions per IP per hour',
+    validator: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0,
+  },
+  {
+    name: 'UPLOAD_RATE_LIMIT_MAX',
+    required: false,
+    defaultValue: '30',
+    description: 'Maximum upload requests per IP per 15 minutes',
+    validator: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0,
+  },
+  {
+    name: 'PRESIGNED_UPLOAD_ENABLED',
+    required: false,
+    defaultValue: 'false',
+    description: 'Enable direct-to-S3 presigned uploads',
+    validator: (value) => ['true', 'false'].includes(value),
+  },
+  {
+    name: 'S3_ALLOW_PUBLIC_ACL',
+    required: false,
+    defaultValue: 'false',
+    description: 'Allow S3 public-read ACL on uploads',
+    validator: (value) => ['true', 'false'].includes(value),
+  },
+  {
+    name: 'AZURE_BLOB_PUBLIC_ACCESS',
+    required: false,
+    defaultValue: 'false',
+    description: 'Allow public blob access when creating Azure containers',
+    validator: (value) => ['true', 'false'].includes(value),
+  },
+  {
+    name: 'FORM_DISPATCH_ALLOWED_HOSTS',
+    required: false,
+    description: 'Comma-separated allowlist for external form dispatch endpoints',
+  },
+  {
+    name: 'LINKNET_MEDIA_TOKEN_SALT',
+    required: false,
+    description: 'Secret salt for Linknet Media token generation',
   },
 
   // Azure Key Vault (Optional - for production)
@@ -161,6 +275,47 @@ export function validateEnvironment(): ValidationResult {
 
     if (value) {
       variables[envVar.name] = value;
+    }
+  }
+
+  const nodeEnv = variables.NODE_ENV || process.env.NODE_ENV || 'development';
+  const databaseUrl = variables.DATABASE_URL || process.env.DATABASE_URL || '';
+  const jwtAccessSecret = variables.JWT_ACCESS_SECRET || variables.JWT_SECRET || process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || '';
+  const databaseSslConfigured =
+    /[?&]sslmode=(require|verify-ca|verify-full)/i.test(databaseUrl) ||
+    (variables.DB_SSL || process.env.DB_SSL) === 'true';
+
+  if (nodeEnv === 'production' && databaseUrl && !databaseSslConfigured) {
+    errors.push('DATABASE_URL must enforce TLS in production using sslmode=require/verify-full or DB_SSL=true');
+  }
+
+  if (!jwtAccessSecret || jwtAccessSecret.length < 32) {
+    errors.push('JWT_ACCESS_SECRET or JWT_SECRET must be configured with at least 32 characters');
+  }
+
+  if (nodeEnv === 'production') {
+    if ((variables.AUTH_RETURN_TOKENS_IN_BODY || process.env.AUTH_RETURN_TOKENS_IN_BODY) === 'true') {
+      warnings.push('AUTH_RETURN_TOKENS_IN_BODY=true should only be used for explicitly approved non-browser clients');
+    }
+
+    if (!(variables.HEALTH_CHECK_TOKEN || process.env.HEALTH_CHECK_TOKEN)) {
+      warnings.push('HEALTH_CHECK_TOKEN is recommended in production to protect /env-check and /health/detailed');
+    }
+
+    if ((variables.PRESIGNED_UPLOAD_ENABLED || process.env.PRESIGNED_UPLOAD_ENABLED) === 'true') {
+      warnings.push('PRESIGNED_UPLOAD_ENABLED=true requires S3 quarantine, post-upload validation, and lifecycle cleanup controls');
+    }
+
+    if ((variables.S3_ALLOW_PUBLIC_ACL || process.env.S3_ALLOW_PUBLIC_ACL) === 'true') {
+      warnings.push('S3_ALLOW_PUBLIC_ACL=true should be approved only when bucket public access policy has been reviewed');
+    }
+
+    if ((variables.AZURE_BLOB_PUBLIC_ACCESS || process.env.AZURE_BLOB_PUBLIC_ACCESS) === 'true') {
+      warnings.push('AZURE_BLOB_PUBLIC_ACCESS=true exposes blob URLs publicly and should be explicitly approved');
+    }
+
+    if (!(variables.LINKNET_MEDIA_TOKEN_SALT || process.env.LINKNET_MEDIA_TOKEN_SALT)) {
+      errors.push('LINKNET_MEDIA_TOKEN_SALT must be configured in production');
     }
   }
 

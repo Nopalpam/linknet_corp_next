@@ -1,6 +1,7 @@
 import multer from 'multer';
 import { Request } from 'express';
 import path from 'path';
+import { fileUploadScanner } from '../services/file-upload-scanner.service';
 
 // File type configurations
 const FILE_TYPES = {
@@ -30,7 +31,7 @@ const FILE_TYPES = {
 };
 
 // Get all allowed mime types
-const getAllowedMimeTypes = (): string[] => {
+export const getAllowedMimeTypes = (): string[] => {
   return [
     ...FILE_TYPES.images.mimeTypes,
     ...FILE_TYPES.documents.mimeTypes,
@@ -39,12 +40,20 @@ const getAllowedMimeTypes = (): string[] => {
 };
 
 // Get all allowed extensions
-const getAllowedExtensions = (): string[] => {
+export const getAllowedExtensions = (): string[] => {
   return [
     ...FILE_TYPES.images.extensions,
     ...FILE_TYPES.documents.extensions,
     ...FILE_TYPES.videos.extensions,
   ];
+};
+
+export const isAllowedFileMetadata = (filename: string, mimeType: string): boolean => {
+  const allowedMimeTypes = getAllowedMimeTypes();
+  const allowedExtensions = getAllowedExtensions();
+  const ext = path.extname(filename).toLowerCase();
+
+  return allowedMimeTypes.includes(mimeType) && allowedExtensions.includes(ext);
 };
 
 // Determine file category based on mime type
@@ -78,15 +87,11 @@ export const getMaxFileSize = (category: string): number => {
 
 // File filter function
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = getAllowedMimeTypes();
-  const allowedExtensions = getAllowedExtensions();
-  const ext = path.extname(file.originalname).toLowerCase();
-
   // Check mime type and extension
-  if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
+  if (isAllowedFileMetadata(file.originalname, file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Allowed types: ${allowedExtensions.join(', ')}`));
+    cb(new Error(`Invalid file type. Allowed types: ${getAllowedExtensions().join(', ')}`));
   }
 };
 
@@ -105,11 +110,12 @@ export const upload = multer({
 
 // Middleware to validate file size based on category
 export const validateFileSize = (req: Request, res: any, next: any) => {
-  if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+  const files = getUploadedFiles(req);
+
+  if (files.length === 0) {
     return next();
   }
 
-  const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
   const errors: string[] = [];
 
   for (const file of files) {
@@ -147,6 +153,37 @@ export const validateUploadFields = (req: Request, res: any, next: any) => {
   }
 
   next();
+};
+
+const getUploadedFiles = (req: Request): Express.Multer.File[] => {
+  if (req.file) return [req.file];
+  if (!req.files) return [];
+  if (Array.isArray(req.files)) return req.files;
+  return Object.values(req.files).flat();
+};
+
+export const scanUploadedFiles = async (req: Request, res: any, next: any) => {
+  try {
+    const files = getUploadedFiles(req);
+
+    for (const file of files) {
+      const scanResult = await fileUploadScanner.scanBuffer(file);
+      if (!scanResult.safe) {
+        return res.status(400).json({
+          success: false,
+          message: 'File security scan failed',
+          threats: scanResult.threats || [],
+        });
+      }
+    }
+
+    next();
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'File security scan failed',
+    });
+  }
 };
 
 // Export file type configurations for use in other modules

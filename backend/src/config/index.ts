@@ -30,12 +30,12 @@ interface Config {
   };
 }
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 if (process.env.NODE_ENV === 'production') {
   if (!JWT_SECRET || JWT_SECRET === 'your-super-secret-jwt-key') {
-    throw new Error('FATAL: JWT_SECRET environment variable must be set to a strong secret in production');
+    throw new Error('FATAL: JWT_ACCESS_SECRET or JWT_SECRET must be set to a strong secret in production');
   }
   if (!JWT_REFRESH_SECRET || JWT_REFRESH_SECRET === 'your-super-secret-refresh-key') {
     throw new Error('FATAL: JWT_REFRESH_SECRET environment variable must be set to a strong secret in production');

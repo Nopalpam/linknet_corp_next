@@ -50,9 +50,9 @@ const LoginPage = () => {
     }
 
     try {
-      await login(formData.email, formData.password);
+      const securityNotice = await login(formData.email, formData.password);
       // Success toast will be shown after redirect
-      toast.success("Login berhasil! Selamat datang.", 3000);
+      toast.success(securityNotice || "Login berhasil! Selamat datang.", 5000);
     } catch (err) {
       // Handle different error types
       const errorMessage = err instanceof Error ? err.message : "Login failed";
@@ -118,7 +118,7 @@ const LoginPage = () => {
 
         {/* Login Form */}
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-lg rounded-lg sm:px-10 border border-gray-200 dark:border-gray-700">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} autoComplete="off">
             {/* Session Expired Message */}
             {sessionExpiredMsg && (
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
@@ -151,7 +151,7 @@ const LoginPage = () => {
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="off"
                 required
                 value={formData.email}
                 onChange={handleChange}
@@ -172,7 +172,7 @@ const LoginPage = () => {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="off"
                 required
                 value={formData.password}
                 onChange={handleChange}

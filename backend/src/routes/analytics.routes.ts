@@ -11,6 +11,8 @@
 
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
 import {
   getGoogleAnalytics,
   getGAStatus,
@@ -19,11 +21,15 @@ import {
 } from '../controllers/analytics.controller';
 
 const router = Router();
+const requireAnalyticsAccess = requirePermission(
+  Permission.LOG_ACTIVITY_READ,
+  Permission.SETTINGS_READ,
+);
 
 // All analytics routes require authentication (CMS only)
-router.get('/analytics/ga', authMiddleware, getGoogleAnalytics);
-router.get('/analytics/ga/status', authMiddleware, getGAStatus);
-router.get('/analytics/news', authMiddleware, getNewsAnalytics);
-router.get('/analytics/combined', authMiddleware, getCombinedAnalytics);
+router.get('/analytics/ga', authMiddleware, requireAnalyticsAccess, getGoogleAnalytics);
+router.get('/analytics/ga/status', authMiddleware, requireAnalyticsAccess, getGAStatus);
+router.get('/analytics/news', authMiddleware, requireAnalyticsAccess, getNewsAnalytics);
+router.get('/analytics/combined', authMiddleware, requireAnalyticsAccess, getCombinedAnalytics);
 
 export default router;

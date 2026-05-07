@@ -31,6 +31,52 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { uploadFile, getStorageStatus } from '../utils/upload';
 import s3Service from '../services/s3/s3Service';
 import logger from '../utils/logger';
+import {
+  getFileCategory,
+  getMaxFileSize,
+  isAllowedFileMetadata,
+} from '../middleware/upload.middleware';
+
+const isPresignedUploadEnabled = (): boolean => {
+  if (process.env.PRESIGNED_UPLOAD_ENABLED !== undefined) {
+    return process.env.PRESIGNED_UPLOAD_ENABLED === 'true';
+  }
+
+  // Direct-to-S3 uploads bypass backend scanning, so production must opt in.
+  return process.env.NODE_ENV !== 'production';
+};
+
+const normalizePresignedExpiry = (value: unknown): number => {
+  const parsed = typeof value === 'number' ? value : parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed)) return 300;
+  return Math.min(Math.max(parsed, 60), 300);
+};
+
+const sanitizeUploadFolder = (value: unknown): string => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return 'uploads/quarantine';
+  }
+
+  const normalized = value
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\/+/g, '/');
+
+  if (
+    !normalized ||
+    normalized.includes('..') ||
+    !/^[a-zA-Z0-9/_-]+$/.test(normalized)
+  ) {
+    return 'uploads/quarantine';
+  }
+
+  // Keep direct uploads in a quarantine prefix until a backend-side
+  // verification workflow promotes the object.
+  return normalized.startsWith('uploads/quarantine')
+    ? normalized
+    : `uploads/quarantine/${normalized}`;
+};
 
 /**
  * Upload file via backend (standard multipart upload).
@@ -89,7 +135,6 @@ export const uploadSingleFile = async (req: AuthRequest, res: Response): Promise
     res.status(500).json({
       success: false,
       message: 'Failed to upload file',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -148,7 +193,7 @@ export const uploadMultipleFiles = async (req: AuthRequest, res: Response): Prom
           originalName: file.originalname,
           mimeType: file.mimetype,
           success: false,
-          error: error instanceof Error ? error.message : 'Upload failed',
+          error: 'Upload failed',
         });
       }
     }
@@ -200,6 +245,14 @@ export const getPresignedUploadUrl = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
+    if (!isPresignedUploadEnabled()) {
+      res.status(403).json({
+        success: false,
+        message: 'Presigned uploads are disabled in this environment',
+      });
+      return;
+    }
+
     // Check if S3 driver is active
     if (!s3Service.isConfigured()) {
       res.status(400).json({
@@ -209,9 +262,9 @@ export const getPresignedUploadUrl = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
-    const { filename, contentType, folder, expiresIn } = req.body;
+    const { filename, contentType, folder, expiresIn, size } = req.body;
 
-    if (!filename) {
+    if (!filename || typeof filename !== 'string') {
       res.status(400).json({
         success: false,
         message: 'filename is required',
@@ -219,16 +272,56 @@ export const getPresignedUploadUrl = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
+    if (!contentType || typeof contentType !== 'string') {
+      res.status(400).json({
+        success: false,
+        message: 'contentType is required',
+      });
+      return;
+    }
+
+    if (!isAllowedFileMetadata(filename, contentType)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid file type for presigned upload',
+      });
+      return;
+    }
+
+    const numericSize = typeof size === 'number' ? size : parseInt(String(size || ''), 10);
+    if (!Number.isFinite(numericSize) || numericSize <= 0) {
+      res.status(400).json({
+        success: false,
+        message: 'size is required for presigned upload',
+      });
+      return;
+    }
+
+    const maxSize = getMaxFileSize(getFileCategory(contentType));
+    if (numericSize > maxSize) {
+      res.status(400).json({
+        success: false,
+        message: `File exceeds maximum allowed size of ${Math.round(maxSize / (1024 * 1024))}MB`,
+      });
+      return;
+    }
+
+    const sanitizedFolder = sanitizeUploadFolder(folder);
+    const normalizedExpiresIn = normalizePresignedExpiry(expiresIn);
+
     const result = await s3Service.generatePresignedUploadUrl(
       filename,
       {
-        folder: folder || 'uploads',
-        contentType: contentType || 'application/octet-stream',
+        folder: sanitizedFolder,
+        contentType,
+        metadata: {
+          requestedBy: req.user.userId,
+          expectedSize: String(numericSize),
+          scanStatus: 'pending',
+        },
       },
-      expiresIn || 300
+      normalizedExpiresIn
     );
-
-    const publicUrl = s3Service.generatePublicUrl(result.key);
 
     logger.info(`[UploadController] Presigned upload URL generated for user ${req.user.userId}: ${result.key}`);
 
@@ -237,17 +330,17 @@ export const getPresignedUploadUrl = async (req: AuthRequest, res: Response): Pr
       data: {
         uploadUrl: result.url,
         key: result.key,
-        publicUrl,
         expiresIn: result.expiresIn,
         expiresAt: result.expiresAt.toISOString(),
         // Instructions for frontend
         instructions: {
           method: 'PUT',
           headers: {
-            'Content-Type': contentType || 'application/octet-stream',
+            'Content-Type': contentType,
           },
           body: 'Raw file bytes (not FormData)',
         },
+        note: 'Object is written to quarantine prefix and must be verified before public use.',
       },
     });
   } catch (error) {
@@ -255,7 +348,6 @@ export const getPresignedUploadUrl = async (req: AuthRequest, res: Response): Pr
     res.status(500).json({
       success: false,
       message: 'Failed to generate presigned URL',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -311,7 +403,6 @@ export const getPresignedGetUrl = async (req: AuthRequest, res: Response): Promi
     res.status(500).json({
       success: false,
       message: 'Failed to generate presigned GET URL',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };

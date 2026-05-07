@@ -144,7 +144,7 @@ export default function UserFormModal({
           {mode === 'create' ? 'Create New User' : 'Edit User'}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Email */}
             <div>
@@ -236,6 +236,7 @@ export default function UserFormModal({
               </label>
               <input
                 type="password"
+                autoComplete="off"
                 value={formData.password || ''}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder={mode === 'edit' ? 'Leave blank to keep current password' : ''}

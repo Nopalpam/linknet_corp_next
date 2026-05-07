@@ -1,5 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 
+const HOST_HEADER_PATTERN = /^[a-z0-9.-]+(?::\d+)?$/i;
+
+const parseAllowedHosts = (): string[] =>
+  (process.env.FORCE_HTTPS_ALLOWED_HOSTS || process.env.ALLOWED_HOSTS || '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+
+const getRedirectHost = (req: Request): string | null => {
+  const host = req.get('host') || req.hostname;
+  if (!host || !HOST_HEADER_PATTERN.test(host)) {
+    return null;
+  }
+
+  const allowedHosts = parseAllowedHosts();
+  if (allowedHosts.length > 0 && !allowedHosts.includes(host.toLowerCase())) {
+    return null;
+  }
+
+  return host;
+};
+
 /**
  * HTTPS Redirect Middleware
  * Forces HTTPS connections in production environments
@@ -33,8 +55,17 @@ export const httpsRedirectMiddleware = (
       return next();
     }
 
-    // Redirect to HTTPS
-    const httpsUrl = `https://${req.hostname}${req.url}`;
+    const redirectHost = getRedirectHost(req);
+    if (!redirectHost) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid request host',
+      });
+      return;
+    }
+
+    // Redirect to HTTPS using a validated host header.
+    const httpsUrl = `https://${redirectHost}${req.originalUrl || req.url}`;
     return res.redirect(301, httpsUrl);
   }
 

@@ -16,6 +16,10 @@ spec:
         app: linknetcorp-backend
         tier: backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: backend
         image: <YOUR_ACR_NAME>.azurecr.io/linknetcorp-backend:latest
@@ -23,6 +27,12 @@ spec:
         ports:
         - containerPort: 5000
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
         
         # Environment variables from ConfigMap
         envFrom:
@@ -42,6 +52,11 @@ spec:
             secretKeyRef:
               name: linknetcorp-backend-secrets
               key: jwt-secret
+        - name: JWT_REFRESH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: jwt-refresh-secret
         
         # Azure Key Vault integration (using Managed Identity)
         - name: AZURE_KEY_VAULT_URL
@@ -121,6 +136,12 @@ data:
   CORS_CREDENTIALS: "true"
   RATE_LIMIT_WINDOW_MS: "900000"
   RATE_LIMIT_MAX_REQUESTS: "100"
+  FORCE_HTTPS: "true"
+  FORCE_HTTPS_ALLOWED_HOSTS: "api.example.com"
+  ALLOWED_REDIRECT_HOSTS: "https://your-frontend-domain.com"
+  AUTH_COOKIE_DOMAIN: ".example.com"
+  AUTO_DISABLE_DORMANT_USERS: "true"
+  DORMANT_USER_DISABLE_DAYS: "30"
 
 ---
 # Note: In production, use Azure Key Vault with CSI driver
@@ -135,6 +156,7 @@ data:
   # echo -n "your-database-url" | base64
   database-url: <BASE64_ENCODED_DATABASE_URL>
   jwt-secret: <BASE64_ENCODED_JWT_SECRET>
+  jwt-refresh-secret: <BASE64_ENCODED_JWT_REFRESH_SECRET>
 
 ---
 # Horizontal Pod Autoscaler

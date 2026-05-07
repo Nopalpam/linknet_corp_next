@@ -39,6 +39,8 @@ import path from 'path';
 import logger from '../../utils/logger';
 import { getS3Client, getS3Config } from './s3Client';
 
+const allowPublicAcl = (): boolean => process.env.S3_ALLOW_PUBLIC_ACL === 'true';
+
 // ============================================================
 // Types & Interfaces
 // ============================================================
@@ -157,11 +159,10 @@ class S3Service {
           uploadedAt: new Date().toISOString(),
           ...options.metadata,
         },
-        // ⚠️ CATATAN UNTUK MEETING IT:
-        // ACL 'public-read' hanya bekerja jika bucket TIDAK memblokir public ACLs.
-        // Jika bucket menggunakan Block Public Access, ACL ini akan diabaikan.
-        // Sebagai alternatif, gunakan bucket policy atau CloudFront.
-        ...(options.isPublic && { ACL: 'public-read' }),
+        // Public ACLs are disabled by default. Prefer private buckets with
+        // CloudFront/signed URLs; enable S3_ALLOW_PUBLIC_ACL only after
+        // bucket policy review and explicit approval.
+        ...(options.isPublic && allowPublicAcl() && { ACL: 'public-read' }),
       });
 
       await client.send(command);

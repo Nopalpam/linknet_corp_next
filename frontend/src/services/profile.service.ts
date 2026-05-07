@@ -38,6 +38,7 @@ export interface UpdateProfileData {
   lastName?: string;
   username?: string;
   phone?: string;
+  currentPassword?: string;
 }
 
 export interface ChangePasswordData {
@@ -119,11 +120,20 @@ class ProfileService extends BaseService {
         }
       }
     }
+    const csrfToken = typeof window !== 'undefined'
+      ? document.cookie
+          .split(';')
+          .map((cookie) => cookie.trim())
+          .find((cookie) => cookie.startsWith('csrf_token='))
+          ?.substring('csrf_token='.length)
+      : null;
     
     const response = await fetch(this.getApiUrl('/profile/avatar'), {
       method: 'PUT',
+      credentials: 'include',
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
+        ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
       },
       body: formData,
     });

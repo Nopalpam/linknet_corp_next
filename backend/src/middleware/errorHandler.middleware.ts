@@ -16,8 +16,6 @@ import {
 } from '../types/error.types';
 import { logError } from '@utils/logger';
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
 /**
  * Check if error is operational (expected) or programming error
  */
@@ -35,11 +33,7 @@ const handlePrismaError = (error: Prisma.PrismaClientKnownRequestError): AppErro
   switch (error.code) {
     case 'P2002':
       // Unique constraint violation
-      const target = (error.meta?.target as string[]) || [];
-      return new DatabaseError(
-        `Duplicate entry for ${target.join(', ')}`,
-        error
-      );
+      return new DatabaseError('Duplicate entry', error);
     
     case 'P2025':
       // Record not found
@@ -100,7 +94,7 @@ const normalizeError = (error: unknown): AppError => {
 
     // Generic error
     return new AppError(
-      error.message || 'An unexpected error occurred',
+      'An unexpected error occurred',
       500,
       ErrorCode.INTERNAL_SERVER_ERROR,
       false // Not operational for unknown errors
@@ -120,27 +114,23 @@ const normalizeError = (error: unknown): AppError => {
  * Format error response
  */
 const formatErrorResponse = (error: AppError, requestId?: string): ErrorResponse => {
+  const message = error.statusCode >= 500 && !error.isOperational
+    ? 'An unexpected error occurred'
+    : error.message;
+
   const response: ErrorResponse = {
     success: false,
     error: {
       code: error.code,
-      message: error.message,
+      message,
     },
     requestId,
     timestamp: new Date().toISOString(),
   };
 
   // Add details if available
-  if (error.details) {
+  if (error.details && error.statusCode < 500) {
     response.error.details = error.details;
-  }
-
-  // In development, add stack trace for non-operational errors
-  if (NODE_ENV === 'development' && !error.isOperational) {
-    response.error.details = {
-      ...response.error.details,
-      stack: error.stack?.split('\n') || [],
-    };
   }
 
   return response;
@@ -188,12 +178,12 @@ export const errorHandler = (
  * Should be added before the global error handler
  */
 export const notFoundHandler = (
-  req: Request,
+  _req: Request,
   _res: Response,
   next: NextFunction
 ): void => {
   const error = new NotFoundError(
-    `Route ${req.method} ${req.originalUrl} not found`,
+    'Resource not found',
     ErrorCode.ROUTE_NOT_FOUND
   );
   next(error);

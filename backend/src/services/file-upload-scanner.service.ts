@@ -30,6 +30,7 @@ export class FileUploadScanner {
   private readonly allowedMimeTypes = [
     // Images
     'image/jpeg',
+    'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
@@ -121,6 +122,92 @@ export class FileUploadScanner {
     }
 
     return result;
+  }
+
+  /**
+   * Scan an in-memory Multer file before it is transferred to storage.
+   */
+  async scanBuffer(file: Express.Multer.File): Promise<ScanResult> {
+    this.validateMemoryFile(file);
+    this.checkFileExtension(file.originalname);
+    this.validateMimeType(file.mimetype);
+
+    const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const contentAnalysisResult = this.analyzeBufferContent(file.buffer, file.mimetype);
+    const threats = contentAnalysisResult.threats || [];
+
+    const result: ScanResult = {
+      safe: threats.length === 0,
+      scannedAt: new Date(),
+      scanner: 'FileUploadScanner v1.0',
+      threats: threats.length > 0 ? threats : undefined,
+      fileHash,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+    };
+
+    if (!result.safe) {
+      await this.logSecurityEvent('FILE_SCAN_FAILED', result);
+    }
+
+    return result;
+  }
+
+  private validateMemoryFile(file: Express.Multer.File): void {
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new Error('File is empty');
+    }
+
+    if (file.size > this.maxFileSize) {
+      throw new Error(`File size exceeds maximum allowed size (${this.maxFileSize / 1024 / 1024}MB)`);
+    }
+  }
+
+  private analyzeBufferContent(
+    buffer: Buffer,
+    mimeType: string
+  ): { safe: boolean; threats?: string[] } {
+    const threats: string[] = [];
+    const magicNumbers: Record<string, string[]> = {
+      'image/jpeg': ['ffd8ff'],
+      'image/png': ['89504e47'],
+      'image/gif': ['474946383761', '474946383961'],
+      'application/pdf': ['255044462d'],
+      'application/zip': ['504b0304', '504b0506', '504b0708'],
+    };
+
+    const expectedSignatures = magicNumbers[mimeType];
+    if (expectedSignatures) {
+      const fileSignature = buffer.toString('hex', 0, 8);
+      const matches = expectedSignatures.some((sig) => fileSignature.startsWith(sig));
+      if (!matches) {
+        threats.push(`MIME type mismatch: Expected ${mimeType} but file signature does not match`);
+      }
+    }
+
+    if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
+      const content = buffer.subarray(0, 1024 * 1024).toString('utf8');
+      const suspiciousPatterns = [
+        /<script/i,
+        /javascript:/i,
+        /onerror=/i,
+        /onload=/i,
+        /eval\(/i,
+        /document\.write/i,
+      ];
+
+      for (const pattern of suspiciousPatterns) {
+        if (pattern.test(content)) {
+          threats.push(`Suspicious script pattern detected: ${pattern.source}`);
+        }
+      }
+    }
+
+    return {
+      safe: threats.length === 0,
+      threats: threats.length > 0 ? threats : undefined,
+    };
   }
 
   /**

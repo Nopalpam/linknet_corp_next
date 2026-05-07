@@ -2,16 +2,31 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import crypto from 'crypto';
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production';
+const devAccessSecret = crypto.randomBytes(32).toString('hex');
+const devRefreshSecret = crypto.randomBytes(32).toString('hex');
+const configuredAccessSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+const configuredRefreshSecret = process.env.JWT_REFRESH_SECRET;
+const JWT_ACCESS_SECRET = configuredAccessSecret || devAccessSecret;
+const JWT_REFRESH_SECRET = configuredRefreshSecret || devRefreshSecret;
 const JWT_ACCESS_EXPIRE = process.env.JWT_ACCESS_EXPIRE || process.env.JWT_EXPIRES_IN || '15m'; // 15 minutes
 const JWT_REFRESH_EXPIRE = process.env.JWT_REFRESH_EXPIRE || process.env.JWT_REFRESH_EXPIRES_IN || '7d'; // 7 days
+
+if (process.env.NODE_ENV === 'production') {
+  if (!configuredAccessSecret || JWT_ACCESS_SECRET.length < 32) {
+    throw new Error('JWT_ACCESS_SECRET or JWT_SECRET must be a strong secret in production');
+  }
+
+  if (!configuredRefreshSecret || JWT_REFRESH_SECRET.length < 32) {
+    throw new Error('JWT_REFRESH_SECRET must be a strong secret in production');
+  }
+}
 
 export interface AccessTokenPayload {
   userId: string;
   email: string;
   roles?: string[];
   permissions?: string[];
+  sessionId?: string;
   type: 'access';
 }
 
@@ -33,12 +48,14 @@ export const generateAccessToken = (user: {
   email: string;
   roles?: string[];
   permissions?: string[];
+  sessionId?: string;
 }): string => {
   const payload: AccessTokenPayload = {
     userId: user.id,
     email: user.email,
     roles: user.roles || [],
     permissions: user.permissions || [],
+    sessionId: user.sessionId,
     type: 'access'
   };
 
@@ -144,6 +161,13 @@ export const verifyRefreshToken = (token: string): RefreshTokenPayload => {
  */
 export const generatePasswordResetToken = (): string => {
   return randomUUID() + '-' + Date.now();
+};
+
+/**
+ * Hash password reset token before database storage
+ */
+export const hashPasswordResetToken = (token: string): string => {
+  return crypto.createHash('sha256').update(token).digest('hex');
 };
 
 /**

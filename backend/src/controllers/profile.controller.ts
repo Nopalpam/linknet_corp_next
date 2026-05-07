@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { comparePassword, hashPassword } from '../utils/password.util';
+import { comparePassword, hashPassword, validatePasswordStrength } from '../utils/password.util';
 import { processAvatarImage, validateImage } from '../utils/image.util';
 import { uploadToAzureBlob, deleteFromAzureBlob, extractBlobNameFromUrl } from '../utils/storage.util';
 import { sendVerificationEmail } from '../utils/email.util';
@@ -140,7 +140,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { firstName, lastName, username, email, phone } = req.body;
+    const { firstName, lastName, username, email, phone, currentPassword } = req.body;
 
     // Get current user
     const currentUser = await prisma.user.findUnique({
@@ -151,6 +151,15 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       res.status(404).json({
         success: false,
         message: 'User not found'
+      });
+      return;
+    }
+
+    const isCurrentPasswordValid = await comparePassword(currentPassword, currentUser.password);
+    if (!isCurrentPasswordValid) {
+      res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
       });
       return;
     }
@@ -490,6 +499,15 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
       res.status(404).json({
         success: false,
         message: 'User not found'
+      });
+      return;
+    }
+
+    const passwordStrength = validatePasswordStrength(newPassword, user.email, user.username);
+    if (!passwordStrength.isValid) {
+      res.status(400).json({
+        success: false,
+        message: passwordStrength.errors[0] || 'Password does not meet policy requirements'
       });
       return;
     }

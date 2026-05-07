@@ -17,7 +17,9 @@ import {
   deleteFileV2,
 } from '../controllers/filemanagerV2.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { upload } from '../middleware/upload.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
+import { scanUploadedFiles, upload, validateFileSize } from '../middleware/upload.middleware';
 
 const router = Router();
 
@@ -29,7 +31,10 @@ const router = Router();
 router.post(
   '/upload',
   authMiddleware,
+  requirePermission(Permission.FILES_CREATE),
   upload.array('files', 10),
+  validateFileSize,
+  scanUploadedFiles,
   uploadFileV2
 );
 
@@ -38,20 +43,20 @@ router.post(
  * @desc    List files with pagination & filtering
  * @access  Private
  */
-router.get('/', authMiddleware, listFilesV2);
+router.get('/', authMiddleware, requirePermission(Permission.FILES_READ), listFilesV2);
 
 /**
  * @route   GET /api/v1/fm/:id
  * @desc    Get file details or download
  * @access  Private
  */
-router.get('/:id', authMiddleware, getFileV2);
+router.get('/:id', authMiddleware, requirePermission(Permission.FILES_READ), getFileV2);
 
 /**
  * @route   DELETE /api/v1/fm/:id
  * @desc    Delete file
  * @access  Private
  */
-router.delete('/:id', authMiddleware, deleteFileV2);
+router.delete('/:id', authMiddleware, requirePermission(Permission.FILES_DELETE), deleteFileV2);
 
 export default router;

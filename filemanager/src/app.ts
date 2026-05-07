@@ -22,6 +22,10 @@ app.disable('x-powered-by');
 const rawOrigins = process.env.ALLOWED_ORIGINS || '*';
 const allowedOrigins = rawOrigins.split(',').map((o) => o.trim());
 
+if (process.env.NODE_ENV === 'production' && allowedOrigins.includes('*')) {
+  throw new Error('ALLOWED_ORIGINS must not be wildcard (*) in production');
+}
+
 app.use(
   cors({
     origin: allowedOrigins.includes('*') ? '*' : allowedOrigins,

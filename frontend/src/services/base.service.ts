@@ -12,7 +12,7 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const API_PREFIX = "/api/v1";
 
-const AUTH_TOKEN_KEY = "auth_token";
+const CSRF_TOKEN_KEY = "csrf_token";
 
 const getCookie = (name: string): string | null => {
   if (typeof window === "undefined") return null;
@@ -30,15 +30,11 @@ const getCookie = (name: string): string | null => {
 
 export class BaseService {
   protected async fetchWithAuth(url: string, options: RequestInit = {}) {
-    let token =
-      typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
-    if (!token) {
-      token = getCookie(AUTH_TOKEN_KEY);
-    }
+    const csrfToken = getCookie(CSRF_TOKEN_KEY);
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(csrfToken && { "X-CSRF-Token": csrfToken }),
       ...options.headers,
     };
 
@@ -47,6 +43,7 @@ export class BaseService {
       response = await fetch(url, {
         ...options,
         headers,
+        credentials: "include",
       });
     } catch (networkError) {
       console.error("Network error in fetchWithAuth:", networkError);
@@ -103,7 +100,8 @@ export class BaseService {
   }
 
   protected getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(AUTH_TOKEN_KEY) || getCookie(AUTH_TOKEN_KEY);
+    // Tokens are intentionally kept in HttpOnly cookies set by the backend.
+    // JavaScript should not read or persist access/refresh tokens.
+    return null;
   }
 }

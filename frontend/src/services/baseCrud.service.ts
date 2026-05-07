@@ -12,7 +12,7 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // ✅ FIX: Use same token key as BaseService
-const AUTH_TOKEN_KEY = 'auth_token';
+const CSRF_TOKEN_KEY = 'csrf_token';
 
 // Cookie helper - get cookie value
 const getCookie = (name: string): string | null => {
@@ -83,21 +83,16 @@ export class BaseCrudService<T> {
    * ✅ FIX: Use 'auth_token' key (same as BaseService)
    */
   protected async fetchResponseWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-    // Get token from localStorage or cookie (fallback)
-    let token = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
-    if (!token) {
-      token = getCookie(AUTH_TOKEN_KEY);
-    }
+    const csrfToken = getCookie(CSRF_TOKEN_KEY);
     
     console.log('🔑 [BaseCrud] Auth Debug:', {
-      hasToken: !!token,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : 'NO TOKEN',
+      usesCookieSession: true,
       url: url
     });
     
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
       ...options.headers,
     };
 
@@ -106,6 +101,7 @@ export class BaseCrudService<T> {
       response = await fetch(url, {
         ...options,
         headers,
+        credentials: 'include',
       });
     } catch (networkError: any) {
       console.error('❌ [BaseCrud] Network error:', {

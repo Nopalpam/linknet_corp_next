@@ -10,6 +10,7 @@ import {
   UserListResponse,
   UserDetailResponse,
 } from '../types/user.types';
+import { validatePasswordStrength } from '../utils/password.util';
 
 const prisma = new PrismaClient();
 
@@ -267,9 +268,17 @@ export class UserService {
     // Hash password if provided, otherwise generate random password
     let hashedPassword: string;
     if (dto.password) {
+      const passwordStrength = validatePasswordStrength(dto.password, dto.email, username);
+      if (!passwordStrength.isValid) {
+        throw new AppError(
+          passwordStrength.errors[0] || 'Password does not meet policy requirements',
+          400,
+          'VALIDATION_ERROR'
+        );
+      }
       hashedPassword = await bcrypt.hash(dto.password, 10);
     } else {
-      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const randomPassword = `${crypto.randomBytes(12).toString('base64')}Aa1!`;
       hashedPassword = await bcrypt.hash(randomPassword, 10);
     }
 
@@ -416,6 +425,12 @@ export class UserService {
         }),
       },
     });
+
+    if (dto.roles) {
+      await prisma.refreshToken.deleteMany({
+        where: { userId },
+      });
+    }
 
     // Log activity
     const changes: string[] = [];

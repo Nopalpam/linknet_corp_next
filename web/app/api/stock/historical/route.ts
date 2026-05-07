@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
+import { enforceRateLimit, normalizeJkSymbol } from '@/lib/apiRateLimit';
 
 export async function GET(request: NextRequest) {
+  const rateLimited = enforceRateLimit(request, 'stock-historical', { limit: 30, windowMs: 60_000 });
+  if (rateLimited) return rateLimited;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const symbol = searchParams.get('symbol');
@@ -10,15 +14,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Stock symbol is required' }, { status: 400 });
     }
 
+    const formattedSymbol = normalizeJkSymbol(symbol);
+    if (!formattedSymbol) {
+      return NextResponse.json({ error: 'Invalid stock symbol' }, { status: 400 });
+    }
+
     const period1Str = searchParams.get('period1') || '1970-01-01';
     const period2Str = searchParams.get('period2') || new Date().toISOString().split('T')[0];
     const interval = (searchParams.get('interval') as '1d' | '1wk' | '1mo') || '1d';
 
-    const formattedSymbol = symbol.endsWith('.JK') ? symbol : `${symbol}.JK`;
+    if (!['1d', '1wk', '1mo'].includes(interval)) {
+      return NextResponse.json({ error: 'Invalid interval' }, { status: 400 });
+    }
+
+    const period1 = new Date(period1Str);
+    const period2 = new Date(period2Str);
+    if (Number.isNaN(period1.getTime()) || Number.isNaN(period2.getTime()) || period1 > period2) {
+      return NextResponse.json({ error: 'Invalid date range' }, { status: 400 });
+    }
 
     const queryOptions = {
-      period1: new Date(period1Str),
-      period2: new Date(period2Str),
+      period1,
+      period2,
       interval: interval,
     };
 

@@ -24,6 +24,7 @@ import {
   refreshTokenValidation
 } from '../validators/auth.validator';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { businessHoursLoginMiddleware } from '../middleware/businessHours.middleware';
 import { loginRateLimiter } from '../middleware/rateLimiter.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 
@@ -39,7 +40,7 @@ const router = Router();
 router.post('/register', registerValidation, validateRequest, register);
 
 // Login user (with specific login rate limiting)
-router.post('/login', loginRateLimiter, loginValidation, validateRequest, login);
+router.post('/login', businessHoursLoginMiddleware, loginRateLimiter, loginValidation, validateRequest, login);
 
 // Logout user (no rate limiting needed)
 router.post('/logout', logout);

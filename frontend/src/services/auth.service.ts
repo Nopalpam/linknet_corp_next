@@ -28,6 +28,7 @@ export type LoginResponse = {
       permissions: string[];
       mfaEnabled?: boolean;
     };
+    securityNotice?: string;
     accessToken?: string;
     refreshToken?: string;
   };
@@ -61,9 +62,9 @@ export type LogoutResponse = {
 
 export type RefreshTokenResponse = {
   success: boolean;
-  data: {
-    accessToken: string;
-    refreshToken: string;
+  data?: {
+    accessToken?: string;
+    refreshToken?: string;
   };
 };
 
@@ -77,6 +78,7 @@ class AuthService extends BaseService {
     try {
       const response = await fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -131,16 +133,16 @@ class AuthService extends BaseService {
   /**
    * Logout user (invalidate current refresh token)
    */
-  async logout(refreshToken: string): Promise<LogoutResponse> {
+  async logout(): Promise<LogoutResponse> {
     const url = this.getApiUrl('/auth/logout');
     
     try {
       const response = await fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refreshToken }),
       });
 
       const data = await response.json();
@@ -185,15 +187,15 @@ class AuthService extends BaseService {
   /**
    * Refresh access token
    */
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+  async refreshToken(): Promise<RefreshTokenResponse> {
     const url = this.getApiUrl('/auth/refresh');
     
     const response = await fetch(url, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refreshToken }),
     });
 
     const data = await response.json();
@@ -225,6 +227,7 @@ class AuthService extends BaseService {
 
     const response = await fetch(url, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, tempToken }),
     });

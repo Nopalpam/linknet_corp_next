@@ -19,6 +19,8 @@ import {
   bulkDeleteFiles,
 } from '../controllers/file.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
 
 const router = Router();
 
@@ -28,7 +30,7 @@ const router = Router();
  * @access  Private
  * @query   prefix, limit, page, startAfter, source (db|storage)
  */
-router.get('/', authMiddleware, listFiles);
+router.get('/', authMiddleware, requirePermission(Permission.FILES_READ), listFiles);
 
 /**
  * @route   GET /api/v1/files/info
@@ -36,14 +38,14 @@ router.get('/', authMiddleware, listFiles);
  * @access  Private
  * @query   key (cloud storage key)
  */
-router.get('/info', authMiddleware, getFileInfo);
+router.get('/info', authMiddleware, requirePermission(Permission.FILES_READ), getFileInfo);
 
 /**
  * @route   DELETE /api/v1/files/:key
  * @desc    Delete a single file by cloud key
  * @access  Private
  */
-router.delete('/:key', authMiddleware, deleteFileByKey);
+router.delete('/:key', authMiddleware, requirePermission(Permission.FILES_DELETE), deleteFileByKey);
 
 /**
  * @route   POST /api/v1/files/delete
@@ -51,6 +53,6 @@ router.delete('/:key', authMiddleware, deleteFileByKey);
  * @access  Private
  * @body    { keys: string[] }
  */
-router.post('/delete', authMiddleware, bulkDeleteFiles);
+router.post('/delete', authMiddleware, requirePermission(Permission.FILES_DELETE), bulkDeleteFiles);
 
 export default router;

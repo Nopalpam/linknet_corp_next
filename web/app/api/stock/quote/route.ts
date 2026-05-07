@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
+import { enforceRateLimit, normalizeJkSymbol } from '@/lib/apiRateLimit';
 
 export async function GET(request: NextRequest) {
+  const rateLimited = enforceRateLimit(request, 'stock-quote', { limit: 60, windowMs: 60_000 });
+  if (rateLimited) return rateLimited;
+
   const searchParams = request.nextUrl.searchParams;
   const symbol = searchParams.get('symbol');
 
@@ -12,8 +16,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const formattedSymbol = normalizeJkSymbol(symbol);
+  if (!formattedSymbol) {
+    return NextResponse.json(
+      { error: 'Invalid stock symbol' },
+      { status: 400 }
+    );
+  }
+
   try {
-    const formattedSymbol = symbol.endsWith('.JK') ? symbol : `${symbol}.JK`;
     const quote = await yahooFinance.quote(formattedSymbol);
 
     if (!quote) {

@@ -26,6 +26,7 @@ export default function EditProfileModal({
     lastName: profile.lastName,
     username: profile.username,
     phone: profile.phone || "",
+    currentPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export default function EditProfileModal({
         lastName: profile.lastName,
         username: profile.username,
         phone: profile.phone || "",
+        currentPassword: "",
       });
       setError(null);
     }
@@ -75,6 +77,11 @@ export default function EditProfileModal({
       }
     }
 
+    if (!formData.currentPassword?.trim()) {
+      setError("Current password is required to save profile changes");
+      return false;
+    }
+
     return true;
   };
 
@@ -109,6 +116,8 @@ export default function EditProfileModal({
         onClose();
         return;
       }
+
+      updateData.currentPassword = formData.currentPassword;
 
       const response = await profileService.updateProfile(updateData);
       
@@ -174,7 +183,7 @@ export default function EditProfileModal({
           </svg>
         </button>
 
-        <form onSubmit={handleSubmit} className="mt-6">
+        <form onSubmit={handleSubmit} className="mt-6" autoComplete="off">
           <div className="space-y-5">
             {/* Error Message */}
             {error && (
@@ -257,6 +266,23 @@ export default function EditProfileModal({
                 value={profile.email}
                 disabled
                 className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 text-gray-500 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="currentPassword">
+                Current Password <span className="text-red-500">*</span>
+              </Label>
+              <input
+                id="currentPassword"
+                type="password"
+                autoComplete="off"
+                value={formData.currentPassword || ""}
+                onChange={(e) => handleChange("currentPassword", e.target.value)}
+                placeholder="Confirm current password"
+                disabled={isLoading}
+                required
+                className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 disabled:opacity-50"
               />
             </div>
           </div>

@@ -9,6 +9,7 @@ import {
 } from '../controllers/profile.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { avatarUpload } from '../config/upload';
+import { scanUploadedFiles } from '../middleware/upload.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 import {
   updateProfileValidation,
@@ -29,7 +30,7 @@ router.get('/', authMiddleware, getProfile);
 router.put('/', authMiddleware, updateProfileValidation, validateRequest, updateProfile);
 
 // Upload/Update avatar
-router.put('/avatar', authMiddleware, avatarUpload.single('avatar'), updateAvatar);
+router.put('/avatar', authMiddleware, avatarUpload.single('avatar'), scanUploadedFiles, updateAvatar);
 
 // Delete avatar
 router.delete('/avatar', authMiddleware, deleteAvatar);

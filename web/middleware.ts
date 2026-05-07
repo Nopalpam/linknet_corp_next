@@ -48,6 +48,7 @@ export default async function middleware(request: NextRequest) {
   response.cookies.set('default-locale', defaultLocale, {
     path: '/',
     sameSite: 'lax',
+    secure: request.nextUrl.protocol === 'https:',
     maxAge: 60 * 60, // 1 hour
   });
 

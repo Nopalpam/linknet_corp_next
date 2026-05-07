@@ -21,7 +21,7 @@ router.get('/settings/public', SettingsController.getPublicSettings);
 router.get(
   '/cms/settings',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_READ),
+  requirePermission(Permission.SETTINGS_READ),
   SettingsController.getAllSettings
 );
 
@@ -29,7 +29,7 @@ router.get(
 router.get(
   '/cms/settings/groups',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_READ),
+  requirePermission(Permission.SETTINGS_READ),
   SettingsController.getGroups
 );
 
@@ -37,7 +37,7 @@ router.get(
 router.get(
   '/cms/settings/:key',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_READ),
+  requirePermission(Permission.SETTINGS_READ),
   SettingsController.getSettingByKey
 );
 
@@ -45,7 +45,7 @@ router.get(
 router.post(
   '/cms/settings',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_CREATE),
+  requirePermission(Permission.SETTINGS_UPDATE),
   SettingsController.createSetting
 );
 
@@ -53,7 +53,7 @@ router.post(
 router.put(
   '/cms/settings/:id',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_UPDATE),
+  requirePermission(Permission.SETTINGS_UPDATE),
   SettingsController.updateSetting
 );
 
@@ -61,7 +61,7 @@ router.put(
 router.post(
   '/cms/settings/update-group',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_UPDATE),
+  requirePermission(Permission.SETTINGS_UPDATE),
   SettingsController.updateGroupSettings
 );
 
@@ -69,7 +69,7 @@ router.post(
 router.delete(
   '/cms/settings/:id',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_DELETE),
+  requirePermission(Permission.SETTINGS_UPDATE),
   SettingsController.deleteSetting
 );
 
@@ -77,7 +77,7 @@ router.delete(
 router.post(
   '/cms/settings/clear-cache',
   authenticate,
-  requirePermission(Permission.MENU_MANAGEMENT_UPDATE),
+  requirePermission(Permission.SETTINGS_UPDATE),
   SettingsController.clearCache
 );
 

@@ -11,6 +11,64 @@ import prisma from '../../config/database';
 const DISPATCH_TIMEOUT_MS = 10_000;
 const DISPATCH_CRON_SCHEDULE = '*/5 * * * *';
 
+const parseAllowedDispatchHosts = (): string[] =>
+  (process.env.FORM_DISPATCH_ALLOWED_HOSTS || '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+
+const isPrivateHostname = (hostname: string): boolean => {
+  const normalized = hostname.toLowerCase();
+  if (
+    normalized === 'localhost' ||
+    normalized === '127.0.0.1' ||
+    normalized === '0.0.0.0' ||
+    normalized === '::1'
+  ) {
+    return true;
+  }
+
+  return (
+    normalized.startsWith('10.') ||
+    normalized.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalized)
+  );
+};
+
+const validateDispatchEndpoint = (endpoint: string): { allowed: boolean; reason?: string } => {
+  let parsed: URL;
+  try {
+    parsed = new URL(endpoint);
+  } catch {
+    return { allowed: false, reason: 'invalid_url' };
+  }
+
+  if (parsed.protocol !== 'https:') {
+    return { allowed: false, reason: 'https_required' };
+  }
+
+  if (isPrivateHostname(parsed.hostname)) {
+    return { allowed: false, reason: 'private_host_not_allowed' };
+  }
+
+  const allowedHosts = parseAllowedDispatchHosts();
+  if (allowedHosts.length === 0) {
+    return process.env.NODE_ENV === 'production'
+      ? { allowed: false, reason: 'missing_dispatch_host_allowlist' }
+      : { allowed: true };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const matched = allowedHosts.some((allowedHost) => {
+    const normalized = allowedHost.replace(/^\*\./, '.');
+    return allowedHost.startsWith('*.')
+      ? hostname.endsWith(normalized)
+      : hostname === allowedHost;
+  });
+
+  return matched ? { allowed: true } : { allowed: false, reason: 'host_not_allowlisted' };
+};
+
 const getMissingFormModuleTableName = (error: unknown): string | null => {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2021') {
     return null;
@@ -228,6 +286,17 @@ export class FormSubmissionDispatchService {
         errorMessage: 'Integration endpoint is not configured',
         responsePayload: {
           reason: 'missing_endpoint',
+          provider,
+        },
+      });
+    }
+
+    const endpointValidation = validateDispatchEndpoint(endpoint);
+    if (!endpointValidation.allowed) {
+      return this.finalizeDispatch(log, FormDispatchStatus.FAILED, {
+        errorMessage: 'Integration endpoint is not permitted by dispatch security policy',
+        responsePayload: {
+          reason: endpointValidation.reason,
           provider,
         },
       });

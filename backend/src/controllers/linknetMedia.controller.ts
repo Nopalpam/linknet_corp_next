@@ -4,7 +4,19 @@ import fs from 'fs';
 import path from 'path';
 
 const MEDIA_API_URL = 'https://ui-stb-cpe.sysln.id/api/mit/portal/data';
-const SALT = '@M1Tc0NT3nT#ln';
+
+function getMediaTokenSalt(): string {
+  const salt = process.env.LINKNET_MEDIA_TOKEN_SALT?.trim();
+  if (salt) {
+    return salt;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('LINKNET_MEDIA_TOKEN_SALT is required in production');
+  }
+
+  return '';
+}
 
 /**
  * Generate API token for Linknet Media API
@@ -18,7 +30,7 @@ function generateMediaToken(): string {
   const hour = String(now.getUTCHours()).padStart(2, '0');
 
   const timestamp = `${year}${month}${day}${hour}`;
-  const raw = timestamp + SALT;
+  const raw = timestamp + getMediaTokenSalt();
 
   return crypto.createHash('md5').update(raw).digest('hex');
 }

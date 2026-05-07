@@ -19,7 +19,10 @@ import {
   getUploadStatus,
 } from '../controllers/upload.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { upload, validateFileSize } from '../middleware/upload.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
+import { uploadRateLimiter } from '../middleware/rateLimiter.middleware';
+import { scanUploadedFiles, upload, validateFileSize } from '../middleware/upload.middleware';
 
 const router = Router();
 
@@ -31,8 +34,11 @@ const router = Router();
 router.post(
   '/',
   authMiddleware,
+  requirePermission(Permission.FILES_CREATE),
+  uploadRateLimiter,
   upload.single('file'),
   validateFileSize,
+  scanUploadedFiles,
   uploadSingleFile
 );
 
@@ -44,8 +50,11 @@ router.post(
 router.post(
   '/multiple',
   authMiddleware,
+  requirePermission(Permission.FILES_CREATE),
+  uploadRateLimiter,
   upload.array('files', 10),
   validateFileSize,
+  scanUploadedFiles,
   uploadMultipleFiles
 );
 
@@ -58,6 +67,8 @@ router.post(
 router.post(
   '/presigned',
   authMiddleware,
+  requirePermission(Permission.FILES_CREATE),
+  uploadRateLimiter,
   getPresignedUploadUrl
 );
 
@@ -70,6 +81,7 @@ router.post(
 router.get(
   '/presigned-get',
   authMiddleware,
+  requirePermission(Permission.FILES_READ),
   getPresignedGetUrl
 );
 
@@ -81,6 +93,7 @@ router.get(
 router.get(
   '/status',
   authMiddleware,
+  requirePermission(Permission.FILES_READ),
   getUploadStatus
 );
 

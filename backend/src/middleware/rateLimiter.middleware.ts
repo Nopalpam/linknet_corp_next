@@ -147,6 +147,46 @@ export const publicRateLimiter = !isRateLimitEnabled
   ? bypassMiddleware 
   : publicRateLimitConfig;
 
+/**
+ * Public form submission limiter
+ * 20 submissions per IP per hour. Public dynamic forms are intentionally
+ * unauthenticated, so they need a tighter control than general API traffic.
+ */
+const publicFormSubmissionRateLimitConfig = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: parseInt(process.env.PUBLIC_FORM_RATE_LIMIT_MAX || '20', 10),
+  message: 'Too many form submissions, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, _res, _next, options) => {
+    throw new RateLimitError(options.message as string);
+  },
+});
+
+export const publicFormSubmissionRateLimiter = !isRateLimitEnabled
+  ? bypassMiddleware
+  : publicFormSubmissionRateLimitConfig;
+
+/**
+ * Upload limiter for authenticated and public upload surfaces.
+ * Keeps memory-buffered upload endpoints from being abused even before
+ * controller-level validation runs.
+ */
+const uploadRateLimitConfig = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: parseInt(process.env.UPLOAD_RATE_LIMIT_MAX || '30', 10),
+  message: 'Too many upload requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, _res, _next, options) => {
+    throw new RateLimitError(options.message as string);
+  },
+});
+
+export const uploadRateLimiter = !isRateLimitEnabled
+  ? bypassMiddleware
+  : uploadRateLimitConfig;
+
 // Export all rate limiters
 export default {
   general: !isRateLimitEnabled ? bypassMiddleware : generalRateLimitConfig,
@@ -154,4 +194,6 @@ export default {
   login: !isRateLimitEnabled ? bypassMiddleware : loginRateLimitConfig,
   strict: !isRateLimitEnabled ? bypassMiddleware : strictRateLimitConfig,
   public: !isRateLimitEnabled ? bypassMiddleware : publicRateLimitConfig,
+  publicFormSubmission: !isRateLimitEnabled ? bypassMiddleware : publicFormSubmissionRateLimitConfig,
+  upload: !isRateLimitEnabled ? bypassMiddleware : uploadRateLimitConfig,
 };

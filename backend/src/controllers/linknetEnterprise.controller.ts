@@ -315,16 +315,13 @@ export async function getEnterpriseCoverage(
         tokenExpiresAt = 0;
       }
 
-      // Log full error details for debugging
+      // Log redacted diagnostics only. External response bodies and bearer
+      // tokens may contain sensitive operational details.
       const errorBody = await apiRes.text().catch(() => '(no body)');
       console.error(`[Enterprise Coverage] API error ${apiRes.status}:`, {
         url: apiUrl,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.slice(0, 20)}...`,
-          'X-partner-id': PARTNER_ID,
-        },
-        responseBody: errorBody,
+        partnerIdConfigured: Boolean(PARTNER_ID),
+        responseBodyBytes: Buffer.byteLength(errorBody),
       });
 
       res.status(apiRes.status).json({

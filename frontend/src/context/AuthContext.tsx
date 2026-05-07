@@ -37,7 +37,7 @@ type AuthContextType = {
   isAuthValidated: boolean; // ✅ NEW: Track if initial validation is complete
   isAuthenticated: boolean;
   isSessionWarningOpen: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<string | undefined>;
   logout: (reason?: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   forceLogout: () => void; // ✅ NEW: Force logout handler
@@ -65,19 +65,8 @@ const setCookie = (name: string, value: string, days: number = 7) => {
   if (typeof window === 'undefined') return;
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
-};
-
-const getCookie = (name: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
+  const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict${secure}`;
 };
 
 const deleteCookie = (name: string) => {
@@ -85,21 +74,12 @@ const deleteCookie = (name: string) => {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
-// Sync token between cookie and localStorage
-const syncTokens = () => {
+// Remove legacy client-side token copies. Backend sessions are carried by
+// HttpOnly cookies and CSRF is handled with the readable csrf_token cookie.
+const clearLegacyClientTokens = () => {
   if (typeof window === 'undefined') return;
-  
-  const cookieToken = getCookie(AUTH_TOKEN_KEY);
-  const localToken = localStorage.getItem(AUTH_TOKEN_KEY);
-  
-  // If token exists in cookie but not localStorage, sync it
-  if (cookieToken && !localToken) {
-    localStorage.setItem(AUTH_TOKEN_KEY, cookieToken);
-  }
-  // If token exists in localStorage but not cookie, sync it
-  else if (localToken && !cookieToken) {
-    setCookie(AUTH_TOKEN_KEY, localToken, 7);
-  }
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -208,20 +188,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       isRefreshingRef.current = true;
-      const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
+      clearLegacyClientTokens();
       
-      if (!token) {
-        console.warn('🔴 No token found during refresh - logging out');
-        if (!forceLogoutRef.current) {
-          clearAuthData();
-          setUser(null);
-          router.replace(buildLoginRedirectUrl('session_expired'));
-        }
-        return;
-      }
-
-      // Sync tokens between cookie and localStorage
-      syncTokens();
+      // Legacy localStorage tokens were cleared above; backend cookies carry the session.
 
       if (AUTH_ENABLED) {
         const profileData = await authService.getProfile();
@@ -332,18 +301,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('🔵 Initializing auth validation...');
       
       try {
-        // Sync tokens first
-        syncTokens();
-
-        const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
-        
-        if (!token) {
-          console.log('🔴 No token found - user not authenticated');
-          setUser(null);
-          setIsAuthValidated(true);
-          setIsLoading(false);
-          return;
-        }
+        clearLegacyClientTokens();
 
         if (AUTH_ENABLED) {
           // ✅ CRITICAL: Validate token with backend BEFORE rendering CMS
@@ -378,10 +336,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (error: any) {
             console.error('🔴 Token validation error:', error);
-            if (isSessionExpiredError(error)) {
-              triggerSessionWarning();
-              return;
-            }
             // Clear auth data for ALL errors (expired, network, etc.)
             // If we can't validate the token, user should re-login
             clearAuthData();
@@ -422,13 +376,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Skip if still loading or not validated yet
     if (isLoading || !isAuthValidated) return;
 
-    // Check if we have a token
-    const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
-    if (!token) {
-      console.warn('🔴 No token on route change');
-      return; // Let other logic handle this
-    }
-
     // Debounce: Only refresh if last refresh was > 5 minutes ago
     const lastRefresh = localStorage.getItem(AUTH_LAST_REFRESH);
     if (lastRefresh) {
@@ -436,8 +383,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (timeSinceRefresh < 300000) return; // 5 minutes
     }
 
-    // Sync tokens and silently refresh user profile
-    syncTokens();
+    // Silently refresh user profile using HttpOnly cookie session.
     refreshUser();
   }, [pathname, isLoading, isAuthValidated, refreshUser]); // ✅ HAPUS user & forceLogout untuk cegah loop
 
@@ -446,12 +392,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!isAuthValidated || !AUTH_ENABLED) return;
 
     const interval = setInterval(() => {
-      const token = getCookie(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!token) {
-        console.warn('🔴 Token disappeared during periodic check');
-        return; // Let other logic handle logout
-      }
-
       // Check last refresh time
       const lastRefresh = localStorage.getItem(AUTH_LAST_REFRESH);
       if (lastRefresh) {
@@ -505,14 +445,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           permissions: userData.permissions || [],
         };
 
-        // Store tokens in both cookie and localStorage
-        // Cookie: for middleware access
-        // localStorage: for API calls & refresh token
-        const accessToken = response.data.accessToken!;
-        const refreshToken = response.data.refreshToken!;
-        setCookie(AUTH_TOKEN_KEY, accessToken, 7);
-        localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        // Backend sets HttpOnly cookies for the browser session.
+        clearLegacyClientTokens();
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userForStorage));
         localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
         
@@ -525,6 +459,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const safeReturnUrl = resolvePostLoginPath(params.get('from'));
         clearStoredLastPath();
         router.replace(safeReturnUrl);
+        return response.data.securityNotice;
       } else {
         // Mock login for development (bypass auth)
         const mockUser: User = {
@@ -555,6 +490,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const safeReturnUrl = resolvePostLoginPath(params.get('from'));
         clearStoredLastPath();
         router.replace(safeReturnUrl);
+        return "Authorized use only. All activity is monitored and logged by PT Link Net Tbk.";
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -574,11 +510,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       if (AUTH_ENABLED) {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-        if (refreshToken) {
-          // Call logout API to invalidate refresh token
-          await authService.logout(refreshToken);
-        }
+        await authService.logout();
       }
     } catch (error) {
       console.error("Logout error:", error);
@@ -624,11 +556,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         permissions: userData.permissions || [],
       };
 
-      const accessToken = response.data.accessToken!;
-      const refreshToken = response.data.refreshToken!;
-      setCookie(AUTH_TOKEN_KEY, accessToken, 7);
-      localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
-      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      clearLegacyClientTokens();
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userForStorage));
       localStorage.setItem(AUTH_LAST_REFRESH, Date.now().toString());
 
@@ -666,22 +594,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsExtendingSession(true);
     try {
       if (AUTH_ENABLED) {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-        if (!refreshToken) {
-          throw new Error('Refresh token tidak ditemukan');
-        }
-
-        const response = await authService.refreshToken(refreshToken);
-        if (!response.success || !response.data.accessToken) {
+        const response = await authService.refreshToken();
+        if (!response.success) {
           throw new Error('Gagal memperpanjang sesi');
         }
 
-        setCookie(AUTH_TOKEN_KEY, response.data.accessToken, 7);
-        localStorage.setItem(AUTH_TOKEN_KEY, response.data.accessToken);
-        if (response.data.refreshToken) {
-          localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refreshToken);
-        }
-
+        clearLegacyClientTokens();
         await refreshUser();
       }
 
