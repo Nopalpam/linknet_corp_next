@@ -105,7 +105,7 @@ export function sanitizeHtmlContent(html: string): string {
     
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
     allowedSchemesByTag: {
-      img: ['http', 'https', 'data'],
+      img: ['http', 'https'],
       video: ['http', 'https'],
       audio: ['http', 'https'],
       source: ['http', 'https'],
@@ -165,6 +165,36 @@ export function getTextFromHtml(html: string): string {
 }
 
 /**
+ * Sanitize a string for plain-text fields.
+ */
+export function sanitizePlainText(value: string): string {
+  return sanitizeHtml(value, {
+    allowedTags: [],
+    allowedAttributes: {},
+  }).trim();
+}
+
+/**
+ * Validate and normalize URLs used in CMS component metadata.
+ */
+export function sanitizeUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    return trimmed;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const allowedProtocols = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+    return allowedProtocols.has(parsed.protocol) ? trimmed : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Truncate HTML content to specified length
  * Preserves HTML structure while limiting text length
  */
@@ -184,8 +214,11 @@ export function truncateHtml(html: string, maxLength: number, ellipsis = '...'):
  * Check if HTML content is empty or only contains whitespace
  */
 export function isHtmlEmpty(html: string): boolean {
-  const text = getTextFromHtml(html).trim();
-  return text.length === 0;
+  const sanitized = sanitizeHtmlContent(html);
+  const text = getTextFromHtml(sanitized).trim();
+  if (text.length > 0) return false;
+
+  return !/<(img|video|audio|source)\b[^>]*(src|poster)=["'][^"']+["']/i.test(sanitized);
 }
 
 /**

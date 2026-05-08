@@ -25,7 +25,7 @@ import {
 } from '../validators/auth.validator';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { businessHoursLoginMiddleware } from '../middleware/businessHours.middleware';
-import { loginRateLimiter } from '../middleware/rateLimiter.middleware';
+import { loginRateLimiter, strictRateLimiter } from '../middleware/rateLimiter.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 
 const router = Router();
@@ -59,16 +59,16 @@ router.post('/reset-password', resetPasswordValidation, validateRequest, resetPa
  */
 
 // Verify MFA token during login (public - uses tempToken)
-router.post('/mfa/verify', mfaVerify);
+router.post('/mfa/verify', strictRateLimiter, mfaVerify);
 
 // Setup MFA (authenticated)
 router.post('/mfa/setup', authMiddleware, mfaSetup);
 
 // Enable MFA after verification (authenticated)
-router.post('/mfa/enable', authMiddleware, mfaEnable);
+router.post('/mfa/enable', authMiddleware, strictRateLimiter, mfaEnable);
 
 // Disable MFA (authenticated)
-router.post('/mfa/disable', authMiddleware, mfaDisable);
+router.post('/mfa/disable', authMiddleware, strictRateLimiter, mfaDisable);
 
 // Get MFA status (authenticated)
 router.get('/mfa/status', authMiddleware, mfaStatus);

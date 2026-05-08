@@ -7,7 +7,11 @@ import {
   uploadPublicFormFile,
 } from './formModule.controller';
 import { publicFormSubmissionRateLimiter, uploadRateLimiter } from '../../middleware/rateLimiter.middleware';
-import { scanUploadedFiles, upload, validateFileSize } from '../../middleware/upload.middleware';
+import {
+  publicFormUpload,
+  scanUploadedFiles,
+  validatePublicFormFileSize,
+} from '../../middleware/upload.middleware';
 
 const router = Router();
 
@@ -18,8 +22,8 @@ router.post('/forms/:businessUnit/:slug/submissions', publicFormSubmissionRateLi
 router.post(
   '/forms/:businessUnit/:slug/files',
   uploadRateLimiter,
-  upload.single('file'),
-  validateFileSize,
+  publicFormUpload.single('file'),
+  validatePublicFormFileSize,
   scanUploadedFiles,
   uploadPublicFormFile
 );

@@ -173,6 +173,13 @@ const ENV_VARS: EnvVarConfig[] = [
     validator: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0,
   },
   {
+    name: 'PUBLIC_FORM_UPLOAD_MAX_BYTES',
+    required: false,
+    defaultValue: '10485760',
+    description: 'Maximum public form attachment size in bytes',
+    validator: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0,
+  },
+  {
     name: 'PRESIGNED_UPLOAD_ENABLED',
     required: false,
     defaultValue: 'false',

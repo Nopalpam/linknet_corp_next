@@ -38,6 +38,11 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import logger from '../../utils/logger';
 import { getS3Client, getS3Config } from './s3Client';
+import {
+  normalizeStorageFilename,
+  normalizeStorageFolder,
+  normalizeStorageKey,
+} from '../../utils/storagePathSecurity.util';
 
 const allowPublicAcl = (): boolean => process.env.S3_ALLOW_PUBLIC_ACL === 'true';
 
@@ -281,13 +286,14 @@ class S3Service {
     }
 
     try {
+      const normalizedKey = normalizeStorageKey(key);
       const command = new DeleteObjectCommand({
         Bucket: config.bucket,
-        Key: key,
+        Key: normalizedKey,
       });
 
       await client.send(command);
-      logger.info(`[S3] Deleted file: ${key}`);
+      logger.info(`[S3] Deleted file: ${normalizedKey}`);
     } catch (error) {
       logger.error(`[S3] Delete failed for ${key}:`, error);
       throw new Error(
@@ -313,8 +319,9 @@ class S3Service {
     if (keys.length === 0) return;
 
     try {
+      const normalizedKeys = keys.map((key) => normalizeStorageKey(key));
       // S3 bulk delete limit is 1000 per request
-      const chunks = this.chunkArray(keys, 1000);
+      const chunks = this.chunkArray(normalizedKeys, 1000);
 
       for (const chunk of chunks) {
         const command = new DeleteObjectsCommand({
@@ -328,7 +335,7 @@ class S3Service {
         await client.send(command);
       }
 
-      logger.info(`[S3] Bulk deleted ${keys.length} file(s)`);
+      logger.info(`[S3] Bulk deleted ${normalizedKeys.length} file(s)`);
     } catch (error) {
       logger.error('[S3] Bulk delete failed:', error);
       throw new Error(
@@ -352,21 +359,22 @@ class S3Service {
    */
   generatePublicUrl(key: string): string {
     const config = getS3Config();
+    const normalizedKey = normalizeStorageKey(key);
 
     // Use CDN URL if configured
     if (config.publicUrl) {
       const baseUrl = config.publicUrl.replace(/\/+$/, ''); // Remove trailing slashes
-      return `${baseUrl}/${key}`;
+      return `${baseUrl}/${normalizedKey}`;
     }
 
     // Use custom endpoint if configured
     if (config.endpoint) {
       const endpoint = config.endpoint.replace(/\/+$/, '');
-      return `${endpoint}/${config.bucket}/${key}`;
+      return `${endpoint}/${config.bucket}/${normalizedKey}`;
     }
 
     // Default: Direct S3 URL
-    return `https://${config.bucket}.s3.${config.region}.amazonaws.com/${key}`;
+    return `https://${config.bucket}.s3.${config.region}.amazonaws.com/${normalizedKey}`;
   }
 
   // ========================================
@@ -468,21 +476,23 @@ class S3Service {
     }
 
     try {
+      const normalizedKey = normalizeStorageKey(key);
+      const normalizedExpiresIn = Math.min(Math.max(expiresIn, 60), 900);
       const command = new GetObjectCommand({
         Bucket: config.bucket,
-        Key: key,
+        Key: normalizedKey,
       });
 
-      const url = await getSignedUrl(client, command, { expiresIn });
+      const url = await getSignedUrl(client, command, { expiresIn: normalizedExpiresIn });
 
-      const expiresAt = new Date(Date.now() + expiresIn * 1000);
+      const expiresAt = new Date(Date.now() + normalizedExpiresIn * 1000);
 
-      logger.info(`[S3] Generated presigned GET URL for: ${key} (expires in ${expiresIn}s)`);
+      logger.info(`[S3] Generated presigned GET URL for: ${normalizedKey} (expires in ${normalizedExpiresIn}s)`);
 
       return {
         url,
-        key,
-        expiresIn,
+        key: normalizedKey,
+        expiresIn: normalizedExpiresIn,
         expiresAt,
       };
     } catch (error) {
@@ -507,9 +517,10 @@ class S3Service {
     if (!client) return false;
 
     try {
+      const normalizedKey = normalizeStorageKey(key);
       const command = new HeadObjectCommand({
         Bucket: config.bucket,
-        Key: key,
+        Key: normalizedKey,
       });
 
       await client.send(command);
@@ -533,15 +544,16 @@ class S3Service {
     if (!client) return null;
 
     try {
+      const normalizedKey = normalizeStorageKey(key);
       const command = new HeadObjectCommand({
         Bucket: config.bucket,
-        Key: key,
+        Key: normalizedKey,
       });
 
       const response = await client.send(command);
 
       return {
-        key,
+        key: normalizedKey,
         size: response.ContentLength || 0,
         lastModified: response.LastModified,
         contentType: response.ContentType,
@@ -573,10 +585,12 @@ class S3Service {
     }
 
     try {
+      const normalizedPrefix = prefix ? normalizeStorageFolder(prefix, 'uploads') : '';
+      const normalizedMaxKeys = Math.min(Math.max(maxKeys, 1), 100);
       const command = new ListObjectsV2Command({
         Bucket: config.bucket,
-        Prefix: prefix || undefined,
-        MaxKeys: maxKeys,
+        Prefix: normalizedPrefix || undefined,
+        MaxKeys: normalizedMaxKeys,
         StartAfter: startAfter,
       });
 
@@ -618,16 +632,18 @@ class S3Service {
     }
 
     try {
+      const normalizedSourceKey = normalizeStorageKey(sourceKey);
+      const normalizedDestinationKey = normalizeStorageKey(destinationKey);
       const command = new CopyObjectCommand({
         Bucket: config.bucket,
-        CopySource: `${config.bucket}/${sourceKey}`,
-        Key: destinationKey,
+        CopySource: `${config.bucket}/${normalizedSourceKey}`,
+        Key: normalizedDestinationKey,
       });
 
       await client.send(command);
 
-      const url = this.generatePublicUrl(destinationKey);
-      logger.info(`[S3] Copied ${sourceKey} → ${destinationKey}`);
+      const url = this.generatePublicUrl(normalizedDestinationKey);
+      logger.info(`[S3] Copied ${normalizedSourceKey} -> ${normalizedDestinationKey}`);
 
       return url;
     } catch (error) {
@@ -646,12 +662,12 @@ class S3Service {
    * Generate a unique filename using UUID while preserving the original extension.
    */
   private generateUniqueFilename(originalName: string, customFilename?: string): string {
-    if (customFilename) return customFilename;
+    if (customFilename) return normalizeStorageFilename(customFilename);
 
     const ext = path.extname(originalName).toLowerCase();
     const uuid = uuidv4();
     const timestamp = Date.now();
-    return `${timestamp}-${uuid}${ext}`;
+    return normalizeStorageFilename(`${timestamp}-${uuid}${ext}`);
   }
 
   /**
@@ -659,8 +675,9 @@ class S3Service {
    * Normalizes slashes and removes leading/trailing separators.
    */
   private buildKey(folder: string, filename: string): string {
-    const normalizedFolder = folder.replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
-    return normalizedFolder ? `${normalizedFolder}/${filename}` : filename;
+    const normalizedFolder = normalizeStorageFolder(folder, 'uploads');
+    const normalizedFilename = normalizeStorageFilename(filename);
+    return normalizeStorageKey(`${normalizedFolder}/${normalizedFilename}`);
   }
 
   /**

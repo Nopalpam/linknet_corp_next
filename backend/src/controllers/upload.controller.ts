@@ -31,11 +31,13 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { uploadFile, getStorageStatus } from '../utils/upload';
 import s3Service from '../services/s3/s3Service';
 import logger from '../utils/logger';
+import prisma from '../config/database';
 import {
   getFileCategory,
   getMaxFileSize,
   isAllowedFileMetadata,
 } from '../middleware/upload.middleware';
+import { normalizeStorageFolder, normalizeStorageKey } from '../utils/storagePathSecurity.util';
 
 const isPresignedUploadEnabled = (): boolean => {
   if (process.env.PRESIGNED_UPLOAD_ENABLED !== undefined) {
@@ -52,30 +54,28 @@ const normalizePresignedExpiry = (value: unknown): number => {
   return Math.min(Math.max(parsed, 60), 300);
 };
 
+const normalizePresignedGetExpiry = (value: unknown): number => {
+  const parsed = typeof value === 'number' ? value : parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed)) return 300;
+  return Math.min(Math.max(parsed, 60), 900);
+};
+
+const normalizeUploadFolder = (value: unknown, fallback = 'uploads'): string => {
+  return normalizeStorageFolder(typeof value === 'string' ? value : undefined, fallback);
+};
+
 const sanitizeUploadFolder = (value: unknown): string => {
-  if (typeof value !== 'string' || !value.trim()) {
+  try {
+    const normalized = normalizeStorageFolder(typeof value === 'string' ? value : undefined, 'uploads/quarantine');
+
+    // Keep direct uploads in a quarantine prefix until a backend-side
+    // verification workflow promotes the object.
+    return normalized.startsWith('uploads/quarantine')
+      ? normalized
+      : `uploads/quarantine/${normalized}`;
+  } catch {
     return 'uploads/quarantine';
   }
-
-  const normalized = value
-    .trim()
-    .replace(/\\/g, '/')
-    .replace(/^\/+|\/+$/g, '')
-    .replace(/\/+/g, '/');
-
-  if (
-    !normalized ||
-    normalized.includes('..') ||
-    !/^[a-zA-Z0-9/_-]+$/.test(normalized)
-  ) {
-    return 'uploads/quarantine';
-  }
-
-  // Keep direct uploads in a quarantine prefix until a backend-side
-  // verification workflow promotes the object.
-  return normalized.startsWith('uploads/quarantine')
-    ? normalized
-    : `uploads/quarantine/${normalized}`;
 };
 
 /**
@@ -105,7 +105,16 @@ export const uploadSingleFile = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    const folder = (req.body.folder as string) || 'uploads';
+    let folder = 'uploads';
+    try {
+      folder = normalizeUploadFolder(req.body.folder, 'uploads');
+    } catch {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid upload folder',
+      });
+      return;
+    }
 
     const result = await uploadFile({
       buffer: file.buffer,
@@ -165,7 +174,16 @@ export const uploadMultipleFiles = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
-    const folder = (req.body.folder as string) || 'uploads';
+    let folder = 'uploads';
+    try {
+      folder = normalizeUploadFolder(req.body.folder, 'uploads');
+    } catch {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid upload folder',
+      });
+      return;
+    }
     const results = [];
 
     for (const file of files) {
@@ -377,7 +395,6 @@ export const getPresignedGetUrl = async (req: AuthRequest, res: Response): Promi
     }
 
     const key = req.query.key as string;
-    const expiresIn = parseInt((req.query.expiresIn as string) || '3600', 10);
 
     if (!key) {
       res.status(400).json({
@@ -387,7 +404,38 @@ export const getPresignedGetUrl = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
-    const result = await s3Service.generatePresignedGetUrl(key, expiresIn);
+    let normalizedKey: string;
+    try {
+      normalizedKey = normalizeStorageKey(key);
+    } catch {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid file key',
+      });
+      return;
+    }
+
+    const fileRecord = await prisma.file.findFirst({
+      where: {
+        deletedAt: null,
+        OR: [
+          { cloudKey: normalizedKey },
+          { path: normalizedKey },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (!fileRecord) {
+      res.status(404).json({
+        success: false,
+        message: 'File not found or not accessible',
+      });
+      return;
+    }
+
+    const expiresIn = normalizePresignedGetExpiry(req.query.expiresIn);
+    const result = await s3Service.generatePresignedGetUrl(normalizedKey, expiresIn);
 
     res.json({
       success: true,

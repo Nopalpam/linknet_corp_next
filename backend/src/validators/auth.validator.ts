@@ -104,6 +104,9 @@ export const resetPasswordValidation = [
  */
 export const refreshTokenValidation = [
   body('refreshToken')
-    .notEmpty()
-    .withMessage('Refresh token is required')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 20 })
+    .withMessage('Invalid refresh token format')
 ];

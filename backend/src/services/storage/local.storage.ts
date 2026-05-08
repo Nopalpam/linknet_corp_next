@@ -16,6 +16,12 @@ import {
   ListResult,
 } from './storage.interface';
 import logger from '../../utils/logger';
+import {
+  normalizeStorageFilename,
+  normalizeStorageFolder,
+  normalizeStorageKey,
+  resolveWithinUploadDir,
+} from '../../utils/storagePathSecurity.util';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
@@ -37,11 +43,11 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   private getAbsolutePath(key: string): string {
-    return path.join(this.uploadDir, key);
+    return resolveWithinUploadDir(this.uploadDir, key);
   }
 
   private keyToUrl(key: string): string {
-    return `${this.baseUrl}/uploads/${key}`;
+    return `${this.baseUrl}/uploads/${normalizeStorageKey(key)}`;
   }
 
   async upload(params: UploadParams): Promise<StorageFile> {
@@ -50,12 +56,12 @@ export class LocalStorageProvider implements IStorageProvider {
 
       // Generate unique filename
       const ext = path.extname(originalName);
-      const uniqueName = `${uuidv4()}${ext}`;
-      const folderPath = folder || 'general';
-      const key = `${folderPath}/${uniqueName}`;
+      const uniqueName = normalizeStorageFilename(`${uuidv4()}${ext}`);
+      const folderPath = normalizeStorageFolder(folder, 'general');
+      const key = normalizeStorageKey(`${folderPath}/${uniqueName}`);
 
       // Ensure directory exists
-      const dirPath = path.join(this.uploadDir, folderPath);
+      const dirPath = resolveWithinUploadDir(this.uploadDir, folderPath);
       this.ensureDir(dirPath);
 
       // Write file
@@ -135,8 +141,9 @@ export class LocalStorageProvider implements IStorageProvider {
     try {
       const prefix = params?.prefix || '';
       const maxResults = params?.maxResults || 100;
+      const safePrefix = prefix ? normalizeStorageFolder(prefix, '') : '';
       const searchDir = prefix
-        ? path.join(this.uploadDir, prefix)
+        ? resolveWithinUploadDir(this.uploadDir, safePrefix)
         : this.uploadDir;
 
       if (!fs.existsSync(searchDir)) {

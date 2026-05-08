@@ -7,6 +7,22 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import path from 'path';
 
 const prisma = new PrismaClient();
+const FILE_SORT_FIELDS = new Set(['createdAt', 'updatedAt', 'originalName', 'name', 'size', 'mimeType']);
+
+const clampPositiveInt = (value: unknown, fallback: number, max: number): number => {
+  const parsed = parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+};
+
+const normalizeSortField = (value: unknown): string => {
+  const sortBy = typeof value === 'string' && FILE_SORT_FIELDS.has(value) ? value : 'createdAt';
+  return sortBy;
+};
+
+const normalizeSortOrder = (value: unknown): 'asc' | 'desc' => {
+  return value === 'asc' ? 'asc' : 'desc';
+};
 
 /**
  * Upload files to cloud storage
@@ -182,9 +198,11 @@ export const getFiles = async (req: AuthRequest, res: Response) => {
       sortOrder = 'desc',
     } = req.query;
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = clampPositiveInt(page, 1, 100000);
+    const limitNum = clampPositiveInt(limit, 20, 100);
     const skip = (pageNum - 1) * limitNum;
+    const orderField = normalizeSortField(sortBy);
+    const orderDirection = normalizeSortOrder(sortOrder);
 
     // Build where clause
     const where: any = {
@@ -215,7 +233,7 @@ export const getFiles = async (req: AuthRequest, res: Response) => {
       skip,
       take: limitNum,
       orderBy: {
-        [sortBy as string]: sortOrder as string,
+        [orderField]: orderDirection,
       },
       include: {
         folder: {
@@ -585,7 +603,7 @@ export const searchFiles = async (req: AuthRequest, res: Response) => {
 
     const { q = '', type = '', limit = '20' } = req.query;
 
-    const limitNum = parseInt(limit as string);
+    const limitNum = clampPositiveInt(limit, 20, 100);
 
     // Build where clause
     const where: any = {

@@ -5,13 +5,14 @@ import createNextIntlPlugin from 'next-intl/plugin';
 // Spesifikasi path ke file request konfigurasi i18n
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const repoRoot = path.resolve(process.cwd(), '..');
+const isProduction = process.env.NODE_ENV === 'production';
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https: http:",
+  `img-src 'self' data: blob: https:${isProduction ? '' : ' http:'}`,
   "font-src 'self' data:",
-  "connect-src 'self' https: http:",
+  `connect-src 'self' https:${isProduction ? '' : ' http:'}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

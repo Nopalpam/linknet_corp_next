@@ -30,6 +30,30 @@ const FILE_TYPES = {
   },
 };
 
+const PUBLIC_FORM_FILE_TYPES = {
+  images: {
+    mimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    extensions: ['.jpg', '.jpeg', '.png', '.webp'],
+  },
+  documents: {
+    mimeTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ],
+    extensions: ['.pdf', '.doc', '.docx', '.xls', '.xlsx'],
+  },
+};
+
+const getPublicFormUploadMaxBytes = (): number => {
+  const configured = parseInt(process.env.PUBLIC_FORM_UPLOAD_MAX_BYTES || '', 10);
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : 10 * 1024 * 1024;
+};
+
 // Get all allowed mime types
 export const getAllowedMimeTypes = (): string[] => {
   return [
@@ -51,6 +75,20 @@ export const getAllowedExtensions = (): string[] => {
 export const isAllowedFileMetadata = (filename: string, mimeType: string): boolean => {
   const allowedMimeTypes = getAllowedMimeTypes();
   const allowedExtensions = getAllowedExtensions();
+  const ext = path.extname(filename).toLowerCase();
+
+  return allowedMimeTypes.includes(mimeType) && allowedExtensions.includes(ext);
+};
+
+export const isAllowedPublicFormFileMetadata = (filename: string, mimeType: string): boolean => {
+  const allowedMimeTypes = [
+    ...PUBLIC_FORM_FILE_TYPES.images.mimeTypes,
+    ...PUBLIC_FORM_FILE_TYPES.documents.mimeTypes,
+  ];
+  const allowedExtensions = [
+    ...PUBLIC_FORM_FILE_TYPES.images.extensions,
+    ...PUBLIC_FORM_FILE_TYPES.documents.extensions,
+  ];
   const ext = path.extname(filename).toLowerCase();
 
   return allowedMimeTypes.includes(mimeType) && allowedExtensions.includes(ext);
@@ -95,6 +133,14 @@ const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFil
   }
 };
 
+const publicFormFileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (isAllowedPublicFormFileMetadata(file.originalname, file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid public form file type. Allowed types: .jpg, .jpeg, .png, .webp, .pdf, .doc, .docx, .xls, .xlsx'));
+  }
+};
+
 // Multer configuration for memory storage
 const storage = multer.memoryStorage();
 
@@ -105,6 +151,15 @@ export const upload = multer({
   limits: {
     fileSize: 200 * 1024 * 1024, // Max 200MB (will be validated per category in controller)
     files: 10, // Max 10 files per request
+  },
+});
+
+export const publicFormUpload = multer({
+  storage,
+  fileFilter: publicFormFileFilter,
+  limits: {
+    fileSize: getPublicFormUploadMaxBytes(),
+    files: 1,
   },
 });
 
@@ -136,6 +191,22 @@ export const validateFileSize = (req: Request, res: any, next: any) => {
       message: 'File validation failed',
       errors,
     });
+  }
+
+  next();
+};
+
+export const validatePublicFormFileSize = (req: Request, res: any, next: any) => {
+  const files = getUploadedFiles(req);
+  const maxSize = getPublicFormUploadMaxBytes();
+
+  for (const file of files) {
+    if (file.size > maxSize) {
+      return res.status(413).json({
+        success: false,
+        message: `File exceeds maximum public form upload size of ${Math.round(maxSize / (1024 * 1024))}MB`,
+      });
+    }
   }
 
   next();

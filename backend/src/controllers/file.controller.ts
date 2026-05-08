@@ -24,9 +24,26 @@ import s3Service from '../services/s3/s3Service';
 import logger from '../utils/logger';
 import fs from 'fs';
 import path from 'path';
+import {
+  normalizeStorageFolder,
+  normalizeStorageKey,
+  resolveWithinUploadDir,
+} from '../utils/storagePathSecurity.util';
 
 const prisma = new PrismaClient();
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+const MAX_BULK_DELETE_KEYS = 100;
+
+const clampPositiveInt = (value: unknown, fallback: number, max: number): number => {
+  const parsed = parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+};
+
+const normalizeOptionalPrefix = (value: unknown): string => {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  return normalizeStorageFolder(value, 'uploads');
+};
 
 /**
  * List files from the active storage driver.
@@ -50,14 +67,29 @@ export const listFiles = async (req: AuthRequest, res: Response): Promise<void> 
       return;
     }
 
-    const prefix = (req.query.prefix as string) || '';
-    const limit = parseInt((req.query.limit as string) || '50', 10);
-    const startAfter = req.query.startAfter as string | undefined;
+    let prefix = '';
+    try {
+      prefix = normalizeOptionalPrefix(req.query.prefix);
+    } catch {
+      res.status(400).json({ success: false, message: 'Invalid prefix parameter' });
+      return;
+    }
+
+    const limit = clampPositiveInt(req.query.limit, 50, 100);
+    let startAfter: string | undefined;
+    if (typeof req.query.startAfter === 'string' && req.query.startAfter.trim()) {
+      try {
+        startAfter = normalizeStorageKey(req.query.startAfter);
+      } catch {
+        res.status(400).json({ success: false, message: 'Invalid startAfter parameter' });
+        return;
+      }
+    }
     const source = (req.query.source as string) || 'db';
 
     // Option 1: List from database (default — works for all drivers)
     if (source === 'db') {
-      const page = parseInt((req.query.page as string) || '1', 10);
+      const page = clampPositiveInt(req.query.page, 1, 100000);
       const skip = (page - 1) * limit;
 
       const where: any = { deletedAt: null };
@@ -127,7 +159,9 @@ export const listFiles = async (req: AuthRequest, res: Response): Promise<void> 
     }
 
     if (driver === 'local') {
-      const dirPath = path.join(UPLOAD_DIR, prefix);
+      const dirPath = prefix
+        ? resolveWithinUploadDir(UPLOAD_DIR, prefix)
+        : path.resolve(UPLOAD_DIR);
       
       if (!fs.existsSync(dirPath)) {
         res.json({ success: true, data: [], driver });
@@ -184,11 +218,22 @@ export const getFileInfo = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    let normalizedKey: string;
+    try {
+      normalizedKey = normalizeStorageKey(key);
+    } catch {
+      res.status(400).json({ success: false, message: 'Invalid file key' });
+      return;
+    }
+
     // Try database first
     const dbFile = await prisma.file.findFirst({
       where: {
-        cloudKey: key,
         deletedAt: null,
+        OR: [
+          { cloudKey: normalizedKey },
+          { path: normalizedKey },
+        ],
       },
     });
 
@@ -200,13 +245,13 @@ export const getFileInfo = async (req: AuthRequest, res: Response): Promise<void
     // Try storage driver directly (S3)
     const driver = storageService.getDriver();
     if (driver === 's3') {
-      const metadata = await s3Service.getFileMetadata(key);
+      const metadata = await s3Service.getFileMetadata(normalizedKey);
       if (metadata) {
         res.json({
           success: true,
           data: {
             ...metadata,
-            url: s3Service.generatePublicUrl(key),
+            url: s3Service.generatePublicUrl(normalizedKey),
           },
           source: 'storage',
         });
@@ -248,26 +293,37 @@ export const deleteFileByKey = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
+    let normalizedKey: string;
+    try {
+      normalizedKey = normalizeStorageKey(key);
+    } catch {
+      res.status(400).json({ success: false, message: 'Invalid file key' });
+      return;
+    }
+
     // Delete from storage
-    const result = await storageService.deleteFile(key);
+    const result = await storageService.deleteFile(normalizedKey);
 
     // Soft delete from database (if record exists)
     await prisma.file.updateMany({
       where: {
-        cloudKey: key,
         deletedAt: null,
+        OR: [
+          { cloudKey: normalizedKey },
+          { path: normalizedKey },
+        ],
       },
       data: {
         deletedAt: new Date(),
       },
     });
 
-    logger.info(`[FileController] File deleted by user ${req.user.userId}: ${key}`);
+    logger.info(`[FileController] File deleted by user ${req.user.userId}: ${normalizedKey}`);
 
     res.json({
       success: true,
       message: result.success ? 'File deleted successfully' : 'File deleted from database (storage deletion uncertain)',
-      data: { key },
+      data: { key: normalizedKey },
     });
   } catch (error) {
     logger.error('[FileController] deleteFileByKey failed:', error);
@@ -299,14 +355,38 @@ export const bulkDeleteFiles = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
+    if (keys.length > MAX_BULK_DELETE_KEYS) {
+      res.status(400).json({
+        success: false,
+        message: `Bulk delete is limited to ${MAX_BULK_DELETE_KEYS} files per request`,
+      });
+      return;
+    }
+
+    if (!keys.every((key) => typeof key === 'string' && key.trim())) {
+      res.status(400).json({ success: false, message: 'keys must contain non-empty strings only' });
+      return;
+    }
+
+    let normalizedKeys: string[];
+    try {
+      normalizedKeys = keys.map((key) => normalizeStorageKey(key));
+    } catch {
+      res.status(400).json({ success: false, message: 'One or more file keys are invalid' });
+      return;
+    }
+
     // Delete from storage
-    const results = await storageService.deleteFiles(keys);
+    const results = await storageService.deleteFiles(normalizedKeys);
 
     // Soft delete from database
     await prisma.file.updateMany({
       where: {
-        cloudKey: { in: keys },
         deletedAt: null,
+        OR: [
+          { cloudKey: { in: normalizedKeys } },
+          { path: { in: normalizedKeys } },
+        ],
       },
       data: {
         deletedAt: new Date(),
@@ -315,11 +395,11 @@ export const bulkDeleteFiles = async (req: AuthRequest, res: Response): Promise<
 
     const successCount = results.filter((r) => r.success).length;
 
-    logger.info(`[FileController] Bulk delete by user ${req.user.userId}: ${successCount}/${keys.length} files`);
+    logger.info(`[FileController] Bulk delete by user ${req.user.userId}: ${successCount}/${normalizedKeys.length} files`);
 
     res.json({
       success: true,
-      message: `Deleted ${successCount}/${keys.length} file(s)`,
+      message: `Deleted ${successCount}/${normalizedKeys.length} file(s)`,
       data: results,
     });
   } catch (error) {

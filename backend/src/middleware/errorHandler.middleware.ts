@@ -5,6 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
+import multer from 'multer';
 import {
   AppError,
   ValidationError,
@@ -83,6 +84,16 @@ const normalizeError = (error: unknown): AppError => {
 
   if (error instanceof Prisma.PrismaClientValidationError) {
     return new ValidationError('Invalid data provided to database');
+  }
+
+  if (error instanceof multer.MulterError) {
+    const isFileSizeError = error.code === 'LIMIT_FILE_SIZE';
+    return new AppError(
+      isFileSizeError ? 'Uploaded file is too large' : 'Invalid file upload',
+      isFileSizeError ? 413 : 400,
+      ErrorCode.VALIDATION_ERROR,
+      true
+    );
   }
 
   // Standard Error object

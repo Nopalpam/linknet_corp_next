@@ -21,6 +21,12 @@ import { v4 as uuidv4 } from 'uuid';
 import logger from '../../utils/logger';
 import s3Service from '../../services/s3/s3Service';
 import azureStorageService from '../../services/azureStorage.service';
+import {
+  normalizeStorageFilename,
+  normalizeStorageFolder,
+  normalizeStorageKey,
+  resolveWithinUploadDir,
+} from '../storagePathSecurity.util';
 
 // ============================================================
 // Types
@@ -79,17 +85,17 @@ const localUpload = async (
   originalName: string,
   options: UploadOptions = {}
 ): Promise<StorageUploadResult> => {
-  const folder = options.folder || 'uploads';
-  const targetDir = path.join(UPLOAD_DIR, folder);
+  const folder = normalizeStorageFolder(options.folder, 'uploads');
+  const targetDir = resolveWithinUploadDir(UPLOAD_DIR, folder);
   ensureDir(targetDir);
 
   const ext = path.extname(originalName).toLowerCase();
-  const uniqueFilename = options.filename || `${Date.now()}-${uuidv4()}${ext}`;
-  const filePath = path.join(targetDir, uniqueFilename);
+  const uniqueFilename = normalizeStorageFilename(options.filename || `${Date.now()}-${uuidv4()}${ext}`);
+  const relativePath = normalizeStorageKey(`${folder}/${uniqueFilename}`);
+  const filePath = resolveWithinUploadDir(UPLOAD_DIR, relativePath);
 
   await fs.promises.writeFile(filePath, buffer);
 
-  const relativePath = `${folder}/${uniqueFilename}`;
   const url = `/uploads/${relativePath}`;
 
   logger.info(`[Storage:local] Uploaded: ${url} (${buffer.length} bytes)`);
@@ -105,14 +111,15 @@ const localUpload = async (
 
 const localDelete = async (key: string): Promise<StorageDeleteResult> => {
   try {
-    const filePath = path.join(UPLOAD_DIR, key);
+    const normalizedKey = normalizeStorageKey(key);
+    const filePath = resolveWithinUploadDir(UPLOAD_DIR, normalizedKey);
     if (fs.existsSync(filePath)) {
       await fs.promises.unlink(filePath);
-      logger.info(`[Storage:local] Deleted: ${key}`);
-      return { success: true, key };
+      logger.info(`[Storage:local] Deleted: ${normalizedKey}`);
+      return { success: true, key: normalizedKey };
     }
-    logger.warn(`[Storage:local] File not found: ${key}`);
-    return { success: false, key };
+    logger.warn(`[Storage:local] File not found: ${normalizedKey}`);
+    return { success: false, key: normalizedKey };
   } catch (error) {
     logger.error(`[Storage:local] Delete failed for ${key}:`, error);
     return { success: false, key };
@@ -314,7 +321,7 @@ class StorageService {
 
       case 'local':
       default: {
-        const filePath = path.join(UPLOAD_DIR, key);
+        const filePath = resolveWithinUploadDir(UPLOAD_DIR, key);
         return fs.existsSync(filePath);
       }
     }

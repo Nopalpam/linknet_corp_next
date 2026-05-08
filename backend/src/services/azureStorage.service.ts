@@ -2,6 +2,11 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { Readable } from 'stream';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  normalizeStorageFilename,
+  normalizeStorageFolder,
+  normalizeStorageKey,
+} from '../utils/storagePathSecurity.util';
 
 const isConfiguredValue = (value?: string): value is string => {
   if (!value) {
@@ -100,21 +105,20 @@ class AzureStorageService {
    */
   private generateUniqueFilename(originalName: string, customFilename?: string): string {
     if (customFilename) {
-      return customFilename;
+      return normalizeStorageFilename(customFilename);
     }
 
     const ext = path.extname(originalName);
     const uuid = uuidv4();
-    return `${uuid}${ext}`;
+    return normalizeStorageFilename(`${uuid}${ext}`);
   }
 
   /**
    * Build blob path with organized structure
    */
   private buildBlobPath(folder: string, filename: string): string {
-    // Remove leading/trailing slashes and normalize
-    const normalizedFolder = folder.replace(/^\/+|\/+$/g, '');
-    return `${normalizedFolder}/${filename}`;
+    const normalizedFolder = normalizeStorageFolder(folder, 'uploads');
+    return normalizeStorageKey(`${normalizedFolder}/${filename}`);
   }
 
   /**

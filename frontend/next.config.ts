@@ -3,6 +3,23 @@ import path from 'path';
 
 const repoRoot = path.resolve(__dirname, '..');
 const isProduction = process.env.NODE_ENV === 'production';
+const defaultRemoteImageHosts = [
+  'linknet.co.id',
+  'www.linknet.co.id',
+  'api.linknet.co.id',
+  '*.cloudfront.net',
+  '*.amazonaws.com',
+  '*.blob.core.windows.net',
+];
+const configuredRemoteImageHosts = (process.env.NEXT_IMAGE_REMOTE_HOSTS || defaultRemoteImageHosts.join(','))
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean)
+  .map((host) => (host.startsWith('*.') ? `**.${host.slice(2)}` : host));
+const remoteImagePatterns = configuredRemoteImageHosts.map((hostname) => ({
+  protocol: 'https' as const,
+  hostname,
+}));
 
 if (isProduction && process.env.NEXT_PUBLIC_AUTH_ENABLED === 'false') {
   throw new Error('NEXT_PUBLIC_AUTH_ENABLED=false is not allowed for production builds');
@@ -28,10 +45,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
+      ...remoteImagePatterns,
       ...(isProduction ? [] : [{
         protocol: 'http',
         hostname: '**',

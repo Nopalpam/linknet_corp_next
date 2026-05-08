@@ -15,8 +15,24 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { getStorageProvider } from '../services/storage';
 import path from 'path';
 import logger from '../utils/logger';
+import { normalizeStorageFolder } from '../utils/storagePathSecurity.util';
 
 const prisma = new PrismaClient();
+const FILE_SORT_FIELDS = new Set(['createdAt', 'updatedAt', 'originalName', 'name', 'size', 'mimeType']);
+
+const clampPositiveInt = (value: unknown, fallback: number, max: number): number => {
+  const parsed = parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+};
+
+const normalizeSortField = (value: unknown): string => (
+  typeof value === 'string' && FILE_SORT_FIELDS.has(value) ? value : 'createdAt'
+);
+
+const normalizeSortOrder = (value: unknown): 'asc' | 'desc' => (
+  value === 'asc' ? 'asc' : 'desc'
+);
 
 /**
  * Upload file(s)
@@ -38,11 +54,17 @@ export const uploadFileV2 = async (req: AuthRequest, res: Response): Promise<voi
     const { folder } = req.body;
     const storage = getStorageProvider();
     const uploadedFiles = [];
+    let folderPath: string;
+
+    try {
+      folderPath = normalizeStorageFolder(typeof folder === 'string' ? folder : undefined, 'filemanager');
+    } catch {
+      res.status(400).json({ success: false, message: 'Invalid folder path' });
+      return;
+    }
 
     for (const file of files) {
       try {
-        const folderPath = folder || 'filemanager';
-        
         // Upload via storage abstraction
         const result = await storage.upload({
           buffer: file.buffer,
@@ -120,13 +142,13 @@ export const listFilesV2 = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = clampPositiveInt(req.query.page, 1, 100000);
+    const limit = clampPositiveInt(req.query.limit, 20, 100);
     const search = req.query.search as string;
     const mimeType = req.query.mimeType as string;
     const folderId = req.query.folderId as string;
-    const sortBy = (req.query.sortBy as string) || 'createdAt';
-    const sortOrder = (req.query.sortOrder as string) || 'desc';
+    const sortBy = normalizeSortField(req.query.sortBy);
+    const sortOrder = normalizeSortOrder(req.query.sortOrder);
 
     const where: any = {
       deletedAt: null,

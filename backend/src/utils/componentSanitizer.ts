@@ -1,4 +1,42 @@
-import { sanitizeHtmlContent } from './htmlSanitizer';
+import { sanitizeHtmlContent, sanitizePlainText, sanitizeUrl } from './htmlSanitizer';
+
+const HTML_FIELD_NAMES = [
+  'content',
+  'contentEn',
+  'contentId',
+  'html',
+  'description',
+  'descriptionEn',
+  'descriptionId',
+  'excerpt',
+  'excerptEn',
+  'excerptId',
+  'text',
+  'body',
+  'quote',
+];
+
+const URL_FIELD_NAMES = [
+  'url',
+  'href',
+  'link',
+  'src',
+  'imageUrl',
+  'videoUrl',
+  'mediaUrl',
+  'thumbnail',
+  'poster',
+];
+
+const isHtmlField = (key: string): boolean => {
+  const lowerKey = key.toLowerCase();
+  return HTML_FIELD_NAMES.some((field) => lowerKey.includes(field.toLowerCase()));
+};
+
+const isUrlField = (key: string): boolean => {
+  const lowerKey = key.toLowerCase();
+  return URL_FIELD_NAMES.some((field) => lowerKey === field.toLowerCase() || lowerKey.endsWith(field.toLowerCase()));
+};
 
 /**
  * Recursively sanitize HTML content in component data
@@ -22,30 +60,13 @@ export function sanitizeComponentData(data: any): any {
     for (const key of Object.keys(data)) {
       const value = data[key];
       
-      // Fields that typically contain HTML content
-      const htmlFields = [
-        'content',
-        'contentEn',
-        'contentId',
-        'html',
-        'description',
-        'descriptionEn',
-        'descriptionId',
-        'excerpt',
-        'excerptEn',
-        'excerptId',
-        'text',
-        'body',
-      ];
-      
-      // Check if this field name suggests HTML content
-      const isHtmlField = htmlFields.some(field => 
-        key.toLowerCase().includes(field.toLowerCase())
-      );
-      
-      if (isHtmlField && typeof value === 'string' && value.trim().length > 0) {
+      if (typeof value === 'string' && isUrlField(key)) {
+        sanitized[key] = sanitizeUrl(value);
+      } else if (typeof value === 'string' && isHtmlField(key) && value.trim().length > 0) {
         // Sanitize HTML content
         sanitized[key] = sanitizeHtmlContent(value);
+      } else if (typeof value === 'string') {
+        sanitized[key] = sanitizePlainText(value);
       } else if (typeof value === 'object' || Array.isArray(value)) {
         // Recursively sanitize nested objects/arrays
         sanitized[key] = sanitizeComponentData(value);
