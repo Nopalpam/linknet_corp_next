@@ -23,6 +23,69 @@ const prisma = new PrismaClient();
  * Handles business logic for AnnouncementType → AnnouncementSection → announcements CRUD operations
  */
 export class AnnouncementService {
+  private normalizeAnnouncementTypeValue(value: any): 'Grid' | 'List' {
+    return value === 'Grid' || value === 'List' ? value : 'List';
+  }
+
+  private async countAnnouncementItemsForType(typeId: string) {
+    return prisma.announcements.count({
+      where: {
+        deleted_at: null,
+        OR: [
+          { type_id: typeId },
+          { announcement_sections: { type_id: typeId } },
+        ],
+      },
+    });
+  }
+
+  private formatAnnouncementType(item: any, announcementItemsCount?: number) {
+    const sectionCount = item?._count?.announcement_sections ?? item?._count?.announcementSections ?? item?.announcement_sections?.length ?? 0;
+    const itemCount = announcementItemsCount ?? item?._count?.announcements ?? item?._count?.announcementItems ?? 0;
+
+    return {
+      ...item,
+      type: this.normalizeAnnouncementTypeValue(item?.type),
+      sortOrder: item?.position ?? item?.sortOrder ?? 0,
+      _count: {
+        ...(item?._count || {}),
+        announcementSections: sectionCount,
+        announcementItems: itemCount,
+        announcement_sections: sectionCount,
+        announcements: itemCount,
+      },
+    };
+  }
+
+  private formatAnnouncementSection(section: any) {
+    const itemCount = section?._count?.announcements ?? section?._count?.announcementItems ?? section?.announcements?.length ?? 0;
+    const announcementType = section?.announcement_types
+      ? {
+          id: section.announcement_types.id,
+          name: section.announcement_types.name,
+          type: this.normalizeAnnouncementTypeValue(section.announcement_types.type),
+        }
+      : null;
+
+    return {
+      ...section,
+      announcementTypeId: section?.type_id || '',
+      title: section?.name || '',
+      announcementYear: section?.announcement_year || null,
+      ctaEnabled: Boolean(section?.cta_enabled),
+      ctaText: section?.cta_text || '',
+      ctaUrl: section?.cta_url || '',
+      sortOrder: section?.position ?? section?.sortOrder ?? 0,
+      announcementType,
+      announcement_types: announcementType,
+      _count: {
+        ...(section?._count || {}),
+        announcementItems: itemCount,
+        announcements: itemCount,
+      },
+    };
+  }
+
   // ============================================
   // ANNOUNCEMENT TYPE METHODS
   // ============================================
@@ -68,9 +131,12 @@ export class AnnouncementService {
       }),
       prisma.announcementType.count({ where }),
     ]);
+    const itemCounts = await Promise.all(
+      announcementTypes.map((announcementType: any) => this.countAnnouncementItemsForType(announcementType.id))
+    );
 
     return {
-      data: announcementTypes,
+      data: announcementTypes.map((announcementType: any, index) => this.formatAnnouncementType(announcementType, itemCounts[index])),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -84,9 +150,19 @@ export class AnnouncementService {
     const types = await prisma.announcementType.findMany({
       where: { deletedAt: null, isActive: true },
       orderBy: { position: 'asc' },
-      select: { id: true, name: true, slug: true, type: true },
+      include: {
+        _count: {
+          select: {
+            announcement_sections: { where: { deletedAt: null } },
+            announcements: { where: { deleted_at: null } },
+          },
+        },
+      },
     });
-    return types;
+    const itemCounts = await Promise.all(
+      types.map((type: any) => this.countAnnouncementItemsForType(type.id))
+    );
+    return types.map((type: any, index) => this.formatAnnouncementType(type, itemCounts[index]));
   }
 
   async getAnnouncementTypeById(id: string) {
@@ -114,7 +190,14 @@ export class AnnouncementService {
       throw new AppError('Announcement type not found', 404);
     }
 
-    return announcementType;
+    const announcementItemsCount = await this.countAnnouncementItemsForType(announcementType.id);
+    return this.formatAnnouncementType(
+      {
+        ...announcementType,
+        announcement_sections: announcementType.announcement_sections.map((section: any) => this.formatAnnouncementSection(section)),
+      },
+      announcementItemsCount
+    );
   }
 
   async createAnnouncementType(data: CreateAnnouncementTypeDTO) {
@@ -264,6 +347,9 @@ export class AnnouncementService {
     const sections = await prisma.announcementSection.findMany({
       where: { type_id: typeId, deletedAt: null },
       include: {
+        announcement_types: {
+          select: { id: true, name: true, type: true },
+        },
         _count: {
           select: { announcements: { where: { deleted_at: null } } },
         },
@@ -271,7 +357,7 @@ export class AnnouncementService {
       orderBy: { position: 'asc' },
     });
 
-    return sections;
+    return sections.map((section: any) => this.formatAnnouncementSection(section));
   }
 
   async updateSectionsOrder(_typeId: string, updates: OrderUpdateItem[]) {
@@ -336,7 +422,7 @@ export class AnnouncementService {
     ]);
 
     return {
-      data: sections,
+      data: sections.map((section: any) => this.formatAnnouncementSection(section)),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -359,11 +445,24 @@ export class AnnouncementService {
         id: true,
         name: true,
         slug: true,
-        announcement_types: { select: { id: true, name: true } },
+        type_id: true,
+        description: true,
+        announcement_year: true,
+        cta_enabled: true,
+        cta_text: true,
+        cta_url: true,
+        position: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        announcement_types: { select: { id: true, name: true, type: true } },
+        _count: {
+          select: { announcements: { where: { deleted_at: null } } },
+        },
       },
     });
 
-    return sections;
+    return sections.map((section: any) => this.formatAnnouncementSection(section));
   }
 
   async getAnnouncementSectionById(id: string) {
@@ -387,7 +486,7 @@ export class AnnouncementService {
       throw new AppError('Announcement section not found', 404);
     }
 
-    return section;
+    return this.formatAnnouncementSection(section);
   }
 
   async createAnnouncementSection(data: CreateAnnouncementSectionDTO) {
@@ -560,10 +659,14 @@ export class AnnouncementService {
 
     const items = await prisma.announcements.findMany({
       where: { section_id: sectionId, deleted_at: null },
+      include: {
+        announcement_types: { select: { id: true, name: true, slug: true, type: true } },
+        announcement_sections: { select: { id: true, name: true, type_id: true, announcement_year: true } },
+      },
       orderBy: { sort_order: 'asc' },
     });
 
-    return items;
+    return items.map((item: any) => this.formatAnnouncementItem(item));
   }
 
   async updateSectionItemsOrder(_sectionId: string, updates: OrderUpdateItem[]) {
@@ -588,6 +691,8 @@ export class AnnouncementService {
       search,
       type_id,
       section_id,
+      data_type,
+      audit_status,
       status,
       sortBy = 'created_at',
       sortOrder = 'desc',
@@ -628,6 +733,12 @@ export class AnnouncementService {
         ];
         delete where.OR;
       }
+    }
+    if (data_type) {
+      where.data_type = data_type;
+    }
+    if (audit_status) {
+      where.audit_status = audit_status;
     }
     if (status) {
       where.status = status;

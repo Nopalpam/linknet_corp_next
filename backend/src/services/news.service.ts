@@ -86,6 +86,7 @@ const NEWS_SORT_FIELD_MAP: Record<string, string> = {
   updated_at: 'updated_at',
   titleEn: 'title_en',
   title_en: 'title_en',
+  title: 'title_en',
   titleId: 'title_id',
   title_id: 'title_id',
   viewCount: 'view_count',

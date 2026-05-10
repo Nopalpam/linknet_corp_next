@@ -10,6 +10,7 @@
 
 export interface CreateReportTypeDTO {
   name: string;
+  type?: 'Grid' | 'List';
   slug?: string;
   description?: string;
   icon?: string;
@@ -20,6 +21,7 @@ export interface CreateReportTypeDTO {
 
 export interface UpdateReportTypeDTO {
   name?: string;
+  type?: 'Grid' | 'List';
   slug?: string;
   description?: string;
   icon?: string;
@@ -32,6 +34,7 @@ export interface ReportTypeQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  type?: 'Grid' | 'List';
   isActive?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -124,6 +127,8 @@ export interface ReportItemQueryParams {
   type_id?: string;
   section_id?: string;
   year?: number;
+  data_type?: string;
+  audit_status?: string;
   status?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

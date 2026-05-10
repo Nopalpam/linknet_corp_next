@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useParams } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
@@ -10,6 +10,9 @@ import CTAList from '../base/section/CTAList';
 import SegmentPicker from '../base/SegmentPicker';
 import CardTVHighlight from '../base/cards/CardTVHighlight';
 import { TV_HIGHLIGHT_SNEEK_PEAK_DATA } from '@/data/components/tvHighlightSneekPeak';
+import { useLinknetMedia } from '@/hooks/useLinknetMedia';
+import { buildChannelLogoRows, resolveMediaHighlightGroups } from '@/lib/mediaService';
+import MediaEmptyState from './MediaEmptyState';
 
 function withLocale(href, locale) {
   if (!href || !locale) return href;
@@ -64,8 +67,14 @@ export default function TVHighlightSneekPeak({
   const locale = params?.locale || 'en';
   const swiperRef = useRef(null);
   const sectionData = cmsData || TV_HIGHLIGHT_SNEEK_PEAK_DATA[name];
+  const mediaSettings = useMemo(() => ({ ...(sectionData || {}), source: 'media_api' }), [sectionData]);
+  const { data: mediaData, isLoading } = useLinknetMedia(Boolean(sectionData));
+  const apiItemGroups = useMemo(
+    () => resolveMediaHighlightGroups(mediaData, mediaSettings, {}),
+    [mediaData, mediaSettings]
+  );
   const initialTabValue = sectionData?.config?.initialTab || 'now-showing';
-  const initialItems = sectionData?.itemGroups?.[initialTabValue] || [];
+  const initialItems = apiItemGroups?.[initialTabValue]?.items || [];
   const initialDesktopIndex = Math.floor(initialItems.length / 2);
   const [activeTab, setActiveTab] = useState(
     initialTabValue
@@ -80,11 +89,13 @@ export default function TVHighlightSneekPeak({
   const {
     config = {},
     introData,
-    itemGroups = {},
     logoIntro,
-    logoRows = [],
     ctaList = []
   } = sectionData || {};
+  const itemGroups = apiItemGroups;
+  const logoRows = mediaData?.channels?.length
+    ? buildChannelLogoRows(mediaData.channels, mediaSettings)
+    : [];
 
   const {
     sectionId,
@@ -95,14 +106,14 @@ export default function TVHighlightSneekPeak({
     bgSizeClass = 'bg-cover'
   } = config || {};
 
-  const tabs = [
-    { value: 'now-showing', label: 'Now Showing' },
-    { value: 'trending', label: 'Trending' }
-  ];
   const groupKeys = Object.keys(itemGroups);
-  const defaultTab = config?.initialTab || tabs[0]?.value || groupKeys[0] || '';
+  const tabs = groupKeys.map((key) => ({
+    value: itemGroups[key].value || key,
+    label: itemGroups[key].label || key,
+  }));
+  const defaultTab = itemGroups[config?.initialTab] ? config.initialTab : groupKeys[0] || '';
   const currentTab = itemGroups[activeTab] ? activeTab : defaultTab;
-  const activeItems = itemGroups[currentTab] || itemGroups[defaultTab] || [];
+  const activeItems = itemGroups[currentTab]?.items || [];
 
   const localizedCtaList = ctaList.map((cta) => ({
     ...cta,
@@ -128,10 +139,16 @@ export default function TVHighlightSneekPeak({
   const initialSlideIndex = isMobile ? 0 : centerIndex;
   const handleTabChange = (nextTab) => {
     setActiveTab(nextTab);
-    const nextItems = itemGroups[nextTab] || itemGroups[defaultTab] || [];
+    const nextItems = itemGroups[nextTab]?.items || itemGroups[defaultTab]?.items || [];
     const nextCenterIndex = Math.floor(nextItems.length / 2);
     setActiveSlide(isMobile ? 0 : nextCenterIndex);
   };
+
+  useEffect(() => {
+    if (!currentTab) return;
+    const nextItems = itemGroups[currentTab]?.items || [];
+    setActiveSlide(isMobile ? 0 : Math.floor(nextItems.length / 2));
+  }, [currentTab, isMobile, itemGroups]);
 
   if (!sectionData) return null;
 
@@ -189,22 +206,24 @@ export default function TVHighlightSneekPeak({
               />
 
             <div className="items-end h-auto pt-1 lg:pt-12">
-              <SegmentPicker
-                options={tabs}
-                value={currentTab}
-                onChange={handleTabChange}
-                className="w-auto rounded-full bg-light-1 p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
-              />
+              {tabs.length > 0 && (
+                <SegmentPicker
+                  options={tabs}
+                  value={currentTab}
+                  onChange={handleTabChange}
+                  className="w-auto rounded-full bg-light-1 p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
+                />
+              )}
             </div>
           </div>
 
           <div className="relative mt-6 md:mt-12 md:justify-self-center">
-            {isMobile ? (
+            {activeItems.length > 0 && isMobile ? (
               <Swiper
                 key={`${name}-${currentTab}-${activeItems.map((item) => item.id).join('-')}`}
                 spaceBetween={18}
                 slidesPerView={1.4}
-                loop
+                loop={activeItems.length > 1}
                 centeredSlides={true}
                 initialSlide={initialSlideIndex}
                 allowTouchMove
@@ -267,7 +286,7 @@ export default function TVHighlightSneekPeak({
                   );
                 })}
               </Swiper>
-            ) : (
+            ) : activeItems.length > 0 ? (
               <div className="hidden md:flex md:items-center md:justify-center md:gap-3 xl:gap-3">
                 {[-2, -1, 0, 1, 2].map((offset) => {
                   const item = getLoopedItem(activeItems, activeSlide + offset);
@@ -321,12 +340,16 @@ export default function TVHighlightSneekPeak({
                   );
                 })}
               </div>
+            ) : null}
+
+            {isLoading && activeItems.length === 0 && (
+              <p className="py-10 text-center text-body-b4 text-secondary">
+                Loading TV highlight data...
+              </p>
             )}
 
-            {activeItems.length === 0 && (
-              <p className="py-10 text-center text-body-b4 text-secondary">
-                No TV highlight data available.
-              </p>
+            {!isLoading && activeItems.length === 0 && (
+              <MediaEmptyState />
             )}
           </div>
 

@@ -1,12 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Modal } from "@/components/ui/modal";
 import {
   managementService,
   Management,
   CreateManagementData,
 } from "@/services/management.service";
+
+const CKEditorWrapper = dynamic(() => import("@/components/ui/ckeditor/CKEditorWrapper"), {
+  ssr: false,
+});
 
 interface ManagementFormModalProps {
   isOpen: boolean;
@@ -29,39 +34,45 @@ export default function ManagementFormModal({
 }: ManagementFormModalProps) {
   const [formData, setFormData] = useState({
     name: "",
-    position: "",
+    positionEn: "",
+    positionId: "",
     photo: "",
-    description: "",
-    email: "",
-    phone: "",
-    linkedin: "",
+    descriptionEn: "",
+    descriptionId: "",
+    bioEn: "",
+    bioId: "",
     is_active: true,
   });
+  const [activeDescriptionLocale, setActiveDescriptionLocale] = useState<"en" | "id">("en");
+  const [activeBioLocale, setActiveBioLocale] = useState<"en" | "id">("en");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Populate form when editing
   useEffect(() => {
     if (mode === "edit" && management) {
+      const parsedDescription = parseLocalizedDescription(management.description);
       setFormData({
         name: management.name || "",
-        position: management.position || "",
+        positionEn: management.positionEn || management.position || "",
+        positionId: management.positionId || management.position || "",
         photo: management.photo || "",
-        description: management.description || "",
-        email: management.email || "",
-        phone: management.phone || "",
-        linkedin: management.linkedin || "",
+        descriptionEn: parsedDescription.en,
+        descriptionId: parsedDescription.id,
+        bioEn: management.bioEn || "",
+        bioId: management.bioId || "",
         is_active: management.is_active ?? true,
       });
     } else {
       setFormData({
         name: "",
-        position: "",
+        positionEn: "",
+        positionId: "",
         photo: "",
-        description: "",
-        email: "",
-        phone: "",
-        linkedin: "",
+        descriptionEn: "",
+        descriptionId: "",
+        bioEn: "",
+        bioId: "",
         is_active: true,
       });
     }
@@ -85,13 +96,13 @@ export default function ManagementFormModal({
     try {
       const payload: CreateManagementData = {
         name: formData.name.trim(),
-        position: formData.position.trim() || undefined,
+        positionEn: formData.positionEn.trim() || undefined,
+        positionId: formData.positionId.trim() || undefined,
         categoryId,
         photo: formData.photo.trim() || undefined,
-        description: formData.description.trim() || undefined,
-        email: formData.email.trim() || undefined,
-        phone: formData.phone.trim() || undefined,
-        linkedin: formData.linkedin.trim() || undefined,
+        description: buildLocalizedDescription(formData.descriptionEn, formData.descriptionId),
+        bioEn: formData.bioEn.trim() || undefined,
+        bioId: formData.bioId.trim() || undefined,
         is_active: formData.is_active,
       };
 
@@ -114,6 +125,52 @@ export default function ManagementFormModal({
   };
 
   if (!isOpen) return null;
+
+  function parseLocalizedDescription(value?: string | null) {
+    if (!value) return { en: "", id: "" };
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return {
+          en: typeof parsed.en === "string" ? parsed.en : "",
+          id: typeof parsed.id === "string" ? parsed.id : "",
+        };
+      }
+    } catch {
+      return { en: value, id: value };
+    }
+    return { en: value, id: value };
+  }
+
+  function buildLocalizedDescription(en: string, id: string) {
+    const value = { en: en.trim(), id: id.trim() };
+    return value.en || value.id ? JSON.stringify(value) : undefined;
+  }
+
+  const LocaleTabs = ({
+    active,
+    onChange,
+  }: {
+    active: "en" | "id";
+    onChange: (locale: "en" | "id") => void;
+  }) => (
+    <div className="mb-3 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-800">
+      {(["en", "id"] as const).map((locale) => (
+        <button
+          key={locale}
+          type="button"
+          onClick={() => onChange(locale)}
+          className={`rounded-md px-3 py-1.5 uppercase transition ${
+            active === locale
+              ? "bg-white text-blue-600 shadow-sm dark:bg-gray-900"
+              : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+          }`}
+        >
+          {locale}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
@@ -160,16 +217,29 @@ export default function ManagementFormModal({
             </div>
 
             {/* Position */}
-            <div className="md:col-span-2">
+            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Position / Job Title
+                Position / Job Title (EN)
               </label>
               <input
                 type="text"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                value={formData.positionEn}
+                onChange={(e) => setFormData({ ...formData, positionEn: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 placeholder="e.g. Chief Executive Officer"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Position / Job Title (ID)
+              </label>
+              <input
+                type="text"
+                value={formData.positionId}
+                onChange={(e) => setFormData({ ...formData, positionId: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="e.g. Direktur Utama"
               />
             </div>
 
@@ -187,61 +257,50 @@ export default function ManagementFormModal({
               />
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="email@example.com"
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Phone
-              </label>
-              <input
-                type="text"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="+62 xxx-xxxx-xxxx"
-              />
-            </div>
-
-            {/* LinkedIn */}
-            <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                LinkedIn URL
-              </label>
-              <input
-                type="url"
-                value={formData.linkedin}
-                onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="https://linkedin.com/in/username"
-              />
-            </div>
           </div>
 
           {/* Description */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description / Bio
+              Description
             </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              placeholder="Brief biography..."
-            />
+            <LocaleTabs active={activeDescriptionLocale} onChange={setActiveDescriptionLocale} />
+            <div className={activeDescriptionLocale === "en" ? "block" : "hidden"}>
+              <CKEditorWrapper
+                value={formData.descriptionEn}
+                onChange={(value) => setFormData((prev) => ({ ...prev, descriptionEn: value }))}
+                minHeight="140px"
+              />
+            </div>
+            <div className={activeDescriptionLocale === "id" ? "block" : "hidden"}>
+              <CKEditorWrapper
+                value={formData.descriptionId}
+                onChange={(value) => setFormData((prev) => ({ ...prev, descriptionId: value }))}
+                minHeight="140px"
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Bio
+            </label>
+            <LocaleTabs active={activeBioLocale} onChange={setActiveBioLocale} />
+            <div className={activeBioLocale === "en" ? "block" : "hidden"}>
+              <CKEditorWrapper
+                value={formData.bioEn}
+                onChange={(value) => setFormData((prev) => ({ ...prev, bioEn: value }))}
+                minHeight="180px"
+              />
+            </div>
+            <div className={activeBioLocale === "id" ? "block" : "hidden"}>
+              <CKEditorWrapper
+                value={formData.bioId}
+                onChange={(value) => setFormData((prev) => ({ ...prev, bioId: value }))}
+                minHeight="180px"
+              />
+            </div>
           </div>
 
           {/* Status */}

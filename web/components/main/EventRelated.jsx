@@ -8,6 +8,7 @@ import 'swiper/css';
 import CardEvent from '@/components/base/cards/CardEvent';
 import LinknetLink from '@/components/base/Link';
 import Intro from '@/components/base/section/Intro';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 const VALID_STATES = ['all', 'upcoming', 'ongoing', 'ended'];
@@ -143,6 +144,7 @@ export default function EventRelated({
   }, [clientEvents, currentEvent?.id, currentEvent?.slug, events, limit, needsFetch, normalizedState, type]);
 
   const resolvedIntro = introData || DEFAULT_INTRO;
+  const shouldRenderIntro = hasIntroContent(resolvedIntro);
 
   // Fallback when no related events found
   if (isLoading) {
@@ -153,9 +155,11 @@ export default function EventRelated({
     return (
       <section className={`py-12 ${className}`}>
         <div className="container">
-          <div className="mb-6">
-            <Intro {...resolvedIntro} />
-          </div>
+          {shouldRenderIntro && (
+            <div className="mb-6">
+              <Intro {...resolvedIntro} />
+            </div>
+          )}
           <p className="text-body-b4 text-secondary">No related events</p>
         </div>
       </section>
@@ -165,9 +169,11 @@ export default function EventRelated({
   return (
     <section className={`overflow-hidden relative py-12 md:py-16 ${className}`}>
       <div className="container">
-        <div className="mb-6 md:mb-10">
-          <Intro {...resolvedIntro} />
-        </div>
+        {shouldRenderIntro && (
+          <div className="mb-6 md:mb-10">
+            <Intro {...resolvedIntro} />
+          </div>
+        )}
 
         <Swiper
           slidesPerView={2}

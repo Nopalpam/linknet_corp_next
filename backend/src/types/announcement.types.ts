@@ -121,6 +121,8 @@ export interface AnnouncementItemQueryParams {
   search?: string;
   type_id?: string;
   section_id?: string;
+  data_type?: string;
+  audit_status?: string;
   status?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

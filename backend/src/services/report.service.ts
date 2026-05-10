@@ -24,6 +24,111 @@ const prisma = new PrismaClient();
  * Matches current Prisma schema with String IDs
  */
 export class ReportService {
+  private normalizeReportTypeValue(value: any): 'Grid' | 'List' | null {
+    return value === 'Grid' || value === 'List' ? value : null;
+  }
+
+  private getReportTypeFromDescription(description?: string | null): 'Grid' | 'List' | null {
+    const match = String(description || '').match(/^Type:\s*(Grid|List)\s*$/i);
+    if (!match) return null;
+    const value = match[1];
+    return value?.toLowerCase() === 'list' ? 'List' : 'Grid';
+  }
+
+  private getReportTypeDescription(type?: 'Grid' | 'List', description?: string | null) {
+    if (description !== undefined) return description || null;
+    return type ? `Type: ${type}` : undefined;
+  }
+
+  private getCleanReportTypeDescription(description?: string | null) {
+    return this.getReportTypeFromDescription(description) ? null : (description || null);
+  }
+
+  private inferReportType(item: any): 'Grid' | 'List' {
+    const explicitType = this.normalizeReportTypeValue(item?.type);
+    if (explicitType) return explicitType;
+
+    const descriptionType = this.getReportTypeFromDescription(item?.description);
+    if (descriptionType) return descriptionType;
+
+    const sectionCount = item?._count?.report_sections ?? item?._count?.reportSections ?? item?.report_sections?.length ?? 0;
+    return sectionCount > 0 ? 'List' : 'Grid';
+  }
+
+  private async countReportItemsForType(typeId: string) {
+    return prisma.reports.count({
+      where: {
+        deleted_at: null,
+        OR: [
+          { type_id: typeId },
+          { report_sections: { type_id: typeId } },
+        ],
+      },
+    });
+  }
+
+  private formatReportType(item: any, reportItemsCount?: number) {
+    const reportSectionsCount = item?._count?.report_sections ?? item?._count?.reportSections ?? item?.report_sections?.length ?? 0;
+    const reportItems = reportItemsCount ?? item?._count?.reports ?? item?._count?.reportItems ?? 0;
+
+    return {
+      ...item,
+      type: this.inferReportType(item),
+      description: this.getCleanReportTypeDescription(item?.description),
+      sortOrder: item?.position ?? item?.sortOrder ?? 0,
+      _count: {
+        ...(item?._count || {}),
+        reportSections: reportSectionsCount,
+        reportItems,
+        report_sections: reportSectionsCount,
+        reports: reportItems,
+      },
+    };
+  }
+
+  private parseReportYear(section: any): number | null {
+    const explicitYear = section?.report_year ?? section?.reportYear;
+    if (explicitYear) {
+      const year = Number(explicitYear);
+      return Number.isNaN(year) ? null : year;
+    }
+
+    const source = `${section?.name || ''} ${section?.description || ''}`;
+    const match = source.match(/\b(20\d{2}|19\d{2})\b/);
+    return match ? Number(match[1]) : null;
+  }
+
+  private formatReportSection(section: any) {
+    const itemCount = section?._count?.reports ?? section?._count?.reportItems ?? section?.reports?.length ?? 0;
+    const reportType = section?.report_types
+      ? {
+          id: section.report_types.id,
+          name: section.report_types.name,
+          type: this.inferReportType({
+            ...section.report_types,
+            _count: { report_sections: 1 },
+          }),
+        }
+      : null;
+
+    return {
+      ...section,
+      reportTypeId: section?.type_id || '',
+      title: section?.name || '',
+      reportYear: this.parseReportYear(section),
+      ctaEnabled: false,
+      ctaText: null,
+      ctaUrl: null,
+      sortOrder: section?.position ?? section?.sortOrder ?? 0,
+      reportType,
+      _count: {
+        ...(section?._count || {}),
+        reportItems: itemCount,
+        reports: itemCount,
+      },
+    };
+  }
+
   // ============================================
   // REPORT TYPE METHODS
   // ============================================
@@ -33,6 +138,7 @@ export class ReportService {
       page = 1,
       limit = 10,
       search,
+      type,
       isActive,
       sortBy = 'position',
       sortOrder = 'asc',
@@ -48,25 +154,32 @@ export class ReportService {
       where.isActive = isActive;
     }
 
-    const [reportTypes, total] = await Promise.all([
+    const [reportTypes, dbTotal] = await Promise.all([
       prisma.reportType.findMany({
         where,
         include: {
           _count: {
             select: {
               report_sections: { where: { deletedAt: null } },
+              reports: { where: { deleted_at: null } },
             },
           },
         },
         orderBy: { [sortBy]: sortOrder },
-        skip,
-        take: limit,
+        ...(type ? {} : { skip, take: limit }),
       }),
       prisma.reportType.count({ where }),
     ]);
+    const reportItemCounts = await Promise.all(
+      reportTypes.map((reportType: any) => this.countReportItemsForType(reportType.id))
+    );
+    const formattedTypes = reportTypes.map((reportType: any, index) => this.formatReportType(reportType, reportItemCounts[index]));
+    const filteredTypes = type ? formattedTypes.filter((reportType: any) => reportType.type === type) : formattedTypes;
+    const data = type ? filteredTypes.slice(skip, skip + limit) : filteredTypes;
+    const total = type ? filteredTypes.length : dbTotal;
 
     return {
-      data: reportTypes,
+      data,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -76,13 +189,24 @@ export class ReportService {
     };
   }
 
-  async getReportTypesList() {
+  async getReportTypesList(typeFilter?: 'Grid' | 'List') {
     const reportTypes = await prisma.reportType.findMany({
       where: { deletedAt: null, isActive: true },
       orderBy: { position: 'asc' },
-      select: { id: true, name: true, slug: true },
+      include: {
+        _count: {
+          select: {
+            report_sections: { where: { deletedAt: null } },
+            reports: { where: { deleted_at: null } },
+          },
+        },
+      },
     });
-    return reportTypes;
+    const itemCounts = await Promise.all(
+      reportTypes.map((reportType: any) => this.countReportItemsForType(reportType.id))
+    );
+    const formattedTypes = reportTypes.map((reportType: any, index) => this.formatReportType(reportType, itemCounts[index]));
+    return typeFilter ? formattedTypes.filter((reportType: any) => reportType.type === typeFilter) : formattedTypes;
   }
 
   async getReportTypeById(id: string) {
@@ -101,6 +225,7 @@ export class ReportService {
         _count: {
           select: {
             report_sections: { where: { deletedAt: null } },
+            reports: { where: { deleted_at: null } },
           },
         },
       },
@@ -110,7 +235,14 @@ export class ReportService {
       throw new AppError('Report type not found', 404);
     }
 
-    return reportType;
+    const reportItemsCount = await this.countReportItemsForType(reportType.id);
+    return this.formatReportType(
+      {
+        ...reportType,
+        report_sections: reportType.report_sections.map((section: any) => this.formatReportSection(section)),
+      },
+      reportItemsCount
+    );
   }
 
   async createReportType(data: CreateReportTypeDTO) {
@@ -134,7 +266,7 @@ export class ReportService {
         id: uuidv4(),
         name: data.name.trim(),
         slug,
-        description: data.description,
+        description: this.getReportTypeDescription(data.type, data.description) ?? null,
         icon: data.icon,
         color: data.color,
         position,
@@ -159,7 +291,9 @@ export class ReportService {
       updateData.name = data.name.trim();
       updateData.slug = data.slug || slugify(data.name, { lower: true, strict: true });
     }
-    if (data.description !== undefined) updateData.description = data.description;
+    if (data.description !== undefined || data.type !== undefined) {
+      updateData.description = this.getReportTypeDescription(data.type, data.description ?? undefined);
+    }
     if (data.icon !== undefined) updateData.icon = data.icon;
     if (data.color !== undefined) updateData.color = data.color;
     if (data.position !== undefined) updateData.position = data.position;
@@ -261,6 +395,9 @@ export class ReportService {
     const sections = await prisma.reportSection.findMany({
       where: { type_id: reportTypeId, deletedAt: null },
       include: {
+        report_types: {
+          select: { id: true, name: true, description: true },
+        },
         _count: {
           select: { reports: { where: { deleted_at: null } } },
         },
@@ -268,7 +405,7 @@ export class ReportService {
       orderBy: { position: 'asc' },
     });
 
-    return sections;
+    return sections.map((section: any) => this.formatReportSection(section));
   }
 
   async updateSectionsOrder(_reportTypeId: string, updates: OrderUpdateItem[]) {
@@ -319,7 +456,7 @@ export class ReportService {
         where,
         include: {
           report_types: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, description: true },
           },
           _count: {
             select: { reports: { where: { deleted_at: null } } },
@@ -333,7 +470,7 @@ export class ReportService {
     ]);
 
     return {
-      data: sections,
+      data: sections.map((section: any) => this.formatReportSection(section)),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -356,11 +493,20 @@ export class ReportService {
         id: true,
         name: true,
         slug: true,
-        report_types: { select: { id: true, name: true } },
+        type_id: true,
+        position: true,
+        description: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        report_types: { select: { id: true, name: true, description: true } },
+        _count: {
+          select: { reports: { where: { deleted_at: null } } },
+        },
       },
     });
 
-    return sections;
+    return sections.map((section: any) => this.formatReportSection(section));
   }
 
   async getReportSectionById(id: string) {
@@ -368,7 +514,7 @@ export class ReportService {
       where: { id, deletedAt: null },
       include: {
         report_types: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, description: true },
         },
         reports: {
           where: { deleted_at: null },
@@ -384,7 +530,7 @@ export class ReportService {
       throw new AppError('Report section not found', 404);
     }
 
-    return section;
+    return this.formatReportSection(section);
   }
 
   async createReportSection(data: CreateReportSectionDTO) {
@@ -549,14 +695,24 @@ export class ReportService {
 
     const items = await prisma.reports.findMany({
       where: { section_id: sectionId, deleted_at: null },
+      include: {
+        report_types: { select: { id: true, name: true, description: true } },
+        report_sections: { select: { id: true, name: true, type_id: true, description: true } },
+      },
       orderBy: { year: 'desc' },
     });
 
-    return items;
+    return items.map((item: any) => this.formatReportItem(item));
   }
 
-  async updateSectionItemsOrder(_sectionId: string, _updates: OrderUpdateItem[]) {
-    // reports model doesn't have position, so we skip ordering for now
+  async updateSectionItemsOrder(_sectionId: string, updates: OrderUpdateItem[]) {
+    const operations = updates.map((item) =>
+      prisma.reports.update({
+        where: { id: item.id },
+        data: { sort_order: item.position },
+      })
+    );
+    await prisma.$transaction(operations);
     return { message: 'Section items order updated' };
   }
 
@@ -572,6 +728,8 @@ export class ReportService {
       type_id,
       section_id,
       year,
+      data_type,
+      audit_status,
       status,
       sortBy = 'created_at',
       sortOrder = 'desc',
@@ -617,6 +775,12 @@ export class ReportService {
     if (year) {
       where.year = year;
     }
+    if (data_type) {
+      where.data_type = data_type;
+    }
+    if (audit_status) {
+      where.audit_status = audit_status;
+    }
     if (status) {
       where.status = status;
     }
@@ -625,9 +789,9 @@ export class ReportService {
       prisma.reports.findMany({
         where,
         include: {
-          report_types: { select: { id: true, name: true, slug: true } },
+          report_types: { select: { id: true, name: true, slug: true, description: true } },
           report_sections: {
-            select: { id: true, name: true, type_id: true },
+            select: { id: true, name: true, type_id: true, description: true },
           },
         },
         orderBy: { [sortBy]: sortOrder },
@@ -652,9 +816,9 @@ export class ReportService {
     const item = await prisma.reports.findFirst({
       where: { id, deleted_at: null },
       include: {
-        report_types: { select: { id: true, name: true, slug: true } },
+        report_types: { select: { id: true, name: true, slug: true, description: true } },
         report_sections: {
-          select: { id: true, name: true, type_id: true },
+          select: { id: true, name: true, type_id: true, description: true },
         },
       },
     });
@@ -720,8 +884,8 @@ export class ReportService {
         updated_at: new Date(),
       },
       include: {
-        report_types: { select: { id: true, name: true, slug: true } },
-        report_sections: { select: { id: true, name: true, type_id: true } },
+        report_types: { select: { id: true, name: true, slug: true, description: true } },
+        report_sections: { select: { id: true, name: true, type_id: true, description: true } },
       },
     });
 
@@ -772,8 +936,8 @@ export class ReportService {
       where: { id },
       data: updateData,
       include: {
-        report_types: { select: { id: true, name: true, slug: true } },
-        report_sections: { select: { id: true, name: true, type_id: true } },
+        report_types: { select: { id: true, name: true, slug: true, description: true } },
+        report_sections: { select: { id: true, name: true, type_id: true, description: true } },
       },
     });
 
@@ -825,8 +989,14 @@ export class ReportService {
     return { message: `${ids.length} report items deleted successfully` };
   }
 
-  async updateReportItemsOrder(_updates: OrderUpdateItem[]) {
-    // reports model doesn't have a position field; skip
+  async updateReportItemsOrder(updates: OrderUpdateItem[]) {
+    const operations = updates.map((item) =>
+      prisma.reports.update({
+        where: { id: item.id },
+        data: { sort_order: item.position },
+      })
+    );
+    await prisma.$transaction(operations);
     return { message: 'Report items order updated' };
   }
 
@@ -894,9 +1064,9 @@ export class ReportService {
       prisma.reports.findMany({
         where,
         include: {
-          report_types: { select: { id: true, name: true, slug: true } },
+          report_types: { select: { id: true, name: true, slug: true, description: true } },
           report_sections: {
-            select: { id: true, name: true, type_id: true },
+            select: { id: true, name: true, type_id: true, description: true },
           },
         },
         orderBy: { sort_order: 'asc' },
@@ -976,10 +1146,10 @@ export class ReportService {
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       reportType: reportType
-        ? { id: reportType.id, name: reportType.name, type: reportType.slug }
+        ? { id: reportType.id, name: reportType.name, type: this.inferReportType(reportType) }
         : null,
       reportSection: reportSection
-        ? { id: reportSection.id, title: reportSection.name, reportYear: null }
+        ? { id: reportSection.id, title: reportSection.name, reportYear: this.parseReportYear(reportSection) }
         : null,
     };
   }

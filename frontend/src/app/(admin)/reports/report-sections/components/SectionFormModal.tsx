@@ -45,15 +45,15 @@ export default function SectionFormModal({
     if (isOpen) {
       if (mode === "edit" && section) {
         setFormData({
-          reportTypeId: section.reportTypeId,
-          title: section.title,
+          reportTypeId: section.reportTypeId || "",
+          title: section.title || "",
           description: section.description || "",
           reportYear: section.reportYear || new Date().getFullYear(),
-          ctaEnabled: section.ctaEnabled,
+          ctaEnabled: section.ctaEnabled ?? false,
           ctaText: section.ctaText || "",
           ctaUrl: section.ctaUrl || "",
-          sortOrder: section.sortOrder,
-          isActive: section.isActive,
+          sortOrder: Number(section.sortOrder ?? 0),
+          isActive: section.isActive ?? true,
         });
       } else {
         setFormData({
@@ -147,7 +147,7 @@ export default function SectionFormModal({
             <select
               id="reportTypeId"
               name="reportTypeId"
-              value={formData.reportTypeId}
+              value={formData.reportTypeId || ""}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -176,7 +176,7 @@ export default function SectionFormModal({
               type="text"
               id="title"
               name="title"
-              value={formData.title}
+              value={formData.title || ""}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -195,7 +195,7 @@ export default function SectionFormModal({
             <textarea
               id="description"
               name="description"
-              value={formData.description}
+              value={formData.description || ""}
               onChange={handleChange}
               rows={3}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -215,7 +215,7 @@ export default function SectionFormModal({
               type="number"
               id="reportYear"
               name="reportYear"
-              value={formData.reportYear}
+              value={formData.reportYear ?? new Date().getFullYear()}
               onChange={handleChange}
               min={2000}
               max={2099}
@@ -229,7 +229,7 @@ export default function SectionFormModal({
               type="checkbox"
               id="ctaEnabled"
               name="ctaEnabled"
-              checked={formData.ctaEnabled}
+              checked={formData.ctaEnabled ?? false}
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
@@ -255,7 +255,7 @@ export default function SectionFormModal({
                   type="text"
                   id="ctaText"
                   name="ctaText"
-                  value={formData.ctaText}
+                  value={formData.ctaText || ""}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="e.g., Download Report"
@@ -272,7 +272,7 @@ export default function SectionFormModal({
                   type="url"
                   id="ctaUrl"
                   name="ctaUrl"
-                  value={formData.ctaUrl}
+                  value={formData.ctaUrl || ""}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="https://..."
@@ -293,7 +293,7 @@ export default function SectionFormModal({
               type="number"
               id="sortOrder"
               name="sortOrder"
-              value={formData.sortOrder}
+              value={formData.sortOrder ?? 0}
               onChange={handleChange}
               min={0}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -306,7 +306,7 @@ export default function SectionFormModal({
               type="checkbox"
               id="isActive"
               name="isActive"
-              checked={formData.isActive}
+              checked={formData.isActive ?? true}
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />

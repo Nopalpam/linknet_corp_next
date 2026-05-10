@@ -6,13 +6,28 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const repoRoot = path.resolve(process.cwd(), '..');
 const isProduction = process.env.NODE_ENV === 'production';
+const tradingViewScriptSources = [
+  'https://s3.tradingview.com',
+  'https://www.tradingview-widget.com',
+];
+const tradingViewFrameSources = [
+  'https://www.tradingview.com',
+  'https://s.tradingview.com',
+  'https://www.tradingview-widget.com',
+];
+const mediaImageSources = [
+  'http://edge.linknetott.swiftserve.com',
+  'https://edge.linknetott.swiftserve.com',
+  'https://ui-stb-cpe.sysln.id',
+];
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' ${tradingViewScriptSources.join(' ')}${isProduction ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https:${isProduction ? '' : ' http:'}`,
+  `img-src 'self' data: blob: https: ${mediaImageSources.join(' ')}${isProduction ? '' : ' http:'}`,
   "font-src 'self' data:",
-  `connect-src 'self' https:${isProduction ? '' : ' http:'}`,
+  `connect-src 'self' https: wss://*.tradingview.com${isProduction ? '' : ' http:'}`,
+  `frame-src 'self' ${tradingViewFrameSources.join(' ')}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -25,6 +40,13 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   experimental: {
     externalDir: true,
+  },
+  images: {
+    remotePatterns: [
+      { protocol: 'http', hostname: 'edge.linknetott.swiftserve.com' },
+      { protocol: 'https', hostname: 'edge.linknetott.swiftserve.com' },
+      { protocol: 'https', hostname: 'ui-stb-cpe.sysln.id' },
+    ],
   },
   async headers() {
     return [

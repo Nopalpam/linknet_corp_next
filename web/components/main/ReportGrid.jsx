@@ -5,9 +5,34 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'; // Im
 import Intro from '../base/section/Intro';
 import CardReport from '../base/cards/CardReport';
 import { REPORT_GRID_DATA } from '@/data/components/reportGrid';
+import { hasIntroContent } from '../../../shared/presentation/intro';
+
+function firstValue(source, keys, fallback = '') {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return fallback;
+}
+
+function normalizeGridReportItem(item = {}) {
+  return {
+    ...item,
+    title: firstValue(item, ['lnCardReport__title', 'title', 'name', 'description', 'subDescription', 'sub_description']),
+    image: firstValue(item, ['image', 'coverImage', 'cover_image', 'thumbnail']),
+    year: firstValue(item, ['year']),
+    fileSize: firstValue(item, ['fileSize', 'file_size']),
+    dataType: firstValue(item, ['dataType', 'data_type']),
+    auditStatus: firstValue(item, ['auditStatus', 'audit_status']),
+    category: firstValue(item, ['category', 'sectionName', 'section_name', 'reportType', 'report_type']),
+    date: firstValue(item, ['period', 'date']),
+    downloadUrl: firstValue(item, ['downloadUrl', 'download_url', 'fileUrl', 'file_url', 'pdfFile', 'pdf_file'], '#'),
+  };
+}
 
 export default function ReportGrid({
   name = 'sustainability-reports',
+  data = null,
   className = ""
 }) {
   const router = useRouter();
@@ -22,11 +47,17 @@ export default function ReportGrid({
 
   const ITEMS_PER_PAGE = 9;
 
-  const sectionData = REPORT_GRID_DATA[name];
+  const cmsSectionData = data && typeof data === 'object' && !Array.isArray(data)
+    ? data
+    : Array.isArray(data)
+      ? { items: data }
+      : null;
+  const sectionData = cmsSectionData || REPORT_GRID_DATA[name];
 
   if (!sectionData) return null;
 
-  const { config, introData, items } = sectionData;
+  const { config, introData } = sectionData;
+  const items = (sectionData.items || []).map(normalizeGridReportItem);
   const {
     sectionId = 'report-grid-section',
     className: configClassName = "",
@@ -99,7 +130,7 @@ export default function ReportGrid({
         {/* ========================================= */}
         {/* HEADER SECTION */}
         {/* ========================================= */}
-        {introData && (
+  {hasIntroContent(introData) && (
           <div className="mb-12 md:mb-16">
             <Intro
               as={introData.as || "h2"}
@@ -120,10 +151,14 @@ export default function ReportGrid({
               <CardReport
                 key={item.id || index}
                 variant="cover"
+                icon="/assets/icons/pdf-circle.svg"
                 image={item.image}
                 year={item.year}
                 title={item.title}
                 fileSize={item.fileSize}
+                badges={item.auditStatus ? [item.auditStatus] : []}
+                category={item.category}
+                date={item.date}
                 downloadUrl={item.downloadUrl}
                 className="animate-in fade-in duration-500"
               />

@@ -6,6 +6,7 @@ import Intro from '../base/section/Intro';
 import Button from '../base/Button';
 import Icon from '../base/Icon';
 import CardNews from '../base/cards/CardNews'; // Sesuaikan path
+import { hasIntroContent, resolveIntroTextValue } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -13,6 +14,7 @@ export default function NewsFeed({
   categorySlug,
   cmsCategory,
   cmsNews = null,
+  cmsData = null,
   mainData = null,
   className = ""
 }) {
@@ -124,9 +126,25 @@ const filteredNews = useMemo(() => {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
-  const introLabel = categoryData?.label || "News";
-  const introTitle = categoryData?.title ? `Catch up on ${categoryData.title}` : "Catch up on All News";
-  const introDesc = categoryData?.desc || "Stay updated with our latest news and announcements.";
+  const explicitIntro = cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || null;
+  const hasExplicitIntro = Boolean(explicitIntro && typeof explicitIntro === 'object' && !Array.isArray(explicitIntro));
+  const resolvedIntro = hasExplicitIntro
+    ? {
+        ...explicitIntro,
+        label: resolveIntroTextValue(explicitIntro.label),
+        title: resolveIntroTextValue(explicitIntro.title),
+        description: resolveIntroTextValue(explicitIntro.description),
+        as: explicitIntro.as || 'h1',
+        align: explicitIntro.align || 'center',
+      }
+    : {
+        as: 'h1',
+        label: categoryData?.label || 'News',
+        title: categoryData?.title ? `Catch up on ${categoryData.title}` : 'Catch up on All News',
+        description: categoryData?.desc || 'Stay updated with our latest news and announcements.',
+        align: 'center',
+      };
+  const shouldRenderIntro = hasIntroContent(resolvedIntro);
 
   return (
     <section
@@ -140,15 +158,11 @@ const filteredNews = useMemo(() => {
       <div className="container">
 
         {/* 1. INTRO SECTION - Akan selalu tampil meskipun berita kosong */}
-        <div className="mb-10 md:mb-14">
-          <Intro
-            as="h1"
-            label={introLabel}
-            title={introTitle}
-            description={introDesc}
-            align="center"
-          />
-        </div>
+        {shouldRenderIntro && (
+          <div className="mb-10 md:mb-14">
+            <Intro {...resolvedIntro} />
+          </div>
+        )}
 
         {/* 2. NEWS GRID ATAU EMPTY STATE */}
         {isLoading ? (

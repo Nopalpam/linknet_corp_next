@@ -9,6 +9,12 @@ import { navItems as enterpriseNavItems } from '../../data/navDataEnterprise';
 import { navItems as corporateNavItems } from '../../data/navData';
 import Button from '../base/Button';
 import Icon from '../base/Icon';
+import {
+  DEFAULT_STOCK_SYMBOL,
+  fetchStockQuote,
+  formatCurrency,
+  formatStockUpdateDate,
+} from '@/lib/stockService';
 
 function transformMenuData(cmsMenus, locale) {
   if (!Array.isArray(cmsMenus) || cmsMenus.length === 0) return null;
@@ -73,6 +79,9 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stockQuote, setStockQuote] = useState(null);
+  const [stockLoading, setStockLoading] = useState(true);
+  const [stockError, setStockError] = useState('');
 
   // --- NEW STATE FOR MOBILE DRAWER ---
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -87,6 +96,16 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
     corporateNavItems.find((item) => item.label === 'Sustainability'),
     corporateNavItems.find((item) => item.label === 'Career'),
   ].filter(Boolean);
+  const stockPriceText = stockQuote?.regularMarketPrice != null
+    ? formatCurrency(stockQuote.regularMarketPrice)
+    : stockLoading
+      ? 'Loading...'
+      : '-';
+  const stockUpdatedText = stockQuote?.regularMarketTime
+    ? `Terakhir diperbarui pada ${formatStockUpdateDate(stockQuote.regularMarketTime)}.`
+    : stockError
+      ? 'Data saham belum tersedia.'
+      : 'Memuat data saham terbaru.';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -94,6 +113,33 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStockQuote = async () => {
+      try {
+        const quote = await fetchStockQuote(DEFAULT_STOCK_SYMBOL);
+        if (!mounted) return;
+        setStockQuote(quote);
+        setStockError('');
+      } catch (error) {
+        if (!mounted) return;
+        setStockQuote(null);
+        setStockError(error instanceof Error ? error.message : 'Failed to fetch stock data');
+      } finally {
+        if (mounted) setStockLoading(false);
+      }
+    };
+
+    loadStockQuote();
+    const refreshTimer = window.setInterval(loadStockQuote, 5 * 60 * 1000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   // Lock scroll saat drawer terbuka
@@ -312,11 +358,11 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
               <div className="lnNavbar__ticker flex flex-col items-start leading-tight">
                 <span className="text-caption-c2 uppercase text-secondary font-medium">IDX: LINK</span>
                 <div className="lnNavbar__ticker-value flex items-center gap-1 text-body-b4 text-black relative group/tooltip cursor-help">
-                  <span className='font-medium'>Rp2.560,00</span>
+                  <span className='font-medium'>{stockPriceText}</span>
                   <Icon name="info" className="text-secondary" style={{ '--icon-size': '16px' }} />
                   <div className="absolute top-full right-0 mt-3 w-64 px-3 py-2 bg-white border border-[#f3f3f3] text-black rounded-[12px] shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 pointer-events-none transform origin-top-right">
                     <p className="text-secondary !font-regular text-caption-c1">
-                      Terakhir diperbarui pada 28 April 2025 19:55 WIB.
+                      {stockUpdatedText}
                     </p>
                   </div>
                 </div>
@@ -383,7 +429,7 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
                     className="flex items-center gap-1 cursor-pointer"
                     onClick={() => setShowMobileTooltip(!showMobileTooltip)}
                   >
-                    <span className="text-body-b4 font-medium text-black">Rp2.560,00</span>
+                    <span className="text-body-b4 font-medium text-black">{stockPriceText}</span>
                     <Icon name="info" className="text-neutral-400" style={{'--icon-size': '14px'}} />
                   </div>
 
@@ -392,7 +438,7 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
                     <>
                       <div className="fixed inset-0 z-[25]" onClick={() => setShowMobileTooltip(false)}></div>
                       <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-white text-black rounded-[16px] shadow-lg z-[30] animate-in fade-in slide-in-from-top-1">
-                         <p className="text-neutral-300 leading-snug">Harga saham terkini diperbarui secara berkala (delay 15 menit).</p>
+                         <p className="text-neutral-500 leading-snug">{stockUpdatedText}</p>
                          <div className="absolute bottom-full right-2 -mb-1 border-4 border-transparent border-b-neutral-900"></div>
                       </div>
                     </>
@@ -502,7 +548,7 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
                     className="flex items-center gap-1 cursor-pointer"
                     onClick={() => setShowMobileTooltip(!showMobileTooltip)}
                   >
-                    <span className="text-body-b4 font-medium text-black">Rp2.560,00</span>
+                    <span className="text-body-b4 font-medium text-black">{stockPriceText}</span>
                     <Icon name="info" className="text-neutral-400" style={{'--icon-size': '14px'}} />
                   </div>
 
@@ -512,7 +558,7 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
                       <div className="fixed inset-0 z-[25]" onClick={() => setShowMobileTooltip(false)}></div>
                       <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-[30] animate-in fade-in slide-in-from-top-1">
                          <div className="font-bold mb-1 text-yellow-400">Market Info</div>
-                         <p className="text-neutral-300 leading-snug">Harga saham terkini diperbarui secara berkala (delay 15 menit).</p>
+                         <p className="text-neutral-300 leading-snug">{stockUpdatedText}</p>
                          <div className="absolute bottom-full right-2 -mb-1 border-4 border-transparent border-b-neutral-900"></div>
                       </div>
                     </>

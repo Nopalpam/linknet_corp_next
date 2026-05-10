@@ -210,6 +210,96 @@ const ENV_VARS: EnvVarConfig[] = [
     required: false,
     description: 'Secret salt for Linknet Media token generation',
   },
+  {
+    name: 'MFA_ENABLED',
+    required: false,
+    defaultValue: 'false',
+    description: 'Enable MFA enforcement',
+    validator: (value) => ['true', 'false', 'enable', 'enabled', '1', '0', 'yes', 'no'].includes(value.toLowerCase()),
+  },
+  {
+    name: 'MFA_PROVIDER',
+    required: false,
+    defaultValue: 'local',
+    description: 'MFA provider: local or keycloak',
+    validator: (value) => ['local', 'keycloak'].includes(value.toLowerCase()),
+  },
+  {
+    name: 'KEYCLOAK_URL',
+    required: false,
+    description: 'Keycloak base URL',
+    validator: (value) => value.startsWith('https://') || value.startsWith('http://localhost'),
+  },
+  {
+    name: 'KEYCLOAK_REALM',
+    required: false,
+    description: 'Keycloak realm name',
+  },
+  {
+    name: 'KEYCLOAK_CLIENT_ID',
+    required: false,
+    description: 'Keycloak client ID',
+  },
+  {
+    name: 'KEYCLOAK_CLIENT_SECRET',
+    required: false,
+    description: 'Keycloak client secret',
+  },
+  {
+    name: 'KEYCLOAK_ADMIN_USER',
+    required: false,
+    description: 'Optional Keycloak admin username for realm MFA status checks',
+  },
+  {
+    name: 'KEYCLOAK_ADMIN_PASSWORD',
+    required: false,
+    description: 'Optional Keycloak admin password for realm MFA status checks',
+  },
+  {
+    name: 'SMTP_HOST',
+    required: false,
+    description: 'SMTP host',
+  },
+  {
+    name: 'SMTP_PORT',
+    required: false,
+    description: 'SMTP port',
+    validator: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0,
+  },
+  {
+    name: 'SMTP_USER',
+    required: false,
+    description: 'SMTP username',
+  },
+  {
+    name: 'SMTP_PASSWORD',
+    required: false,
+    description: 'SMTP password',
+  },
+  {
+    name: 'SMTP_FROM_NAME',
+    required: false,
+    description: 'Default email sender name',
+  },
+  {
+    name: 'SMTP_FROM_EMAIL',
+    required: false,
+    description: 'Default email sender address',
+    validator: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+  },
+  {
+    name: 'SMTP_SECURE',
+    required: false,
+    description: 'Use SMTPS',
+    validator: (value) => ['true', 'false', '1', '0', 'yes', 'no'].includes(value.toLowerCase()),
+  },
+  {
+    name: 'MAIL_FAIL_OPEN',
+    required: false,
+    defaultValue: 'true',
+    description: 'Skip mail failures instead of failing auth flows',
+    validator: (value) => ['true', 'false'].includes(value),
+  },
 
   // Azure Key Vault (Optional - for production)
   {
@@ -298,6 +388,43 @@ export function validateEnvironment(): ValidationResult {
 
   if (!jwtAccessSecret || jwtAccessSecret.length < 32) {
     errors.push('JWT_ACCESS_SECRET or JWT_SECRET must be configured with at least 32 characters');
+  }
+
+  const mfaEnabled = ['true', 'enable', 'enabled', '1', 'yes'].includes(
+    (variables.MFA_ENABLED || process.env.MFA_ENABLED || '').toLowerCase()
+  );
+  const mfaProvider = (variables.MFA_PROVIDER || process.env.MFA_PROVIDER || 'local').toLowerCase();
+  if (mfaEnabled && mfaProvider === 'keycloak') {
+    const missingKeycloakVars = [
+      'KEYCLOAK_URL',
+      'KEYCLOAK_REALM',
+      'KEYCLOAK_CLIENT_ID',
+      'KEYCLOAK_CLIENT_SECRET',
+    ].filter((name) => !(variables[name] || process.env[name]));
+
+    if (missingKeycloakVars.length > 0) {
+      errors.push(`Keycloak MFA is enabled but missing: ${missingKeycloakVars.join(', ')}`);
+    }
+  }
+
+  const smtpHasAnyValue = [
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+    'SMTP_FROM_NAME',
+    'SMTP_FROM_EMAIL',
+    'SMTP_SECURE',
+  ].some((name) => Boolean(variables[name] || process.env[name]));
+
+  const smtpReady = Boolean(
+    (variables.SMTP_HOST || process.env.SMTP_HOST) &&
+    (variables.SMTP_PORT || process.env.SMTP_PORT) &&
+    (variables.SMTP_FROM_EMAIL || process.env.SMTP_FROM_EMAIL)
+  );
+
+  if (smtpHasAnyValue && !smtpReady) {
+    warnings.push('SMTP is partially configured. Email delivery will be skipped until SMTP_HOST, SMTP_PORT, and SMTP_FROM_EMAIL are set.');
   }
 
   if (nodeEnv === 'production') {

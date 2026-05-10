@@ -13,11 +13,34 @@ import { managementCategories } from '../../data/components/managementCategory';
 import CardManagement from '../base/cards/CardManagement';
 import ModalManagement from '../base/modals/ModalManagement'; // IMPORT MODAL BARU DI SINI
 import Intro from '../base/section/Intro';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Import Hooks
 import { useModalRegistry } from '../hooks/useModalRegistry';
 
-export default function Management({ cmsData = null, data = null, mainData = null, config = {}, className = '' }) {
+function normalizeTabId(value) {
+  if (value === null || value === undefined) return '';
+  return String(value);
+}
+
+function localizedValue(value, locale = 'id') {
+  if (!value) return '';
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value[locale] || value.id || value.en || '';
+  }
+  if (typeof value !== 'string') return String(value);
+  try {
+    const parsed = JSON.parse(value);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed[locale] || parsed.id || parsed.en || '';
+    }
+  } catch {
+    return value;
+  }
+  return value;
+}
+
+export default function Management({ cmsData = null, data = null, mainData = null, config = {}, className = '', locale = 'id' }) {
   const source = cmsData || data || {};
   const sourceMainData = mainData || source.mainData || {};
   const introData = source.introData || source.sectionIntro || source.intro || null;
@@ -26,7 +49,7 @@ export default function Management({ cmsData = null, data = null, mainData = nul
     if (!Array.isArray(cmsCategories) || cmsCategories.length === 0) return managementCategories;
 
     return cmsCategories.map((category) => ({
-      id: category.id,
+      id: normalizeTabId(category.id ?? category.slug ?? category.key ?? category.name),
       label: category.label || category.name || category.title || '',
     }));
   }, [sourceMainData.categories, source.categories]);
@@ -37,13 +60,21 @@ export default function Management({ cmsData = null, data = null, mainData = nul
     return cmsItems.map((item) => ({
       id: item.id || item.slug || item.name,
       name: item.name || item.full_name || '',
-      role: item.role || item.position || item.title || '',
-      categoryId: item.categoryId || item.category_id || item.management_category_id || item.managementCategory?.id,
+      role: localizedValue(locale === 'id' ? (item.positionId || item.position_id) : (item.positionEn || item.position_en), locale)
+        || item.role
+        || item.position
+        || item.title
+        || '',
+      categoryId: normalizeTabId(item.categoryId ?? item.category_id ?? item.management_category_id ?? item.managementCategory?.id),
       imgSrc: item.imgSrc || item.image || item.photo || item.photo_url || item.thumbnail || '',
-      about: item.about || item.description || item.bio || '',
+      about: localizedValue(locale === 'id' ? (item.bioId || item.bio_id) : (item.bioEn || item.bio_en), locale)
+        || localizedValue(item.description, locale)
+        || item.about
+        || item.bio
+        || '',
     }));
-  }, [sourceMainData.managements, source.items, source.managements]);
-  const [activeTab, setActiveTab] = useState(categories[0]?.id || '');
+  }, [locale, sourceMainData.managements, source.items, source.managements]);
+  const [activeTab, setActiveTab] = useState(normalizeTabId(categories[0]?.id));
   const [selectedManager, setSelectedManager] = useState(null);
 
   const { openModal, closeModal, isModalOpen } = useModalRegistry();
@@ -64,12 +95,12 @@ export default function Management({ cmsData = null, data = null, mainData = nul
   const gridRef = useRef(null);
 
   const filteredData = useMemo(() => {
-    return items.filter((item) => item.categoryId === activeTab);
+    return items.filter((item) => normalizeTabId(item.categoryId) === activeTab);
   }, [activeTab, items]);
 
   useEffect(() => {
-    if (!categories.some((category) => category.id === activeTab)) {
-      setActiveTab(categories[0]?.id || '');
+    if (!categories.some((category) => normalizeTabId(category.id) === activeTab)) {
+      setActiveTab(normalizeTabId(categories[0]?.id));
     }
   }, [activeTab, categories]);
 
@@ -112,7 +143,7 @@ export default function Management({ cmsData = null, data = null, mainData = nul
       style={sectionStyle}
     >
 
-      {introData && (introData.label || introData.title || introData.description) && (
+      {hasIntroContent(introData) && (
         <div className="mb-8">
           <Intro
             as={introData.as || 'h2'}
@@ -127,20 +158,27 @@ export default function Management({ cmsData = null, data = null, mainData = nul
       {/* --- TAB NAVIGATION --- */}
       <div className="mb-4">
         <Swiper slidesPerView="auto" spaceBetween={12} className="!pb-4">
-          {managementCategories.map((cat) => (
+          {categories.map((cat) => {
+            const tabId = normalizeTabId(cat.id);
+            const isActive = activeTab === tabId;
+
+            return (
             <SwiperSlide key={cat.id} className="!w-auto !h-auto">
               <button
-                onClick={() => setActiveTab(cat.id)}
+                type="button"
+                onClick={() => setActiveTab(tabId)}
                 className={`px-6 py-2.5 rounded-[16px] border text-body-b5 font-medium transition-all duration-300 h-full min-w-[140px] max-w-[240px] md:min-w-[175px] md:max-w-[240px] overflow-hidden ${
-                  activeTab === cat.id
+                  isActive
                     ? 'bg-warning border-transparent text-black shadow-md'
                     : 'bg-white border-secondary text-black hover:border-neutral-400'
                 }`}
+                aria-pressed={isActive}
               >
                 {cat.label}
               </button>
             </SwiperSlide>
-          ))}
+            );
+          })}
         </Swiper>
       </div>
 

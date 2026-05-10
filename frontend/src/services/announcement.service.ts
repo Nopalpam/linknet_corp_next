@@ -26,6 +26,8 @@ export interface AnnouncementType {
   _count?: {
     announcement_sections: number;
     announcements: number;
+    announcementSections?: number;
+    announcementItems?: number;
   };
 }
 
@@ -47,8 +49,14 @@ export interface AnnouncementSection {
     name: string;
     type: string;
   } | null;
+  announcementType?: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
   _count?: {
     announcements: number;
+    announcementItems?: number;
   };
   announcements?: AnnouncementItem[];
 }

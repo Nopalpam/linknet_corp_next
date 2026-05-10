@@ -18,6 +18,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import { ABOUT_WITH_USP_DATA } from '../../data/components/aboutWithUSP';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -313,7 +314,7 @@ export default function AboutWithUSP({
         {isImageLayout ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-stretch">
             <div className={`${layoutVariant === 'image-on-left' ? 'md:order-1' : 'md:order-2'} flex min-w-0 flex-col justify-between gap-12 md:gap-20`}>
-              {introData && (
+              {hasIntroContent(introData) && (
                 <div className="lnGsapUspItem">
                   <SectionIntro
                     as={introData.as || "h2"}
@@ -344,7 +345,7 @@ export default function AboutWithUSP({
           </div>
         ) : (
           <>
-            {introData && (
+            {hasIntroContent(introData) && (
               <div className="mb-10 md:mb-12 lnGsapUspItem">
                 <SectionIntro
                   as={introData.as || "h2"}

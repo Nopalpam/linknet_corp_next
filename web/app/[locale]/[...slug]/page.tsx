@@ -81,7 +81,10 @@ export default async function CMSPage({ params }: PageProps) {
   const { locale, slug } = await params;
   const slugPath = normalizeCmsSlug(slug);
 
-  const page = await getPageBySlug(slugPath);
+  const [page, publicSettings] = await Promise.all([
+    getPageBySlug(slugPath),
+    getPublicSettings(),
+  ]);
 
   if (!page) {
     notFound();
@@ -104,6 +107,7 @@ export default async function CMSPage({ params }: PageProps) {
     product: page.product ?? null,
     promo: page.promo ?? null,
     source: page.source ?? null,
+    publicSettings,
   };
 
   return <PageRenderer components={components} locale={locale} pageContext={pageContext} />;

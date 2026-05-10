@@ -173,6 +173,7 @@ export default function CardNews({
     >
       {/* Image Container */}
       {/* order-2 (Mobile: dikanan) | md:order-1 (Desktop: diatas) */}
+      {image && (
       <div className="lnCardNews__thumbnailWrap w-[90px] sm:w-[140px] md:w-full shrink-0 order-2 md:order-1">
         <div className="lnCardNews__thumbnail aspect-[1] md:aspect-[3/2] rounded-[8px] md:rounded-[12px] overflow-hidden bg-neutral-100 relative">
           <img 
@@ -183,6 +184,7 @@ export default function CardNews({
           />
         </div>
       </div>
+      )}
 
       {/* Text Content */}
       {/* order-1 (Mobile: dikiri) | md:order-2 (Desktop: dibawah) */}
@@ -191,9 +193,16 @@ export default function CardNews({
             {title}
         </h3>
 
-        <span className="lnCardNews__meta text-body-b5 text-secondary mb-3 md:mb-4">
-          By {author} &middot; {formatDate(date, timezone)}
-        </span>
+        {(author || date) && (
+          <span className="lnCardNews__meta text-body-b5 text-secondary mb-3 md:mb-4">
+            {author ? `By ${author}` : ''}{author && date ? ' · ' : ''}{date ? formatDate(date, timezone) : ''}
+          </span>
+        )}
+        {desc && (
+          <p className="lnCardNews__desc text-body-b5 text-secondary line-clamp-2 mb-3">
+            {desc}
+          </p>
+        )}
         
         {badgeText && (
           <div className="lnCardNews__footer mt-auto md:mt-0 pt-1">

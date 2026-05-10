@@ -72,7 +72,7 @@ export default function ManagementDataPage() {
       const response = await managementService.getManagements({
         categoryId,
         limit: 100,
-        sortBy: "dataOrder",
+        sortBy: "order",
         sortOrder: "asc",
       });
       setManagements(response.data || []);

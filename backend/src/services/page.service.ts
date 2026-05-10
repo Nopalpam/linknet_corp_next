@@ -1,7 +1,7 @@
-import { Prisma, PrismaClient, PageStatus, PageTemplate } from '@prisma/client';
+import { Prisma, PageStatus, PageTemplate } from '@prisma/client';
+import prisma from '@config/database';
 import { AppError } from '../types/error.types';
-
-const prisma = new PrismaClient();
+import { syncComponentInstance } from '../pageBuilder/migrationEngine';
 
 const pageListSelect = {
   id: true,
@@ -49,6 +49,18 @@ const pageDetailSelect = {
 } satisfies Prisma.PageSelect;
 
 const normalizePageResponse = <T extends Record<string, unknown>>(page: T) => page;
+
+const withRuntimeSyncedComponents = <T extends { components?: any[] }>(page: T): T => {
+  if (!Array.isArray(page.components)) return page;
+
+  return {
+    ...page,
+    components: page.components.map((component) => ({
+      ...component,
+      data: syncComponentInstance(component.type, component.data).instance,
+    })),
+  };
+};
 
 const parsePageStatus = (status?: string): PageStatus | undefined => {
   if (!status) return undefined;
@@ -105,7 +117,7 @@ export class PageService {
       select: pageDetailSelect,
     });
     if (!page) throw new AppError('Page not found', 404);
-    return normalizePageResponse(page);
+    return normalizePageResponse(withRuntimeSyncedComponents(page));
   }
 
   async getPageHistory(id: string, page = 1, perPage = 10) {
@@ -221,7 +233,7 @@ export class PageService {
         },
       }
     });
-    return page;
+    return page ? withRuntimeSyncedComponents(page) : page;
   }
 
   /**
@@ -301,7 +313,7 @@ export class PageService {
         updatedAt: new Date()
       },
       select: pageDetailSelect,
-    }).then(normalizePageResponse);
+    }).then((page) => normalizePageResponse(withRuntimeSyncedComponents(page)));
   }
 
   /**
@@ -326,7 +338,7 @@ export class PageService {
    * Uses a transactional delete-all + create-many approach
    * to ensure atomic replacement of all components.
    */
-  async savePageComponents(pageId: string, components: any[]) {
+  async savePageComponents(pageId: string, components: any[], userId?: string) {
     // Verify page exists
     const page = await prisma.page.findUnique({
       where: { id: pageId },
@@ -349,8 +361,11 @@ export class PageService {
             const componentsToCreate = components.map((c, index) => ({
                 pageId,
                 type: c.type,
-                // component_data: store all props including nested children as JSON
-                data: c.data || c.props || {},
+                // component_data: store all props in the schema-versioned envelope
+                data: syncComponentInstance(c.type, c.data || c.props || {}, {
+                  persistAudit: true,
+                  syncedBy: userId || 'system',
+                }).instance as any,
                 // sort_order: derived from array position
                 order: index,
                 isVisible: c.isVisible ?? true
@@ -371,7 +386,7 @@ export class PageService {
 
         console.log('✅ Components saved successfully:', result?.components?.length || 0);
         
-        return result ? normalizePageResponse(result) : result;
+        return result ? normalizePageResponse(withRuntimeSyncedComponents(result)) : result;
     });
   }
 }

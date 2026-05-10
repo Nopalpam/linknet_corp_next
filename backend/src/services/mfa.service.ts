@@ -15,11 +15,26 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
+import keycloakService from './keycloak.service';
+import {
+  clearMfaLoginChallenge,
+  createMfaLoginChallenge,
+  getMfaLoginChallenge,
+  MfaProvider,
+} from './mfaChallenge.service';
 
 const prisma = new PrismaClient();
 
 // App name shown in authenticator apps
 const APP_NAME = process.env.MFA_APP_NAME || 'LinkNet Corp CMS';
+
+export const getMfaProvider = (): MfaProvider => {
+  const provider = (process.env.MFA_PROVIDER || process.env.AUTH_MFA_PROVIDER || 'local')
+    .toLowerCase()
+    .trim();
+
+  return provider === 'keycloak' ? 'keycloak' : 'local';
+};
 
 /**
  * Check if MFA is enabled globally via environment variable
@@ -29,6 +44,8 @@ export const isMfaGloballyEnabled = (): boolean => {
   const value = (process.env.MFA_ENABLED || '').toLowerCase().trim();
   return ['true', 'enable', 'enabled', '1', 'yes'].includes(value);
 };
+
+export const isMfaManagedByKeycloak = (): boolean => getMfaProvider() === 'keycloak';
 
 /**
  * Generate a new TOTP secret for a user
@@ -96,6 +113,10 @@ export const setupMfa = async (userId: string): Promise<{
   qrCode: string;
   otpauthUrl: string;
 }> => {
+  if (isMfaManagedByKeycloak()) {
+    throw new Error('MFA setup is managed by the Keycloak realm. Please configure OTP in Keycloak.');
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { email: true, mfaEnabled: true },
@@ -132,6 +153,10 @@ export const setupMfa = async (userId: string): Promise<{
  * Enable MFA for a user after they verify their first OTP
  */
 export const enableMfa = async (userId: string, token: string): Promise<boolean> => {
+  if (isMfaManagedByKeycloak()) {
+    throw new Error('MFA enablement is managed by the Keycloak realm.');
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { mfaSecret: true, mfaEnabled: true },
@@ -172,6 +197,10 @@ export const enableMfa = async (userId: string, token: string): Promise<boolean>
  * Disable MFA for a user
  */
 export const disableMfa = async (userId: string, token: string): Promise<boolean> => {
+  if (isMfaManagedByKeycloak()) {
+    throw new Error('MFA disablement is managed by the Keycloak realm.');
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { mfaSecret: true, mfaEnabled: true },
@@ -216,25 +245,130 @@ export const getUserMfaStatus = async (userId: string): Promise<{
   mfaEnabled: boolean;
   mfaGloballyEnabled: boolean;
   hasMfaSecret: boolean;
+  provider: MfaProvider;
+  managedByRealm: boolean;
 }> => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { mfaEnabled: true, mfaSecret: true },
+    select: { email: true, mfaEnabled: true, mfaSecret: true },
   });
 
   if (!user) {
     throw new Error('User not found');
   }
 
+  const provider = getMfaProvider();
+
+  if (provider === 'keycloak') {
+    if (!isMfaGloballyEnabled()) {
+      return {
+        mfaEnabled: false,
+        mfaGloballyEnabled: false,
+        hasMfaSecret: false,
+        provider,
+        managedByRealm: true,
+      };
+    }
+
+    const status = await keycloakService.getUserMfaStatus(user.email);
+    return {
+      mfaEnabled: status.mfaEnabled,
+      mfaGloballyEnabled: true,
+      hasMfaSecret: status.hasMfaSecret,
+      provider,
+      managedByRealm: true,
+    };
+  }
+
   return {
     mfaEnabled: user.mfaEnabled,
     mfaGloballyEnabled: isMfaGloballyEnabled(),
     hasMfaSecret: !!user.mfaSecret,
+    provider,
+    managedByRealm: false,
   };
+};
+
+export const shouldRequireMfaForLogin = async (input: {
+  userId: string;
+  email: string;
+  localMfaEnabled: boolean;
+}): Promise<boolean> => {
+  if (!isMfaGloballyEnabled()) return false;
+
+  if (isMfaManagedByKeycloak()) {
+    return keycloakService.isOtpRequiredForUser(input.email);
+  }
+
+  return input.localMfaEnabled;
+};
+
+export const createLoginChallenge = (input: {
+  userId: string;
+  email: string;
+  password?: string;
+}): string => {
+  const challenge = createMfaLoginChallenge({
+    userId: input.userId,
+    email: input.email,
+    password: input.password,
+    provider: getMfaProvider(),
+  });
+
+  return challenge.id;
+};
+
+export const verifyLoginChallenge = async (input: {
+  challengeId: string;
+  userId: string;
+  otp: string;
+  localSecret?: string | null;
+}): Promise<boolean> => {
+  const challenge = getMfaLoginChallenge(input.challengeId);
+  if (!challenge || challenge.userId !== input.userId) {
+    throw new Error('MFA challenge has expired. Please login again.');
+  }
+
+  if (challenge.provider === 'keycloak') {
+    if (!challenge.password) {
+      throw new Error('MFA challenge cannot be verified. Please login again.');
+    }
+
+    const verified = await keycloakService.verifyPasswordAndOtp({
+      username: challenge.email,
+      password: challenge.password,
+      otp: input.otp,
+    }).catch((error) => {
+      logger.warn('Keycloak MFA verification failed', {
+        userId: input.userId,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    });
+
+    if (verified) {
+      clearMfaLoginChallenge(challenge.id);
+    }
+
+    return verified;
+  }
+
+  if (!input.localSecret) {
+    throw new Error('MFA is not configured for this user.');
+  }
+
+  const verified = verifyMfaToken(input.localSecret, input.otp);
+  if (verified) {
+    clearMfaLoginChallenge(challenge.id);
+  }
+
+  return verified;
 };
 
 export default {
   isMfaGloballyEnabled,
+  isMfaManagedByKeycloak,
+  getMfaProvider,
   generateMfaSecret,
   generateQrCode,
   verifyMfaToken,
@@ -242,4 +376,7 @@ export default {
   enableMfa,
   disableMfa,
   getUserMfaStatus,
+  shouldRequireMfaForLogin,
+  createLoginChallenge,
+  verifyLoginChallenge,
 };

@@ -88,10 +88,10 @@ function mapDocumentItem(
 
   return {
     id: document?.id || fallbackId,
-    title: resolveField(document, 'title') || (typeof document?.filename === 'string' ? document.filename : ''),
+    title: resolveField(document, 'documentName') || resolveField(document, 'document_name') || resolveField(document, 'title') || (typeof document?.filename === 'string' ? document.filename : ''),
     filename: typeof document?.filename === 'string' ? document.filename : '',
     url: typeof document?.url === 'string' ? document.url : '',
-    date: typeof document?.date === 'string' ? document.date : '',
+    date: typeof document?.subDesc === 'string' ? document.subDesc : (typeof document?.sub_desc === 'string' ? document.sub_desc : (typeof document?.date === 'string' ? document.date : '')),
     icon: typeof document?.icon === 'string' ? document.icon : fileType || 'pdf',
     fileType,
     year: document?.year != null ? String(document.year) : '',
@@ -166,7 +166,7 @@ export function mapInformationListPresentation(
           relatedArticles: Array.isArray(section.related_articles)
             ? section.related_articles.map((article: Record<string, any>, articleIndex: number) => ({
                 id: article.id || `info-${index}-article-${articleIndex}`,
-                text: resolveField(article, 'title') || resolveField(article, 'text'),
+                text: resolveField(article, 'articleName') || resolveField(article, 'article_name') || resolveField(article, 'title') || resolveField(article, 'text'),
                 url: (typeof article.url === 'string' && article.url) || (typeof article.href === 'string' && article.href) || '#',
               }))
             : [],

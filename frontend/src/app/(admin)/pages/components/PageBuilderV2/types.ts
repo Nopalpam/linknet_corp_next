@@ -125,6 +125,7 @@ export interface HeroSettings {
   buttonText?: string;
   buttonLink?: string;
   showButton?: boolean;
+  ctaList?: Record<string, any>[];
 }
 
 export const DEFAULT_HERO_SETTINGS: HeroSettings = {
@@ -135,6 +136,7 @@ export const DEFAULT_HERO_SETTINGS: HeroSettings = {
   buttonText: 'Get Started',
   buttonLink: '#',
   showButton: true,
+  ctaList: [],
 };
 
 export interface PricingPlan {
@@ -183,6 +185,9 @@ export interface ComponentRegistryEntry {
   description: string;
   icon: string;
   category: string;
+  schemaVersion?: number;
+  fields?: any[];
+  metadata?: Record<string, any>;
   defaultData: Record<string, any>;
 }
 

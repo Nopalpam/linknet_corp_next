@@ -5,6 +5,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 
 import CardEvent from '@/components/base/cards/CardEvent';
 import Intro from '@/components/base/section/Intro';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 const VALID_STATES = ['all', 'upcoming', 'ongoing', 'ended'];
@@ -159,6 +160,8 @@ export default function EventsList({
   pagination: paginationProp = null,
   state = 'all',
   limit = 12,
+  sortBy = 'start_date',
+  sortDirection = 'asc',
   itemsPerRow = 3,
   showPagination = true,
   introData,
@@ -186,8 +189,8 @@ export default function EventsList({
     const qp = new URLSearchParams();
     qp.set('page', String(currentPage));
     qp.set('limit', String(limit));
-    qp.set('sortBy', 'start_date');
-    qp.set('sortOrder', 'asc');
+    qp.set('sortBy', String(sortBy));
+    qp.set('sortOrder', String(sortDirection).toLowerCase() === 'desc' ? 'desc' : 'asc');
     qp.set('locale', String(locale));
 
     const apiState = toApiState(normalizedState);
@@ -214,7 +217,7 @@ export default function EventsList({
     return () => {
       cancelled = true;
     };
-  }, [currentPage, limit, locale, needsFetch, normalizedState]);
+  }, [currentPage, limit, locale, needsFetch, normalizedState, sortBy, sortDirection]);
 
   useEffect(() => {
     setCurrentPage(paginationProp?.currentPage || pageFromUrl || 1);
@@ -235,6 +238,7 @@ export default function EventsList({
     description: '',
     align: 'left',
   };
+  const shouldRenderIntro = hasIntroContent(resolvedIntro);
 
   const handlePageChange = (page) => {
     if (page === activePage) return;
@@ -259,9 +263,11 @@ export default function EventsList({
   return (
     <section className={`bg-white py-16 md:py-24 ${className}`.trim()}>
       <div className="container mx-auto px-4 md:px-0">
-        <div className="mb-10">
-          <Intro {...resolvedIntro} />
-        </div>
+        {shouldRenderIntro && (
+          <div className="mb-10">
+            <Intro {...resolvedIntro} />
+          </div>
+        )}
 
         {isLoading ? (
           <SkeletonGrid itemsPerRow={itemsPerRow} />

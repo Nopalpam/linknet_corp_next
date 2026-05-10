@@ -88,15 +88,15 @@ export default function ItemFormModal({
         setFormData({
           announcementTypeId: typeId,
           announcementSectionId: item.announcementSectionId || "",
-          title: item.title,
+          title: item.title || "",
           subDescription: item.subDescription || "",
           pdfFile: item.pdfFile || "",
           coverImage: item.coverImage || "",
           dataType: item.dataType || undefined,
           auditStatus: item.auditStatus || undefined,
           fileSize: item.fileSize || "",
-          sortOrder: item.sortOrder,
-          isActive: item.isActive,
+          sortOrder: Number(item.sortOrder ?? 0),
+          isActive: item.isActive ?? true,
         });
         setImagePreview(item.coverImage || "");
         updateSelectedType(typeId);
@@ -145,8 +145,6 @@ export default function ItemFormModal({
           ? (e.target as HTMLInputElement).checked
           : name === "sortOrder"
           ? parseInt(value) || 0
-          : value === ""
-          ? undefined
           : value,
     }));
   };
@@ -303,7 +301,7 @@ export default function ItemFormModal({
               type="text"
               id="title"
               name="title"
-              value={formData.title}
+              value={formData.title || ""}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -501,7 +499,7 @@ export default function ItemFormModal({
                 type="number"
                 id="sortOrder"
                 name="sortOrder"
-                value={formData.sortOrder}
+                value={formData.sortOrder ?? 0}
                 onChange={handleChange}
                 min={0}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -515,7 +513,7 @@ export default function ItemFormModal({
               type="checkbox"
               id="isActive"
               name="isActive"
-              checked={formData.isActive}
+              checked={formData.isActive ?? true}
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />

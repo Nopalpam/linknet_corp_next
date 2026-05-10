@@ -4,13 +4,18 @@ import LinknetLink from '../Link';
 
 export default function CardReportHome({
   iconSrc = "/assets/icons/icon-pdf-circle.svg", 
-  title = "Annual Reports",
-  description = "Temukan perjalanan pertumbuhan, strategi, dan pencapaian kami setiap tahunnya.",
-  ctaText = "View More",
-  ctaLink = "#",
-  year = "2025",
+  title = "",
+  description = "",
+  ctaText = "",
+  ctaLink = "",
+  ctaList = [],
+  year = "",
   className = ""
 }) {
+  const primaryCta = Array.isArray(ctaList) && ctaList.length > 0 ? ctaList[0] : null;
+  const label = primaryCta?.label || primaryCta?.text || ctaText;
+  const href = primaryCta?.href || primaryCta?.url || ctaLink;
+
   return (
    <div 
       className={`lnCardReportHome relative flex flex-col rounded-[24px] overflow-hidden w-full max-w-[400px] hover:-translate-y-1 duration-200 transition-transform h-full ${className}`}
@@ -23,7 +28,7 @@ export default function CardReportHome({
         <div className="lnCardReportHome__iconWrap w-full h-auto mb-6">
           <img 
             src={iconSrc} 
-            alt={`${title} icon`} 
+            alt={title ? `${title} icon` : 'Report icon'} 
             className="lnCardReportHome__icon w-12 h-12 object-contain"
           />
         </div>
@@ -38,18 +43,20 @@ export default function CardReportHome({
           {description}
         </p>
 
-        {/* Menggunakan Custom Component <Link> */}
-        <LinknetLink 
-          href={ctaLink || '#'} 
-          variant="secondary-outline" 
-          size='md' 
-          className="lnCardReportHome__cta flex transition-colors"
-        >
-          <span>{ctaText}</span>
-        </LinknetLink>
+        {label && (
+          <LinknetLink 
+            href={href || '#'} 
+            variant={primaryCta?.variant || 'secondary-outline'} 
+            size={primaryCta?.size || 'md'} 
+            className="lnCardReportHome__cta flex transition-colors"
+          >
+            <span>{label}</span>
+          </LinknetLink>
+        )}
       </div>
 
       {/* Bagian Bawah (Footer Kuning) */}
+      {year && (
       <div className="lnCardReportHome__footer py-2 pt-6 -mt-4 w-full flex items-center justify-center"
         style={{ 
           backgroundImage: `url('/assets/bg/yellow-marble.jpg')`,
@@ -61,6 +68,7 @@ export default function CardReportHome({
           {year}
         </span>
       </div>
+      )}
       
     </div>
   );

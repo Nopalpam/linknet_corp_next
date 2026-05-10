@@ -17,6 +17,7 @@ const MfaSetupPage = () => {
   const [secret, setSecret] = useState<string>("");
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [mfaGloballyEnabled, setMfaGloballyEnabled] = useState(false);
+  const [mfaManagedByRealm, setMfaManagedByRealm] = useState(false);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +43,7 @@ const MfaSetupPage = () => {
         if (res.success) {
           setMfaEnabled(res.data.mfaEnabled);
           setMfaGloballyEnabled(res.data.mfaGloballyEnabled);
+          setMfaManagedByRealm(res.data.managedByRealm === true);
           setStep("status");
         }
       } catch (err) {
@@ -221,6 +223,14 @@ const MfaSetupPage = () => {
         </div>
       )}
 
+      {mfaManagedByRealm && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            MFA is managed by the Keycloak realm. Setup and disable actions must be done from Keycloak.
+          </p>
+        </div>
+      )}
+
       {/* Status View */}
       {step === "status" && (
         <div>
@@ -254,7 +264,7 @@ const MfaSetupPage = () => {
             </div>
           </div>
 
-          {mfaEnabled ? (
+          {mfaManagedByRealm ? null : mfaEnabled ? (
             <button
               onClick={() => { setShowDisableModal(true); setError(""); setDisableOtp(["", "", "", "", "", ""]); }}
               className="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20 transition-colors"

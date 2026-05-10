@@ -21,6 +21,7 @@ interface PageRendererProps {
     product?: string | null;
     promo?: string | null;
     source?: string | null;
+    publicSettings?: Record<string, any>;
   };
 }
 
@@ -101,7 +102,7 @@ export default function PageRenderer({ components, locale = 'id', pageContext }:
         // receive the CMS payload so one-to-one synced components can render
         // stored Page Builder data instead of silently falling back to static data.
         const props = entry.mapProps
-          ? entry.mapProps({ data: data || {}, locale, t, styleProps })
+          ? entry.mapProps({ data: data || {}, locale, t, styleProps, pageContext })
           : {
               data: data || {},
               cmsData: data || {},

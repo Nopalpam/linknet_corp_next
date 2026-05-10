@@ -13,9 +13,22 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Intro from '../base/section/Intro';
 import { MILESTONE_DATA } from '@/data/components/milestone';
 import Icon from '../base/Icon';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
+
+function getMilestoneListText(item) {
+  if (!item) return '';
+  if (typeof item === 'string') return item;
+  if (typeof item !== 'object') return String(item);
+
+  const value = item.text ?? item.label ?? item.title;
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.en || value.id || '';
+  return String(value);
+}
 
 export default function Milestone({
   name = 'history',
@@ -94,7 +107,7 @@ export default function Milestone({
 
             {/* Tambahkan class gsap-milestone-item pada Intro */}
             <div className="lnGsapMilestoneItem">
-              {introData && (
+              {hasIntroContent(introData) && (
                   <Intro
                       as={introData.as || "h2"}
                       label={introData.label}
@@ -140,8 +153,13 @@ export default function Milestone({
                 }}
                 className="w-full h-auto !overflow-visible"
             >
-                {items.map((item, index) => (
-                <SwiperSlide key={item.id} className="h-auto">
+                {items.map((item, index) => {
+                  const list = Array.isArray(item.list)
+                    ? item.list.map(getMilestoneListText).filter(Boolean)
+                    : [];
+
+                  return (
+                <SwiperSlide key={item.id || `${item.year || 'milestone'}-${index}`} className="h-auto">
                     {/* EFEK ZIG-ZAG (STAGGER):
                       Index ganjil (1, 3, 5) akan diturunkan menggunakan margin-top.
 
@@ -152,13 +170,11 @@ export default function Milestone({
 
                     {/* Image/Gradient Box */}
                     <div className="relative w-full aspect-[4/5] rounded-[24px] overflow-hidden mb-6 shadow-sm">
-                        {item.image && (
                         <img
-                            src={item.image}
-                            alt={item.year}
+                            src={item.image || '/assets/bg/bg-yellow-gradient.jpg'}
+                            alt={item.year || 'Milestone image'}
                             className="w-full h-full object-cover mix-blend-overlay opacity-80"
                         />
-                        )}
 
                         {/* Tahun di pojok kiri bawah kotak gambar */}
                         <div className="absolute bottom-6 left-6 z-10">
@@ -177,9 +193,9 @@ export default function Milestone({
                         )}
 
                         {/* Render List Numbering (01., 02., dst) */}
-                        {item.list && item.list.length > 0 && (
+                        {list.length > 0 && (
                         <ul className="mt-4 flex flex-col gap-2">
-                            {item.list.map((listItem, i) => (
+                            {list.map((listItem, i) => (
                             <li key={i} className="flex gap-3 text-body-b5 font-medium text-primary leading-snug">
                                 {/* Format angka menjadi 2 digit (01, 02) */}
                                 <span className="text-secondary font-bold shrink-0">
@@ -194,7 +210,8 @@ export default function Milestone({
 
                     </div>
                 </SwiperSlide>
-                ))}
+                  );
+                })}
             </Swiper>
             </div>
         </div>

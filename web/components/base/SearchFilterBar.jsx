@@ -114,6 +114,7 @@ export default function SearchFilterBar({
   filters = [], 
   filterValues = {}, 
   onFilterChange,
+  showSearch = true,
   className = ""
 }) {
   return (
@@ -126,6 +127,7 @@ export default function SearchFilterBar({
     >
       
       {/* 1. SEARCH INPUT */}
+      {showSearch && (
       <label className="flex-1 flex items-center w-full gap-3 cursor-text md:py-2">
         <Icon 
           name="search" 
@@ -141,9 +143,10 @@ export default function SearchFilterBar({
           autoComplete="off"
         />
       </label>
+      )}
 
       {/* 2. DIVIDER */}
-      {filters && filters.length > 0 && (
+      {showSearch && filters && filters.length > 0 && (
         <span className="hidden md:block w-px bg-neutral-100 mx-5 my-2 shrink-0" aria-hidden="true"></span>
       )}
 

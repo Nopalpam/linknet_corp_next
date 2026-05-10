@@ -162,7 +162,7 @@ export default function ModalTVHighlight({
                     </div>
                   </div>
 
-                  <Linknetlink
+                  {/* <Linknetlink
                     href={trailerUrl || '#'}
                     variant="primary-reverse"
                     size="md"
@@ -172,7 +172,7 @@ export default function ModalTVHighlight({
                     className="lnModalTVHighlight_trailer"
                   >
                     Watch Trailer
-                  </Linknetlink>
+                  </Linknetlink> */}
                 </div>
               </div>
             </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import Image from 'next/image';
 import LinknetLink from '../base/Link';
 import SplitText from '../base/text/SplitText';
 
@@ -14,6 +13,32 @@ import { HERO_DATA } from '../../data/components/hero';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
+
+function hasHeroValue(value) {
+  return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+}
+
+function HeroPill({ iconSrc = '', label = '', isDark = false, className = '' }) {
+  if (!hasHeroValue(iconSrc) && !hasHeroValue(label)) return null;
+
+  return (
+    <div className={`lnHero__pill lnGsapHeroItem inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-[2px] border border-neutral-900/5 ${className}`}>
+      {hasHeroValue(iconSrc) && (
+        <img
+          src={iconSrc}
+          alt=""
+          aria-hidden="true"
+          className="lnHero__pillIcon w-4 h-4 object-contain rounded-[1px] shadow-sm"
+        />
+      )}
+      {hasHeroValue(label) && (
+        <span className={`lnHero__pillLabel text-caption-c1 font-medium tracking-wide ${isDark ? 'text-white' : 'text-black'}`}>
+          {label}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function Hero({
   name, // Prop untuk mengambil key dari file data
@@ -77,14 +102,10 @@ export default function Hero({
     badgeLabel: legacyBadgeLabel = "",
     logoSrc = "",
     logoSquare,
-    labelText = "",
     labelIconSrc = "",
     introData,
     title = "",
     description = "",
-    ctaText = "",
-    ctaLink = "#",
-    ctaTarget = "_self",
     ctaList,
     bgColor = "bg-[#FFB800]",
     heroSize = "md",
@@ -92,18 +113,21 @@ export default function Hero({
     bgOverlay: topLevelBgOverlay = false,
   } = data;
 
-  // Resolve intro fields: prefer introData object, fall back to flat fields
-  const resolvedLabel = introData?.label || labelText;
+  // Resolve content from Intro Data. Legacy flat title/description remain only
+  // for static data compatibility.
+  const resolvedLabel = introData?.label || '';
   const resolvedTitle = introData?.title || title;
   const resolvedDescription = introData?.description || description;
 
-  // Normalize CTA list: prefer ctaList array, fall back to single ctaText/ctaLink
-  const normalizedCtaList = Array.isArray(ctaList) && ctaList.length > 0
-    ? ctaList
-    : (ctaText ? [{ text: ctaText, href: ctaLink, target: ctaTarget }] : []);
+  const normalizedCtaList = Array.isArray(ctaList)
+    ? ctaList.filter((cta) => cta && (cta.text || cta.label) && (cta.href || cta.url))
+    : [];
 
-  const badgeIcon = parentProduct?.iconImage || legacyBadgeIcon;
-  const badgeLabel = parentProduct?.productName || legacyBadgeLabel;
+  const hasParentProductConfig = parentProduct && typeof parentProduct === 'object';
+  const badgeIcon = hasParentProductConfig ? parentProduct.iconImage || '' : legacyBadgeIcon;
+  const badgeLabel = hasParentProductConfig ? parentProduct.productName || '' : legacyBadgeLabel;
+  const hasParentProductBadge = hasHeroValue(badgeIcon) || hasHeroValue(badgeLabel);
+  const shouldRenderLabelPill = !hasParentProductConfig && !hasParentProductBadge && (hasHeroValue(resolvedLabel) || hasHeroValue(labelIconSrc));
 
   const {
     bgImage: bgImageDesktop = "",
@@ -186,46 +210,21 @@ export default function Hero({
                     )}
 
                     {/* COMPONENT 2: LABEL PILL */}
-                    {(resolvedLabel || labelIconSrc) && (
-                        <div className="lnGsapHeroItem inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-[2px] border border-neutral-900/5"> {/* Class GSAP */}
-                        {labelIconSrc && (
-                            <img
-                            src={labelIconSrc}
-                            alt="Icon"
-                            className="w-4 h-auto rounded-[1px] shadow-sm"
-                            />
-                        )}
-                        {resolvedLabel && (
-                            <span className={`text-caption-c1 font-medium tracking-wide ${isDark ? 'text-white' : 'text-black'}`}>
-                                {resolvedLabel}
-                            </span>
-                        )}
-                        </div>
+                    {shouldRenderLabelPill && (
+                        <HeroPill
+                            iconSrc={labelIconSrc}
+                            label={resolvedLabel}
+                            isDark={isDark}
+                        />
                     )}
 
                     {/* COMPONENT 3: TITLE (Tidak diberi class GSAP karena sudah ditangani SplitText) */}
-                    {(badgeIcon || badgeLabel) && (
-                        <div className="lnHero__badge mb-1 flex items-center gap-2 lnGsapHeroItem">
-                            {badgeIcon && (
-                                <div className="lnHero__badgeIcon flex h-[32px] w-[32px] items-center justify-center rounded-full bg-white p-2 shadow-md">
-                                    <Image
-                                        src={badgeIcon}
-                                        alt=""
-                                        aria-hidden="true"
-                                        width={18}
-                                        height={18}
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
-                            )}
-
-                            {badgeLabel && (
-                                <span className={`lnHero__badgeLabel text-body-b5 font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                                    {badgeLabel}
-                                </span>
-                            )}
-                        </div>
-                    )}
+                    <HeroPill
+                        iconSrc={badgeIcon}
+                        label={badgeLabel}
+                        isDark={isDark}
+                        className="lnHero__badge mb-1"
+                    />
 
                     {resolvedTitle && (
                         <Tag className={`text-headline-h4 md:text-headline-h3 font-bold tracking-tight drop-shadow-sm ${isDark ? 'text-white text-shadow-md' : 'text-black'}`}>
@@ -253,13 +252,13 @@ export default function Hero({
                         </div>
                     )}
 
-                    {/* COMPONENT 5: CTA BUTTONS (ctaList with fallback to ctaText/ctaLink) */}
+                    {/* COMPONENT 5: CTA BUTTONS */}
                     {normalizedCtaList.length > 0 && (
                         <div className="mt-4 lnGsapHeroItem flex flex-wrap gap-3"> {/* Class GSAP */}
                             {normalizedCtaList.map((cta, index) => (
                                 <LinknetLink
                                     key={cta.id || index}
-                                    href={cta.href || cta.url || '#'}
+                                    href={cta.href || cta.url}
                                     variant={cta.variant || (isDark ? "secondary-outline--white" : "secondary-outline--black")}
                                     size={cta.size || "lg"}
                                     target={cta.target || '_self'}

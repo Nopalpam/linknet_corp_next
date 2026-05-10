@@ -7,6 +7,7 @@ import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigat
 import SearchFilterBar from '@/components/base/SearchFilterBar';
 import Intro from '@/components/base/section/Intro';
 import CardCareer from '../base/cards/CardCareer';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -238,7 +239,7 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
     >
       <div className="container mx-auto px-4 md:px-8 max-w-7xl">
 
-        {introData && (introData.label || introData.title || introData.description) && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-10">
             <Intro
               as={introData.as || 'h2'}

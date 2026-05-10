@@ -29,8 +29,8 @@ import {
 import {
   getDefaultSettings,
   normalizeComponentType,
-  isRegisteredType,
 } from './registry';
+import { normalizeDataDrivenSettings } from './dataDrivenSettings';
 import { pagesService } from '@/services/pages.service';
 import { DEFAULT_SECTION_INTRO } from '../../../../../../../shared/presentation/intro';
 
@@ -210,7 +210,7 @@ function canonicalizeComponentSettings(settings: Record<string, any>) {
   return next;
 }
 
-function normalizeComponentSettings(settings: Record<string, any>, defaults: Record<string, any> | null) {
+function normalizeComponentSettings(componentType: string, settings: Record<string, any>, defaults: Record<string, any> | null) {
   const rest = { ...(settings || {}) };
   const hasSectionIntro = Boolean(settings?.introData || settings?.sectionIntro || settings?.intro);
   const hasSectionConfig = Boolean(
@@ -252,7 +252,23 @@ function normalizeComponentSettings(settings: Record<string, any>, defaults: Rec
   }
 
   const merged = defaults ? deepMergeDefaults(defaults, migrated) : migrated;
-  return canonicalizeComponentSettings(merged);
+  return normalizeDataDrivenSettings(componentType, canonicalizeComponentSettings(merged));
+}
+
+function unwrapSchemaEnvelope(componentType: string, settings: Record<string, any>) {
+  if (
+    settings &&
+    typeof settings === 'object' &&
+    !Array.isArray(settings) &&
+    settings._component === componentType &&
+    settings.data &&
+    typeof settings.data === 'object' &&
+    !Array.isArray(settings.data)
+  ) {
+    return settings.data;
+  }
+
+  return settings;
 }
 
 // =============================================================================
@@ -301,7 +317,7 @@ function pageBuilderReducer(
         id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: action.componentType,
         order: action.index ?? state.components.length,
-        settings: canonicalizeComponentSettings(defaultSettings),
+        settings: normalizeDataDrivenSettings(action.componentType, canonicalizeComponentSettings(defaultSettings)),
         isVisible: true,
       };
 
@@ -503,7 +519,11 @@ export function PageBuilderProvider({
             }
 
             const defaultSettings = getDefaultSettings(normalizedType);
-            const normalizedSettings = normalizeComponentSettings(settings, defaultSettings);
+            const normalizedSettings = normalizeComponentSettings(
+              normalizedType,
+              unwrapSchemaEnvelope(normalizedType, settings),
+              defaultSettings,
+            );
 
             return {
               id: dbComp.id,

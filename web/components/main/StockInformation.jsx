@@ -1,9 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Intro from '../base/section/Intro';
 import SegmentPicker from '../base/SegmentPicker';
 import Icon from '../base/Icon';
+import TradingViewSymbolOverview from '../widgets/TradingViewSymbolOverview';
+import {
+  DEFAULT_STOCK_SYMBOL,
+  fetchStockSnapshot,
+  formatCurrency,
+  formatHistoryDate,
+  formatNumber,
+  formatStockUpdateDate,
+  getTradedValue,
+  normalizeStockSymbol,
+  toTradingViewSymbol,
+} from '@/lib/stockService';
 
 const TABS = [
   { label: 'Information', value: 'information' },
@@ -14,12 +26,9 @@ export default function StockInformation({ config, cmsData = null, className = "
   const [activeTab, setActiveTab] = useState('information');
   const [stockData, setStockData] = useState({ quote: null, history: [] });
   const [isLoading, setIsLoading] = useState(true);
-
-  const tradingViewContainer = useRef(null);
-  const symbol = cmsData?.symbol || 'LINK.JK';
-  const tradingViewSymbol = symbol.includes(':')
-    ? symbol
-    : symbol.replace('.JK', '').replace('IDX-', 'IDX:');
+  const [errorMessage, setErrorMessage] = useState('');
+  const symbol = normalizeStockSymbol(cmsData?.symbol || DEFAULT_STOCK_SYMBOL);
+  const tradingViewSymbol = toTradingViewSymbol(symbol);
   const title = cmsData?.title || 'Dapatkan informasi terkini mengenai harga saham LINK hari ini';
   const {
     sectionId,
@@ -38,143 +47,33 @@ export default function StockInformation({ config, cmsData = null, className = "
   // 1. FETCH DATA DARI LOCAL API
   // =========================================
   useEffect(() => {
+    let mounted = true;
+
     const fetchStockData = async () => {
       setIsLoading(true);
+      setErrorMessage('');
       try {
-        const QUOTE_URL = `/api/stock/quote?symbol=${symbol}`;
+        const snapshot = await fetchStockSnapshot(symbol);
+        if (!mounted) return;
 
-        const pastDate = new Date();
-        pastDate.setDate(pastDate.getDate() - 15);
-        const period1 = pastDate.toISOString().split('T')[0];
-
-        const HISTORY_URL = `/api/stock/historical?symbol=${symbol}&period1=${period1}&interval=1d`;
-
-        const [quoteRes, historyRes] = await Promise.all([
-          fetch(QUOTE_URL),
-          fetch(HISTORY_URL)
-        ]);
-
-        const quoteData = await quoteRes.json();
-        const historyData = await historyRes.json();
-
-        const quoteResult = quoteData.data || quoteData;
-        const historyArray = Array.isArray(historyData) ? historyData : (historyData.data || []);
-
-        const last10Days = historyArray.slice(-10).reverse();
-
-        setStockData({
-          quote: quoteResult,
-          history: last10Days
-        });
+        setStockData(snapshot);
       } catch (error) {
         console.error("Gagal mengambil data saham:", error);
+        if (!mounted) return;
+
+        setStockData({ quote: null, history: [] });
+        setErrorMessage(error instanceof Error ? error.message : 'Failed to fetch stock data');
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
     fetchStockData();
-  }, []);
 
-  // =========================================
-  // 2. INJEKSI SCRIPT TRADINGVIEW
-  // =========================================
-  useEffect(() => {
-    if (tradingViewContainer.current && tradingViewContainer.current.children.length === 0) {
-      const script = document.createElement("script");
-      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
-      script.type = "text/javascript";
-      script.async = true;
-      script.innerHTML = JSON.stringify({
-        "lineWidth": 2,
-        "lineType": 0,
-        "chartType": "area",
-        "fontColor": "rgb(106, 109, 120)",
-        "gridLineColor": "rgba(46, 46, 46, 0.06)",
-        "volumeUpColor": "rgba(34, 171, 148, 0.5)",
-        "volumeDownColor": "rgba(247, 82, 95, 0.5)",
-        "backgroundColor": "#ffffff",
-        "widgetFontColor": "#0F0F0F",
-        "upColor": "#22ab94",
-        "downColor": "#f7525f",
-        "borderUpColor": "#22ab94",
-        "borderDownColor": "#f7525f",
-        "wickUpColor": "#22ab94",
-        "wickDownColor": "#f7525f",
-        "colorTheme": "light",
-        "isTransparent": false,
-        "locale": "en",
-        "chartOnly": false,
-        "scalePosition": "right",
-        "scaleMode": "Normal",
-        "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-        "valuesTracking": "1",
-        "changeMode": "price-and-percent",
-        "symbols": [[`${tradingViewSymbol}|${cmsData?.interval || '1D'}`]],
-        "dateRanges": ["1d|1","1m|30","3m|60","12m|1D","60m|1W","all|1M"],
-        "fontSize": "10",
-        "headerFontSize": "medium",
-        "autosize": true,
-        "width": "100%",
-        "height": "100%",
-        "noTimeScale": false,
-        "hideDateRanges": false,
-        "hideMarketStatus": false,
-        "hideSymbolLogo": false
-      });
-      tradingViewContainer.current.appendChild(script);
-    }
-  }, []);
-
-  // =========================================
-  // 3. FORMATTER HELPER (Sesuai Gambar)
-  // =========================================
-
-  // Format harga dengan IDR (contoh: IDR 2.890)
-  const formatCurrency = (val) => {
-    if (val === null || val === undefined) return '-';
-    return `IDR ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(val)}`;
-  };
-
-  // Format angka murni tanpa IDR (contoh: 92.872.355.000)
-  const formatNumber = (val) => {
-    if (val === null || val === undefined) return '-';
-    return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(val);
-  };
-
-  // Format Header Tanggal: "Sel, 10 Mar 2026 - 16:11:32 WIB"
-  const formatUpdateDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    return `${dayName}, ${day} ${month} ${year} - ${hours}:${minutes}:${seconds} WIB`;
-  };
-
-  // Format Tabel History: "1 Januari 2026"
-  const formatHistoryDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
-  };
-
-  // Fallback untuk 'Value' (Transaksi = Volume * Harga) jika field Value tidak ada
-  const getTradedValue = (quote) => {
-    if (quote.value) return quote.value;
-    const vol = quote.regularMarketVolume || 0;
-    const price = quote.regularMarketPrice || 0;
-    return vol * price;
-  };
+    return () => {
+      mounted = false;
+    };
+  }, [symbol]);
 
   return (
     <section
@@ -199,10 +98,12 @@ export default function StockInformation({ config, cmsData = null, className = "
         {/* --- TRADINGVIEW WIDGET --- */}
         <div className="mb-10">
             <div className="w-full h-[400px] md:h-[500px] mb-2 rounded-[24px] overflow-hidden shadow-sm border border-neutral-100">
-            <div className="tradingview-widget-container h-full w-full">
-                <div ref={tradingViewContainer} className="tradingview-widget-container__widget h-full w-full"></div>
-
-            </div>
+              <TradingViewSymbolOverview
+                symbol={tradingViewSymbol}
+                interval={cmsData?.interval || '1D'}
+                locale={cmsData?.locale || 'en'}
+                theme={cmsData?.theme || 'light'}
+              />
             </div>
             <div className="tradingview-widget-copyright text-center py-2 text-xs text-neutral-400 bg-white">
             <a href="https://www.tradingview.com/symbols/IDX-LINK/" rel="noopener nofollow" target="_blank" className="hover:text-blue-500 transition-colors">
@@ -228,7 +129,7 @@ export default function StockInformation({ config, cmsData = null, className = "
             </div>
           ) : !stockData.quote ? (
             <div className="py-20 text-center text-red-500 font-medium">
-              Data saham belum tersedia.
+              {errorMessage || 'Data saham belum tersedia.'}
             </div>
           ) : (
             <>
@@ -239,7 +140,7 @@ export default function StockInformation({ config, cmsData = null, className = "
                   {/* Info Tanggal (Di luar border) */}
                   <div className="flex justify-center items-center gap-2 text-body-b5 text-secondary bg-light-1 pt-[12px] pb-[36px] px-6 md:px-8 -mb-[24px]">
                     <Icon name="info" />
-                    Update per-tanggal {formatUpdateDate(stockData.quote.regularMarketTime || new Date())}
+                    Update per-tanggal {formatStockUpdateDate(stockData.quote.regularMarketTime || new Date())}
                   </div>
 
                   {/* Kotak Putih Border */}
@@ -319,7 +220,7 @@ export default function StockInformation({ config, cmsData = null, className = "
         {/* --- FOOTER NOTE SECTION --- */}
         <div className="mt-6 text-center">
           <p className="text-caption-c1 text-secondary">
-            This API uses <a href="https://www.npmjs.com/package/yahoo-finance2" target="_blank" className="underline hover:text-neutral-600 transition-colors">yahoo-finance2</a> under the hood.
+            Data saham disajikan melalui local stock API dengan rate limit dan fallback aman.
           </p>
         </div>
 

@@ -11,6 +11,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import CardAward from '../base/cards/CardAward';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // =========================================
 // IMPORT DUA SUMBER DATA BERBEDA
@@ -140,7 +141,7 @@ export default function AwardSneakPeek({
       <div className="container">
 
         {/* --- INTRO SECTION --- */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-10 md:mb-16 lnGsapAwardItem">
             <Intro
               as={introData.as || "h2"}

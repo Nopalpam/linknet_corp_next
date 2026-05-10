@@ -6,6 +6,7 @@ import Button from '@/components/base/Button';
 import Icon from '@/components/base/Icon';
 import Intro from '@/components/base/section/Intro';
 import { useModalFormEventRegister } from '@/components/base/modals/ModalFormEventRegister';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const STATUS_CONFIG = {
   upcoming: {
@@ -90,6 +91,10 @@ export default function EventHero({
       description: '',
       align: 'left',
     };
+
+    if (!hasIntroContent(resolvedIntro)) {
+      return null;
+    }
 
     return (
       <section

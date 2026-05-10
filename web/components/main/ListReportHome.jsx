@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Intro from '../base/section/Intro';
 import SegmentPicker from '../base/SegmentPicker';
 import CardReportHome from '../base/cards/CardReportHome';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Import Swiper React components & styles
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -18,6 +19,43 @@ import { LIST_REPORT_HOME_DATA } from '@/data/components/listReportHome';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
+
+function firstValue(source, keys, fallback = '') {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return fallback;
+}
+
+function normalizeCtaList(item = {}) {
+  const ctaSource = item.ctaList || item.cta_list || item.ctaButtons || item.cta_buttons;
+  if (Array.isArray(ctaSource)) {
+    return ctaSource.map((cta, index) => ({
+      id: cta.id || `cta-${index}`,
+      label: firstValue(cta, ['label', 'text', 'ctaText', 'cta_text']),
+      text: firstValue(cta, ['text', 'label', 'ctaText', 'cta_text']),
+      href: firstValue(cta, ['href', 'url', 'ctaLink', 'cta_link'], '#'),
+      variant: cta.variant || 'secondary-outline',
+      size: cta.size || 'md',
+    })).filter((cta) => cta.label || cta.text || cta.href);
+  }
+
+  const label = firstValue(item, ['ctaText', 'cta_text', 'buttonText', 'button_text']);
+  const href = firstValue(item, ['ctaLink', 'cta_link', 'buttonLink', 'button_link'], '');
+  return label || href ? [{ label, text: label, href: href || '#', variant: 'secondary-outline', size: 'md' }] : [];
+}
+
+function normalizeReportHomeItem(item = {}, index = 0) {
+  return {
+    id: item.id || `report-home-${index}`,
+    iconSrc: firstValue(item, ['iconSrc', 'icon_src', 'icon']),
+    title: firstValue(item, ['title']),
+    desc: firstValue(item, ['desc', 'description']),
+    ctaList: normalizeCtaList(item),
+    year: firstValue(item, ['year']),
+  };
+}
 
 export default function ListReportHome({
   name,
@@ -112,7 +150,9 @@ export default function ListReportHome({
   };
 
   // Mengambil daftar array card sesuai dengan tab yang sedang aktif
-  const activeItems = items[activeTab] || [];
+  const activeItems = Array.isArray(items?.[activeTab])
+    ? items[activeTab].map(normalizeReportHomeItem)
+    : [];
 
   return (
     <section
@@ -131,7 +171,7 @@ export default function ListReportHome({
 
           {/* Kiri: Intro Title */}
           <div className="w-full lnGsapReportHeader">
-            {introData && (
+            {hasIntroContent(introData) && (
               <Intro
                 as={introData.as || "h2"}
                 label={introData.label}
@@ -180,9 +220,8 @@ export default function ListReportHome({
                     <CardReportHome
                       iconSrc={item.iconSrc}
                       title={item.title}
-                      description={item.description}
-                      ctaText={item.ctaText}
-                      ctaLink={item.ctaLink}
+                      description={item.desc}
+                      ctaList={item.ctaList}
                       year={item.year}
                       className="w-full h-full"
                     />

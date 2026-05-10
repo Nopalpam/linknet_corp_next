@@ -79,7 +79,14 @@ export function SortableManagementRow({
       {/* Position EN */}
       <td className="px-4 py-3">
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          {management.position || "-"}
+          {management.positionEn || management.position || "-"}
+        </span>
+      </td>
+
+      {/* Position ID */}
+      <td className="px-4 py-3">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {management.positionId || management.position || "-"}
         </span>
       </td>
 

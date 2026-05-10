@@ -39,6 +39,34 @@ export interface UpdateComponentVisibilityData {
   businessUnit?: string;
 }
 
+export interface ComponentSchemaSyncImpact {
+  pageId: string;
+  pageTitle: string;
+  pageSlug: string;
+  componentId: string;
+  componentType: string;
+  order: number;
+  currentVersion: number;
+  targetVersion: number;
+  changed: boolean;
+  operations: string[];
+  errors: string[];
+  warnings: string[];
+}
+
+export interface ComponentSchemaSyncResult {
+  dryRun: boolean;
+  totalPages: number;
+  totalComponents: number;
+  outdatedComponents: number;
+  changedComponents: number;
+  failedComponents: number;
+  targetVersions: Record<string, number>;
+  impacts: ComponentSchemaSyncImpact[];
+  syncedAt?: string;
+  syncedBy?: string;
+}
+
 class ComponentVisibilityService extends BaseService {
   private baseUrl = '/cms/component-visibility';
 
@@ -123,6 +151,18 @@ class ComponentVisibilityService extends BaseService {
    */
   async syncFromRegistry(): Promise<{ success: boolean; synced: number }> {
     return this.fetchWithAuth(this.getApiUrl(`${this.baseUrl}/sync`), {
+      method: 'POST',
+    });
+  }
+
+  async dryRunSchemaSync(): Promise<{ success: boolean; data: ComponentSchemaSyncResult }> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/pages/components/schema-sync/dry-run'), {
+      method: 'POST',
+    });
+  }
+
+  async syncAllSchemas(): Promise<{ success: boolean; message: string; data: ComponentSchemaSyncResult }> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/pages/components/schema-sync'), {
       method: 'POST',
     });
   }

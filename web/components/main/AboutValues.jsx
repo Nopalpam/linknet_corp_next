@@ -14,6 +14,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CardProduct from '../base/cards/CardProduct'; // Sesuaikan path
 import Intro from '../base/section/Intro'; // Sesuaikan path
 import { ABOUT_VALUES_DATA } from '@/data/components/aboutValues'; // Sesuaikan path
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -91,7 +92,7 @@ export default function AboutValues({
         {/* ========================================= */}
         {/* SECTION INTRO */}
         {/* ========================================= */}
-        {introData && (
+        {hasIntroContent(introData) && (
           // Tambahkan class gsap-value-item pada wrapper Intro
           <div className="mb-10 md:mb-12 lnGsapValueItem">
             <Intro
@@ -137,6 +138,7 @@ export default function AboutValues({
                       logo={val.logo}
                       title={val.title}
                       desc={val.desc}
+                      ctaList={val.ctaList}
                       bodyTitle={val.bodyTitle}
                       list={(val.list || []).map((item) => ({
                         ...item,

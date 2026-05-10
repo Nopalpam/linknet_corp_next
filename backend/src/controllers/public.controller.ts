@@ -1,6 +1,15 @@
 import { Request, Response } from 'express';
 import { ContentStatus, Prisma, PrismaClient, PageStatus } from '@prisma/client';
 import { isMainComponent, ALL_COMPONENT_TYPES } from '../constants/componentDefaults';
+import { syncComponentInstance } from '../pageBuilder/migrationEngine';
+import { getComponentSchema } from '../pageBuilder/schemaRegistry';
+import { MapCoverageService } from '../services/mapCoverage.service';
+import {
+  buildStateWhere as buildEventStateWhere,
+  EVENT_LIST_INCLUDE,
+  EventPublicState,
+  serializeEventList,
+} from '../services/event.service';
 
 const prisma = new PrismaClient();
 
@@ -79,16 +88,33 @@ const toJsonSafeValue = (value: any): any => {
   return value;
 };
 
-const getNewsOrderBy = (order: string | undefined): any => {
-  switch (order) {
-    case 'oldest':
-      return { news_date: 'asc' };
-    case 'alphabetical':
-      return { title_en: 'asc' };
-    case 'latest':
-    default:
-      return { news_date: 'desc' };
-  }
+const isPlainObject = (value: any): value is Record<string, any> => (
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+);
+
+const getNewsOrderBy = (configOrOrder: Record<string, any> | string | undefined): any => {
+  const config = typeof configOrOrder === 'object' && configOrOrder !== null ? configOrOrder : {};
+  const legacyOrder = typeof configOrOrder === 'string' ? configOrOrder : undefined;
+  const sort = readString(config, ['sort_by', 'sortBy', 'sort', 'order'], legacyOrder || 'news_date').toLowerCase();
+  const sortOrder = readSortOrder(config, sort === 'oldest' ? 'asc' : 'desc');
+
+  if (sort === 'oldest') return { news_date: 'asc' };
+  if (sort === 'latest') return { news_date: 'desc' };
+  if (sort === 'alphabetical' || sort === 'title') return { title_en: 'asc' };
+
+  const fieldMap: Record<string, string> = {
+    created_at: 'created_at',
+    createdat: 'created_at',
+    date: 'news_date',
+    news_date: 'news_date',
+    newsdate: 'news_date',
+    published_at: 'published_at',
+    publishedat: 'published_at',
+    updated_at: 'updated_at',
+    updatedat: 'updated_at',
+  };
+
+  return { [fieldMap[sort] || 'news_date']: sortOrder };
 };
 
 const getConfiguredNewsIds = (config: any): string[] => {
@@ -122,6 +148,468 @@ const publicNewsWhere = (now: Date, extra: Prisma.newsWhereInput = {}): Prisma.n
   ...extra,
 });
 
+const readConfigValue = (config: Record<string, any>, keys: string[]) => (
+  keys.map((key) => config[key]).find((value) => value !== undefined && value !== null && value !== '')
+);
+
+const readString = (config: Record<string, any>, keys: string[], fallback = ''): string => {
+  const value = readConfigValue(config, keys);
+  return typeof value === 'string' ? value.trim() : value == null ? fallback : String(value).trim();
+};
+
+const readBoolean = (config: Record<string, any>, keys: string[], fallback = false): boolean => {
+  const value = readConfigValue(config, keys);
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+  if (typeof value === 'number') return value === 1;
+  return fallback;
+};
+
+const readNumber = (
+  config: Record<string, any>,
+  keys: string[],
+  fallback: number,
+  min = 1,
+  max = 100
+): number => {
+  const value = Number(readConfigValue(config, keys));
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(Math.trunc(value), min), max);
+};
+
+const readLimit = (config: Record<string, any>, fallback = 12, max = 100) => readNumber(
+  config,
+  ['limit', 'max_data', 'maxData', 'per_page', 'perPage', 'items_per_page', 'itemsPerPage'],
+  fallback,
+  1,
+  max
+);
+
+const readPage = (config: Record<string, any>) => readNumber(config, ['page', 'currentPage', 'current_page'], 1, 1, 10000);
+
+const readSortOrder = (config: Record<string, any>, fallback: Prisma.SortOrder = 'desc'): Prisma.SortOrder => (
+  readString(config, ['sort_direction', 'sortDirection', 'sort_order', 'sortOrder', 'direction'], fallback).toLowerCase() === 'asc' ? 'asc' : 'desc'
+);
+
+const buildPagination = (page: number, limit: number, total: number) => ({
+  currentPage: page,
+  totalPages: Math.ceil(total / limit) || 1,
+  totalItems: total,
+  itemsPerPage: limit,
+});
+
+const getEventOrderBy = (config: Record<string, any>): Prisma.eventsOrderByWithRelationInput => {
+  const sort = readString(config, ['sort_by', 'sortBy', 'sort', 'sorting', 'order'], 'start_date').toLowerCase();
+  const sortOrder = readSortOrder(config, sort === 'oldest' ? 'asc' : 'desc');
+  const fieldMap: Record<string, keyof Prisma.eventsOrderByWithRelationInput> = {
+    alphabetical: 'title',
+    created_at: 'created_at',
+    createdat: 'created_at',
+    date: 'start_date',
+    latest: 'start_date',
+    newest: 'created_at',
+    old: 'start_date',
+    oldest: 'start_date',
+    start_date: 'start_date',
+    startdate: 'start_date',
+    title: 'title',
+    updated_at: 'updated_at',
+    updatedat: 'updated_at',
+  };
+  const field = fieldMap[sort] || 'start_date';
+  const direction = sort === 'oldest' ? 'asc' : sort === 'alphabetical' ? 'asc' : sortOrder;
+  return { [field]: direction } as Prisma.eventsOrderByWithRelationInput;
+};
+
+const getReportOrderBy = (config: Record<string, any>) => {
+  const sort = readString(config, ['sort_by', 'sortBy', 'sort', 'sorting', 'order'], 'year').toLowerCase();
+  const sortOrder = readSortOrder(config, sort === 'oldest' ? 'asc' : 'desc');
+
+  if (sort === 'alphabetical' || sort === 'title') {
+    return [{ title: 'asc' as const }];
+  }
+
+  if (sort === 'published_at' || sort === 'publishedat') {
+    return [{ published_at: sortOrder }, { year: sortOrder }, { sort_order: 'asc' as const }];
+  }
+
+  if (sort === 'sort_order' || sort === 'sortorder') {
+    return [{ sort_order: sortOrder }, { year: 'desc' as const }];
+  }
+
+  const direction = sort === 'oldest' ? 'asc' : sort === 'latest' ? 'desc' : sortOrder;
+  return [
+    { year: direction },
+    { published_at: direction },
+    { created_at: direction },
+    { sort_order: 'asc' as const },
+  ];
+};
+
+const serializeReport = (report: any) => ({
+  id: report.id,
+  title: report.title || report.lnCardReport__title || '',
+  lnCardReport__title: report.lnCardReport__title || report.title || '',
+  description: report.description,
+  subDescription: report.description || report.subDescription || report.sub_description || '',
+  sub_description: report.description || report.subDescription || report.sub_description || '',
+  image: report.cover_image || report.thumbnail || '',
+  year: report.year,
+  period: report.period,
+  fileSize: report.file_size || '',
+  file_size: report.file_size || '',
+  downloadUrl: report.file_url || report.pdf_file || '',
+  download_url: report.file_url || report.pdf_file || '',
+  fileUrl: report.file_url || report.pdf_file || '',
+  dataType: report.data_type || '',
+  data_type: report.data_type || '',
+  reportType: report.report_types?.name || '',
+  report_type: report.report_types?.name || '',
+  sectionName: report.report_sections?.name || '',
+  section_name: report.report_sections?.name || '',
+  auditStatus: report.audit_status || '',
+  category: report.report_sections?.name || report.report_types?.name || '',
+  date: report.period || (report.year ? String(report.year) : ''),
+  slug: report.slug,
+});
+
+const serializeReports = (reports: any[]) => reports.map(serializeReport);
+
+const serializeHomeReportCard = (report: any) => ({
+  id: report.id,
+  iconSrc: '/assets/icons/pdf-circle.svg',
+  title: report.report_types?.name || report.report_sections?.name || report.title || '',
+  description: report.report_sections?.description || report.description || report.title || '',
+  ctaText: 'View More',
+  ctaLink: report.file_url || report.pdf_file || report.slug || '#',
+  year: report.year ? String(report.year) : '',
+});
+
+const serializeHomeAnnouncementCard = (announcement: any) => ({
+  id: announcement.id,
+  iconSrc: '/assets/icons/pdf-circle.svg',
+  title: announcement.announcement_types?.name || announcement.announcement_sections?.name || announcement.title || '',
+  description: announcement.description || announcement.title || '',
+  ctaText: 'View More',
+  ctaLink: announcement.pdf_file || announcement.file_url || announcement.slug || '#',
+  year: announcement.created_at ? String(new Date(announcement.created_at).getFullYear()) : '',
+});
+
+async function fetchEventsComponentData(config: Record<string, any>, related = false) {
+  const page = related ? 1 : readPage(config);
+  const limit = readLimit(config, related ? 4 : 12, 100);
+  const locale = readString(config, ['locale', 'lang'], 'en');
+  const currentEventId = readString(config, ['current_event_id', 'currentEventId']);
+  const currentEventSlug = readString(config, ['current_event_slug', 'currentEventSlug']);
+  const state = readString(config, ['state', 'status_filter', 'statusFilter']);
+
+  const where: Prisma.eventsWhereInput = {
+    status: ContentStatus.PUBLISHED,
+  };
+
+  const exclude = [
+    ...(currentEventId ? [currentEventId] : []),
+  ];
+
+  const notClauses: Prisma.eventsWhereInput[] = [];
+  if (exclude.length) notClauses.push({ id: { in: exclude } });
+  if (currentEventSlug) notClauses.push({ slug: currentEventSlug });
+  if (notClauses.length) where.NOT = notClauses;
+
+  const eventState = state === 'past' ? 'ended' : state;
+  if (['upcoming', 'ongoing', 'ended'].includes(eventState)) {
+    const stateWhere = buildEventStateWhere(eventState as EventPublicState);
+    if (stateWhere) {
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), stateWhere];
+    }
+  }
+
+  const skip = related ? 0 : (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    prisma.events.findMany({
+      where,
+      include: EVENT_LIST_INCLUDE,
+      skip,
+      take: limit,
+      orderBy: getEventOrderBy(config),
+    }),
+    prisma.events.count({ where }),
+  ]);
+
+  return {
+    events: serializeEventList(items, locale),
+    pagination: buildPagination(page, limit, total),
+  };
+}
+
+async function buildReportWhere(config: Record<string, any>, now: Date): Promise<Prisma.reportsWhereInput> {
+  const typeSlug = readString(config, ['report_type_slug', 'reportTypeSlug', 'type_slug', 'typeSlug', 'category_slug', 'categorySlug']);
+  const sectionSlug = readString(config, ['report_section_slug', 'reportSectionSlug', 'section_slug', 'sectionSlug']);
+
+  const where: Prisma.reportsWhereInput = {
+    status: ContentStatus.PUBLISHED,
+    is_active: true,
+    deleted_at: null,
+    AND: [{ OR: [{ published_at: null }, { published_at: { lte: now } }] }],
+  };
+
+  const typeId = readString(config, ['report_type_id', 'reportTypeId', 'type_id', 'typeId', 'category_id', 'categoryId']);
+  const sectionId = readString(config, ['report_section_id', 'reportSectionId', 'section_id', 'sectionId']);
+
+  if (typeId) {
+    where.type_id = typeId;
+  } else if (typeSlug) {
+    where.report_types = { is: { slug: typeSlug } };
+  }
+
+  if (sectionId) {
+    where.section_id = sectionId;
+  } else if (sectionSlug) {
+    where.report_sections = { is: { slug: sectionSlug } };
+  }
+
+  return where;
+}
+
+async function fetchReportsComponentData(config: Record<string, any>, mode: 'grid' | 'part' | 'home') {
+  const now = await getDatabaseNow();
+  const limit = readLimit(config, mode === 'home' ? 12 : 9, mode === 'home' ? 200 : 100);
+  const page = readPage(config);
+  const where = await buildReportWhere(config, now);
+
+  if (mode === 'home') {
+    const [types, reports, announcements] = await Promise.all([
+      prisma.reportType.findMany({
+        where: { isActive: true, deletedAt: null },
+        orderBy: { position: 'asc' },
+      }),
+      prisma.reports.findMany({
+        where,
+        include: { report_types: true, report_sections: true },
+        orderBy: getReportOrderBy(config),
+        take: limit,
+      }),
+      prisma.announcements.findMany({
+        where: {
+          status: ContentStatus.PUBLISHED,
+          is_active: true,
+          deleted_at: null,
+        },
+        include: { announcement_sections: { include: { announcement_types: true } }, announcement_types: true },
+        orderBy: getAnnouncementOrderBy(config),
+        take: limit,
+      }),
+    ]);
+
+    const configuredTabs = Array.isArray(config.tabs) && config.tabs.length > 0
+      ? config.tabs
+      : [
+          { label: 'Report', value: 'report' },
+          { label: 'Announcement', value: 'announcement' },
+        ];
+    const manualItems = isPlainObject(config.items) ? config.items : {};
+    const hasManualItems = Object.values(manualItems).some((value) => Array.isArray(value));
+    const reportItems = hasManualItems && Array.isArray(manualItems.report)
+      ? manualItems.report
+      : reports.map(serializeHomeReportCard);
+    const announcementItems = hasManualItems && Array.isArray(manualItems.announcement)
+      ? manualItems.announcement
+      : announcements.map(serializeHomeAnnouncementCard);
+    const items = configuredTabs.reduce<Record<string, any[]>>((acc, tab) => {
+      const value = String(tab.value || '').trim();
+      if (!value) return acc;
+      if (value === 'report') acc[value] = reportItems;
+      else if (value === 'announcement') acc[value] = announcementItems;
+      else if (hasManualItems) acc[value] = Array.isArray(manualItems[value]) ? manualItems[value] : [];
+      else {
+        acc[value] = serializeReports(reports.filter((report) => report.report_types?.slug === value));
+      }
+      return acc;
+    }, {});
+
+    return { tabs: configuredTabs.length > 0 ? configuredTabs : types.map((type) => ({ label: type.name, value: type.slug })), items };
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.reports.findMany({
+      where,
+      include: { report_types: true, report_sections: true },
+      orderBy: getReportOrderBy(config),
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.reports.count({ where }),
+  ]);
+  const serializedItems = serializeReports(items);
+
+  if (mode === 'part') {
+    const first = items[0];
+    return {
+      id: first?.report_sections?.slug || first?.report_types?.slug || readString(config, ['sectionId', 'section_id'], 'reports'),
+      header: {
+        title: first?.report_sections?.name || first?.report_types?.name || readString(config, ['header_title', 'headerTitle', 'title'], 'Reports'),
+        desc: first?.report_sections?.description || first?.report_types?.description || readString(config, ['header_description', 'headerDescription', 'description']),
+      },
+      items: serializedItems,
+    };
+  }
+
+  return {
+    items: serializedItems,
+    pagination: buildPagination(page, limit, total),
+  };
+}
+
+async function fetchReportListComponentData(config: Record<string, any>) {
+  const now = await getDatabaseNow();
+  const limit = readLimit(config, 12, 200);
+  const page = readPage(config);
+  const where = await buildReportWhere(config, now);
+
+  const [reports, total, types, sections] = await Promise.all([
+    prisma.reports.findMany({
+      where,
+      include: { report_types: true, report_sections: true },
+      orderBy: getReportOrderBy(config),
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.reports.count({ where }),
+    prisma.reportType.findMany({
+      where: { isActive: true, deletedAt: null },
+      orderBy: { position: 'asc' },
+    }),
+    prisma.reportSection.findMany({
+      where: { isActive: true, deletedAt: null },
+      include: { report_types: true },
+      orderBy: { position: 'asc' },
+    }),
+  ]);
+
+  const groupsById = new Map<string, any>();
+
+  reports.forEach((report: any) => {
+    const section = report.report_sections;
+    const type = report.report_types;
+    const groupId = section?.id || type?.id || 'reports';
+
+    if (!groupsById.has(groupId)) {
+      groupsById.set(groupId, {
+        id: groupId,
+        header: {
+          title: section?.name || type?.name || 'Reports',
+          desc: section?.description || type?.description || '',
+          date: report.published_at || report.created_at || '',
+        },
+        items: [],
+      });
+    }
+
+    groupsById.get(groupId).items.push(serializeReport(report));
+  });
+
+  return {
+    groups: Array.from(groupsById.values()),
+    items: serializeReports(reports),
+    types,
+    sections,
+    pagination: buildPagination(page, limit, total),
+  };
+}
+
+const getAnnouncementOrderBy = (config: Record<string, any>) => {
+  const sort = readString(config, ['sort_by', 'sortBy', 'sort', 'order'], 'created_at').toLowerCase();
+  const sortOrder = readSortOrder(config, sort === 'oldest' ? 'asc' : 'desc');
+
+  if (sort === 'alphabetical' || sort === 'title') {
+    return [{ title: 'asc' as const }];
+  }
+
+  if (sort === 'sort_order' || sort === 'sortorder') {
+    return [{ sort_order: sortOrder }, { created_at: 'desc' as const }];
+  }
+
+  return [{ created_at: sortOrder }, { sort_order: 'asc' as const }];
+};
+
+function buildAnnouncementWhere(config: Record<string, any>): Prisma.announcementsWhereInput {
+  const typeId = readString(config, ['announcement_type_id', 'announcementTypeId', 'type_id', 'typeId', 'category_id', 'categoryId']);
+  const sectionId = readString(config, ['announcement_section_id', 'announcementSectionId', 'section_id', 'sectionId']);
+  const typeSlug = readString(config, ['announcement_type_slug', 'announcementTypeSlug', 'type_slug', 'typeSlug', 'category_slug', 'categorySlug']);
+  const sectionSlug = readString(config, ['announcement_section_slug', 'announcementSectionSlug', 'section_slug', 'sectionSlug']);
+
+  const where: Prisma.announcementsWhereInput = {
+    status: ContentStatus.PUBLISHED,
+    is_active: true,
+    deleted_at: null,
+  };
+  const and: Prisma.announcementsWhereInput[] = [];
+
+  if (typeId) {
+    and.push({
+      OR: [
+        { type_id: typeId },
+        { announcement_sections: { is: { type_id: typeId } } },
+      ],
+    });
+  } else if (typeSlug) {
+    and.push({
+      OR: [
+        { announcement_types: { is: { slug: typeSlug } } },
+        { announcement_sections: { is: { announcement_types: { is: { slug: typeSlug } } } } },
+      ],
+    });
+  }
+
+  if (sectionId) {
+    and.push({ section_id: sectionId });
+  } else if (sectionSlug) {
+    and.push({ announcement_sections: { is: { slug: sectionSlug } } });
+  }
+
+  if (and.length) {
+    where.AND = and;
+  }
+
+  return where;
+}
+
+async function fetchAnnouncementListComponentData(config: Record<string, any>) {
+  const latestOnly = readBoolean(config, ['latest_only', 'latestOnly'], false);
+  const page = latestOnly ? 1 : readPage(config);
+  const limit = latestOnly ? 1 : readLimit(config, 10, 100);
+  const where = buildAnnouncementWhere(config);
+
+  const [announcements, total, types, sections] = await Promise.all([
+    prisma.announcements.findMany({
+      where,
+      include: { announcement_sections: { include: { announcement_types: true } }, announcement_types: true },
+      orderBy: getAnnouncementOrderBy(config),
+      skip: latestOnly ? 0 : (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.announcements.count({ where }),
+    prisma.announcementType.findMany({
+      where: { isActive: true, deletedAt: null },
+      orderBy: { position: 'asc' },
+    }),
+    prisma.announcementSection.findMany({
+      where: { isActive: true, deletedAt: null },
+      include: { announcement_types: true },
+      orderBy: { position: 'asc' },
+    }),
+  ]);
+
+  return {
+    announcements,
+    items: announcements,
+    types,
+    sections,
+    pagination: buildPagination(page, limit, total),
+  };
+}
+
 // ============================================================================
 // MAIN COMPONENT DATA FETCHERS
 // ============================================================================
@@ -136,9 +624,9 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         const featuredCount = componentConfig.featured_count || 1;
         const gridCount = componentConfig.grid_count || 4;
         const totalCount = featuredCount + gridCount;
-        const source = componentConfig.source || componentConfig.data_source || 'cms_highlights';
+        const source = componentConfig.source || 'cms_highlights';
         const selectedNewsIds = getConfiguredNewsIds(componentConfig);
-        const orderBy = getNewsOrderBy(componentConfig.order);
+        const orderBy = getNewsOrderBy(componentConfig);
 
         if (source === 'selected_news' && selectedNewsIds.length > 0) {
           const selectedNews = await prisma.news.findMany({
@@ -164,30 +652,54 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
           take: totalCount,
         });
         const highlightedNews = highlights.map((h: any) => h.news);
-        const sortedHighlightedNews = ['latest', 'oldest', 'alphabetical'].includes(componentConfig.order)
+        const highlightSort = readString(componentConfig, ['sort_by', 'sortBy', 'sort', 'order'], 'news_date').toLowerCase();
+        const highlightDirection = readSortOrder(componentConfig, 'desc');
+        const sortedHighlightedNews = ['news_date', 'published_at', 'created_at', 'latest', 'oldest', 'alphabetical', 'title'].includes(highlightSort)
           ? [...highlightedNews].sort((a: any, b: any) => {
-              if (componentConfig.order === 'alphabetical') {
+              if (highlightSort === 'alphabetical' || highlightSort === 'title') {
                 return String(a.title_en || '').localeCompare(String(b.title_en || ''));
               }
-              const left = new Date(a.news_date || a.created_at || 0).getTime();
-              const right = new Date(b.news_date || b.created_at || 0).getTime();
-              return componentConfig.order === 'oldest' ? left - right : right - left;
+              const dateKey = highlightSort === 'published_at'
+                ? 'published_at'
+                : highlightSort === 'created_at'
+                  ? 'created_at'
+                  : 'news_date';
+              const left = new Date(a[dateKey] || a.news_date || a.created_at || 0).getTime();
+              const right = new Date(b[dateKey] || b.news_date || b.created_at || 0).getTime();
+              const direction = highlightSort === 'oldest' ? 'asc' : highlightSort === 'latest' ? 'desc' : highlightDirection;
+              return direction === 'asc' ? left - right : right - left;
             })
           : highlightedNews;
         const newsItems = sortedHighlightedNews.length > 0 ? sortedHighlightedNews : fallbackNews;
         return splitFeaturedNews(newsItems, featuredCount, gridCount);
       }
+      case 'news_feed':
       case 'news_list': {
-        const maxData = componentConfig.max_data || 12;
+        const maxData = readLimit(componentConfig, 12, 100);
+        const page = readPage(componentConfig);
+        const categorySlug = readString(componentConfig, ['category_slug', 'categorySlug', 'category']);
+        const categoryId = readString(componentConfig, ['category_id', 'categoryId']);
+        let resolvedCategoryId = categoryId;
+
+        if (categorySlug && !resolvedCategoryId) {
+          const category = await prisma.news_categories.findFirst({
+            where: { slug: categorySlug, is_active: true, deleted_at: null },
+            select: { id: true },
+          });
+          resolvedCategoryId = category?.id || '__missing_category__';
+        }
+
         const where: any = {
           ...publicNewsWhere(now),
-          ...(componentConfig.category_id ? { category_id: componentConfig.category_id } : {}),
+          ...(resolvedCategoryId ? { category_id: resolvedCategoryId } : {}),
         };
+
         const [newsItems, total] = await Promise.all([
           prisma.news.findMany({
             where,
             include: { news_categories: true },
-            orderBy: getNewsOrderBy(componentConfig.order),
+            orderBy: getNewsOrderBy(componentConfig),
+            skip: (page - 1) * maxData,
             take: maxData,
           }),
           prisma.news.count({ where }),
@@ -200,12 +712,7 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
           news: newsItems,
           categories,
           total,
-          pagination: {
-            currentPage: 1,
-            totalPages: Math.ceil(total / maxData),
-            totalItems: total,
-            itemsPerPage: maxData,
-          },
+          pagination: buildPagination(page, maxData, total),
         };
       }
       case 'news_teaser': {
@@ -240,7 +747,7 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         const newsItems = await prisma.news.findMany({
           where,
           include: { news_categories: true },
-          orderBy: getNewsOrderBy(componentConfig.order),
+          orderBy: getNewsOrderBy(componentConfig),
           take: maxData,
         });
 
@@ -280,44 +787,35 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         return { managements, categories };
       }
       case 'announcement_list': {
-        const announcements = await prisma.announcements.findMany({
-          where: { status: 'PUBLISHED', deleted_at: null },
-          include: { announcement_sections: { include: { announcement_types: true } } },
-          orderBy: { created_at: 'desc' },
-          take: componentConfig.per_page || 10,
-        });
-        const types = await prisma.announcementType.findMany({
-          where: { isActive: true, deletedAt: null },
-          orderBy: { position: 'asc' },
-        });
-        return { announcements, types };
+        return fetchAnnouncementListComponentData(componentConfig);
       }
       case 'report_list': {
-        const reportTypes = await prisma.reportType.findMany({
-          where: { isActive: true, deletedAt: null },
-          include: {
-            report_sections: {
-              where: { isActive: true, deletedAt: null },
-              include: {
-                reports: {
-                  where: { status: 'PUBLISHED', deleted_at: null },
-                  orderBy: { year: 'desc' },
-                },
-              },
-              orderBy: { position: 'asc' },
-            },
-          },
-          orderBy: { position: 'asc' },
-        });
-        return { reportTypes };
+        return fetchReportListComponentData(componentConfig);
       }
+      case 'report_grid':
+        return fetchReportsComponentData(componentConfig, 'grid');
+      case 'report_list_part':
+        return fetchReportsComponentData(componentConfig, 'part');
+      case 'list_report_home':
+        return fetchReportsComponentData(componentConfig, 'home');
+      case 'maps_coverage_v1':
+        return MapCoverageService.getPublicMapData();
+      case 'events_list':
+        return fetchEventsComponentData(componentConfig);
+      case 'event_related':
+        return fetchEventsComponentData(componentConfig, true);
       case 'awards_list': {
-        const normalizedOrder = String(componentConfig?.order || componentConfig?.sort_order || 'latest').toLowerCase();
-        const issueDateOrder = normalizedOrder === 'oldest' ? 'asc' : 'desc';
+        const sortBy = readString(componentConfig, ['sort_by', 'sortBy', 'order'], 'issue_date').toLowerCase();
+        const sortDirection = readSortOrder(componentConfig, 'desc');
+        const issueDateOrder = sortBy === 'oldest' ? 'asc' : sortDirection;
 
         const awards = await prisma.award.findMany({
           where: { isActive: true, deletedAt: null },
-          orderBy: [{ issueDate: issueDateOrder }, { year: issueDateOrder }, { position: 'asc' }],
+          orderBy: sortBy === 'year'
+            ? [{ year: issueDateOrder }, { position: 'asc' }]
+            : sortBy === 'title'
+              ? [{ title: 'asc' }, { year: 'desc' }]
+              : [{ issueDate: issueDateOrder }, { year: issueDateOrder }, { position: 'asc' }],
         });
         return { awards };
       }
@@ -346,7 +844,13 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         return null;
     }
   } catch (error) {
-    console.error(`Error fetching data for ${type}:`, error);
+    const prismaError = error as Prisma.PrismaClientKnownRequestError;
+    console.error('Public component data fetch failed', {
+      componentType: type,
+      prismaCode: prismaError?.code,
+      prismaMeta: prismaError?.meta,
+      message: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -367,6 +871,9 @@ export const getAvailableComponents = async (
     res.json({
       success: true,
       data: ALL_COMPONENT_TYPES.map((ct) => ({
+        schemaVersion: getComponentSchema(ct.type)?.version || 1,
+        fields: getComponentSchema(ct.type)?.fields || [],
+        metadata: getComponentSchema(ct.type)?.metadata || {},
         type: ct.type,
         name: ct.name,
         description: ct.description,
@@ -417,16 +924,18 @@ export const getPublicPageBySlug = async (
     // For MAIN components, fetch additional data
     const componentsWithData = await Promise.all(
       page.components.map(async (c: any) => {
+        const synced = syncComponentInstance(c.type, c.data);
+        const componentData = synced.instance.data;
         const base = {
           id: c.id,
           type: c.type,
-          data: c.data,
+          data: synced.instance,
           order: c.order,
           isVisible: c.isVisible,
         };
 
         if (isMainComponent(c.type)) {
-          const mainData = await fetchMainComponentData(c.type, c.data);
+          const mainData = await fetchMainComponentData(c.type, componentData);
           return { ...base, mainData: toJsonSafeValue(mainData) };
         }
 
@@ -514,7 +1023,7 @@ export const getPagePreview = async (
         components: page.components.map((c: any) => ({
           id: c.id,
           type: c.type,
-          data: c.data,
+          data: syncComponentInstance(c.type, c.data).instance,
           order: c.order,
           isVisible: c.isVisible,
         })),

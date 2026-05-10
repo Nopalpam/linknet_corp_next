@@ -10,6 +10,7 @@ import Intro from '../base/section/Intro'; // Sesuaikan path
 import LinknetLink from '../base/Link'; // Sesuaikan path
 import Icon from '../base/Icon'; // Sesuaikan path
 import { JOIN_FIRST_SQUAD_DATA } from '@/data/components/joinFirstSquad';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 export default function JoinFirstSquad({
   name = 'default',
@@ -56,7 +57,7 @@ export default function JoinFirstSquad({
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-10 md:mb-14">
             <Intro
               as={introData.as || "h2"}

@@ -578,6 +578,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const startSessionTimer = useCallback(() => {
     clearSessionTimers();
+    isSessionWarningOpenRef.current = false;
     setIsSessionWarningOpen(false);
     setSessionCountdown(SESSION_COUNTDOWN_SECONDS);
 

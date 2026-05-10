@@ -220,6 +220,10 @@ app.use(`${API_PREFIX}`, awardRoutes);
 import managementRoutes from '@routes/management.routes';
 app.use(`${API_PREFIX}/cms/managements`, managementRoutes);
 
+// Map Coverage Management routes (CMS)
+import mapCoverageRoutes from '@routes/mapCoverage.routes';
+app.use(`${API_PREFIX}/cms/map-coverage`, mapCoverageRoutes);
+
 // Activity Log routes (CMS)
 import logActivityRoutes from '@routes/logActivity.routes';
 app.use(`${API_PREFIX}/cms/log-activity`, logActivityRoutes);

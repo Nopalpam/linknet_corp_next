@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 import { enforceRateLimit, normalizeJkSymbol } from '@/lib/apiRateLimit';
+
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+
+const toNullableNumber = (value: unknown): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const toIsoDate = (value: unknown): string => {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Date(value < 1_000_000_000_000 ? value * 1000 : value).toISOString();
+  }
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  return new Date().toISOString();
+};
 
 export async function GET(request: NextRequest) {
   const rateLimited = enforceRateLimit(request, 'stock-quote', { limit: 60, windowMs: 60_000 });
@@ -38,23 +56,26 @@ export async function GET(request: NextRequest) {
 
     const data = {
       symbol: result.symbol as string,
-      regularMarketPrice: (result.regularMarketPrice as number) || 0,
-      regularMarketChange: (result.regularMarketChange as number) || 0,
-      regularMarketChangePercent: (result.regularMarketChangePercent as number) || 0,
-      regularMarketVolume: (result.regularMarketVolume as number) || 0,
-      regularMarketOpen: (result.regularMarketOpen as number) || 0,
-      marketCap: (result.marketCap as number) || 0,
+      regularMarketPrice: toNullableNumber(result.regularMarketPrice),
+      regularMarketChange: toNullableNumber(result.regularMarketChange),
+      regularMarketChangePercent: toNullableNumber(result.regularMarketChangePercent),
+      regularMarketVolume: toNullableNumber(result.regularMarketVolume),
+      regularMarketOpen: toNullableNumber(result.regularMarketOpen),
+      marketCap: toNullableNumber(result.marketCap),
       shortName: (result.shortName as string) || '',
       longName: result.longName as string | undefined,
       currency: (result.currency as string) || 'IDR',
-      regularMarketTime: new Date((result.regularMarketTime as Date) || Date.now()).toISOString(),
-      previousClose: (result.regularMarketPreviousClose as number) || 0,
-      dayHigh: (result.regularMarketDayHigh as number) || 0,
-      dayLow: (result.regularMarketDayLow as number) || 0,
-      fiftyTwoWeekHigh: (result.fiftyTwoWeekHigh as number) || 0,
-      fiftyTwoWeekLow: (result.fiftyTwoWeekLow as number) || 0,
-      averageDailyVolume3Month: (result.averageDailyVolume3Month as number) || 0,
-      averageDailyVolume10Day: (result.averageDailyVolume10Day as number) || 0,
+      regularMarketTime: toIsoDate(result.regularMarketTime),
+      regularMarketPreviousClose: toNullableNumber(result.regularMarketPreviousClose),
+      regularMarketDayHigh: toNullableNumber(result.regularMarketDayHigh),
+      regularMarketDayLow: toNullableNumber(result.regularMarketDayLow),
+      previousClose: toNullableNumber(result.regularMarketPreviousClose),
+      dayHigh: toNullableNumber(result.regularMarketDayHigh),
+      dayLow: toNullableNumber(result.regularMarketDayLow),
+      fiftyTwoWeekHigh: toNullableNumber(result.fiftyTwoWeekHigh),
+      fiftyTwoWeekLow: toNullableNumber(result.fiftyTwoWeekLow),
+      averageDailyVolume3Month: toNullableNumber(result.averageDailyVolume3Month),
+      averageDailyVolume10Day: toNullableNumber(result.averageDailyVolume10Day),
     };
 
     return NextResponse.json({ data });

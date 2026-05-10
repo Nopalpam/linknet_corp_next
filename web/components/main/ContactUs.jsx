@@ -1,41 +1,59 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import Input from '../base/forms/Input';
 import Select from '../base/forms/Select';
 import Textarea from '../base/forms/Textarea';
-import Checkbox from '../base/forms/Checkbox';           // <--- Import Checkbox
-import SelectMultiple from '../base/forms/SelectMultiple'; // <--- Import SelectMultiple
 import Icon from '../base/Icon'; 
 import Button from '../base/Button';
+import Intro from '../base/section/Intro';
+import { fetchPublicContactSettings, normalizeContactSettings } from '@/lib/contactDataSource';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
-export default function ContactUs() {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+export default function ContactUs({
+  cmsData = null,
+  settings = null,
+  locale = 'en',
+  className = '',
+}) {
   const formRef = useRef(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [contactSettings, setContactSettings] = useState(() => normalizeContactSettings(settings || {}, locale));
   
-  // 1. Tambahkan state untuk solutions (array) dan agreeTerms (boolean)
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     role: '', company: '', inquiry: '', message: '',
-    solutions: [], 
-    agreeTerms: false 
   });
 
   const inquiryOptions = [
-    { label: 'Business Inquiry', value: 'business' },
-    { label: 'Technical Support', value: 'support' },
-    { label: 'Career', value: 'career' },
-    { label: 'Others', value: 'others' },
+    { label: 'Business Inquiry', value: 'BUSINESS' },
+    { label: 'Technical Support', value: 'SUPPORT' },
+    { label: 'Career', value: 'CAREER' },
+    { label: 'Others', value: 'OTHERS' },
   ];
 
-  // Opsi untuk Select Multiple
-  const solutionOptions = [
-    { label: 'Data Center', value: 'data-center' },
-    { label: 'CTIP', value: 'ctip' },
-    { label: 'Anti-DDoS', value: 'anti-ddos' },
-    { label: 'Cloud Services', value: 'cloud' },
-    { label: 'Network Firewall', value: 'firewall' },
-  ];
+  const introData = useMemo(() => cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || null, [cmsData]);
+  const hasContactData = Boolean(contactSettings.email || contactSettings.primaryPhone?.number || contactSettings.address);
+
+  useEffect(() => {
+    if (settings) {
+      setContactSettings(normalizeContactSettings(settings, locale));
+      return;
+    }
+
+    let alive = true;
+    fetchPublicContactSettings(locale).then((nextSettings) => {
+      if (alive) setContactSettings(nextSettings);
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, [locale, settings]);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -43,97 +61,138 @@ export default function ContactUs() {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const resetForm = (clearStatus = true) => {
+    setFormData({ firstName: '', lastName: '', email: '', phone: '', role: '', company: '', inquiry: '', message: '' });
+    setSubmitAttempted(false);
+    if (clearStatus) setSubmitStatus(null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitAttempted(true); 
+    setSubmitAttempted(true);
+    setSubmitStatus(null);
 
-    // Validasi manual untuk SelectMultiple jika dianggap wajib (required)
-    // Karena SelectMultiple kita custom div, browser tidak bisa menahannya secara otomatis
-    const isSolutionsEmpty = formData.solutions.length === 0;
+    const form = formRef.current;
+    const firstInvalid = form?.querySelector('.is-invalid .lnFormInput__control') || form?.querySelector(':invalid');
+    if (firstInvalid) {
+      firstInvalid.focus({ preventScroll: true });
+      firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
-    setTimeout(() => {
-      const form = formRef.current;
-      const firstInvalid = form.querySelector('.is-invalid .lnFormInput__control') || form.querySelector(':invalid');
-      
-      // Cek apakah form native tidak valid ATAU select multiple kosong
-      if (firstInvalid || isSolutionsEmpty) {
-        if (firstInvalid) {
-          firstInvalid.focus({ preventScroll: true });
-          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (isSolutionsEmpty) {
-          // Jika hanya Select Multiple yang error, scroll ke sana
-          const smEl = document.getElementById('cu-solutions-wrap');
-          smEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      } else {
-        // Lolos Validasi!
-        console.log('Valid Form Submitted:', formData);
-        alert("Form berhasil dikirim!");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact-us/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+          company: formData.company,
+          inquiryType: formData.inquiry,
+          message: formData.message,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+
+      if (!response.ok || json?.success === false) {
+        throw new Error(json?.message || 'Failed to submit contact form.');
       }
-    }, 50);
+
+      setSubmitStatus({ type: 'success', message: json?.message || 'Thank you for contacting us.' });
+      resetForm(false);
+    } catch (error) {
+      setSubmitStatus({ type: 'error', message: error.message || 'Failed to submit contact form.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <section className="py-16 bg-light-2">
+    <section className={`py-16 bg-light-2 ${className}`}>
       <div className="container mx-auto max-w-7xl flex flex-col lg:flex-row gap-12 lg:gap-20">
         
-        {/* --- KIRI: Info Kontak --- */}
         <div className="w-full lg:w-5/12 pt-4">
-           <h2 className="text-headline-h3 font-bold text-black mb-4 tracking-tight">We're Here to Help</h2>
-           <p className="text-body-b4 text-secondary mb-10 leading-relaxed">
-             We're here to assist you with any questions, concerns, or feedback you may have. Connect with us today!
-           </p>
+          {hasIntroContent(introData) ? (
+            <Intro
+              as={introData.as || 'h2'}
+              label={introData.label}
+              title={introData.title}
+              description={introData.description}
+              align={introData.align || 'left'}
+              className="!mb-10"
+            />
+          ) : (
+            <>
+              <h2 className="text-headline-h3 font-bold text-black mb-4 tracking-tight">We're Here to Help</h2>
+              <p className="text-body-b4 text-secondary mb-10 leading-relaxed">
+                We're here to assist you with any questions, concerns, or feedback you may have. Connect with us today!
+              </p>
+            </>
+          )}
 
-           <div className="text-neutral-400 font-regular text-body-b4 mb-6">For further inquiry,</div>
+           {hasContactData && (
+             <div className="text-neutral-400 font-regular text-body-b4 mb-6">For further inquiry,</div>
+           )}
 
             <div className="flex flex-col gap-6">
-              {/* Item: Email */}
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center shrink-0">
-                  <Icon name="mail" className="text-neutral-600" />
+              {contactSettings.email && (
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center shrink-0">
+                    <Icon name="mail" className="text-neutral-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-body-b5 text-secondary font-regular mb-1">Email Us</span>
+                    <a href={contactSettings.emailHref} className="text-body-b4 font-medium text-black transition-colors">
+                      {contactSettings.email}
+                    </a>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-body-b5 text-secondary font-regular mb-1">Email Us</span>
-                  <a href="mailto:corporate.secretary@linknet.co.id" className="text-body-b4 font-medium text-black transition-colors">
-                    corporate.secretary@linknet.co.id
-                  </a>
-                </div>
-              </div>
+              )}
 
-              {/* Item: Phone */}
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center shrink-0">
-                  <Icon name="phone" className="text-neutral-600" />
+              {contactSettings.primaryPhone?.number && (
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center shrink-0">
+                    <Icon name="phone" className="text-neutral-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-body-b5 text-secondary font-regular mb-1">{contactSettings.primaryPhone.label || 'Phone Number'}</span>
+                    <a href={contactSettings.phoneHref} className="text-body-b4 font-medium text-black transition-colors">
+                      {contactSettings.primaryPhone.number}
+                    </a>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-body-b5 text-secondary font-regular mb-1">Phone Number</span>
-                  <a href="tel:02129536800" className="text-body-b4 font-medium text-black transition-colors">
-                    021-29536800
-                  </a>
-                </div>
-              </div>
+              )}
 
-              {/* Item: Phone */}
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center shrink-0">
-                  <Icon name="pin-location" className="text-neutral-600" />
+              {contactSettings.address && (
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center shrink-0">
+                    <Icon name="pin-location" className="text-neutral-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-body-b5 text-secondary font-regular mb-1">Registered Office</span>
+                    <p className="text-body-b4 font-medium text-black transition-colors">
+                      {contactSettings.address}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-body-b5 text-secondary font-regular mb-1">Registered Office</span>
-                  <p href="tel:02129536800" className="text-body-b4 font-medium text-black transition-colors">
-                    Centennial Tower Lantai 26, Unit D. Jl. Jenderal Gatot Subroto Kav. 24-25 Jakarta 12930, Indonesia
-                  </p>
-                </div>
-              </div>
-
-
+              )}
             </div>
         </div>
 
-        {/* --- KANAN: Form Card --- */}
         <div className="w-full lg:w-7/12">
           <div className="bg-white rounded-[24px] p-6 md:p-10 shadow-[0_8px_40px_rgba(0,0,0,0.04)] shadow-lg">
             <h3 className="text-xl font-bold text-neutral-900 mb-8">Fill in the following data</h3>
+            {submitStatus && (
+              <div className={`mb-5 rounded-xl px-4 py-3 text-body-b5 ${
+                submitStatus.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+              }`}>
+                {submitStatus.message}
+              </div>
+            )}
 
             <form id="applyForm" ref={formRef} onSubmit={handleSubmit} noValidate>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
@@ -177,20 +236,6 @@ export default function ContactUs() {
                   />
                 </div>
 
-                {/* --- 2. SELECT MULTIPLE DI SINI --- */}
-                <div className="md:col-span-2" id="cu-solutions-wrap">
-                  <SelectMultiple 
-                    id="cu-solutions" 
-                    label="Solutions of Interest" 
-                    options={solutionOptions} 
-                    required 
-                    selectedValues={formData.solutions} 
-                    onChange={(newValues) => setFormData(prev => ({ ...prev, solutions: newValues }))}
-                    // Trigger error merah dari parent state
-                    error={submitAttempted && formData.solutions.length === 0 ? "Please select at least one solution." : ""}
-                  />
-                </div>
-
                 <div className="md:col-span-2">
                   <Textarea 
                     id="cu-message" label="Message" maxLength={500} required 
@@ -202,30 +247,13 @@ export default function ContactUs() {
 
               </div>
 
-              {/* --- 3. CHECKBOX AGREEMENT DI SINI --- */}
-              <div className="mt-6 mb-8">
-                <Checkbox 
-                  id="cu-agreeTerms"
-                  label="I acknowledge that I have read, understood, and agreed to the applicable Terms & Conditions and Privacy Policy."
-                  required
-                  checked={formData.agreeTerms}
-                  onChange={(e) => setFormData(prev => ({ ...prev, agreeTerms: e.target.checked }))}
-                />
-                {/* Pesan error manual untuk Checkbox jika dibutuhkan */}
-                {submitAttempted && !formData.agreeTerms && (
-                  <p className="text-sm text-red-500 mt-2 px-4">You must agree to the Terms & Conditions.</p>
-                )}
-              </div>
-
               <div className="flex gap-4 justify-end mt-4">
                 <Button 
                   type="reset"
                   variant='secondary-outline' 
                   size='lg'
-                  onClick={() => { 
-                    setFormData({ firstName: '', lastName: '', email: '', phone: '', role: '', company: '', inquiry: '', message: '', solutions: [], agreeTerms: false }); 
-                    setSubmitAttempted(false); 
-                  }} 
+                  onClick={() => resetForm()}
+                  disabled={isSubmitting}
                 >
                   Reset
                 </Button>
@@ -233,8 +261,9 @@ export default function ContactUs() {
                   variant='primary'
                   size='lg' 
                   type="submit"
+                  disabled={isSubmitting}
                 >
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </Button>
               </div>
             </form>

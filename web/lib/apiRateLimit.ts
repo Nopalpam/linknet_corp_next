@@ -52,9 +52,13 @@ export const normalizeJkSymbol = (symbol: string | null): string | null => {
   if (!symbol) return null;
 
   const trimmed = symbol.trim().toUpperCase();
-  if (!/^[A-Z0-9]{1,12}(\.JK)?$/.test(trimmed)) {
+  const normalized = trimmed
+    .replace(/^IDX[:.-]/, '')
+    .replace(/\.JK$/, '');
+
+  if (!/^[A-Z0-9]{1,12}$/.test(normalized)) {
     return null;
   }
 
-  return trimmed.endsWith('.JK') ? trimmed : `${trimmed}.JK`;
+  return `${normalized}.JK`;
 };

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 import { enforceRateLimit, normalizeJkSymbol } from '@/lib/apiRateLimit';
+
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 export async function GET(request: NextRequest) {
   const rateLimited = enforceRateLimit(request, 'stock-historical', { limit: 30, windowMs: 60_000 });

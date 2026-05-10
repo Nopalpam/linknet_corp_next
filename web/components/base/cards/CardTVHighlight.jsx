@@ -77,7 +77,7 @@ export default function CardTVHighlight({
 
         {/* <div className="CardTVHightlight_overlay pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" /> */}
 
-        {badge && (
+        {/* {badge && (
           <div className="lnCardTVHighlight__badgeWrap CardTVHightlight_badgeWrap absolute left-2 top-2 md:left-3 md:top-3">
             <span
               className={cx(
@@ -90,7 +90,7 @@ export default function CardTVHighlight({
               {badge}
             </span>
           </div>
-        )}
+        )} */}
       </div>
 
       <div className={cx(

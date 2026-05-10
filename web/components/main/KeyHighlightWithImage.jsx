@@ -12,6 +12,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import Intro from '../base/section/Intro'; // Sesuaikan path
 import { KEY_HIGHLIGHT_IMAGE_DATA } from '@/data/components/keyHighlight'; // Sesuaikan path
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -92,7 +93,7 @@ export default function KeyHighlightWithImage({
 
           {/* Intro Content (Kiri) - Dibungkus div untuk dianimasikan GSAP */}
           <div className="lnGsapHighlightItem md:max-w-2xl lg:max-w-3xl">
-            {introData && (
+            {hasIntroContent(introData) && (
               <Intro
                 as={introData.as || "h2"}
                 label={introData.label}

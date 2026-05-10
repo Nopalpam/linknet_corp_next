@@ -9,6 +9,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Import Komponen & Data
 import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
 import { LOGO_RUNNING_DATA } from '@/data/components/logoRunning'; 
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -99,7 +100,7 @@ export default function LogoRunning({
       <div className="container mx-auto px-4 md:px-0">
         
         {/* HEADER SECTION DENGAN COMPONENT INTRO */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="lnGsapLogoItem mb-8 md:mb-10">
             <Intro 
               as={introData.as || "h2"}

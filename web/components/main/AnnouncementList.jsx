@@ -3,8 +3,42 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchFilterBar from '@/components/base/SearchFilterBar';
-import Icon from '@/components/base/Icon';
+import CardReport from '@/components/base/cards/CardReport';
 import Intro from '@/components/base/section/Intro';
+import { hasIntroContent } from '../../../shared/presentation/intro';
+
+function getAnnouncementSection(item) {
+  return item?.announcement_sections || item?.announcementSection || {};
+}
+
+function getAnnouncementType(item, section = getAnnouncementSection(item)) {
+  return section?.announcement_types || section?.announcementType || item?.announcement_types || item?.announcementType || {};
+}
+
+function firstValue(source, keys, fallback = '') {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return fallback;
+}
+
+function normalizeAnnouncementItem(item = {}) {
+  const section = getAnnouncementSection(item);
+  const type = getAnnouncementType(item, section);
+
+  return {
+    ...item,
+    title: firstValue(item, ['lnCardReport__title', 'title', 'name', 'subDescription', 'sub_description', 'description']),
+    image: firstValue(item, ['image', 'coverImage', 'cover_image', 'thumbnail']),
+    year: firstValue(item, ['year']) || section?.announcement_year || section?.announcementYear || '',
+    fileSize: firstValue(item, ['fileSize', 'file_size']),
+    dataType: firstValue(item, ['dataType', 'data_type']),
+    auditStatus: firstValue(item, ['auditStatus', 'audit_status']),
+    category: type.name || section.name || section.title || '',
+    downloadUrl: firstValue(item, ['downloadUrl', 'download_url', 'fileUrl', 'file_url', 'pdfFile', 'pdf_file'], '#'),
+  };
+}
 
 /**
  * AnnouncementList — Renders announcements from CMS mainData.
@@ -18,14 +52,29 @@ export default function AnnouncementList({
   title,
   cmsData = null,
   mainData,
+  layout,
   className = '',
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const announcements = useMemo(() => mainData?.announcements || [], [mainData]);
+  const announcements = useMemo(
+    () => (mainData?.announcements || mainData?.items || []).map(normalizeAnnouncementItem),
+    [mainData]
+  );
   const types = useMemo(() => mainData?.types || [], [mainData]);
+  const sections = useMemo(() => mainData?.sections || [], [mainData]);
+  const showSearch = cmsData?.show_search !== false && cmsData?.showSearch !== false;
+  const showTypeFilter = cmsData?.show_type_filter !== false && cmsData?.showTypeFilter !== false;
+  const showSectionFilter = cmsData?.show_section_filter !== false && cmsData?.showSectionFilter !== false;
+  const showYearFilter = cmsData?.show_year_filter !== false && cmsData?.showYearFilter !== false;
+  const showPagination = cmsData?.show_pagination !== false && cmsData?.showPagination !== false;
+  const showPublishDate = cmsData?.show_publish_date !== false && cmsData?.showPublishDate !== false;
+  const showCta = cmsData?.show_cta !== false && cmsData?.showCta !== false;
+  const layoutType = (layout || cmsData?.layout || 'list').toLowerCase();
+  const isGridLayout = layoutType === 'grid' || layoutType === 'compact';
+  const cardVariant = isGridLayout ? 'cover' : 'list';
   const introData = cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || (title ? {
     as: 'h2',
     title,
@@ -36,7 +85,7 @@ export default function AnnouncementList({
   const pageParam = searchParams.get('page');
   const parsedPage = parseInt(pageParam, 10);
   const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = Number(cmsData?.limit || cmsData?.per_page || 10) || 10;
 
   // Local state
   const [searchValue, setSearchValue] = useState('');
@@ -48,15 +97,16 @@ export default function AnnouncementList({
     const years = new Set();
 
     announcements.forEach((a) => {
-      const section = a.announcement_sections;
-      if (section?.announcement_year) {
-        years.add(section.announcement_year);
+      const section = getAnnouncementSection(a);
+      const year = section?.announcement_year || section?.announcementYear;
+      if (year) {
+        years.add(year);
       }
     });
 
     const filters = [];
 
-    if (typeOptions.length > 0) {
+    if (showTypeFilter && typeOptions.length > 0) {
       filters.push({
         key: 'type',
         placeholder: 'Announcement Type',
@@ -64,7 +114,15 @@ export default function AnnouncementList({
       });
     }
 
-    if (years.size > 0) {
+    if (showSectionFilter && sections.length > 0) {
+      filters.push({
+        key: 'section',
+        placeholder: 'Announcement Section',
+        options: sections.map((section) => ({ label: section.name || section.title, value: section.id })),
+      });
+    }
+
+    if (showYearFilter && years.size > 0) {
       const sortedYears = Array.from(years).sort((a, b) => String(b).localeCompare(String(a)));
       filters.push({
         key: 'year',
@@ -74,7 +132,7 @@ export default function AnnouncementList({
     }
 
     return filters;
-  }, [announcements, types]);
+  }, [announcements, types, sections, showTypeFilter, showSectionFilter, showYearFilter]);
 
   // ─── Filter + search ─────────────────────────────────────────
   const filteredAnnouncements = useMemo(() => {
@@ -85,15 +143,21 @@ export default function AnnouncementList({
       const matchSearch = !keyword || titleStr.includes(keyword);
 
       let matchFilters = true;
+      const section = getAnnouncementSection(a);
+      const type = getAnnouncementType(a, section);
 
       if (filterValues.type) {
-        const typeId = a.announcement_sections?.announcement_types?.id;
+        const typeId = type?.id || a.type_id || a.announcementTypeId;
         if (typeId !== filterValues.type) matchFilters = false;
       }
 
       if (filterValues.year) {
-        const year = a.announcement_sections?.announcement_year;
+        const year = section?.announcement_year || section?.announcementYear;
         if (year !== filterValues.year) matchFilters = false;
+      }
+      if (filterValues.section) {
+        const sectionId = section?.id || a.section_id || a.announcementSectionId;
+        if (sectionId !== filterValues.section) matchFilters = false;
       }
 
       return matchSearch && matchFilters;
@@ -105,14 +169,17 @@ export default function AnnouncementList({
     const map = new Map();
 
     filteredAnnouncements.forEach((a) => {
-      const section = a.announcement_sections;
+      const section = getAnnouncementSection(a);
+      const type = getAnnouncementType(a, section);
       const sectionId = section?.id || 'uncategorized';
       if (!map.has(sectionId)) {
         map.set(sectionId, {
           id: sectionId,
-          name: section?.name || 'Other',
-          year: section?.announcement_year || '',
-          typeName: section?.announcement_types?.name || '',
+          name: section?.name || section?.title || 'Other',
+          year: section?.announcement_year || section?.announcementYear || '',
+          typeName: type?.name || '',
+          ctaText: (section?.cta_enabled ?? section?.ctaEnabled) ? (section?.cta_text || section?.ctaText || '') : '',
+          ctaUrl: (section?.cta_enabled ?? section?.ctaEnabled) ? (section?.cta_url || section?.ctaUrl || '') : '',
           items: [],
         });
       }
@@ -128,9 +195,9 @@ export default function AnnouncementList({
   }, [filteredAnnouncements]);
 
   // ─── Pagination ──────────────────────────────────────────────
-  const totalPages = Math.ceil(groupedBySection.length / ITEMS_PER_PAGE) || 1;
+  const totalPages = showPagination ? (Math.ceil(groupedBySection.length / ITEMS_PER_PAGE) || 1) : 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedGroups = groupedBySection.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedGroups = showPagination ? groupedBySection.slice(startIndex, startIndex + ITEMS_PER_PAGE) : groupedBySection;
 
   // ─── Handlers ────────────────────────────────────────────────
   const updatePage = (page) => {
@@ -180,7 +247,7 @@ export default function AnnouncementList({
     return (
       <section className={`lnSection ${className}`}>
         <div className="container">
-          {introData && (introData.label || introData.title || introData.description) && (
+          {hasIntroContent(introData) && (
             <div className="mb-6">
               <Intro
                 as={introData.as || 'h2'}
@@ -200,7 +267,7 @@ export default function AnnouncementList({
   return (
     <section id="announcement-list-section" className={`bg-light-2 pt-10 pb-24 ${className}`}>
       <div className="container">
-        {introData && (introData.label || introData.title || introData.description) && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-10">
             <Intro
               as={introData.as || 'h2'}
@@ -213,16 +280,19 @@ export default function AnnouncementList({
         )}
 
         {/* Search & Filters */}
+        {(showSearch || generatedFilters.length > 0) && (
         <div className="mb-4">
           <SearchFilterBar
             searchPlaceholder="Search announcements..."
             searchValue={searchValue}
             onSearchChange={handleSearchChange}
+            showSearch={showSearch}
             filters={generatedFilters}
             filterValues={filterValues}
             onFilterChange={handleFilterChange}
           />
         </div>
+        )}
 
         {/* Grouped List */}
         {paginatedGroups.length > 0 ? (
@@ -237,12 +307,31 @@ export default function AnnouncementList({
                   {group.typeName && (
                     <span className="text-caption-c1 text-secondary">{group.typeName}</span>
                   )}
+                  {showCta && group.ctaUrl && (
+                    <a
+                      href={group.ctaUrl}
+                      className="mt-3 inline-flex text-sm font-medium text-brand-600 hover:text-brand-700"
+                    >
+                      {group.ctaText || 'View more'}
+                    </a>
+                  )}
                 </div>
 
                 {/* Items */}
-                <div className="flex flex-col gap-3">
+                <div
+                  className={
+                    isGridLayout
+                      ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'
+                      : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                  }
+                >
                   {group.items.map((item) => (
-                    <AnnouncementItem key={item.id} item={item} />
+                    <AnnouncementItem
+                      key={item.id}
+                      item={item}
+                      showPublishDate={showPublishDate}
+                      variant={cardVariant}
+                    />
                   ))}
                 </div>
               </div>
@@ -257,7 +346,7 @@ export default function AnnouncementList({
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {showPagination && totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-10">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -298,50 +387,30 @@ export default function AnnouncementList({
 }
 
 // ─── Single Announcement Item ──────────────────────────────────
-function AnnouncementItem({ item }) {
-  const hasPdf = item.pdf_file;
+function AnnouncementItem({ item, showPublishDate = true, variant = 'list' }) {
+  const section = getAnnouncementSection(item);
+  const type = getAnnouncementType(item, section);
+  const createdAt = item.created_at || item.createdAt || '';
+  const dateLabel = showPublishDate && createdAt
+    ? new Date(createdAt).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
 
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-gray-100 last:border-b-0">
-      <div className="flex items-start gap-3 flex-1 min-w-0">
-        {/* PDF Icon */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-          <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-          </svg>
-        </div>
-
-        {/* Title + Date */}
-        <div className="flex-1 min-w-0">
-          <p className="text-body-b4 font-medium text-black truncate">
-            {item.title}
-          </p>
-          {item.created_at && (
-            <span className="text-caption-c1 text-secondary">
-              {new Date(item.created_at).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Download button */}
-      {hasPdf && (
-        <a
-          href={item.pdf_file}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Download
-        </a>
-      )}
-    </div>
+    <CardReport
+      variant={variant}
+      icon="/assets/icons/pdf-circle.svg"
+      image={item.image}
+      year={item.year}
+      title={item.title || ''}
+      fileSize={item.fileSize}
+      badges={item.auditStatus ? [item.auditStatus] : []}
+      category={type.name || section.name || section.title || ''}
+      date={dateLabel}
+      downloadUrl={item.downloadUrl || item.pdf_file || item.pdfFile || item.file_url || '#'}
+    />
   );
 }

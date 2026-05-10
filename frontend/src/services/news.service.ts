@@ -178,12 +178,27 @@ class NewsContentService extends BaseCrudService<News> {
   async getActiveNews(params?: {
     page?: number;
     limit?: number;
+    search?: string;
     category_id?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<PaginatedResponse<News>> {
     const queryString = this.buildQueryString(params || {});
     return this.fetchWithAuth(`${API_URL}/api/v1/public/news?${queryString}`);
+  }
+
+  /** Search CMS news for relational fields and page builder selectors */
+  async searchForSelection(params?: {
+    search?: string;
+    limit?: number;
+  }): Promise<PaginatedResponse<News>> {
+    return this.getPaginated({
+      page: 1,
+      limit: params?.limit || 20,
+      search: params?.search,
+      sortBy: 'news_date',
+      sortOrder: 'desc',
+    });
   }
 
   /** Get highlighted news (public) */

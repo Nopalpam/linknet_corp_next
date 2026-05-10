@@ -42,11 +42,11 @@ export class AnnouncementController {
 
   private mapAnnouncementItemSortBy(sortBy: string): string {
     const mapping: Record<string, string> = {
-      sortOrder: 'created_at',
-      sort_order: 'created_at',
-      order: 'created_at',
+      sortOrder: 'sort_order',
+      sort_order: 'sort_order',
+      order: 'sort_order',
     };
-    const validFields = ['created_at', 'updated_at', 'title', 'slug', 'status', 'sort_order'];
+    const validFields = ['created_at', 'updated_at', 'title', 'slug', 'status', 'sort_order', 'data_type', 'audit_status'];
     const mapped = mapping[sortBy] || sortBy;
     return validFields.includes(mapped) ? mapped : 'created_at';
   }
@@ -94,6 +94,7 @@ export class AnnouncementController {
   async createAnnouncementType(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, slug, type, description, icon, color, position, sortOrder, isActive } = req.body;
+      const typePosition = position ?? sortOrder;
 
       if (!name || name.trim() === '') {
         throw new AppError('Name is required', 400);
@@ -106,7 +107,7 @@ export class AnnouncementController {
         description,
         icon,
         color,
-        position: (position ?? sortOrder) ? parseInt(position ?? sortOrder) : undefined,
+        position: typePosition !== undefined ? parseInt(typePosition) : undefined,
         isActive,
       });
 
@@ -494,6 +495,8 @@ export class AnnouncementController {
         search: req.query.search as string,
         type_id: (req.query.type_id || req.query.announcementTypeId) as string,
         section_id: (req.query.section_id || req.query.announcementSectionId) as string,
+        data_type: (req.query.data_type || req.query.dataType) as string,
+        audit_status: (req.query.audit_status || req.query.auditStatus) as string,
         status: req.query.status as string,
         sortBy: this.mapAnnouncementItemSortBy((req.query.sortBy as string) || 'created_at'),
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',

@@ -9,6 +9,8 @@
 
 import React from 'react';
 import { HeroSettings } from '../types';
+import { CtaListModule } from './CtaListModule';
+import { SortableListEditor } from './SortableListEditor';
 
 interface HeroEditorProps {
   settings: HeroSettings;
@@ -148,6 +150,26 @@ export const HeroEditor: React.FC<HeroEditorProps> = ({ settings, onChange }) =>
           </div>
         </div>
       )}
+
+      <SortableListEditor
+        label="CTA List"
+        items={Array.isArray(settings.ctaList) ? settings.ctaList : []}
+        onChange={(nextItems) => updateField('ctaList', nextItems)}
+        createItem={() => ({
+          label: '',
+          href: '',
+          target: '_self',
+          variant: 'primary',
+          size: 'lg',
+          link_type: 'url',
+        })}
+        addLabel="Add CTA"
+        emptyLabel="No CTA list items yet"
+        getItemLabel={(item, index) => item.label?.en || item.label || item.text?.en || item.text || `CTA ${index + 1}`}
+        renderItem={(item, _index, updateItem) => (
+          <CtaListModule value={item} onChange={updateItem} />
+        )}
+      />
     </div>
   );
 };

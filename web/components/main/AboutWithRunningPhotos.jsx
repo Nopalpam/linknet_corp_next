@@ -3,6 +3,7 @@
 import React from 'react';
 import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
 import { ABOUT_RUNNING_PHOTOS_DATA } from '@/data/components/aboutRunningPhotos'; // Sesuaikan path
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 export default function AboutWithRunningPhotos({
   name = 'default',
@@ -68,7 +69,7 @@ export default function AboutWithRunningPhotos({
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-12">
             <Intro
               as={introData.as || "h2"}

@@ -4,6 +4,7 @@ import React from 'react';
 import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import { CLOSING_SENTENCE_DATA } from '@/data/components/closingSentence';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 export default function ClosingSentence({
   name = 'default',
@@ -31,7 +32,7 @@ export default function ClosingSentence({
       <div className={`container mx-auto px-4 md:px-0 max-w-4xl text-center pb-16 md:pb-20 ${className}`}>
 
         {/* Menggunakan Komponen Intro */}
-        {normalizedIntroData && (
+        {hasIntroContent(normalizedIntroData) && (
           <div className="mb-8 md:mb-10">
             <Intro
               as={normalizedIntroData.as}

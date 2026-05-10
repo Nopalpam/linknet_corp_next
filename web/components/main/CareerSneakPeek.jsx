@@ -15,6 +15,7 @@ import { useParams } from 'next/navigation';
 import CardCareer from '../base/cards/CardCareer';
 import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -101,7 +102,7 @@ const CareerSneakPeek = ({
 
       <div className="container">
         {/* --- Intro Section --- */}
-      {introData && (
+      {hasIntroContent(introData) && (
         <div className="mb-10 lnGsapCareerItem"> {/* Class GSAP ditambahkan di sini */}
           {/* Mapping prop 'label' dari data ke prop 'preTitle' di komponen Intro */}
           <Intro

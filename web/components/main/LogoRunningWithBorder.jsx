@@ -10,6 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import { LOGO_RUNNING_BORDER_DATA } from '@/data/components/logoRunningWithBorder'; 
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -100,7 +101,7 @@ export default function LogoRunningWithBorder({
         <div className="py-8 md:py-8 px-6 md:px-12 bg-white border border-neutral rounded-[16px] md:rounded-[24px] overflow-hidden flex flex-col items-start gap-10 md:gap-14 w-full">
         
             {/* HEADER SECTION DENGAN COMPONENT INTRO */}
-            {introData && (
+            {hasIntroContent(introData) && (
             <div className="lnGsapRunningItem w-full">
                 <Intro 
                 as={introData.as || "h2"}

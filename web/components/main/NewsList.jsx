@@ -7,6 +7,7 @@ import Button from '../base/Button';
 import Icon from '../base/Icon';
 import CardNews from '../base/cards/CardNews';
 import CTAList from '../base/section/CTAList';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -27,6 +28,12 @@ export default function NewsList({
   const searchPlaceholder = cmsData?.searchPlaceholder || 'Search news...';
   const searchButtonText = cmsData?.searchButtonText || 'Search';
   const itemsPerPage = cmsData?.limit || 12;
+  const sortBy = cmsData?.sortBy || cmsData?.sort_by || 'news_date';
+  const sortDirection = cmsData?.sortDirection || cmsData?.sort_direction || 'desc';
+  const displayImage = cmsData?.displayImage !== false && cmsData?.display_image !== false;
+  const displayDescription = cmsData?.displayDescription !== false && cmsData?.display_description !== false;
+  const showDate = cmsData?.showDate !== false && cmsData?.show_date !== false;
+  const showCategory = cmsData?.showCategory !== false && cmsData?.show_category !== false;
   const ctaList = cmsData?.ctaList || [];
 
   // Initial data from server (mainData from PageBuilder)
@@ -38,7 +45,7 @@ export default function NewsList({
   const [news, setNews] = useState(initialNews);
   const [pagination, setPagination] = useState(initialPagination);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(cmsData?.category || cmsData?.category_id || '');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +57,8 @@ export default function NewsList({
       const queryParams = new URLSearchParams();
       queryParams.set('page', String(page));
       queryParams.set('limit', String(itemsPerPage));
+      queryParams.set('sortBy', String(sortBy));
+      queryParams.set('sortOrder', String(sortDirection).toLowerCase() === 'asc' ? 'asc' : 'desc');
       if (categoryId) queryParams.set('category_id', categoryId);
       if (search) queryParams.set('search', search);
 
@@ -66,7 +75,7 @@ export default function NewsList({
     } finally {
       setIsLoading(false);
     }
-  }, [itemsPerPage]);
+  }, [itemsPerPage, sortBy, sortDirection]);
 
   // Re-fetch when filters change (but NOT on initial load since we have mainData)
   useEffect(() => {
@@ -128,7 +137,7 @@ export default function NewsList({
       <div className="container mx-auto px-4 md:px-0">
 
         {/* INTRO */}
-        {introData && (introData.label || introData.title || introData.description) && (
+        {hasIntroContent(introData) && (
           <div className="mb-6 md:mb-8">
             <Intro
               as={introData.as || 'h2'}
@@ -233,11 +242,12 @@ export default function NewsList({
               <CardNews
                 key={item.id}
                 variant="default"
-                image={item.news_thumbnail}
-                badgeText={getBadgeText(item)}
+                image={displayImage ? item.news_thumbnail : undefined}
+                badgeText={showCategory ? getBadgeText(item) : ''}
                 title={getTitle(item)}
                 author={item.author}
-                date={item.news_date}
+                date={showDate ? item.news_date : undefined}
+                desc={displayDescription ? (locale === 'id' ? item.excerpt_id : item.excerpt_en) : undefined}
                 href={`/${locale}/news/${item.slug}`}
               />
             ))}

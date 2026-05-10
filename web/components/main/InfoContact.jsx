@@ -3,6 +3,7 @@
 import React from 'react';
 import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
 import Icon from '../base/Icon'; // Sesuaikan path jika berbeda
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 import { INFO_CONTACT_DATA } from '@/data/components/infoContact';
 
@@ -44,7 +45,7 @@ export default function InfoContact({
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-10">
             <Intro
               as={introData.as || "h2"}

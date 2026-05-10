@@ -3,6 +3,7 @@
 import Icon from '@/components/base/Icon';
 import SectionIntro from '@/components/base/section/Intro';
 import CTAList from '@/components/base/section/CTAList';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 /**
  * Built-in generic CMS section components.
@@ -25,21 +26,29 @@ export function TextBlock({ label, title, description, introData, ctaList = [], 
   className?: string;
 }) {
   const resolvedIntroData = resolveIntroData(introData, title, description);
+  const shouldUseLegacyLabel = introData === undefined;
+  const introForRender = {
+    ...resolvedIntroData,
+    label: resolvedIntroData?.label || (shouldUseLegacyLabel ? label : ''),
+  };
+  const shouldRenderIntro = hasIntroContent(introForRender);
 
   return (
     <section className={`lnSection ${className || ''}`}>
       <div className="container">
-        <SectionIntro
-          as={resolvedIntroData.as || 'h2'}
-          label={resolvedIntroData.label || label || ''}
-          title={resolvedIntroData.title || ''}
-          description={resolvedIntroData.description || ''}
-          align={resolvedIntroData.align || 'left'}
-        />
+        {shouldRenderIntro && (
+          <SectionIntro
+            as={introForRender.as || 'h2'}
+            label={introForRender.label || ''}
+            title={introForRender.title || ''}
+            description={introForRender.description || ''}
+            align={introForRender.align || 'left'}
+          />
+        )}
         <CTAList
           ctaList={ctaList}
           align={resolvedIntroData.align || 'left'}
-          className="mt-6"
+          className={shouldRenderIntro ? 'mt-6' : ''}
           defaultSize="lg"
         />
       </div>
@@ -165,7 +174,17 @@ type SummaryHighlight = {
 } | null;
 
 function resolveIntroData(introData?: IntroData, title?: string, description?: string): IntroData {
-  return introData || {
+  if (introData !== undefined) {
+    return introData || {
+      as: 'h2',
+      label: '',
+      title: '',
+      description: '',
+      align: 'left',
+    };
+  }
+
+  return {
     as: 'h2',
     label: '',
     title: title || '',
@@ -189,19 +208,23 @@ function ServicesListSection({
   services: ServiceItem[];
   className?: string;
 }) {
+  const shouldRenderIntro = hasIntroContent(introData);
+
   return (
     <section className={`lnSection lnSection__listServices bg-light py-16 md:py-24 ${className || ''}`}>
       <div className="container">
-        <SectionIntro
-          as={introData.as || 'h2'}
-          label={introData.label || ''}
-          title={introData.title || ''}
-          description={introData.description || ''}
-          align={introData.align || 'left'}
-          className="!w-full"
-        />
+        {shouldRenderIntro && (
+          <SectionIntro
+            as={introData.as || 'h2'}
+            label={introData.label || ''}
+            title={introData.title || ''}
+            description={introData.description || ''}
+            align={introData.align || 'left'}
+            className="!w-full"
+          />
+        )}
 
-        <div className="mt-8 grid gap-5 md:mt-10 md:grid-cols-2 xl:grid-cols-3">
+        <div className={`${shouldRenderIntro ? 'mt-8 md:mt-10' : ''} grid gap-5 md:grid-cols-2 xl:grid-cols-3`}>
           {services.map((service, index) => {
             const hasPrimaryLink = Boolean(service.link);
 
@@ -290,23 +313,26 @@ function CardsWithSummarySection({
   className?: string;
 }) {
   const hasHighlight = Boolean(highlight?.metrics && highlight.metrics.length > 0);
+  const shouldRenderIntro = hasIntroContent(introData);
 
   return (
     <section className={`lnSection lnSection__cardsWithSummary bg-white py-16 md:py-24 ${className || ''}`}>
       <div className="container">
         <div className={`grid gap-8 lg:gap-10 ${hasHighlight ? 'xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start' : ''}`}>
           <div>
-            <SectionIntro
-             as={introData.as || 'h2'}
-              label={introData.label || ''}
-              title={introData.title || ''}
-              description={introData.description || ''}
-              align={introData.align || 'left'}
-              className="!w-full"
-            />
+            {shouldRenderIntro && (
+              <SectionIntro
+               as={introData.as || 'h2'}
+                label={introData.label || ''}
+                title={introData.title || ''}
+                description={introData.description || ''}
+                align={introData.align || 'left'}
+                className="!w-full"
+              />
+            )}
 
             {cards.length > 0 ? (
-              <div className="mt-8 grid gap-5 md:mt-10 md:grid-cols-2">
+              <div className={`${shouldRenderIntro ? 'mt-8 md:mt-10' : ''} grid gap-5 md:grid-cols-2`}>
                 {cards.map((card, index) => {
                   const cardContent = (
                     <>
@@ -417,6 +443,7 @@ export function GenericSection({ title, description, className, variant, introDa
   highlight?: SummaryHighlight;
 }) {
   const resolvedIntroData = resolveIntroData(introData, title, description);
+  const shouldRenderIntro = hasIntroContent(resolvedIntroData);
 
   if (variant === 'list-services' && Array.isArray(services) && services.length > 0) {
     return (
@@ -441,6 +468,8 @@ export function GenericSection({ title, description, className, variant, introDa
       />
     );
   }
+
+  if (!shouldRenderIntro) return null;
 
   return (
     <section className={`lnSection ${className || ''}`}>

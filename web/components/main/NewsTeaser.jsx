@@ -7,7 +7,7 @@ import CardNews from '../base/cards/CardNews'; // Sesuaikan path
 
 import { useParams } from 'next/navigation';
 
-import { resolveIntroTextValue } from '../../../shared/presentation/intro';
+import { hasIntroContent, resolveIntroTextValue } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -115,13 +115,14 @@ const locale = params.locale || localeProp || 'en';
   if (!sectionData || !displayNews || displayNews.length === 0) return null;
 
   const introData = sectionData.introData || sectionData.sectionIntro || sectionData.intro || null;
+  const hasExplicitIntro = Boolean(introData && typeof introData === 'object' && !Array.isArray(introData));
   const resolvedIntroData = {
     ...(introData || {}),
     label: resolveIntroTextValue(introData?.label),
-    title: resolveIntroTextValue(introData?.title) || categoryTitle,
+    title: resolveIntroTextValue(introData?.title) || (hasExplicitIntro ? '' : categoryTitle),
     description: resolveIntroTextValue(introData?.description),
   };
-  const hasIntro = Boolean(resolvedIntroData.label || resolvedIntroData.title || resolvedIntroData.description);
+  const hasIntro = hasIntroContent(resolvedIntroData);
   const { config } = sectionData;
   const {
     sectionId,

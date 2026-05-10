@@ -174,6 +174,14 @@ export const mfaVerify = async (req: AuthRequest, res: Response): Promise<void> 
       return;
     }
 
+    if (!decoded.mfaChallengeId) {
+      res.status(401).json({
+        success: false,
+        message: 'MFA challenge is missing or expired. Please login again.',
+      });
+      return;
+    }
+
     // Get user and verify MFA token
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
@@ -203,16 +211,21 @@ export const mfaVerify = async (req: AuthRequest, res: Response): Promise<void> 
       },
     });
 
-    if (!user || !user.mfaSecret) {
+    if (!user) {
       res.status(401).json({
         success: false,
-        message: 'User not found or MFA not configured',
+        message: 'User not found',
       });
       return;
     }
 
     // Verify OTP
-    const isValid = mfaService.verifyMfaToken(user.mfaSecret, token);
+    const isValid = await mfaService.verifyLoginChallenge({
+      challengeId: decoded.mfaChallengeId,
+      userId: user.id,
+      otp: token,
+      localSecret: user.mfaSecret,
+    });
 
     if (!isValid) {
       res.status(400).json({

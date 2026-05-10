@@ -13,6 +13,7 @@ import Highcharts from 'highcharts';
 import { MAPS_COVERAGE_DATA } from '../../data/components/mapsCoverage';
 import { MAP_REGIONS_DATA } from '../../data/constants/mapRegions';
 import INDO_TOPOLOGY from '../../data/constants/id-all.topo.json';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 export default function MapsCoverage({
   name,
@@ -227,7 +228,7 @@ export default function MapsCoverage({
     >
       <div className="container mx-auto px-4 md:px-0">
 
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-12">
             <Intro
               as={introData.as || "h2"}

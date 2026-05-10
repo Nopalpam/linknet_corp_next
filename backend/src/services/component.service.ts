@@ -9,6 +9,8 @@ import {
   ALL_COMPONENT_TYPES,
   getDefaultComponentData,
 } from '../constants/componentDefaults';
+import { syncComponentInstance } from '../pageBuilder/migrationEngine';
+import { getComponentSchema } from '../pageBuilder/schemaRegistry';
 
 // Initialize Ajv
 const ajv = new Ajv({ allErrors: true, verbose: true });
@@ -101,7 +103,10 @@ export class ComponentService {
       },
     });
 
-    return components;
+    return components.map((component) => ({
+      ...component,
+      data: syncComponentInstance(component.type, component.data).instance,
+    }));
   }
 
   /**
@@ -125,7 +130,10 @@ export class ComponentService {
       throw new AppError('Component not found', 404);
     }
 
-    return component;
+    return {
+      ...component,
+      data: syncComponentInstance(component.type, component.data).instance,
+    };
   }
 
   /**
@@ -183,7 +191,7 @@ export class ComponentService {
       data: {
         pageId: data.pageId,
         type: data.componentType,
-        data: sanitizedData,
+        data: syncComponentInstance(data.componentType, sanitizedData, { persistAudit: true }).instance as any,
         order,
         isVisible: data.isVisible ?? true,
       },
@@ -223,7 +231,7 @@ export class ComponentService {
       where: { id },
       data: {
         ...(data.componentType && { type: data.componentType }),
-        ...(data.componentData && { data: componentData }),
+        ...(data.componentData && { data: syncComponentInstance(componentType, componentData, { persistAudit: true }).instance as any }),
         ...(data.order !== undefined && { order: data.order }),
         ...(data.isVisible !== undefined && { isVisible: data.isVisible }),
       },
@@ -336,6 +344,9 @@ export class ComponentService {
       .filter((ct) => !inactiveKeys.has(ct.type))
       .map((ct) => ({
         type: ct.type,
+        schemaVersion: getComponentSchema(ct.type)?.version || 1,
+        fields: getComponentSchema(ct.type)?.fields || [],
+        metadata: getComponentSchema(ct.type)?.metadata || {},
         name: ct.name,
         componentPath: ct.componentPath,
         description: ct.description,

@@ -26,6 +26,11 @@ export default function CardReport({
   category,
   date,
 }) {
+  const normalizedBadges = Array.isArray(badges)
+    ? badges.filter((badge) => typeof badge === 'string' && badge.trim()).map((badge) => badge.trim())
+    : [];
+  const safeTitle = typeof title === 'string' ? title : '';
+  const hasImage = typeof image === 'string' && image.trim();
 
   // ==========================================
   // VARIANT 2: LIST / ROW (Gambar Bawah)
@@ -33,7 +38,7 @@ export default function CardReport({
   if (variant === 'list') {
     const actionHref = suffixHref || downloadUrl;
     const actionIcon = suffixIcon || <Icon name="download" className='text-secondary' style={{ '--icon-size': '24px' }} />;
-    const hasMeta = badges.length > 0 || category || date;
+    const hasMeta = normalizedBadges.length > 0 || category || date;
 
     return (
       <div
@@ -57,13 +62,13 @@ export default function CardReport({
           className="lnCardReport__body flex flex-col flex-1 min-w-0"
         >
           <h3 className="lnCardReport__title text-body-b4 text-black font-regular transition-colors">
-            {title}
+            {safeTitle}
           </h3>
           
           {hasMeta ? (
             <div className="lnCardReport__meta flex flex-wrap items-center gap-3 text-sm text-neutral-400 mt-2 md:mt-3">
               {/* Badges Pill */}
-              {badges.map((badge, index) => (
+              {normalizedBadges.map((badge, index) => (
                 <span 
                   key={index} 
                   className="lnCardReport__badge px-3 py-1 bg-neutral-50 text-black font-medium rounded-full text-caption-c1 transition-colors group-hover:bg-yellow-500"
@@ -107,12 +112,18 @@ export default function CardReport({
       {/* Left: Cover Image */}
       <div className="lnCardReport__coverMedia w-[120px] h-auto shrink-0 relative m-1.5">
         {/* Aspect ratio di mobile agak kotak, di desktop mengikuti tinggi konten via h-full absolute */}
-        <img 
-          src={image} 
-          alt={title} 
-          className="lnCardReport__coverImage w-full h-full object-cover rounded-[12px]" 
-          loading="lazy"
-        />
+        {hasImage ? (
+          <img 
+            src={image} 
+            alt={safeTitle} 
+            className="lnCardReport__coverImage w-full h-full object-cover rounded-[12px]" 
+            loading="lazy"
+          />
+        ) : (
+          <div className="lnCardReport__coverImage lnCardReport__coverImage--fallback flex h-full w-full items-center justify-center rounded-[12px] bg-light-2">
+            <Icon name="download" className="text-secondary" style={{ '--icon-size': '32px' }} />
+          </div>
+        )}
       </div>
 
       {/* Right: Content */}
@@ -126,7 +137,7 @@ export default function CardReport({
           )}
           
           <p className="lnCardReport__title text-body-b4 text-black font-regular mb-4 line-clamp-2">
-            {title}
+            {safeTitle}
           </p>
         </div>
 

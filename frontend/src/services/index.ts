@@ -17,6 +17,7 @@ export * from './logActivity.service';
 export * from './pages.service';
 export * from './contact.service';
 export * from './menu.service';
+export * from './media.service';
 export * from './settings.service';
 export * from './profile.service';
 export * from './urlRedirection.service';

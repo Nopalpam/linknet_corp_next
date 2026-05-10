@@ -9,7 +9,7 @@ import Icon from '../base/Icon';
 import { useModalRegistry } from '../hooks/useModalRegistry';
 
 // UBAH: Terima prop 'data' secara langsung
-export default function ReportListPart({ data, config, className = "" }) {
+export default function ReportListPart({ data, config, className = "", cardVariant = "list" }) {
   // 2. Gunakan Hook
   const { openModal, closeModal, isModalOpen } = useModalRegistry();
 
@@ -34,6 +34,10 @@ export default function ReportListPart({ data, config, className = "" }) {
   const MAX_VISIBLE = 4;
   const visibleItems = items.slice(0, MAX_VISIBLE);
   const hasMore = items.length > MAX_VISIBLE;
+  const normalizedCardVariant = cardVariant === 'cover' ? 'cover' : 'list';
+  const itemGridClass = normalizedCardVariant === 'cover'
+    ? 'grid grid-cols-1 md:grid-cols-2 gap-x-[20px] gap-y-4 md:gap-y-[16px]'
+    : 'grid grid-cols-1 md:grid-cols-2 gap-x-[20px] gap-y-4 md:gap-y-[16px]';
 
   const getPdfIcon = (type) => {
     return type === 'Consolidated'
@@ -66,14 +70,17 @@ export default function ReportListPart({ data, config, className = "" }) {
         </div>
 
         {/* GRID LIST ITEMS (Max 6) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-[20px] gap-y-4 md:gap-y-[16px]">
+        <div className={itemGridClass}>
           {visibleItems.map((item) => (
             <CardReport
               key={item.id}
-              variant="list"
-              icon={getPdfIcon(item.reportType)}
-              title={item.title}
-              badges={[item.auditStatus]}
+              variant={normalizedCardVariant}
+              icon={getPdfIcon(item.dataType || item.reportType)}
+              image={item.image}
+              year={item.year}
+              title={item.title || ''}
+              fileSize={item.fileSize}
+              badges={item.auditStatus ? [item.auditStatus] : []}
               category={item.category}
               date={item.date}
               downloadUrl={item.downloadUrl}
@@ -113,10 +120,13 @@ export default function ReportListPart({ data, config, className = "" }) {
             {items.map((item) => (
               <CardReport
                 key={item.id}
-                variant="list"
-                icon={getPdfIcon(item.reportType)}
-                title={item.title}
-                badges={[item.auditStatus]}
+                variant={normalizedCardVariant}
+                icon={getPdfIcon(item.dataType || item.reportType)}
+                image={item.image}
+                year={item.year}
+                title={item.title || ''}
+                fileSize={item.fileSize}
+                badges={item.auditStatus ? [item.auditStatus] : []}
                 category={item.category}
                 date={item.date}
                 downloadUrl={item.downloadUrl}

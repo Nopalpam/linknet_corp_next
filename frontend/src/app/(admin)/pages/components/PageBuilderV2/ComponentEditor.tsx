@@ -24,9 +24,19 @@ import { getRegistryEntry } from './registry';
 import { isMultilingual, ComponentSettings } from './types';
 import { CkeditorEditor } from './editors/CkeditorEditor';
 import { CtaListModule, isCtaListItem } from './editors/CtaListModule';
+import { InformationListEditor } from './editors/InformationListEditor';
+import { MediaGenreField, MediaHighlightCategoriesField, MediaIdsField } from './editors/MediaSelectionEditor';
 import { ICON_OPTIONS } from './iconOptions';
 import { awardsService, Award } from '@/services/awards.service';
 import { newsCategoryService, newsService, NewsCategory, News } from '@/services/news.service';
+import { reportService } from '@/services/report.service';
+import { announcementService } from '@/services/announcement.service';
+import {
+  getDataDrivenFieldHelper,
+  getDataDrivenFieldLabel,
+  isDataDrivenComponent,
+  normalizeDataDrivenSettings,
+} from './dataDrivenSettings';
 
 // =============================================================================
 // TYPE-SPECIFIC EDITOR MAPPING
@@ -34,6 +44,7 @@ import { newsCategoryService, newsService, NewsCategory, News } from '@/services
 
 const TYPE_SPECIFIC_EDITORS: Record<string, React.ComponentType<{ settings: any; onChange: (s: any) => void }>> = {
   ckeditor: CkeditorEditor,
+  information_list: InformationListEditor,
 };
 
 // =============================================================================
@@ -45,7 +56,7 @@ const COMMON_FIELD_KEYS = ['config', 'custom_id', 'custom_class', 'bg_type', 'bg
 /** Keys that belong to the CONTENT group */
 const CONTENT_KEYS = ['title', 'subtitle', 'heading', 'subheading', 'description', 'content', 'text', 'label', 'name', 'caption', 'alt', 'excerpt', 'summary', 'body', 'quote', 'author', 'source', 'placeholder', 'badge', 'tag', 'category'];
 /** Keys that belong to the LAYOUT group */
-const LAYOUT_KEYS = ['theme', 'size', 'layout', 'alignment', 'text_position', 'columns', 'gap', 'padding', 'margin', 'width', 'height', 'max_width', 'max_items', 'per_page', 'itemsPerRow', 'items_per_row', 'limit', 'state', 'order', 'direction', 'position', 'variant', 'style', 'display', 'grid', 'spacing', 'rows', 'cols', 'show_', 'hide_', 'is_', 'enable_', 'visible'];
+const LAYOUT_KEYS = ['theme', 'size', 'layout', 'alignment', 'text_position', 'columns', 'gap', 'padding', 'margin', 'width', 'height', 'max_width', 'max_items', 'per_page', 'itemsPerRow', 'items_per_row', 'limit', 'state', 'order', 'direction', 'position', 'variant', 'style', 'display', 'grid', 'spacing', 'rows', 'cols', 'report_type_id', 'report_section_id', 'announcement_type_id', 'announcement_section_id', 'sort_by', 'sort_direction', 'card_style', 'sort', 'sort_order', 'status', 'show_', 'hide_', 'is_', 'enable_', 'visible'];
 /** Keys that belong to the BUTTON group. Button Settings must only expose CTA lists. */
 const CTA_LIST_KEYS = ['ctaList', 'cta_list', 'ctaButtons', 'cta_buttons', 'buttons'];
 const BUTTON_KEYS = CTA_LIST_KEYS;
@@ -61,8 +72,13 @@ const TYPE_HIDDEN_FIELDS: Record<string, string[]> = {
   events_list: ['events', 'items', 'list', 'mainData', 'main_data'],
   news_highlight: ['title'],
   news_featured: ['title'],
+  news_list: ['category_slug', 'categorySlug'],
   news_teaser: ['categorySlug', 'category_slug'],
   navbar_newsroom: ['introData', 'sectionIntro', 'intro'],
+  report_list: ['report_type_slug', 'report_section_slug'],
+  report_grid: ['report_type_slug', 'report_section_slug', 'data'],
+  report_list_part: ['report_type_slug', 'report_section_slug', 'data'],
+  announcement_list: ['announcement_type_slug', 'announcement_section_slug'],
 };
 
 /** Helper text for technical/non-obvious fields */
@@ -80,7 +96,19 @@ const FIELD_HELPERS: Record<string, string> = {
   max_items: 'Maximum number of items to display',
   per_page: 'Number of items per page for pagination',
   order: 'Sort order for displayed items',
+  category_id: 'Filter content by category/type ID.',
+  category_slug: 'Filter content by category/type slug.',
+  card_style: 'Visual card style used by the public renderer.',
+  display_image: 'Show or hide card images where supported.',
+  display_description: 'Show or hide descriptions/excerpts where supported.',
+  display_metadata: 'Show or hide metadata such as date/category where supported.',
   news_ids: 'Pilih beberapa berita dari database. Urutan pilihan di bawah ini akan dipakai di public.',
+  channel_ids: 'Pilih channel dari Media API. Jika kosong, frontend menampilkan empty state.',
+  genre_ids: 'Pilih genre dari Media API. Channel yang tampil akan mengikuti genre terpilih.',
+  reel_item_ids: 'Pilih highlight/program dari Media API. Reel Name otomatis mengikuti item yang dipilih.',
+  highlight_categories: 'Buat kategori dan pilih Reel Items untuk tiap kategori.',
+  logo_channel_ids: 'Pilih channel logo dari Media API untuk marquee. Jika kosong, marquee tidak ditampilkan.',
+  source: 'Data source for this component.',
   itemsPerRow: 'Number of event cards per row on desktop.',
   showPagination: 'Show frontend pagination controls when more CMS events are available.',
   state: 'Filter events by public state from CMS.',
@@ -139,6 +167,106 @@ const ACTION_MODAL_OPTIONS = [
   'form-suggest-enterprise',
   'form-event-register',
 ];
+
+function getSortByOptions(componentType?: string): SelectOption[] {
+  switch (componentType) {
+    case 'tv_channel_list':
+    case 'tv_channel_sneak_peek':
+      return [
+        { value: 'manual', label: 'Manual selected order' },
+        { value: 'name', label: 'Channel name' },
+        { value: 'channel_number', label: 'Channel number' },
+        { value: 'api_order', label: 'API order' },
+      ];
+    case 'tv_highlight_sliders':
+    case 'tv_highlight_sneek_peak':
+      return [
+        { value: 'manual', label: 'Manual selected order' },
+        { value: 'api_order', label: 'API order' },
+        { value: 'title', label: 'Title' },
+        { value: 'year', label: 'Year' },
+      ];
+    case 'report_list':
+    case 'report_grid':
+    case 'report_list_part':
+    case 'list_report_home':
+      return [
+        { value: 'year', label: 'Report year' },
+        { value: 'published_at', label: 'Publish date' },
+        { value: 'title', label: 'Report title' },
+        { value: 'sort_order', label: 'CMS sort order' },
+      ];
+    case 'announcement_list':
+      return [
+        { value: 'created_at', label: 'Publish date' },
+        { value: 'title', label: 'Title' },
+        { value: 'sort_order', label: 'CMS sort order' },
+      ];
+    case 'events_list':
+    case 'event_related':
+      return [
+        { value: 'start_date', label: 'Event start date' },
+        { value: 'created_at', label: 'Created date' },
+        { value: 'title', label: 'Event title' },
+      ];
+    case 'news_list':
+    case 'news_highlight':
+    case 'news_featured':
+    case 'news_feed':
+    case 'news_teaser':
+      return [
+        { value: 'news_date', label: 'News date' },
+        { value: 'published_at', label: 'Publish date' },
+        { value: 'title', label: 'News title' },
+        { value: 'created_at', label: 'Created date' },
+      ];
+    case 'awards_list':
+      return [
+        { value: 'issue_date', label: 'Issue date' },
+        { value: 'year', label: 'Award year' },
+        { value: 'title', label: 'Award title' },
+      ];
+    default:
+      return ['latest', 'oldest', 'alphabetical'];
+  }
+}
+
+function getSourceOptions(componentType?: string): SelectOption[] {
+  if ([
+    'tv_channel_list',
+    'tv_channel_sneak_peek',
+    'tv_highlight_sliders',
+    'tv_highlight_sneek_peak',
+  ].includes(componentType || '')) {
+    return [
+      { value: 'media_api', label: 'Media API' },
+    ];
+  }
+
+  return [
+    { value: 'cms_highlights', label: 'CMS News Highlights' },
+    { value: 'selected_news', label: 'Selected News' },
+  ];
+}
+
+function getCardStyleOptions(componentType?: string): SelectOption[] {
+  if (componentType === 'report_list' || componentType === 'report_grid') {
+    return [
+      { value: 'default', label: 'Default report card' },
+      { value: 'cover', label: 'Cover card' },
+      { value: 'compact', label: 'Compact document row' },
+    ];
+  }
+
+  if (componentType === 'announcement_list') {
+    return [
+      { value: 'document', label: 'Document row' },
+      { value: 'compact', label: 'Compact row' },
+    ];
+  }
+
+  return ['default', 'compact', 'featured'];
+}
 
 const SINGLE_BUTTON_TEXT_KEYS = ['cta_label', 'button_label', 'label', 'cta_text', 'button_text', 'textCTA', 'ctaText'];
 const SINGLE_BUTTON_LINK_KEYS = ['cta_href', 'button_href', 'href', 'cta_link', 'button_link', 'button_url', 'cta_url', 'ctaLink', 'action'];
@@ -378,7 +506,9 @@ function classifyField(key: string): 'content' | 'layout' | 'button' | 'items' |
   return 'content'; // default
 }
 
-function getHelperText(key: string): string | undefined {
+function getHelperText(key: string, componentType?: string): string | undefined {
+  const contextualHelper = getDataDrivenFieldHelper(componentType, key);
+  if (contextualHelper) return contextualHelper;
   if (FIELD_HELPERS[key]) return FIELD_HELPERS[key];
   for (const [hk, hv] of Object.entries(FIELD_HELPERS)) {
     if (key.startsWith(hk) || key.endsWith(hk)) return hv;
@@ -457,7 +587,8 @@ function shouldHideField(key: string, data: Record<string, any>): boolean {
   if (isActionModalField(key) && linkType !== 'action-modal') return true;
   if (isCtaListItem(data) && (key === 'icon' || key === 'iconLeft' || key === 'icon_left' || key === 'iconRight' || key === 'icon_right')) return true;
 
-  const source = data.source ?? data.data_source;
+  const source = data.source;
+  if (key === 'reel_names' || key === 'reelNames') return true;
   const isNewsIdsField = key === 'news_ids' || key === 'newsIds' || key === 'selected_news_ids' || key === 'selectedNewsIds';
   if (isNewsIdsField && source !== 'selected_news') return true;
   if ((key === 'featuredNews' || key === 'items') && source === 'selected_news') return true;
@@ -506,6 +637,8 @@ interface FieldProps {
   onChange: (val: any) => void;
   depth?: number;
   templateValue?: any;
+  componentType?: string;
+  contextData?: Record<string, any>;
 }
 
 function FieldWrapper({ children, helper }: { children: React.ReactNode; helper?: string }) {
@@ -519,12 +652,12 @@ function FieldWrapper({ children, helper }: { children: React.ReactNode; helper?
   );
 }
 
-function MultilingualField({ label, value, onChange, fieldKey }: FieldProps) {
+function MultilingualField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
   const isHtml = isHtmlField('', value);
   const InputEl = isHtml ? 'textarea' : 'input';
   const extraProps = isHtml ? { rows: 3 } : {};
   const placeholder = getPlaceholder(fieldKey);
-  const helper = getHelperText(fieldKey);
+  const helper = getHelperText(fieldKey, componentType);
 
   return (
     <FieldWrapper helper={helper}>
@@ -555,10 +688,10 @@ function MultilingualField({ label, value, onChange, fieldKey }: FieldProps) {
   );
 }
 
-function StringField({ label, value, onChange, fieldKey }: FieldProps) {
+function StringField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
   const isHtml = isHtmlField(fieldKey, value);
   const placeholder = getPlaceholder(fieldKey);
-  const helper = getHelperText(fieldKey);
+  const helper = getHelperText(fieldKey, componentType);
 
   if (isHtml || (typeof value === 'string' && value.length > 100)) {
     return (
@@ -594,8 +727,8 @@ function StringField({ label, value, onChange, fieldKey }: FieldProps) {
   );
 }
 
-function NumberField({ label, value, onChange, fieldKey }: FieldProps) {
-  const helper = getHelperText(fieldKey);
+function NumberField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
+  const helper = getHelperText(fieldKey, componentType);
   const placeholder = getPlaceholder(fieldKey);
 
   return (
@@ -612,8 +745,8 @@ function NumberField({ label, value, onChange, fieldKey }: FieldProps) {
   );
 }
 
-function BooleanField({ label, value, onChange, fieldKey }: FieldProps) {
-  const helper = getHelperText(fieldKey);
+function BooleanField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
+  const helper = getHelperText(fieldKey, componentType);
 
   return (
     <FieldWrapper helper={helper}>
@@ -639,9 +772,12 @@ function BooleanField({ label, value, onChange, fieldKey }: FieldProps) {
   );
 }
 
-function SelectField({ label, value, onChange, options, fieldKey }: FieldProps & { options: string[] }) {
-  const helper = getHelperText(fieldKey);
-  const normalizedOptions = typeof value === 'string' && value && !options.includes(value)
+type SelectOption = string | { value: string; label: string };
+
+function SelectField({ label, value, onChange, options, fieldKey, componentType }: FieldProps & { options: SelectOption[] }) {
+  const helper = getHelperText(fieldKey, componentType);
+  const optionValues = options.map((option) => typeof option === 'string' ? option : option.value);
+  const normalizedOptions: SelectOption[] = typeof value === 'string' && value && !optionValues.includes(value)
     ? [value, ...options]
     : options;
 
@@ -653,9 +789,14 @@ function SelectField({ label, value, onChange, options, fieldKey }: FieldProps &
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
       >
-        {normalizedOptions.map((opt) => (
-          <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
-        ))}
+        {normalizedOptions.map((opt) => {
+          const optionValue = typeof opt === 'string' ? opt : opt.value;
+          const optionLabel = typeof opt === 'string' ? opt.charAt(0).toUpperCase() + opt.slice(1).replace(/_/g, ' ') : opt.label;
+
+          return (
+            <option key={optionValue} value={optionValue}>{optionLabel}</option>
+          );
+        })}
       </select>
     </FieldWrapper>
   );
@@ -710,6 +851,204 @@ function NewsCategorySelectField({ label, value, onChange, fieldKey }: FieldProp
             </option>
           );
         })}
+      </select>
+    </FieldWrapper>
+  );
+}
+
+function ReportTypeSelectField({ label, value, onChange }: FieldProps) {
+  const [types, setTypes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const currentValue = typeof value === 'string' ? value : '';
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    reportService
+      .getReportTypesList()
+      .then((response) => {
+        if (mounted) setTypes(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setTypes([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <FieldWrapper helper="Pilih Report Type aktif dari Report CMS. Source component ini fixed ke data Report.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <select
+        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+        value={currentValue}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading report types...' : 'All report types'}</option>
+        {currentValue && !types.some((type) => type.id === currentValue) && (
+          <option value={currentValue}>{currentValue}</option>
+        )}
+        {types.map((type) => (
+          <option key={type.id} value={type.id}>
+            {type.name}
+          </option>
+        ))}
+      </select>
+    </FieldWrapper>
+  );
+}
+
+function ReportSectionSelectField({ label, value, onChange, contextData }: FieldProps) {
+  const [sections, setSections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const reportTypeId = typeof contextData?.report_type_id === 'string' ? contextData.report_type_id : '';
+  const currentValue = typeof value === 'string' ? value : '';
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    reportService
+      .getReportSectionsList(reportTypeId || undefined)
+      .then((response) => {
+        if (mounted) setSections(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setSections([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [reportTypeId]);
+
+  return (
+    <FieldWrapper helper="Opsional. Pilih Report Section aktif; kosongkan untuk menampilkan semua section yang cocok.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <select
+        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+        value={currentValue}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading report sections...' : 'All report sections'}</option>
+        {currentValue && !sections.some((section) => section.id === currentValue) && (
+          <option value={currentValue}>{currentValue}</option>
+        )}
+        {sections.map((section) => (
+          <option key={section.id} value={section.id}>
+            {section.name || section.title}{section.report_types?.name ? ` - ${section.report_types.name}` : ''}
+          </option>
+        ))}
+      </select>
+    </FieldWrapper>
+  );
+}
+
+function AnnouncementTypeSelectField({ label, value, onChange }: FieldProps) {
+  const [types, setTypes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const currentValue = typeof value === 'string' ? value : '';
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    announcementService
+      .getAnnouncementTypesList()
+      .then((response) => {
+        if (mounted) setTypes(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setTypes([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <FieldWrapper helper="Pilih kategori/type aktif dari Announcement CMS.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <select
+        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+        value={currentValue}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading announcement categories...' : 'All announcement categories'}</option>
+        {currentValue && !types.some((type) => type.id === currentValue) && (
+          <option value={currentValue}>{currentValue}</option>
+        )}
+        {types.map((type) => (
+          <option key={type.id} value={type.id}>
+            {type.name}
+          </option>
+        ))}
+      </select>
+    </FieldWrapper>
+  );
+}
+
+function AnnouncementSectionSelectField({ label, value, onChange, contextData }: FieldProps) {
+  const [sections, setSections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const announcementTypeId = typeof contextData?.announcement_type_id === 'string' ? contextData.announcement_type_id : '';
+  const currentValue = typeof value === 'string' ? value : '';
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    announcementService
+      .getAnnouncementSectionsList(announcementTypeId || undefined)
+      .then((response) => {
+        if (mounted) setSections(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setSections([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [announcementTypeId]);
+
+  return (
+    <FieldWrapper helper="Opsional. Pilih section aktif; kosongkan untuk menampilkan semua section yang cocok.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <select
+        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+        value={currentValue}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading announcement sections...' : 'All announcement sections'}</option>
+        {currentValue && !sections.some((section) => section.id === currentValue) && (
+          <option value={currentValue}>{currentValue}</option>
+        )}
+        {sections.map((section) => (
+          <option key={section.id} value={section.id}>
+            {section.name || section.title}{section.announcement_types?.name ? ` - ${section.announcement_types.name}` : ''}
+          </option>
+        ))}
       </select>
     </FieldWrapper>
   );
@@ -857,8 +1196,8 @@ function NewsIdsField({ label, value, onChange }: FieldProps) {
   );
 }
 
-function IconField({ label, value, onChange, fieldKey }: FieldProps) {
-  const helper = getHelperText(fieldKey) || 'Select an icon name or enter a file/path value';
+function IconField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
+  const helper = getHelperText(fieldKey, componentType) || 'Select an icon name or enter a file/path value';
   const currentValue = typeof value === 'string' ? value : '';
   const selectedIcon = ICON_OPTIONS.includes(currentValue as any) ? currentValue : '';
   const customPath = selectedIcon ? '' : currentValue;
@@ -1122,19 +1461,72 @@ const EMPTY_ARRAY_ITEM_TEMPLATES: Record<string, any> = {
   },
 };
 
+const CONTEXTUAL_ARRAY_ITEM_TEMPLATES: Record<string, Record<string, any>> = {
+  list_report_home: {
+    report: {
+      title: { en: '', id: '' },
+      desc: { en: '', id: '' },
+      ctaList: [],
+      year: '',
+    },
+    announcement: {
+      title: { en: '', id: '' },
+      desc: { en: '', id: '' },
+      ctaList: [],
+      year: '',
+    },
+  },
+  milestone: {
+    list: {
+      text: { en: '', id: '' },
+    },
+  },
+  usp_grid_slider: {
+    list: {
+      icon: 'key',
+      text: { en: '', id: '' },
+    },
+  },
+};
+
+const CTA_ARRAY_KEYS = new Set(['ctaList', 'cta_list', 'cta_buttons']);
+
+function getContextualArrayItemTemplate(componentType: string | undefined, fieldKey: string): any {
+  if (!componentType) return null;
+  if (componentType === 'list_report_home' && fieldKey !== 'tabs' && !CTA_ARRAY_KEYS.has(fieldKey)) {
+    return CONTEXTUAL_ARRAY_ITEM_TEMPLATES.list_report_home.report;
+  }
+  return CONTEXTUAL_ARRAY_ITEM_TEMPLATES[componentType]?.[fieldKey] || null;
+}
+
+function applyArrayItemDefaults(fieldKey: string, item: any): any {
+  if (!item || typeof item !== 'object' || !CTA_ARRAY_KEYS.has(fieldKey)) return item;
+  return {
+    ...item,
+    variant: item.variant || 'primary',
+    size: item.size || 'lg',
+    link_type: item.link_type || 'url',
+  };
+}
+
 function cloneAndClear(value: any): any {
   const cloned = JSON.parse(JSON.stringify(value));
   clearValues(cloned);
   return cloned;
 }
 
-function getEmptyArrayItemTemplate(fieldKey: string, templateValue?: any): any {
+function getEmptyArrayItemTemplate(fieldKey: string, templateValue?: any, componentType?: string): any {
+  const contextualTemplate = getContextualArrayItemTemplate(componentType, fieldKey);
+  if (contextualTemplate) {
+    return JSON.parse(JSON.stringify(contextualTemplate));
+  }
+
   if (Array.isArray(templateValue) && templateValue.length > 0) {
-    return cloneAndClear(templateValue[0]);
+    return applyArrayItemDefaults(fieldKey, cloneAndClear(templateValue[0]));
   }
 
   if (EMPTY_ARRAY_ITEM_TEMPLATES[fieldKey]) {
-    return cloneAndClear(EMPTY_ARRAY_ITEM_TEMPLATES[fieldKey]);
+    return applyArrayItemDefaults(fieldKey, cloneAndClear(EMPTY_ARRAY_ITEM_TEMPLATES[fieldKey]));
   }
 
   return {
@@ -1143,7 +1535,7 @@ function getEmptyArrayItemTemplate(fieldKey: string, templateValue?: any): any {
   };
 }
 
-function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue }: FieldProps) {
+function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue, componentType }: FieldProps) {
   const items = Array.isArray(value) ? value : [];
   const [collapsed, setCollapsed] = useState(items.length > 3);
   const [minimizedItems, setMinimizedItems] = useState<Record<number, boolean>>(() => {
@@ -1176,13 +1568,19 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue
 
   const addItem = () => {
     setCollapsed(false);
+    const contextualTemplate = getContextualArrayItemTemplate(componentType, fieldKey);
     if (items.length === 0) {
-      onChange([getEmptyArrayItemTemplate(fieldKey, templateValue)]);
+      onChange([getEmptyArrayItemTemplate(fieldKey, templateValue, componentType)]);
       setMinimizedItems({ 0: false });
       return;
     }
-    const template = JSON.parse(JSON.stringify(items[0]));
-    clearValues(template);
+    let template = contextualTemplate
+      ? getEmptyArrayItemTemplate(fieldKey, templateValue, componentType)
+      : JSON.parse(JSON.stringify(items[0]));
+    if (!contextualTemplate) {
+      clearValues(template);
+      template = applyArrayItemDefaults(fieldKey, template);
+    }
     const newItems = [...items, template];
     onChange(newItems);
     // Expand the new item, keep others as-is
@@ -1461,6 +1859,8 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue
                       depth={depth + 1}
                       templateData={Array.isArray(templateValue) ? (templateValue[idx] || templateValue[0]) : undefined}
                       contextData={item}
+                      objectKey={fieldKey}
+                      componentType={componentType}
                     />
                   ) : (
                     <input
@@ -1507,10 +1907,11 @@ function renderField(
   handleFieldChange: (key: string, val: any) => void,
   depth: number,
   templateValue?: any,
-  componentType?: string
+  componentType?: string,
+  contextData?: Record<string, any>
 ): { element: React.ReactNode; wide: boolean } {
-  const label = humanize(key);
-  const fieldProps: FieldProps = { label, fieldKey: key, value, onChange: (v) => handleFieldChange(key, v), depth, templateValue };
+  const label = getDataDrivenFieldLabel(componentType, key) || humanize(key);
+  const fieldProps: FieldProps = { label, fieldKey: key, value, onChange: (v) => handleFieldChange(key, v), depth, templateValue, componentType, contextData };
 
   // Select fields for known enums
   if (key === 'bg_type') {
@@ -1529,7 +1930,12 @@ function renderField(
     return { element: <SelectField key={key} {...fieldProps} options={['h1', 'h2', 'h3', 'h4', 'h5', 'h6']} />, wide: false };
   }
   if (key === 'layout') {
-    return { element: <SelectField key={key} {...fieldProps} options={['grid', 'list', 'carousel']} />, wide: false };
+    const layoutOptions = componentType === 'report_list'
+      ? [{ value: 'list', label: 'Grouped list' }, { value: 'grid', label: 'Card grid' }]
+      : componentType === 'announcement_list'
+        ? [{ value: 'list', label: 'Grouped cover cards' }, { value: 'grid', label: 'Document card grid' }, { value: 'compact', label: 'Compact list' }]
+        : ['grid', 'list', 'carousel'];
+    return { element: <SelectField key={key} {...fieldProps} options={layoutOptions} />, wide: false };
   }
   if (key === 'layoutVariant' || key === 'layout_variant') {
     return { element: <SelectField key={key} {...fieldProps} options={LAYOUT_VARIANT_OPTIONS} />, wide: false };
@@ -1552,17 +1958,33 @@ function renderField(
   if (key === 'size_hero') {
     return { element: <SelectField key={key} {...fieldProps} options={['lnHero__medium', 'lnHero__small']} />, wide: false };
   }
-  if (key === 'order') {
-    const options = componentType === 'event_related'
-      ? ['latest', 'newest', 'random']
-      : ['latest', 'oldest', 'alphabetical'];
+  if (key === 'order' || key === 'sort_by') {
+    const options = getSortByOptions(componentType);
     return { element: <SelectField key={key} {...fieldProps} options={options} />, wide: false };
+  }
+  if (key === 'sort_direction') {
+    return { element: <SelectField key={key} {...fieldProps} options={[{ value: 'desc', label: 'Newest / Descending' }, { value: 'asc', label: 'Oldest / Ascending' }]} />, wide: false };
   }
   if (key === 'state' && (componentType === 'events_list' || componentType === 'event_related')) {
     return { element: <SelectField key={key} {...fieldProps} options={['all', 'upcoming', 'ongoing', 'ended']} />, wide: false };
   }
-  if (key === 'source' || key === 'data_source') {
-    return { element: <SelectField key={key} {...fieldProps} options={['cms_highlights', 'selected_news', 'manual']} />, wide: false };
+  if (key === 'source') {
+    return { element: <SelectField key={key} {...fieldProps} options={getSourceOptions(componentType)} />, wide: false };
+  }
+  if (key === 'card_style') {
+    return { element: <SelectField key={key} {...fieldProps} options={getCardStyleOptions(componentType)} />, wide: false };
+  }
+  if (key === 'report_type_id') {
+    return { element: <ReportTypeSelectField key={key} {...fieldProps} />, wide: false };
+  }
+  if (key === 'report_section_id') {
+    return { element: <ReportSectionSelectField key={key} {...fieldProps} />, wide: false };
+  }
+  if (key === 'announcement_type_id') {
+    return { element: <AnnouncementTypeSelectField key={key} {...fieldProps} />, wide: false };
+  }
+  if (key === 'announcement_section_id') {
+    return { element: <AnnouncementSectionSelectField key={key} {...fieldProps} />, wide: false };
   }
   if (key === 'category_sort_by' || key === 'categorySortBy') {
     return { element: <SelectField key={key} {...fieldProps} options={['default', 'label_asc', 'label_desc', 'slug_asc', 'slug_desc']} />, wide: false };
@@ -1578,6 +2000,18 @@ function renderField(
   }
   if (key === 'news_ids' || key === 'newsIds' || key === 'selected_news_ids' || key === 'selectedNewsIds') {
     return { element: <NewsIdsField key={key} {...fieldProps} />, wide: true };
+  }
+  if (key === 'channel_ids' || key === 'channelIds' || key === 'logo_channel_ids' || key === 'logoChannelIds') {
+    return { element: <MediaIdsField key={key} label={label} value={value} onChange={(v) => handleFieldChange(key, v)} kind="channel" />, wide: true };
+  }
+  if (key === 'genre_ids' || key === 'genreIds' || key === 'genre_names' || key === 'genreNames') {
+    return { element: <MediaGenreField key={key} label={label} value={value} onChange={(v) => handleFieldChange(key, v)} />, wide: true };
+  }
+  if (key === 'reel_item_ids' || key === 'reelItemIds' || key === 'highlight_item_ids' || key === 'highlightItemIds') {
+    return { element: <MediaIdsField key={key} label={label} value={value} onChange={(v) => handleFieldChange(key, v)} kind="reel_item" />, wide: true };
+  }
+  if (key === 'highlight_categories' || key === 'highlightCategories') {
+    return { element: <MediaHighlightCategoriesField key={key} label={label} value={value} onChange={(v) => handleFieldChange(key, v)} />, wide: true };
   }
 
   // Multilingual (always wide)
@@ -1641,6 +2075,51 @@ function renderField(
   return { element: <StringField key={key} {...fieldProps} />, wide };
 }
 
+const CONTEXTUAL_FIELD_ORDER: Record<string, Record<string, string[]>> = {
+  usp_grid_slider: {
+    items: ['logo', 'title', 'desc', 'ctaList', 'bodyTitle', 'list'],
+  },
+  milestone: {
+    list: ['text'],
+  },
+};
+
+function shouldHideContextualField(key: string, componentType?: string, objectKey?: string): boolean {
+  if (componentType === 'milestone' && objectKey === 'list' && key === 'icon') {
+    return true;
+  }
+
+  if (componentType === 'usp_grid_slider' && objectKey === 'items' && key === 'iconListDefault') {
+    return true;
+  }
+
+  return false;
+}
+
+function orderObjectFieldEntries(
+  entries: [string, any][],
+  componentType?: string,
+  objectKey?: string
+): [string, any][] {
+  const order = componentType && objectKey
+    ? CONTEXTUAL_FIELD_ORDER[componentType]?.[objectKey]
+    : undefined;
+
+  if (!order) return entries;
+
+  const position = new Map(order.map((key, index) => [key, index]));
+
+  return [...entries].sort(([keyA], [keyB]) => {
+    const a = position.get(keyA);
+    const b = position.get(keyB);
+
+    if (a !== undefined && b !== undefined) return a - b;
+    if (a !== undefined) return -1;
+    if (b !== undefined) return 1;
+    return 0;
+  });
+}
+
 function ObjectFields({
   data,
   onChange,
@@ -1682,15 +2161,35 @@ function ObjectFields({
   }
 
   const handleFieldChange = (key: string, newVal: any) => {
-    onChange({ ...editorData, [key]: newVal });
+    const nextData = { ...editorData, [key]: newVal };
+
+    if (key === 'report_type_id') {
+      nextData.report_section_id = '';
+    }
+    if (key === 'announcement_type_id') {
+      nextData.announcement_section_id = '';
+    }
+    if (key === 'latest_only' && newVal === true) {
+      nextData.limit = 1;
+    }
+
+    onChange(nextData);
   };
 
   const visibilityContext = contextData || data || {};
-  const entries = Object.entries(editorData).filter(([key]) => !excludeKeys.includes(key) && !shouldHideField(key, visibilityContext));
+  const entries = orderObjectFieldEntries(
+    Object.entries(editorData).filter(([key]) =>
+      !excludeKeys.includes(key) &&
+      !shouldHideField(key, visibilityContext) &&
+      !shouldHideContextualField(key, componentType, objectKey)
+    ),
+    componentType,
+    objectKey
+  );
 
   // Render fields into a smart grid: wide fields get full width, short fields share a row
   const rendered = entries.map(([key, value]) => {
-    const { element, wide } = renderField(key, value, handleFieldChange, depth, templateData?.[key], componentType);
+    const { element, wide } = renderField(key, value, handleFieldChange, depth, templateData?.[key], componentType, visibilityContext);
     return { key, element, wide };
   });
 
@@ -1826,14 +2325,25 @@ export function ComponentEditor() {
   const defaultSettings = registryEntry?.defaultData || {};
 
   const handleSettingsChange = (newSettings: ComponentSettings) => {
-    updateComponent(selectedComponentId, normalizeSettingsForEditor(newSettings));
+    const normalizedSettings = normalizeSettingsForEditor(newSettings);
+    updateComponent(
+      selectedComponentId,
+      isDataDrivenComponent(selectedComponent.type)
+        ? normalizeDataDrivenSettings(selectedComponent.type, normalizedSettings)
+        : normalizedSettings
+    );
   };
 
   // Categorize fields into groups
-  const settings = {
+  const normalizedSelectedSettings = normalizeSettingsForEditor(selectedComponent.settings || {});
+  const settings = isDataDrivenComponent(selectedComponent.type) ? normalizeDataDrivenSettings(selectedComponent.type, {
     ...(selectedComponent.type === 'awards_marquee' ? { award_ids: [] } : {}),
     ...(['news_highlight', 'news_featured'].includes(selectedComponent.type) ? { news_ids: [] } : {}),
-    ...normalizeSettingsForEditor(selectedComponent.settings || {}),
+    ...normalizedSelectedSettings,
+  }) : {
+    ...(selectedComponent.type === 'awards_marquee' ? { award_ids: [] } : {}),
+    ...(['news_highlight', 'news_featured'].includes(selectedComponent.type) ? { news_ids: [] } : {}),
+    ...normalizedSelectedSettings,
   };
   const groups: Record<string, Record<string, any>> = {
     layout: {},

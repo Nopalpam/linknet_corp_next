@@ -20,6 +20,20 @@ const remoteImagePatterns = configuredRemoteImageHosts.map((hostname) => ({
   protocol: 'https' as const,
   hostname,
 }));
+const tradingViewScriptSources = [
+  'https://s3.tradingview.com',
+  'https://www.tradingview-widget.com',
+];
+const tradingViewFrameSources = [
+  'https://www.tradingview.com',
+  'https://s.tradingview.com',
+  'https://www.tradingview-widget.com',
+];
+const mediaImageSources = [
+  'http://edge.linknetott.swiftserve.com',
+  'https://edge.linknetott.swiftserve.com',
+  'https://ui-stb-cpe.sysln.id',
+];
 
 if (isProduction && process.env.NEXT_PUBLIC_AUTH_ENABLED === 'false') {
   throw new Error('NEXT_PUBLIC_AUTH_ENABLED=false is not allowed for production builds');
@@ -27,11 +41,12 @@ if (isProduction && process.env.NEXT_PUBLIC_AUTH_ENABLED === 'false') {
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' ${tradingViewScriptSources.join(' ')}${isProduction ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https:${isProduction ? '' : ' http:'}`,
+  `img-src 'self' data: blob: https: ${mediaImageSources.join(' ')}${isProduction ? '' : ' http:'}`,
   "font-src 'self' data:",
-  `connect-src 'self' https:${isProduction ? '' : ' http:'}`,
+  `connect-src 'self' https: wss://*.tradingview.com${isProduction ? '' : ' http:'}`,
+  `frame-src 'self' ${tradingViewFrameSources.join(' ')}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -46,6 +61,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       ...remoteImagePatterns,
+      { protocol: 'http', hostname: 'edge.linknetott.swiftserve.com' },
+      { protocol: 'https', hostname: 'edge.linknetott.swiftserve.com' },
+      { protocol: 'https', hostname: 'ui-stb-cpe.sysln.id' },
       ...(isProduction ? [] : [{
         protocol: 'http',
         hostname: '**',

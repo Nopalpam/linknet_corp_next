@@ -131,11 +131,30 @@ export const logError = (
   context?: Record<string, unknown>,
   requestId?: string
 ) => {
+  const appError = error as Error & {
+    code?: string;
+    statusCode?: number;
+    details?: Record<string, unknown>;
+    originalError?: Error & { code?: string; meta?: Record<string, unknown> };
+  };
+
   logger.error(error.message, {
     error: {
       name: error.name,
       message: error.message,
       stack: error.stack,
+      code: appError.code,
+      statusCode: appError.statusCode,
+      details: appError.details,
+      originalError: appError.originalError
+        ? {
+            name: appError.originalError.name,
+            message: appError.originalError.message,
+            code: appError.originalError.code,
+            meta: appError.originalError.meta,
+            stack: appError.originalError.stack,
+          }
+        : undefined,
     },
     requestId,
     ...context,

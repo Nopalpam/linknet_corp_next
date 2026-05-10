@@ -1,16 +1,29 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 
 import Intro from '../base/section/Intro';
 import TabsUnderline from '../base/section/TabsUnderline';
 import CardTVChannel from '../base/cards/CardTVChannel';
+import CTAList from '../base/section/CTAList';
 import Icon from '../base/Icon';
 import { TV_CHANNEL_LIST_DATA } from '@/data/components/tvChannelList';
-import { TV_CHANNEL_CATALOG } from '@/data/components/tvChannelData';
+import { useLinknetMedia } from '@/hooks/useLinknetMedia';
+import { buildMediaTabs, resolveMediaChannels } from '@/lib/mediaService';
+import MediaEmptyState from './MediaEmptyState';
 
 function cn(...classes) {
   return classes.filter(Boolean).join(' ');
+}
+
+function withLocale(href, locale) {
+  if (!href || !locale) return href;
+  if (href.startsWith('#') || href.startsWith('http') || href.startsWith(`/${locale}`)) {
+    return href;
+  }
+
+  return href.startsWith('/') ? `/${locale}${href}` : href;
 }
 
 export default function TVChannelList({
@@ -18,11 +31,14 @@ export default function TVChannelList({
   className = '',
   cmsData = null
 }) {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const sectionData = cmsData || TV_CHANNEL_LIST_DATA[name];
   const {
     config = {},
     introData,
-    tabs = []
+    tabs = [],
+    ctaList = []
   } = sectionData || {};
 
   const {
@@ -31,17 +47,31 @@ export default function TVChannelList({
 
   const initialTab = tabs[0]?.value || 'all';
   const searchPlaceholder = 'Search by Channel Name / Channel No';
-  const emptyMessage = 'No TV channels match your search right now.';
-  const catalogItems = useMemo(() => Object.values(TV_CHANNEL_CATALOG), []);
+  const mediaSettings = useMemo(() => ({ ...(sectionData || {}), source: 'media_api' }), [sectionData]);
+  const { data: mediaData, isLoading } = useLinknetMedia(Boolean(sectionData));
   const [activeTab, setActiveTab] = useState(initialTab);
   const [searchValue, setSearchValue] = useState('');
+  const channels = useMemo(
+    () => resolveMediaChannels(mediaData, mediaSettings, []),
+    [mediaData, mediaSettings]
+  );
+  const resolvedTabs = useMemo(
+    () => buildMediaTabs(channels, tabs),
+    [channels, tabs]
+  );
+  const tabValues = resolvedTabs.map((item) => item.value ?? item.id);
+  const currentTab = tabValues.includes(activeTab) ? activeTab : (tabValues[0] || 'all');
+  const localizedCtaList = ctaList.map((cta) => ({
+    ...cta,
+    href: withLocale(cta.href, locale)
+  }));
 
   const filteredItems = useMemo(() => {
     const keyword = searchValue.trim().toLowerCase();
 
-    return catalogItems
+    return channels
       .filter((item) => {
-        const matchTab = activeTab === 'all' || item.categories?.includes(activeTab);
+        const matchTab = currentTab === 'all' || item.categories?.includes(currentTab);
         if (!matchTab) return false;
 
         if (!keyword) return true;
@@ -56,7 +86,7 @@ export default function TVChannelList({
 
         return (a.channelNumber || '').localeCompare(b.channelNumber || '');
       });
-  }, [activeTab, catalogItems, searchValue]);
+  }, [channels, currentTab, searchValue]);
 
   if (!sectionData) return null;
 
@@ -112,13 +142,15 @@ export default function TVChannelList({
             </form>
 
             <div className="overflow-hidden">
-              <TabsUnderline
-              items={tabs}
-              value={activeTab}
-              onChange={setActiveTab}
-              ariaLabel="TV channel categories"
-              className="lnTVChannelList__tabs"
-            />
+              {channels.length > 0 && resolvedTabs.length > 0 && (
+                <TabsUnderline
+                  items={resolvedTabs}
+                  value={currentTab}
+                  onChange={setActiveTab}
+                  ariaLabel="TV channel categories"
+                  className="lnTVChannelList__tabs"
+                />
+              )}
             </div>
 
             <div className="lnTVChannelList__count mt-8 md:mt-10">
@@ -127,7 +159,11 @@ export default function TVChannelList({
               </h2>
             </div>
 
-            {filteredItems.length > 0 ? (
+            {isLoading && filteredItems.length === 0 ? (
+              <p className="lnTVChannelList__empty py-10 text-center text-neutral-500">
+                Loading TV channels...
+              </p>
+            ) : filteredItems.length > 0 ? (
               <div className="lnTVChannelList__grid mt-6 grid grid-cols-2 gap-3 md:mt-8 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
                 {filteredItems.map((item) => (
                   <CardTVChannel
@@ -141,10 +177,16 @@ export default function TVChannelList({
                 ))}
               </div>
             ) : (
-              <p className="lnTVChannelList__empty py-10 text-center text-neutral-500">
-                {emptyMessage}
-              </p>
+              <MediaEmptyState className="lnTVChannelList__empty text-neutral-500" />
             )}
+
+            <CTAList
+              ctaList={localizedCtaList}
+              align="center"
+              className="mt-10 md:mt-14"
+              ctaClassName="!rounded-full !border-neutral-200 !px-8 md:!px-10 !text-black hover:!border-neutral-300"
+              defaultSize="lg"
+            />
           </div>
         </div>
       </section>

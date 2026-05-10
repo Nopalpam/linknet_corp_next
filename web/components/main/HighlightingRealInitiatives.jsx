@@ -12,6 +12,7 @@ import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import CardNews from '../base/cards/CardNews'; // Sesuaikan path jika folder CardNews berbeda
 import { HIGHLIGHTING_INITIATIVES_DATA } from '@/data/components/highlightingInitiatives';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -103,7 +104,7 @@ export default function HighlightingRealInitiatives({
       <div className="container mx-auto px-4 md:px-0">
 
         {/* HEADER SECTION */}
-        {introData && (
+        {hasIntroContent(introData) && (
           // Tambahkan class gsap-initiative-item
           <div className="mb-10 lnGsapInitiativeItem">
             <Intro

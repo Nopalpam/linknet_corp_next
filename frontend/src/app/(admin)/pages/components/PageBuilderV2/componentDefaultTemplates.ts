@@ -252,44 +252,44 @@ export const uspGridSliderDefaults = withCommon({
       logo: '/assets/icons/corporate-values/icon-customers.webp',
       title: { en: 'Obsession for Customers', id: 'Obsesi terhadap Pelanggan' },
       desc: { en: '', id: '' },
+      ctaList: [],
       bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
-      iconListDefault: 'key',
       list: [
-        { icon: '', text: { en: 'I start with my customers in mind in every decision I make.', id: 'Saya memulai dengan pelanggan dalam setiap keputusan yang saya buat.' } },
-        { icon: '', text: { en: 'I go the extra mile to deliver beyond customers\' expectations.', id: 'Saya berusaha lebih untuk memberikan melebihi ekspektasi pelanggan.' } },
+        { icon: 'key', text: { en: 'I start with my customers in mind in every decision I make.', id: 'Saya memulai dengan pelanggan dalam setiap keputusan yang saya buat.' } },
+        { icon: 'key', text: { en: 'I go the extra mile to deliver beyond customers\' expectations.', id: 'Saya berusaha lebih untuk memberikan melebihi ekspektasi pelanggan.' } },
       ],
     },
     {
       logo: '/assets/icons/corporate-values/icon-change.webp',
       title: { en: 'Courage For Change', id: 'Keberanian untuk Berubah' },
       desc: { en: '', id: '' },
+      ctaList: [],
       bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
-      iconListDefault: 'key',
       list: [
-        { icon: '', text: { en: 'I fearlessly push boundaries and try new things', id: 'Saya tanpa rasa takut mendorong batas dan mencoba hal baru' } },
-        { icon: '', text: { en: 'I continuously adapt and improve to get better every day.', id: 'Saya terus beradaptasi dan meningkatkan diri setiap hari.' } },
+        { icon: 'key', text: { en: 'I fearlessly push boundaries and try new things', id: 'Saya tanpa rasa takut mendorong batas dan mencoba hal baru' } },
+        { icon: 'key', text: { en: 'I continuously adapt and improve to get better every day.', id: 'Saya terus beradaptasi dan meningkatkan diri setiap hari.' } },
       ],
     },
     {
       logo: '/assets/icons/corporate-values/icon-collaboration.webp',
       title: { en: 'Passion For Collaboration', id: 'Semangat untuk Kolaborasi' },
       desc: { en: '', id: '' },
+      ctaList: [],
       bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
-      iconListDefault: 'key',
       list: [
-        { icon: '', text: { en: 'I build trust in all relationships to work towards common goals.', id: 'Saya membangun kepercayaan dalam semua hubungan untuk mencapai tujuan bersama.' } },
-        { icon: '', text: { en: 'I embrace diversity and learn from each other.', id: 'Saya menerima keberagaman dan belajar satu sama lain.' } },
+        { icon: 'key', text: { en: 'I build trust in all relationships to work towards common goals.', id: 'Saya membangun kepercayaan dalam semua hubungan untuk mencapai tujuan bersama.' } },
+        { icon: 'key', text: { en: 'I embrace diversity and learn from each other.', id: 'Saya menerima keberagaman dan belajar satu sama lain.' } },
       ],
     },
     {
       logo: '/assets/icons/corporate-values/icon-uncompromising-integrity.webp',
       title: { en: 'Uncompromising Integrity', id: 'Integritas Tanpa Kompromi' },
       desc: { en: '', id: '' },
+      ctaList: [],
       bodyTitle: { en: 'Key Behavior', id: 'Perilaku Utama' },
-      iconListDefault: 'key',
       list: [
-        { icon: '', text: { en: 'I am honest, fair, and show ethical behaviour', id: 'Saya jujur, adil, dan menunjukkan perilaku etis' } },
-        { icon: '', text: { en: 'I am consistent and accountable for my actions.', id: 'Saya konsisten dan bertanggung jawab atas tindakan saya.' } },
+        { icon: 'key', text: { en: 'I am honest, fair, and show ethical behaviour', id: 'Saya jujur, adil, dan menunjukkan perilaku etis' } },
+        { icon: 'key', text: { en: 'I am consistent and accountable for my actions.', id: 'Saya konsisten dan bertanggung jawab atas tindakan saya.' } },
       ],
     },
   ],
@@ -351,6 +351,7 @@ export const businessTabDefaults = withCommon({
         id: 'Kami menyediakan konektivitas, teknologi, dan solusi keamanan siber yang andal untuk mendukung transformasi digital. Dengan lebih dari 3.300 pelanggan, kami menghadirkan layanan internet dan ICT yang aman dan berkinerja tinggi.',
       },
       background_image: '/assets/bg/bg-enterprise.jpg',
+      background_image_mobile: '',
       logo_image: '/assets/logos/logo-enterprise.svg',
       cta_text: { en: 'Learn More', id: 'Selengkapnya' },
       cta_link: '/business/enterprise',
@@ -366,6 +367,7 @@ export const businessTabDefaults = withCommon({
         id: 'Linknet Fiber berdedikasi untuk memberikan pengalaman internet terbaik dengan teknologi fiber optic mutakhir yang menghubungkan Internet Service Provider (ISP) ke pelanggan.',
       },
       background_image: '/assets/bg/bg-fiber.jpg',
+      background_image_mobile: '',
       logo_image: '/assets/logos/logo-fiberco-white.png',
       cta_text: { en: 'Learn More', id: 'Selengkapnya' },
       cta_link: '/business/fiber',
@@ -381,6 +383,7 @@ export const businessTabDefaults = withCommon({
         id: 'Solusi hiburan dan media premium yang menghadirkan konten terbaik langsung ke rumah dan bisnis Anda.',
       },
       background_image: '/assets/bg/bg-media.jpg',
+      background_image_mobile: '',
       logo_image: '/assets/logos/logo-mediaco.svg',
       cta_text: { en: 'Learn More', id: 'Selengkapnya' },
       cta_link: '/business/media',
@@ -563,22 +566,26 @@ export const informationListDefaults = withCommon({
       },
       related_articles: [
         {
-          title: { en: 'Linknet Successfully Completed IPO On The Indonesia Stock Exchange (IDX)', id: 'Linknet Berhasil Menyelesaikan IPO di Bursa Efek Indonesia (BEI)' },
+          articleName: { en: 'Linknet Successfully Completed IPO On The Indonesia Stock Exchange (IDX)', id: 'Linknet Berhasil Menyelesaikan IPO di Bursa Efek Indonesia (BEI)' },
+          source: 'manual',
+          articleId: '',
           url: '#',
         },
         {
-          title: { en: 'Rebranding of OTT Service From "First Media Live" To "First Media Go"', id: 'Rebranding Layanan OTT Dari "First Media Live" Menjadi "First Media Go"' },
+          articleName: { en: 'Rebranding of OTT Service From "First Media Live" To "First Media Go"', id: 'Rebranding Layanan OTT Dari "First Media Live" Menjadi "First Media Go"' },
+          source: 'manual',
+          articleId: '',
           url: '#',
         },
       ],
       documents: [
         {
-          title: { en: 'Anti-Bribery and Anti-Corruption Policy', id: 'Kebijakan Anti-Penyuapan dan Anti-Korupsi' },
-          date: 'February 26, 2025',
-          file_type: 'pdf',
+          documentName: { en: 'Anti-Bribery and Anti-Corruption Policy', id: 'Kebijakan Anti-Penyuapan dan Anti-Korupsi' },
+          subDesc: 'February 26, 2025',
           url: '#',
         },
       ],
+      ctaList: [],
     },
     {
       title: { en: 'About Linknet', id: 'Tentang Linknet' },
@@ -588,6 +595,7 @@ export const informationListDefaults = withCommon({
       },
       related_articles: [],
       documents: [],
+      ctaList: [],
     },
   ],
 });
@@ -759,9 +767,9 @@ export const milestoneDefaults = withCommon({
         id: 'Pencapaian teknologi besar tercapai',
       },
       list: [
-        { en: 'Launched HD', id: 'Meluncurkan HD' },
-        { en: 'New Network Roll Out', id: 'Perluasan Jaringan Baru' },
-        { en: 'Launched Video On Demand Services', id: 'Meluncurkan Layanan Video On Demand' },
+        { text: { en: 'Launched HD', id: 'Meluncurkan HD' } },
+        { text: { en: 'New Network Roll Out', id: 'Perluasan Jaringan Baru' } },
+        { text: { en: 'Launched Video On Demand Services', id: 'Meluncurkan Layanan Video On Demand' } },
       ],
     },
     {
@@ -805,7 +813,7 @@ export const awardsMarqueeDefaults = withCommon({
 export const newsHighlightDefaults = withCommon({
   source: 'cms_highlights',
   news_ids: [],
-  featuredNews: [],
+  limit: 5,
   introData: {
     as: 'h2',
     label: { en: 'MEDIA & ACTIVITIES', id: 'MEDIA & AKTIVITAS' },
@@ -818,7 +826,8 @@ export const newsHighlightDefaults = withCommon({
   },
   featured_count: 1,
   grid_count: 4,
-  order: 'latest',
+  sort_by: 'news_date',
+  sort_direction: 'desc',
   show_category: true,
   show_date: true,
   cta_text: { en: 'See More', id: 'Lihat Lainnya' },
@@ -835,19 +844,29 @@ export const newsHighlightDefaults = withCommon({
 // ─── 17. news_list (from newsFeed.js + newsTeaser.js) ───────────────
 
 export const newsListDefaults = withCommon({
-  title: {
+  introData: {
+    as: 'h2',
+    label: { en: '', id: '' },
+    title: {
     en: 'All News & Updates',
     id: 'Semua Berita & Pembaruan',
   },
-  source: 'all',
-  category_id: null,
-  category_slug: null,
-  max_data: 12,
-  order: 'latest',
+    description: { en: '', id: '' },
+    align: 'left',
+  },
+  category_id: '',
+  limit: 12,
+  sort_by: 'news_date',
+  sort_direction: 'desc',
   show_pagination: true,
   show_search: true,
   show_category_filter: true,
   layout: 'grid',
+  card_style: 'default',
+  display_image: true,
+  display_description: true,
+  show_date: true,
+  show_category: true,
   cta_text: { en: 'View All News', id: 'Lihat Semua Berita' },
   cta_link: '/news',
   cta_variant: 'primary',
@@ -921,16 +940,30 @@ export const managementListDefaults = withCommon({
 // ─── 21. report_list (from listReportHome.js + reportGrid.js) ───────
 
 export const reportListDefaults = withCommon({
-  title: {
+  introData: {
+    as: 'h2',
+    label: { en: '', id: '' },
+    title: {
     en: 'Performance Transparency & Corporate Announcements',
     id: 'Transparansi Kinerja & Pengumuman Perusahaan',
   },
-  report_type: null,
+    description: { en: '', id: '' },
+    align: 'left',
+  },
+  report_type_id: '',
+  report_section_id: '',
+  limit: 12,
+  sort_by: 'year',
+  sort_direction: 'desc',
   show_year_filter: true,
   show_type_filter: true,
+  show_section_filter: true,
   show_search: true,
   layout: 'grid',
-  per_page: 12,
+  card_style: 'default',
+  display_image: true,
+  display_description: true,
+  show_pagination: true,
 });
 
 // ─── 22. awards_list (from awardsFeed.js) ───────────────────────────
@@ -952,23 +985,39 @@ export const awardsListDefaults = withCommon({
   show_image: true,
   show_pagination: true,
   columns: 3,
-  per_page: 9,
-  order: 'latest',
+  limit: 9,
+  sort_by: 'issue_date',
+  sort_direction: 'desc',
 });
 
 // ─── 23. announcement_list ──────────────────────────────────────────
 
 export const announcementListDefaults = withCommon({
-  title: {
+  introData: {
+    as: 'h2',
+    label: { en: '', id: '' },
+    title: {
     en: 'Announcements',
     id: 'Pengumuman',
   },
+    description: { en: '', id: '' },
+    align: 'left',
+  },
+  announcement_type_id: '',
+  announcement_section_id: '',
+  latest_only: false,
+  limit: 10,
+  sort_by: 'created_at',
+  sort_direction: 'desc',
+  layout: 'list',
+  card_style: 'document',
+  show_publish_date: true,
+  show_cta: true,
   show_type_filter: true,
   show_section_filter: true,
+  show_year_filter: true,
   show_search: true,
   show_pagination: true,
-  per_page: 10,
-  order: 'latest',
 });
 
 // ─── Export all templates as a lookup map ────────────────────────────

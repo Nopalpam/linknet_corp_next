@@ -18,8 +18,46 @@ import {
 import { AuthRequest } from '../middleware/auth.middleware';
 import { clearAuthCookies, setAuthCookies } from '../utils/authCookie.util';
 import { buildAuthTokenResponse } from '../utils/authResponse.util';
+import mfaService from '../services/mfa.service';
 
 const prisma = new PrismaClient();
+
+type RefreshRotationCacheEntry = {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+};
+
+const REFRESH_ROTATION_GRACE_MS = 30_000;
+const refreshRotationCache = new Map<string, RefreshRotationCacheEntry>();
+
+const rememberRefreshRotation = (
+  oldTokenHash: string,
+  accessToken: string,
+  refreshToken: string
+): void => {
+  const expiresAt = Date.now() + REFRESH_ROTATION_GRACE_MS;
+  refreshRotationCache.set(oldTokenHash, { accessToken, refreshToken, expiresAt });
+
+  setTimeout(() => {
+    const entry = refreshRotationCache.get(oldTokenHash);
+    if (entry?.expiresAt === expiresAt) {
+      refreshRotationCache.delete(oldTokenHash);
+    }
+  }, REFRESH_ROTATION_GRACE_MS).unref();
+};
+
+const getRecentRefreshRotation = (oldTokenHash: string): RefreshRotationCacheEntry | null => {
+  const entry = refreshRotationCache.get(oldTokenHash);
+  if (!entry) return null;
+
+  if (entry.expiresAt <= Date.now()) {
+    refreshRotationCache.delete(oldTokenHash);
+    return null;
+  }
+
+  return entry;
+};
 
 /**
  * Register new user
@@ -209,17 +247,27 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // ==========================================
     // MFA CHECK: If MFA is globally enabled AND user has MFA enabled
     // ==========================================
-    const mfaGlobalValue = (process.env.MFA_ENABLED || '').toLowerCase().trim();
-    const MFA_ENABLED = ['true', 'enable', 'enabled', '1', 'yes'].includes(mfaGlobalValue);
     const userMfaEnabled = (user as any).mfaEnabled === true;
+    const requiresMfa = await mfaService.shouldRequireMfaForLogin({
+      userId: user.id,
+      email: user.email,
+      localMfaEnabled: userMfaEnabled,
+    });
 
-    if (MFA_ENABLED && userMfaEnabled) {
+    if (requiresMfa) {
+      const mfaChallengeId = mfaService.createLoginChallenge({
+        userId: user.id,
+        email: user.email,
+        password,
+      });
+
       // Generate a short-lived temp token for MFA verification
       const tempToken = generateAccessToken({
         id: user.id,
         email: user.email,
         roles: [],
         permissions: [],
+        mfaChallengeId,
       });
 
       // Log MFA challenge
@@ -511,6 +559,20 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
     });
 
     if (!storedToken) {
+      const recentRotation = getRecentRefreshRotation(tokenHash);
+      if (recentRotation) {
+        setAuthCookies(res, recentRotation.accessToken, recentRotation.refreshToken);
+
+        res.status(200).json({
+          success: true,
+          message: 'Tokens refreshed successfully',
+          data: {
+            ...buildAuthTokenResponse(recentRotation.accessToken, recentRotation.refreshToken),
+          }
+        });
+        return;
+      }
+
       res.status(401).json({
         success: false,
         message: 'Invalid refresh token',
@@ -576,6 +638,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
     ]);
 
     setAuthCookies(res, newAccessToken, newRefreshToken);
+    rememberRefreshRotation(tokenHash, newAccessToken, newRefreshToken);
 
     res.status(200).json({
       success: true,

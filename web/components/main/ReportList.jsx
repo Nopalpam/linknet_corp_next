@@ -5,41 +5,112 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 import SearchFilterBar from '@/components/base/SearchFilterBar';
 import ReportListPart from '@/components/main/ReportListPart';
+import CardReport from '@/components/base/cards/CardReport';
 import Intro from '@/components/base/section/Intro';
 import { REPORT_LIST_DATA } from '@/data/components/reportList';
+import { hasIntroContent } from '../../../shared/presentation/intro';
+
+function firstValue(source, keys, fallback = '') {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return fallback;
+}
+
+function normalizeReportItem(report, type = {}, section = {}) {
+  const reportTypeName = firstValue(type, ['name', 'title']) || firstValue(report, ['reportType', 'report_type']);
+  const sectionName = firstValue(section, ['name', 'title']) || firstValue(report, ['sectionName', 'section_name']);
+  const dataType = firstValue(report, ['dataType', 'data_type']);
+  const createdDate = firstValue(report, ['createdAt', 'created_at', 'published_at', 'date']);
+  const title = firstValue(report, ['lnCardReport__title', 'title', 'name', 'subDescription', 'sub_description', 'description']);
+
+  return {
+    ...report,
+    id: report.id,
+    title,
+    lnCardReport__title: title,
+    description: firstValue(report, ['description', 'subDescription', 'sub_description', 'lnCardReport__title']),
+    image: firstValue(report, ['image', 'coverImage', 'cover_image', 'thumbnail']),
+    year: firstValue(report, ['year']) || (sectionName.match(/\b(20\d{2}|19\d{2})\b/)?.[1] || ''),
+    fileSize: firstValue(report, ['fileSize', 'file_size']),
+    dataType,
+    reportType: reportTypeName,
+    auditStatus: firstValue(report, ['auditStatus', 'audit_status']),
+    category: sectionName || reportTypeName,
+    sectionName,
+    date: firstValue(report, ['period', 'date']) || (createdDate || ''),
+    downloadUrl: firstValue(report, ['downloadUrl', 'download_url', 'fileUrl', 'file_url', 'pdfFile', 'pdf_file'], '#'),
+  };
+}
+
+function normalizeReportGroups(items, fallbackTitle = 'Reports') {
+  if (!Array.isArray(items) || items.length === 0) return [];
+
+  const looksGrouped = items.some((item) => Array.isArray(item?.items) || item?.header);
+  if (looksGrouped) {
+    return items.map((group, index) => ({
+      ...group,
+      id: group.id || group.slug || `report-group-${index}`,
+      header: {
+        title: group.header?.title || group.title || group.name || fallbackTitle,
+        desc: group.header?.desc || group.header?.description || group.description || '',
+        date: group.header?.date || group.date || '',
+      },
+      items: (group.items || group.reports || group.reportItems || []).map((item) => normalizeReportItem(item, group.type || {}, group.section || {})),
+    }));
+  }
+
+  return [{
+    id: 'reports',
+    header: {
+      title: fallbackTitle,
+      desc: '',
+      date: items[0]?.created_at || items[0]?.createdAt || '',
+    },
+    items: items.map((item) => normalizeReportItem(item)),
+  }];
+}
 
 function transformMainData(mainData) {
+  if (Array.isArray(mainData?.groups)) return normalizeReportGroups(mainData.groups);
   if (!mainData?.reportTypes) return null;
 
   const groups = [];
 
   mainData.reportTypes.forEach((type) => {
-    if (!type.report_sections) return;
+    const sections = type.report_sections || type.reportSections || [];
+    const directReports = type.reports || type.reportItems || [];
 
-    type.report_sections.forEach((section) => {
-      if (!section.reports || section.reports.length === 0) return;
+    if (directReports.length > 0) {
+      groups.push({
+        id: type.id || type.slug || type.name,
+        header: {
+          title: type.name || type.title || 'Reports',
+          desc: type.description || '',
+          date: directReports[0]?.created_at || directReports[0]?.createdAt || '',
+        },
+        items: directReports.map((report) => normalizeReportItem(report, type)),
+      });
+    }
+
+    sections.forEach((section) => {
+      const reports = section.reports || section.reportItems || [];
+      if (reports.length === 0) return;
 
       groups.push({
         id: section.id || `${type.id}-${section.name}`,
         header: {
-          title: `${type.name} - ${section.name}`,
+          title: section.name || section.title || type.name || 'Reports',
           desc: section.description || '',
-          date: section.reports[0]?.created_at || '',
+          date: reports[0]?.created_at || reports[0]?.createdAt || '',
         },
-        items: section.reports.map((report) => ({
-          id: report.id,
-          title: report.title,
-          reportType: type.name,
-          auditStatus: report.audit_status || report.auditStatus || '',
-          category: type.name,
-          date: report.created_at || report.year?.toString() || '',
-          downloadUrl: report.pdf_file || report.file_url || '#',
-        })),
+        items: reports.map((report) => normalizeReportItem(report, type, section)),
       });
     });
   });
 
-  return groups;
+  return normalizeReportGroups(groups);
 }
 
 export default function ReportListPage({
@@ -47,6 +118,12 @@ export default function ReportListPage({
   showTypeFilter = true,
   showStatusFilter = true,
   showYearFilter = true,
+  showSectionFilter = true,
+  showPagination = true,
+  layout = 'list',
+  cardStyle = 'default',
+  displayImage = true,
+  displayDescription = true,
 
   // Kategori data yang ingin diambil
   name = "financial-statement",
@@ -76,9 +153,16 @@ export default function ReportListPage({
     const transformed = transformMainData(mainData || source.mainData);
     const cmsItems = source.items || source.list || source.reports;
     if (transformed && transformed.length > 0) return transformed;
-    if (Array.isArray(cmsItems) && cmsItems.length > 0) return cmsItems;
-    return REPORT_LIST_DATA[name] || [];
+    if (Array.isArray(cmsItems) && cmsItems.length > 0) return normalizeReportGroups(cmsItems, source.title || 'Reports');
+    return normalizeReportGroups(REPORT_LIST_DATA[name] || []);
   }, [mainData, source, name]);
+  const flatItems = useMemo(() => {
+    if (Array.isArray((mainData || source.mainData)?.items)) return (mainData || source.mainData).items.map((item) => normalizeReportItem(item));
+    return rawData.flatMap((group) => (group.items || []).map((item) => ({
+      ...item,
+      sectionName: group.header?.title || '',
+    })));
+  }, [mainData, source, rawData]);
 
   // 1. Ambil state currentPage dari URL Parameter (?page=x)
   const pageParam = searchParams.get('page');
@@ -98,13 +182,15 @@ export default function ReportListPage({
     const types = new Set();
     const statuses = new Set();
     const years = new Set();
+    const sections = new Set();
 
     rawData.forEach(group => {
-      group.items.forEach(item => {
+      if (group.header?.title) sections.add(group.header.title);
+      (group.items || []).forEach(item => {
         if (item.reportType) types.add(item.reportType);
         if (item.auditStatus) statuses.add(item.auditStatus);
-        if (item.date) {
-          const year = new Date(item.date).getFullYear();
+        if (item.year || item.date) {
+          const year = item.year || new Date(item.date).getFullYear();
           if (!isNaN(year)) years.add(year.toString());
         }
       });
@@ -115,6 +201,9 @@ export default function ReportListPage({
     if (showTypeFilter && types.size > 0) {
       filters.push({ key: 'reportType', placeholder: 'Report Type', options: Array.from(types).map(t => ({ label: t, value: t })) });
     }
+    if (showSectionFilter && sections.size > 0) {
+      filters.push({ key: 'sectionName', placeholder: 'Report Section', options: Array.from(sections).map(s => ({ label: s, value: s })) });
+    }
     if (showStatusFilter && statuses.size > 0) {
       filters.push({ key: 'auditStatus', placeholder: 'Audit Status', options: Array.from(statuses).map(s => ({ label: s, value: s })) });
     }
@@ -124,7 +213,7 @@ export default function ReportListPage({
     }
 
     return filters;
-  }, [rawData, showTypeFilter, showStatusFilter, showYearFilter]);
+  }, [rawData, showTypeFilter, showSectionFilter, showStatusFilter, showYearFilter]);
 
 
   // ==========================================
@@ -134,7 +223,7 @@ export default function ReportListPage({
     const searchKeyword = searchValue.trim().toLowerCase();
 
     const filtered = rawData.map(group => {
-      const filteredItems = group.items.filter(item => {
+      const filteredItems = (group.items || []).filter(item => {
         const itemTitle = item.title ? item.title.toLowerCase() : "";
         const matchSearch = searchKeyword === "" || itemTitle.includes(searchKeyword);
 
@@ -143,8 +232,15 @@ export default function ReportListPage({
           const selectedVal = filterValues[key];
           if (selectedVal && selectedVal !== '') {
             if (key === 'year') {
-              const itemYear = new Date(item.date).getFullYear().toString();
+              const itemYear = String(item.year || (item.date ? new Date(item.date).getFullYear() : ''));
               if (itemYear !== selectedVal) {
+                matchFilters = false;
+                break;
+              }
+            }
+            else if (key === 'sectionName') {
+              const sectionName = group.header?.title || item.sectionName || '';
+              if (sectionName !== selectedVal) {
                 matchFilters = false;
                 break;
               }
@@ -163,14 +259,40 @@ export default function ReportListPage({
 
     return filtered.filter(group => group.items.length > 0);
   }, [rawData, searchValue, filterValues]);
+  const filteredFlatItems = useMemo(() => {
+    const searchKeyword = searchValue.trim().toLowerCase();
+
+    return flatItems.filter((item) => {
+      const titleText = (item.title || '').toLowerCase();
+      const descriptionText = (item.description || '').toLowerCase();
+      const matchSearch = !searchKeyword || titleText.includes(searchKeyword) || descriptionText.includes(searchKeyword);
+
+      if (!matchSearch) return false;
+
+      return Object.entries(filterValues).every(([key, selectedVal]) => {
+        if (!selectedVal) return true;
+        if (key === 'year') {
+          const itemYear = item.year || (item.date ? new Date(item.date).getFullYear() : '');
+          return String(itemYear) === String(selectedVal);
+        }
+        return String(item[key] || '') === String(selectedVal);
+      });
+    });
+  }, [flatItems, searchValue, filterValues]);
 
 
   // ==========================================
   // C. KALKULASI DATA PAGINATION
   // ==========================================
-  const totalPages = Math.ceil(filteredGroups.length / GROUPS_PER_PAGE) || 1;
-  const startIndex = (currentPage - 1) * GROUPS_PER_PAGE;
-  const paginatedGroups = filteredGroups.slice(startIndex, startIndex + GROUPS_PER_PAGE);
+  const GRID_ITEMS_PER_PAGE = Number(source.limit || source.per_page || 12) || 12;
+  const totalPages = showPagination
+    ? (layout === 'grid'
+      ? (Math.ceil(filteredFlatItems.length / GRID_ITEMS_PER_PAGE) || 1)
+      : (Math.ceil(filteredGroups.length / GROUPS_PER_PAGE) || 1))
+    : 1;
+  const startIndex = (currentPage - 1) * (layout === 'grid' ? GRID_ITEMS_PER_PAGE : GROUPS_PER_PAGE);
+  const paginatedGroups = showPagination ? filteredGroups.slice(startIndex, startIndex + GROUPS_PER_PAGE) : filteredGroups;
+  const gridItems = showPagination ? filteredFlatItems.slice(startIndex, startIndex + GRID_ITEMS_PER_PAGE) : filteredFlatItems;
 
 
   // ==========================================
@@ -242,7 +364,7 @@ export default function ReportListPage({
     >
       <div className="container">
 
-        {introData && (introData.label || introData.title || introData.description) && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-10">
             <Intro
               as={introData.as || 'h2'}
@@ -257,12 +379,13 @@ export default function ReportListPage({
         {/* ========================================= */}
         {/* GLOBAL SEARCH & FILTER BAR */}
         {/* ========================================= */}
-        {source.show_search !== false && (
+        {(source.show_search !== false || generatedFilters.length > 0) && (
         <div className="mb-4">
           <SearchFilterBar
             searchPlaceholder="Search document titles..."
             searchValue={searchValue}
             onSearchChange={handleSearchChange}
+            showSearch={source.show_search !== false}
             filters={generatedFilters}
             filterValues={filterValues}
             onFilterChange={handleFilterChange}
@@ -273,11 +396,39 @@ export default function ReportListPage({
         {/* ========================================= */}
         {/* LIST RENDERER (PAGINATED) */}
         {/* ========================================= */}
-        {paginatedGroups.length > 0 ? (
+        {layout === 'grid' ? (
+          gridItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-h-[360px]">
+              {gridItems.map((item, index) => (
+                <CardReport
+                  key={item.id || index}
+                  variant="cover"
+                  icon="/assets/icons/pdf-circle.svg"
+                  image={displayImage ? item.image : undefined}
+                  year={item.year}
+                  title={item.title}
+                  fileSize={item.fileSize}
+                  badges={item.auditStatus ? [item.auditStatus] : []}
+                  category={item.category}
+                  date={displayDescription ? item.date : ''}
+                  downloadUrl={item.downloadUrl}
+                  className="animate-in fade-in duration-500"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-20 text-neutral-400">
+              No reports found matching your criteria.
+            </div>
+          )
+        ) : paginatedGroups.length > 0 ? (
           <div className="flex flex-col gap-4 min-h-[500px]">
             {paginatedGroups.map((group) => (
               <div key={group.id} className="animate-in fade-in duration-500">
-                <ReportListPart data={group} />
+                <ReportListPart
+                  data={displayDescription ? group : { ...group, header: { ...group.header, desc: '' } }}
+                  cardVariant="list"
+                />
               </div>
             ))}
           </div>
@@ -290,7 +441,7 @@ export default function ReportListPage({
         {/* ========================================= */}
         {/* PAGINATION CONTROLS */}
         {/* ========================================= */}
-        {totalPages > 1 && (
+        {showPagination && totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-4 pt-4">
 
             {/* Tombol Previous */}

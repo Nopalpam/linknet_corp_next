@@ -17,6 +17,22 @@ interface ReportTypeFormModalProps {
   reportType?: ReportType | null;
 }
 
+const DEFAULT_REPORT_TYPE_FORM: CreateReportTypeData = {
+  name: "",
+  type: "Grid",
+  sortOrder: 0,
+  isActive: true,
+};
+
+function normalizeReportTypeForm(reportType?: ReportType | null): CreateReportTypeData {
+  return {
+    name: reportType?.name ?? "",
+    type: reportType?.type === "List" ? "List" : "Grid",
+    sortOrder: Number(reportType?.sortOrder ?? 0),
+    isActive: reportType?.isActive ?? true,
+  };
+}
+
 export default function ReportTypeFormModal({
   isOpen,
   onClose,
@@ -25,30 +41,15 @@ export default function ReportTypeFormModal({
   reportType,
 }: ReportTypeFormModalProps) {
   const toast = useToast();
-  const [formData, setFormData] = useState<CreateReportTypeData>({
-    name: "",
-    type: "Grid",
-    sortOrder: 0,
-    isActive: true,
-  });
+  const [formData, setFormData] = useState<CreateReportTypeData>(DEFAULT_REPORT_TYPE_FORM);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       if (mode === "edit" && reportType) {
-        setFormData({
-          name: reportType.name,
-          type: reportType.type,
-          sortOrder: reportType.sortOrder,
-          isActive: reportType.isActive,
-        });
+        setFormData(normalizeReportTypeForm(reportType));
       } else {
-        setFormData({
-          name: "",
-          type: "Grid",
-          sortOrder: 0,
-          isActive: true,
-        });
+        setFormData(DEFAULT_REPORT_TYPE_FORM);
       }
     }
   }, [isOpen, mode, reportType]);
@@ -130,7 +131,7 @@ export default function ReportTypeFormModal({
               type="text"
               id="name"
               name="name"
-              value={formData.name}
+              value={formData.name ?? ""}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -149,7 +150,7 @@ export default function ReportTypeFormModal({
             <select
               id="type"
               name="type"
-              value={formData.type}
+              value={formData.type ?? "Grid"}
               onChange={handleChange}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
@@ -174,7 +175,7 @@ export default function ReportTypeFormModal({
               type="number"
               id="sortOrder"
               name="sortOrder"
-              value={formData.sortOrder}
+              value={formData.sortOrder ?? 0}
               onChange={handleChange}
               min={0}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -187,7 +188,7 @@ export default function ReportTypeFormModal({
               type="checkbox"
               id="isActive"
               name="isActive"
-              checked={formData.isActive}
+              checked={formData.isActive ?? true}
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />

@@ -2,16 +2,22 @@
 
 import React from 'react';
 import Icon from '../Icon'; // Sesuaikan path jika berbeda
+import CTAList from '../section/CTAList';
 
 export default function CardProduct({
   logo,
   title,
   desc,
+  ctaList = [],
   bodyTitle,
   list = [],
   note,
   className = ""
 }) {
+  const normalizedCtaList = Array.isArray(ctaList)
+    ? ctaList.filter((cta) => cta && (cta.text || cta.label) && (cta.href || cta.url || cta.action || cta.actionModal || cta.action_modal))
+    : [];
+
   return (
     // Pastikan h-full agar SwiperSlide memiliki tinggi yang sama
     <div className={`lnCardProduct cardProduct flex flex-col bg-light-2 w-full h-full rounded-[20px] md:rounded-[24px] ${className}`}>
@@ -24,6 +30,7 @@ export default function CardProduct({
         
         {/* Kontainer Logo & Title dengan justify-between vertikal */}
         {/* Kita beri min-h agar konsisten jika tinggi logo bervariasi */}
+        {logo && (
         <div className="lnCardProduct__head flex flex-col justify-between items-start flex-grow mb-6 gap-4">
           {logo && (
             <img 
@@ -33,6 +40,7 @@ export default function CardProduct({
             />
           )}
         </div>
+        )}
 
         <div className="lnCardProduct__intro">
           {title && (
@@ -45,6 +53,15 @@ export default function CardProduct({
             <p className="lnCardProduct__desc text-body-b5 text-secondary mt-4">
               {desc}
             </p>
+          )}
+
+          {normalizedCtaList.length > 0 && (
+            <CTAList
+              ctaList={normalizedCtaList}
+              defaultVariant="secondary-outline"
+              defaultSize="md"
+              className="mt-5 gap-3"
+            />
           )}
         </div>
       </div>

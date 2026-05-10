@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   componentVisibilityService,
   ComponentVisibilityEntry,
+  ComponentSchemaSyncResult,
 } from "@/services/componentVisibility.service";
 import { useToast } from "@/context/ToastContext";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
@@ -22,6 +23,19 @@ function StatusBadge({ status }: { status: "ACTIVE" | "INACTIVE" }) {
       {status === "ACTIVE" ? "Active" : "Inactive"}
     </span>
   );
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
@@ -147,6 +161,8 @@ export default function ComponentVisibilityPage() {
   const [editingEntry, setEditingEntry] = useState<ComponentVisibilityEntry | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
+  const [schemaSyncing, setSchemaSyncing] = useState(false);
+  const [schemaPreview, setSchemaPreview] = useState<ComponentSchemaSyncResult | null>(null);
   const [bulkWorking, setBulkWorking] = useState(false);
 
   // Pagination state
@@ -198,6 +214,33 @@ export default function ComponentVisibilityPage() {
       toast.error(err.message || "Sync failed");
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleDryRunSchemaSync() {
+    setSchemaSyncing(true);
+    try {
+      const res = await componentVisibilityService.dryRunSchemaSync();
+      setSchemaPreview(res.data);
+      toast.success(`Preview ready: ${res.data.outdatedComponents} outdated component(s)`);
+    } catch (err: any) {
+      toast.error(err.message || "Schema preview failed");
+    } finally {
+      setSchemaSyncing(false);
+    }
+  }
+
+  async function handleSyncAllSchemas() {
+    setSchemaSyncing(true);
+    try {
+      const res = await componentVisibilityService.syncAllSchemas();
+      setSchemaPreview(res.data);
+      toast.success(`Synced ${res.data.changedComponents} component(s) to latest schema`);
+      await fetchEntries();
+    } catch (err: any) {
+      toast.error(err.message || "Schema sync failed");
+    } finally {
+      setSchemaSyncing(false);
     }
   }
 
@@ -297,6 +340,21 @@ export default function ComponentVisibilityPage() {
               are hidden from the component selector.
             </p>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleDryRunSchemaSync}
+              disabled={schemaSyncing}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+            >
+              Preview Schema Sync
+            </button>
+            <button
+              onClick={handleSyncAllSchemas}
+              disabled={schemaSyncing}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {schemaSyncing ? "Syncing..." : "Sync All Components"}
+            </button>
           <button
             onClick={handleSync}
             disabled={syncing}
@@ -317,6 +375,8 @@ export default function ComponentVisibilityPage() {
             </svg>
             {syncing ? "Syncing…" : "Sync from Registry"}
           </button>
+        </div>
+
         </div>
 
         {/* Stats */}
@@ -351,6 +411,43 @@ export default function ComponentVisibilityPage() {
             </div>
           ))}
         </div>
+
+        {schemaPreview && (
+          <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-900/20">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                  Component Schema Sync Preview
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  {schemaPreview.totalComponents} components scanned across {schemaPreview.totalPages} pages.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full bg-white px-3 py-1 font-medium text-blue-700 dark:bg-gray-900 dark:text-blue-300">
+                  Outdated: {schemaPreview.outdatedComponents}
+                </span>
+                <span className="rounded-full bg-white px-3 py-1 font-medium text-blue-700 dark:bg-gray-900 dark:text-blue-300">
+                  Changed: {schemaPreview.changedComponents}
+                </span>
+                <span className="rounded-full bg-white px-3 py-1 font-medium text-blue-700 dark:bg-gray-900 dark:text-blue-300">
+                  Failed: {schemaPreview.failedComponents}
+                </span>
+              </div>
+            </div>
+            {schemaPreview.impacts.length > 0 && (
+              <div className="max-h-48 overflow-auto rounded-md bg-white text-xs dark:bg-gray-950">
+                {schemaPreview.impacts.slice(0, 12).map((impact) => (
+                  <div key={impact.componentId} className="border-b border-gray-100 px-3 py-2 last:border-b-0 dark:border-gray-800">
+                    <span className="font-mono text-blue-700 dark:text-blue-300">{impact.componentType}</span>
+                    <span className="text-gray-500 dark:text-gray-400"> on {impact.pageTitle || impact.pageSlug}</span>
+                    <span className="ml-2 text-gray-400">v{impact.currentVersion} -&gt; v{impact.targetVersion}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -475,6 +572,12 @@ export default function ComponentVisibilityPage() {
                     Visibility in Page Builder
                   </th>
                   <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">
+                    Created At
+                  </th>
+                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">
+                    Updated At
+                  </th>
+                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">
                     Actions
                   </th>
                 </tr>
@@ -533,6 +636,12 @@ export default function ComponentVisibilityPage() {
                       <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                         {entry.status === "ACTIVE" ? "Visible" : "Hidden"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                      {formatDateTime(entry.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                      {formatDateTime(entry.updatedAt)}
                     </td>
                     <td className="px-4 py-3">
                       <button

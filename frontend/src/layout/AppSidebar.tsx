@@ -61,6 +61,11 @@ const menuSections: MenuSection[] = [
         path: "/management",
       },
       {
+        icon: <GridIcon />,
+        name: "Map Coverage Management",
+        path: "/map-coverage",
+      },
+      {
         icon: <ListIcon />,
         name: "Reports",
         subItems: [
@@ -78,15 +83,15 @@ const menuSections: MenuSection[] = [
           { name: "Announcements Items", path: "/announcements/announcement-items" },
         ],
       },
-      {
-        icon: <CalenderIcon />,
-        name: "Announcement",
-        subItems: [
-          { name: "Announcement Type", path: "/announcement/type" },
-          { name: "Announcement Section", path: "/announcement/section" },
-          { name: "Announcement Item", path: "/announcement/item" },
-        ],
-      },
+      // {
+      //   icon: <CalenderIcon />,
+      //   name: "Announcement",
+      //   subItems: [
+      //     { name: "Announcement Type", path: "/announcement/type" },
+      //     { name: "Announcement Section", path: "/announcement/section" },
+      //     { name: "Announcement Item", path: "/announcement/item" },
+      //   ],
+      // },
       {
         icon: <PageIcon />,
         name: "News",
@@ -117,21 +122,6 @@ const menuSections: MenuSection[] = [
         path: "/cookie-consents",
       },
       {
-        icon: <BoxCubeIcon />,
-        name: "File Manager",
-        path: "/file-manager",
-      },
-      {
-        icon: <GridIcon />,
-        name: "Data Components",
-        path: "/component-visibility",
-      },
-      {
-        icon: <TableIcon />,
-        name: "Label Data Bank",
-        path: "/data/label",
-      },
-      {
         icon: <ListIcon />,
         name: "Form Registration",
         subItems: [
@@ -160,6 +150,21 @@ const menuSections: MenuSection[] = [
         icon: <GridIcon />,
         name: "Roles & Permissions",
         path: "/roles-permissions",
+      },
+      {
+        icon: <BoxCubeIcon />,
+        name: "File Manager",
+        path: "/file-manager",
+      },
+      {
+        icon: <GridIcon />,
+        name: "Data Components",
+        path: "/component-visibility",
+      },
+      {
+        icon: <TableIcon />,
+        name: "Label Data Bank",
+        path: "/data/label",
       },
       {
         icon: <ListIcon />,

@@ -8,6 +8,7 @@ import Icon from '../base/Icon';
 import { MAPS_COVERAGE_DATA } from '../../data/components/mapsCoverage';
 import { MAP_REGIONS_DATA } from '../../data/constants/mapRegions';
 import INDO_TOPOLOGY from '../../data/constants/id-all.topo.json';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const MAP_WIDTH = 1150;
 const MAP_PADDING = 20;
@@ -89,7 +90,8 @@ function buildMapFeatures(topology, provinceMap, colors) {
     .filter((geometry) => geometry.properties?.name)
     .map((geometry) => {
       const provinceKey = geometry.properties['hc-key'];
-      const isCovered = Boolean(provinceMap[provinceKey]);
+      const regionKey = provinceMap[provinceKey];
+      const isCovered = Boolean(regionKey);
       const rings = geometry.type === 'Polygon'
         ? geometry.arcs.map((ringArcs) => buildRing(topology, ringArcs, bbox, scaleFactor, arcCache))
         : geometry.arcs.flatMap((polygon) =>
@@ -105,7 +107,7 @@ function buildMapFeatures(topology, provinceMap, colors) {
         provinceName: geometry.properties.name,
         isCovered,
         path: rings.map((ring) => ringToPath(ring)).join(' '),
-        defaultFill: isCovered ? colors.covered : colors.noCoverage,
+        defaultFill: isCovered ? (colors.coveredByRegion?.[regionKey] || colors.covered) : colors.noCoverage,
         bounds,
         markerPosition: {
           x: centerX,
@@ -209,7 +211,17 @@ export default function MapsCoverageV1({
   const [mapViewportWidth, setMapViewportWidth] = useState(0);
 
   const sectionData = cmsData || MAPS_COVERAGE_DATA[name];
-  const { colors, businessUnits, provinceMap } = MAP_REGIONS_DATA;
+  const mapData = cmsData?.mapData || cmsData?.coverageData || cmsData?.mainData?.mapData || null;
+  const colors = {
+    ...MAP_REGIONS_DATA.colors,
+    ...(mapData?.colors || {}),
+  };
+  const businessUnits = Object.keys(mapData?.businessUnits || {}).length > 0
+    ? mapData.businessUnits
+    : MAP_REGIONS_DATA.businessUnits;
+  const provinceMap = Object.keys(mapData?.provinceMap || {}).length > 0
+    ? mapData.provinceMap
+    : MAP_REGIONS_DATA.provinceMap;
 
   const mapModel = useMemo(
     () => buildMapFeatures(INDO_TOPOLOGY, provinceMap, colors),
@@ -361,7 +373,7 @@ export default function MapsCoverageV1({
       style={sectionStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-12">
             <Intro
               as={introData.as || 'h2'}

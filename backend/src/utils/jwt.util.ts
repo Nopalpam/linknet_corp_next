@@ -27,6 +27,7 @@ export interface AccessTokenPayload {
   roles?: string[];
   permissions?: string[];
   sessionId?: string;
+  mfaChallengeId?: string;
   type: 'access';
 }
 
@@ -49,6 +50,7 @@ export const generateAccessToken = (user: {
   roles?: string[];
   permissions?: string[];
   sessionId?: string;
+  mfaChallengeId?: string;
 }): string => {
   const payload: AccessTokenPayload = {
     userId: user.id,
@@ -56,6 +58,7 @@ export const generateAccessToken = (user: {
     roles: user.roles || [],
     permissions: user.permissions || [],
     sessionId: user.sessionId,
+    mfaChallengeId: user.mfaChallengeId,
     type: 'access'
   };
 

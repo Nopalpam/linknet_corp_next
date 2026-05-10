@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Grid } from 'swiper/modules';
@@ -13,7 +13,10 @@ import CTAList from '../base/section/CTAList';
 import SectionPillTabs from '../base/section/SectionPillTabs';
 import CardTVChannel from '../base/cards/CardTVChannel';
 import { TV_CHANNEL_SNEAK_PEEK_DATA } from '@/data/components/tvChannelSneakPeek';
-import { TV_CHANNEL_CATALOG } from '@/data/components/tvChannelData';
+import { hasIntroContent } from '../../../shared/presentation/intro';
+import { useLinknetMedia } from '@/hooks/useLinknetMedia';
+import { buildMediaTabs, resolveMediaChannels } from '@/lib/mediaService';
+import MediaEmptyState from './MediaEmptyState';
 
 function withLocale(href, locale) {
   if (!href || !locale) return href;
@@ -33,8 +36,18 @@ export default function TVChannelSneakPeek({
   const params = useParams();
   const locale = params?.locale || 'en';
   const sectionData = cmsData || TV_CHANNEL_SNEAK_PEEK_DATA[name];
-  const tabs = sectionData?.tabs || [];
-  const initialTab = sectionData?.config?.initialTab || tabs[0]?.value || 'all';
+  const configuredTabs = sectionData?.tabs || [];
+  const initialTab = sectionData?.config?.initialTab || configuredTabs[0]?.value || 'all';
+  const mediaSettings = useMemo(() => ({ ...(sectionData || {}), source: 'media_api' }), [sectionData]);
+  const { data: mediaData, isLoading } = useLinknetMedia(Boolean(sectionData));
+  const channels = useMemo(
+    () => resolveMediaChannels(mediaData, { ...mediaSettings, limit: 0 }, []),
+    [mediaData, mediaSettings]
+  );
+  const tabs = useMemo(
+    () => buildMediaTabs(channels, configuredTabs),
+    [channels, configuredTabs]
+  );
   const [tabState, setTabState] = useState({
     scope: name,
     value: initialTab
@@ -51,19 +64,22 @@ export default function TVChannelSneakPeek({
     bgImageMobile = '',
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
-    displayLimit = 8,
+    displayLimit: configDisplayLimit = 8,
     mobileSlidesPerView = 2,
     mobileGridRows = 2
   } = config || {};
+  const displayLimit = Number(sectionData?.limit || configDisplayLimit || 8);
 
-  const activeTab = tabState.scope === name ? tabState.value : initialTab;
+  const tabValues = tabs.map((item) => item.value ?? item.id);
+  const requestedTab = tabState.scope === name ? tabState.value : initialTab;
+  const activeTab = tabValues.includes(requestedTab) ? requestedTab : (tabValues[0] || 'all');
 
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
-  const activeChannels = Object.values(TV_CHANNEL_CATALOG)
+  const activeChannels = channels
     .filter((item) => activeTab === 'all' || item.categories?.includes(activeTab))
     .sort((a, b) => {
       const byName = (a.channelName || '').localeCompare(b.channelName || '');
@@ -119,7 +135,7 @@ export default function TVChannelSneakPeek({
     >
       <div className="container mx-auto px-4 md:px-0">
         <div className="mx-auto max-w-[1440px]">
-          {introData && (
+          {hasIntroContent(introData) && (
             <div className="max-w-[920px]">
               <Intro
                 as={introData.as || 'h2'}
@@ -133,15 +149,21 @@ export default function TVChannelSneakPeek({
             </div>
           )}
 
-          <SectionPillTabs
-            items={tabs}
-            value={activeTab}
-            onChange={(nextTab) => setTabState({ scope: name, value: nextTab })}
-            ariaLabel="TV channel categories"
-            className="mt-8"
-          />
+          {channels.length > 0 && tabs.length > 0 && (
+            <SectionPillTabs
+              items={tabs}
+              value={activeTab}
+              onChange={(nextTab) => setTabState({ scope: name, value: nextTab })}
+              ariaLabel="TV channel categories"
+              className="mt-8"
+            />
+          )}
 
-          {activeChannels.length > 0 ? (
+          {isLoading && activeChannels.length === 0 ? (
+            <p className="mt-10 text-body-b4 text-secondary">
+              Loading channels...
+            </p>
+          ) : activeChannels.length > 0 ? (
             <>
               <div className="mt-8 md:hidden">
                 <Swiper
@@ -184,9 +206,7 @@ export default function TVChannelSneakPeek({
               </div>
             </>
           ) : (
-            <p className="mt-10 text-body-b4 text-secondary">
-              No channels available.
-            </p>
+            <MediaEmptyState className="mt-10" />
           )}
 
           <CTAList

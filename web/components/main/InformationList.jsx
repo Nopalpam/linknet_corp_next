@@ -4,6 +4,7 @@ import React from 'react';
 import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import Icon from '../base/Icon';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 import { INFO_LIST_DATA } from '@/data/components/informationList';
 
@@ -48,7 +49,7 @@ export default function InformationList({
         {/* ========================================= */}
         {/* HEADER SECTION (Menggunakan Intro) */}
         {/* ========================================= */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-12 md:mb-16">
             <Intro
               as={introData.as || "h2"}
@@ -122,8 +123,8 @@ export default function InformationList({
                         <li key={dIdx}>
                           <a href={doc.url} className="flex items-center gap-4 group hover:bg-neutral-50/50 rounded-[12px] py-2 md:py-3 md:p-4">
                             <img
-                              src={doc.icon || "/assets/icons/pdf-circlesvg.svg"}
-                              alt="PDF"
+                              src="/assets/icons/pdf-circlesvg.svg"
+                              alt="PDF z"
                               className="w-10 h-10 flex-shrink-0"
                             />
                             <div className="flex flex-col pt-0.5">

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Intro from '../base/section/Intro';
 import CardNews from '../base/cards/CardNews'; // Gunakan CardNews sesuai instruksi
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Import GSAP & ScrollTrigger
 import gsap from 'gsap';
@@ -225,7 +226,7 @@ export default function AwardsFeed({
         {/* ========================================= */}
         {/* HEADER SECTION */}
         {/* ========================================= */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-10 md:mb-16 lnGsapAwardsIntro">
             <Intro
               as={introData.as || "h2"}

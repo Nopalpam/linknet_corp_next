@@ -12,6 +12,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Intro from '../base/section/Intro';
 import { TESTIMONIALS_DATA } from '@/data/components/testimonials';
 import Icon from '../base/Icon';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -302,7 +303,7 @@ export default function Testimonials({
           {/* ===================================== */}
           {/* INTRO                                 */}
           {/* ===================================== */}
-          {introData && (
+          {hasIntroContent(introData) && (
             <div className="mb-8 md:mb-10 lnGsapTestimonialIntro max-w-4xl">
               <Intro
                 as={introData.as || 'h2'}

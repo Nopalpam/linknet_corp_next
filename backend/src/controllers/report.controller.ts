@@ -44,11 +44,11 @@ export class ReportController {
 
   private mapReportItemSortBy(sortBy: string): string {
     const mapping: Record<string, string> = {
-      sortOrder: 'created_at',
-      sort_order: 'created_at',
-      order: 'created_at',
+      sortOrder: 'sort_order',
+      sort_order: 'sort_order',
+      order: 'sort_order',
     };
-    const validFields = ['created_at', 'updated_at', 'title', 'slug', 'year', 'quarter', 'status', 'published_at', 'downloads'];
+    const validFields = ['created_at', 'updated_at', 'title', 'slug', 'year', 'quarter', 'status', 'published_at', 'downloads', 'sort_order', 'data_type', 'audit_status'];
     const mapped = mapping[sortBy] || sortBy;
     return validFields.includes(mapped) ? mapped : 'created_at';
   }
@@ -59,6 +59,7 @@ export class ReportController {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
         search: req.query.search as string,
+        type: req.query.type as 'Grid' | 'List',
         isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined,
         sortBy: this.mapReportTypeSortBy((req.query.sortBy as string) || 'position'),
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc',
@@ -75,9 +76,9 @@ export class ReportController {
     }
   }
 
-  async getReportTypesList(_req: Request, res: Response, next: NextFunction) {
+  async getReportTypesList(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await reportService.getReportTypesList();
+      const data = await reportService.getReportTypesList(req.query.type as 'Grid' | 'List' | undefined);
 
       res.json({
         success: true,
@@ -90,7 +91,8 @@ export class ReportController {
 
   async createReportType(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, slug, description, icon, color, position, sortOrder, isActive } = req.body;
+      const { name, type, slug, description, icon, color, position, sortOrder, isActive } = req.body;
+      const typePosition = position ?? sortOrder;
 
       if (!name || name.trim() === '') {
         throw new AppError('Name is required', 400);
@@ -98,11 +100,12 @@ export class ReportController {
 
       const reportType = await reportService.createReportType({
         name,
+        type,
         slug,
         description,
         icon,
         color,
-        position: (position ?? sortOrder) ? parseInt(position ?? sortOrder) : undefined,
+        position: typePosition !== undefined ? parseInt(typePosition) : undefined,
         isActive,
       });
 
@@ -137,10 +140,11 @@ export class ReportController {
       const { id } = req.params;
       if (!id) throw new AppError('Report type ID is required', 400);
 
-      const { name, slug, description, icon, color, position, sortOrder, isActive } = req.body;
+      const { name, type, slug, description, icon, color, position, sortOrder, isActive } = req.body;
 
       const reportType = await reportService.updateReportType(id, {
         name,
+        type,
         slug,
         description,
         icon,
@@ -465,6 +469,8 @@ export class ReportController {
         type_id: (req.query.type_id || req.query.reportTypeId) as string,
         section_id: (req.query.section_id || req.query.reportSectionId) as string,
         year: req.query.year ? parseInt(req.query.year as string) : undefined,
+        data_type: (req.query.data_type || req.query.dataType) as string,
+        audit_status: (req.query.audit_status || req.query.auditStatus) as string,
         status: req.query.status as string,
         sortBy: this.mapReportItemSortBy((req.query.sortBy as string) || 'created_at'),
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PageService } from '../../services/page.service';
+import { ComponentSchemaSyncService } from '../../services/componentSchemaSync.service';
 
 const pageService = new PageService();
 
@@ -143,9 +144,29 @@ export const saveComponents = async (req: Request, res: Response, next: NextFunc
         req.logData.oldData = oldPage;
       }
       
-      const result = await pageService.savePageComponents(id, components);
+      const userId = (req as any).user?.id;
+      const result = await pageService.savePageComponents(id, components, userId);
       res.json({ success: true, message: 'Components saved successfully', data: result });
   } catch (error) {
       next(error);
   }
 }
+
+export const dryRunComponentSchemaSync = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await ComponentSchemaSyncService.dryRun();
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const syncAllComponentSchemas = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    const result = await ComponentSchemaSyncService.syncAll(userId);
+    res.json({ success: true, message: 'Component schemas synced successfully', data: result });
+  } catch (error) {
+    next(error);
+  }
+};

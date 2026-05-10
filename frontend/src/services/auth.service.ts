@@ -3,7 +3,7 @@
  * Handles all authentication related API calls
  */
 
-import { BaseService } from './base.service';
+import { BaseService, refreshAuthSession } from './base.service';
 
 // Response types
 export type LoginResponse = {
@@ -188,23 +188,8 @@ class AuthService extends BaseService {
    * Refresh access token
    */
   async refreshToken(): Promise<RefreshTokenResponse> {
-    const url = this.getApiUrl('/auth/refresh');
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Token refresh failed');
-    }
-
-    return data;
+    await refreshAuthSession();
+    return { success: true };
   }
 
   /**
@@ -288,6 +273,8 @@ class AuthService extends BaseService {
       mfaEnabled: boolean;
       mfaGloballyEnabled: boolean;
       hasMfaSecret: boolean;
+      provider?: 'local' | 'keycloak';
+      managedByRealm?: boolean;
     };
   }> {
     const url = this.getApiUrl('/auth/mfa/status');

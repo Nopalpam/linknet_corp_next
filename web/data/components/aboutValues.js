@@ -21,11 +21,11 @@ export const ABOUT_VALUES_DATA = {
         logo: "/assets/icons/corporate-values/icon-customers.webp",
         title: "Obsession for Customers",
         desc: "",
+        ctaList: [],
         bodyTitle: "Key Behavior",
-        iconListDefault: "key",
         list: [
-          { icon: "", text: "I start with my customers in mind in every decision I make." },
-          { icon: "", text: "I go the extra mile to deliver beyond customers' expectations." }
+          { icon: "key", text: "I start with my customers in mind in every decision I make." },
+          { icon: "key", text: "I go the extra mile to deliver beyond customers' expectations." }
         ]
       },
       {
@@ -33,11 +33,11 @@ export const ABOUT_VALUES_DATA = {
         logo: "/assets/icons/corporate-values/icon-change.webp",
         title: "Courage For Change",
         desc: "",
+        ctaList: [],
         bodyTitle: "Key Behavior",
-        iconListDefault: "key",
         list: [
-          { icon: "", text: "I fearlessly push boundaries and try new things" },
-          { icon: "", text: "I continuously adapt and improve to get better every day." }
+          { icon: "key", text: "I fearlessly push boundaries and try new things" },
+          { icon: "key", text: "I continuously adapt and improve to get better every day." }
         ]
       },
       {
@@ -45,11 +45,11 @@ export const ABOUT_VALUES_DATA = {
         logo: "/assets/icons/corporate-values/icon-collaboration.webp",
         title: "Passion For Collaboration",
         desc: "",
+        ctaList: [],
         bodyTitle: "Key Behavior",
-        iconListDefault: "key",
         list: [
-          { icon: "", text: "I build trust in all relationships to work towards common goals." },
-          { icon: "", text: "I embrace diversity and learn from each other." }
+          { icon: "key", text: "I build trust in all relationships to work towards common goals." },
+          { icon: "key", text: "I embrace diversity and learn from each other." }
         ]
       },
       {
@@ -57,11 +57,11 @@ export const ABOUT_VALUES_DATA = {
         logo: "/assets/icons/corporate-values/icon-uncompromising-integrity.webp",
         title: "Uncompromising Integrity",
         desc: "",
+        ctaList: [],
         bodyTitle: "Key Behavior",
-        iconListDefault: "key",
         list: [
-          { icon: "", text: "I am honest, fair, and show ethical behaviour" },
-          { icon: "", text: "I am consistent and accountable for my actions." }
+          { icon: "key", text: "I am honest, fair, and show ethical behaviour" },
+          { icon: "key", text: "I am consistent and accountable for my actions." }
         ]
       }
     ]

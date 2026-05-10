@@ -1311,6 +1311,30 @@ model ComponentVisibility {
   @@map("component_visibility")
 }
 
+model MapCoverageRegion {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  label        String    @default("Area")
+  title        String
+  color        String?
+  provinceKeys Json      @default("[]") @map("province_keys")
+  cities       Json      @default("[]")
+  lat          Float?
+  lon          Float?
+  sortOrder    Int       @default(0) @map("sort_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdBy    String?   @map("created_by")
+  updatedBy    String?   @map("updated_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@index([deletedAt])
+  @@map("map_coverage_regions")
+}
+
 model LabelGroup {
   id         String      @id @default(uuid())
   parentName String      @unique @map("parent_name")

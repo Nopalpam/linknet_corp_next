@@ -29,6 +29,7 @@ import {
   mapCardsWithSummaryPresentation,
   mapListServicesPresentation,
 } from '../../shared/presentation/solutions';
+import { buildSharedIntroData } from '../../shared/presentation/intro';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ export interface PropMapperContext {
   t: (field: any) => string;
   /** Pre-built style props from CMS (className from custom_class) */
   styleProps: Record<string, any>;
+  pageContext?: Record<string, any>;
 }
 
 // ─── Helper for localized text ──────────────────────────────────────
@@ -57,12 +59,13 @@ export interface PropMapperContext {
 export function createLocalizer(locale: string) {
   const lang = (locale === 'id' || locale === 'en') ? locale : 'id';
   return (field: any): string => {
-    if (!field) return '';
-    if (typeof field === 'string') return field;
+    if (field == null) return '';
+    if (typeof field === 'string') return field.trim();
     if (typeof field === 'object') {
-      return field[lang] || field['id'] || field['en'] || '';
+      const localized = field[lang] || field.id || field.en || field.label || field.title || field.name || '';
+      return localized == null || typeof localized === 'object' ? '' : String(localized).trim();
     }
-    return String(field);
+    return String(field).trim();
   };
 }
 
@@ -110,10 +113,14 @@ function localizeField(
   }
 
   if (typeof value === 'string') {
-    return value;
+    return value.trim();
   }
 
-  return value == null ? '' : String(value);
+  if (value == null || typeof value === 'object') {
+    return '';
+  }
+
+  return String(value).trim();
 }
 
 function extractIntro(
@@ -121,38 +128,18 @@ function extractIntro(
   t: (f: any) => string,
   locale: string
 ) {
-  const introSource = data?.introData || data?.sectionIntro || data?.intro;
-  const hasIntroContent = Boolean(
-    introSource && typeof introSource === 'object' && (
-      localizeField(introSource, 'label', t, locale) ||
-      localizeField(introSource, 'title', t, locale) ||
-      localizeField(introSource, 'description', t, locale)
-    )
-  );
+  const explicitIntroKey = ['introData', 'sectionIntro', 'intro'].find((key) => (
+    Object.prototype.hasOwnProperty.call(data || {}, key) &&
+    data?.[key] !== undefined
+  ));
+  const introSource = explicitIntroKey ? data?.[explicitIntroKey] : undefined;
 
-  if (introSource && typeof introSource === 'object' && hasIntroContent) {
-    return {
-      as: introSource.as || 'h2',
-      label: localizeField(introSource, 'label', t, locale),
-      title: localizeField(introSource, 'title', t, locale),
-      description: localizeField(introSource, 'description', t, locale),
-      align: introSource.align || 'left',
-      fluid: Boolean(introSource.fluid),
-      labelClassName: introSource.labelClassName || '',
-      titleClassName: introSource.titleClassName || '',
-      descriptionClassName: introSource.descriptionClassName || '',
-      className: introSource.className || '',
-    };
-  }
+  if (explicitIntroKey) {
+    const introRecord = introSource && typeof introSource === 'object' && !Array.isArray(introSource)
+      ? introSource
+      : {};
 
-  if (data?.intro && typeof data.intro === 'object') {
-    return {
-      as: data.intro.as || 'h2',
-      label: t(data.intro.label),
-      title: t(data.intro.title),
-      description: t(data.intro.description),
-      align: data.intro.align || 'left',
-    };
+    return buildSharedIntroData(undefined, (item, field) => localizeField(item || {}, field, t, locale), introRecord);
   }
 
   const hasIntro = data?.intro_title || data?.intro_label || data?.intro_description;
@@ -281,7 +268,13 @@ function backgroundPositionToClasses(position: string | undefined): string {
 }
 
 export function normalizeComponentData(data: Record<string, any> | undefined): Record<string, any> {
-  const source = data || {};
+  const rawSource = data || {};
+  const source = rawSource?._component && rawSource?.data && typeof rawSource.data === 'object'
+    ? {
+        ...rawSource.data,
+        ...(rawSource.mainData !== undefined ? { mainData: rawSource.mainData } : {}),
+      }
+    : rawSource;
   const config = source.config && typeof source.config === 'object' ? source.config : {};
   const introData = source.introData || source.sectionIntro || source.intro;
   const rawCtaList = getRawCtaList(source);
@@ -580,17 +573,29 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       cmsData: {
         introData: extractIntro(data, t, locale),
         valuesList: Array.isArray(data.items)
-          ? data.items.map((item: any, idx: number) => ({
-              id: `value-${idx}`,
-              logo: item.logo || (typeof item.icon === 'string' && item.icon.startsWith('/') ? item.icon : undefined),
-              title: localizeField(item, 'title', t, locale),
-              desc: localizeField(item, 'desc', t, locale),
-              bodyTitle: localizeField(item, 'bodyTitle', t, locale) || localizeField(item, 'description', t, locale),
-              iconListDefault: item.iconListDefault || undefined,
-              list: Array.isArray(item.list)
-                ? item.list.map((li: any) => ({ icon: li.icon || item.iconListDefault || undefined, text: t(li.text) }))
-                : [],
-            }))
+          ? data.items.map((item: any, idx: number) => {
+              const ctaList = getRawCtaList(item)
+                .map((cta, index) => normalizeCtaItem(cta, t, index))
+                .filter((cta) => cta.text && cta.href);
+
+              return {
+                id: item.id || `value-${idx}`,
+                logo: item.logo || (typeof item.icon === 'string' && item.icon.startsWith('/') ? item.icon : undefined),
+                title: localizeField(item, 'title', t, locale),
+                desc: localizeField(item, 'desc', t, locale),
+                ctaList,
+                bodyTitle: localizeField(item, 'bodyTitle', t, locale) || localizeField(item, 'description', t, locale),
+                iconListDefault: item.iconListDefault || undefined,
+                list: Array.isArray(item.list)
+                  ? item.list
+                      .map((li: any) => ({
+                        icon: li?.icon || item.iconListDefault || undefined,
+                        text: t(li?.text ?? li),
+                      }))
+                      .filter((li: any) => li.text)
+                  : [],
+              };
+            })
           : [],
       },
       slidesPerViewDesktop: data.slides_per_view_desktop ?? data.slides_per_view ?? 4,
@@ -731,6 +736,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   contact_us: {
     component: ContactUs,
+    mapProps: ({ data, t, locale, styleProps, pageContext }) => ({
+      cmsData: {
+        introData: extractIntro(data, t, locale),
+      },
+      settings: pageContext?.publicSettings || null,
+      locale,
+      ...styleProps,
+    }),
   },
 
   // ── Career ──────────────────────────────────────────────────────
@@ -784,7 +797,16 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   news_highlight: {
     component: NewsFeatured,
     mapProps: ({ data, t, locale, styleProps }) => {
-      const ctaList = getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index));
+      const rawHeroCtaList = data.ctaList || data.cta_list || data.ctaButtons || data.cta_buttons || data.buttons;
+      const ctaList = Array.isArray(rawHeroCtaList)
+        ? rawHeroCtaList
+            .filter((cta) => {
+              const label = t(cta?.label ?? cta?.text ?? cta?.button_text ?? cta?.cta_text);
+              const href = cta?.href || cta?.url || cta?.action || cta?.cta_link || cta?.button_link;
+              return Boolean(label && href);
+            })
+            .map((cta, index) => normalizeCtaItem(cta, t, index))
+        : [];
       const introData = extractIntro(data, t, locale) || {
         as: 'h2',
         title: localizeField(data, 'title', t, locale),
@@ -794,7 +816,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       return {
         cmsData: {
           ...data,
-          source: data.source || data.data_source || 'cms_highlights',
+          source: data.source || 'cms_highlights',
           introData,
           ctaList,
         },
@@ -817,7 +839,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       return {
         cmsData: {
           ...data,
-          source: data.source || data.data_source || 'cms_highlights',
+          source: data.source || 'cms_highlights',
           introData,
           ctaList,
         },
@@ -839,10 +861,16 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           align: data.intro_align || 'left',
         },
         subDescription: localizeField(data, 'sub_description', t, locale),
-        limit: data.max_data || 12,
+        limit: data.limit || data.max_data || 12,
+        sortBy: data.sort_by || data.sortBy || 'news_date',
+        sortDirection: data.sort_direction || data.sortDirection || data.sort_order || 'desc',
         showPagination: data.show_pagination !== false,
         showSearch: data.show_search !== false,
         showCategoryFilter: data.show_category_filter !== false,
+        displayImage: data.display_image !== false,
+        displayDescription: data.display_description !== false,
+        showDate: data.show_date !== false,
+        showCategory: data.show_category !== false,
         searchPlaceholder: t(data.search_placeholder) || (locale === 'id' ? 'Cari berita...' : 'Search news...'),
         searchButtonText: t(data.search_button_text) || (locale === 'id' ? 'Cari' : 'Search'),
         category: data.category_id || null,
@@ -891,8 +919,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       },
       name: data.name || data.report_type || 'financial-statement',
       showTypeFilter: data.show_type_filter !== false,
+      showSectionFilter: data.show_section_filter !== false,
       showStatusFilter: data.show_status_filter !== false,
       showYearFilter: data.show_year_filter !== false,
+      showPagination: data.show_pagination !== false,
+      layout: data.layout || 'list',
+      cardStyle: data.card_style || 'default',
+      displayImage: data.display_image !== false,
+      displayDescription: data.display_description !== false,
       mainData: data.mainData || null,
       ...styleProps,
     }),
@@ -919,11 +953,11 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             align: data.intro_align || 'center',
           },
           items: awards.map((award: any) => mapAwardItem(award, t, locale)),
-          perPage: data.per_page || data.max_data || 9,
+          perPage: data.limit || data.per_page || data.max_data || 9,
           showPagination: data.show_pagination !== false,
           showYearFilter: data.show_year_filter !== false,
           showImage: data.show_image !== false,
-          sortOrder: data.order || data.sort_order || 'latest',
+          sortOrder: data.sort_direction || data.order || data.sort_order || 'desc',
           columns: data.columns || 3,
         },
         mainData: data.mainData || null,
@@ -1066,27 +1100,37 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   milestone: {
     component: Milestone,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        introData: extractIntro(data, t, locale) || {
-          as: 'h2',
-          label: '',
-          title: t(data.title),
-          description: '',
-          align: 'left',
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const milestones = Array.isArray(data.milestones)
+        ? data.milestones
+        : Array.isArray(data.items)
+          ? data.items
+          : [];
+
+      return {
+        cmsData: {
+          introData: extractIntro(data, t, locale) || {
+            as: 'h2',
+            label: '',
+            title: t(data.title),
+            description: '',
+            align: 'left',
+          },
+          items: milestones.map((ms: any, idx: number) => ({
+            id: ms.id || `milestone-${idx}`,
+            year: ms.year || '',
+            image: ms.image || undefined,
+            description: t(ms.description),
+            list: Array.isArray(ms.list)
+              ? ms.list
+                  .map((item: any) => t(item?.text ?? item))
+                  .filter(Boolean)
+              : [],
+          })),
         },
-        items: Array.isArray(data.milestones)
-          ? data.milestones.map((ms: any, idx: number) => ({
-              id: `milestone-${idx}`,
-              year: ms.year || '',
-              image: ms.image || undefined,
-              description: t(ms.description),
-              list: Array.isArray(ms.list) ? ms.list.map((item: any) => t(item)) : [],
-            }))
-          : [],
-      },
-      ...styleProps,
-    }),
+        ...styleProps,
+      };
+    },
   },
 
   product_showcase: {
@@ -1384,8 +1428,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           config: {
             sectionId: config.sectionId || data.custom_id || '',
             className: config.className || data.custom_class || '',
-            bgImage: config.bgImage || data.bg_image || '',
-            bgImageMobile: config.bgImageMobile || data.bg_image_mobile || '',
+            bgImage: config.bgImage || data.bg_image || data.background_image || '',
+            bgImageMobile: config.bgImageMobile || data.bg_image_mobile || data.background_image_mobile || '',
             bgPositionClasses: config.bgPositionClasses || data.bg_position_classes || backgroundPositionToClasses(data.bg_position),
             bgSizeClass: config.bgSizeClass || data.bg_size_class || 'bg-cover',
           },
@@ -1428,7 +1472,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       const parentProduct = data.parentProduct || data.parent_product || null;
       const introData = extractIntro(data, t, locale) || {
         as: data.as || 'h2',
-        label: localizeField(data, 'labelText', t, locale) || localizeField(data, 'label_text', t, locale),
+        label: '',
         title: localizeField(data, 'title', t, locale),
         description: localizeField(data, 'description', t, locale),
         align: 'left',
@@ -1455,8 +1499,6 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           } : undefined,
           introData,
           ctaList: ctaList.length > 0 ? ctaList : undefined,
-          // backward-compat flat fields (for static data consumers)
-          labelText: introData.label || '',
           title: introData.title || '',
           description: introData.description || '',
         },
@@ -1552,7 +1594,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: EventRelated,
     mapProps: ({ data, t, locale, styleProps }) => ({
       currentEvent: data.currentEvent || data.current_event || null,
-      events: null,
+      events: data.mainData?.events || data.events || null,
       type: (data.type as string) || (data.order as string) || 'latest',
       state: (data.state as string) || 'all',
       limit: Number(data.limit) || 4,
@@ -1571,11 +1613,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   events_list: {
     component: EventsList,
     mapProps: ({ data, t, locale, styleProps }) => ({
-      events: null,
+      events: data.mainData?.events || data.events || null,
+      pagination: data.mainData?.pagination || data.pagination || null,
       state: (data.state as string) || 'all',
       limit: Number(data.limit) || 12,
+      sortBy: data.sort_by || data.sortBy || 'start_date',
+      sortDirection: data.sort_direction || data.sortDirection || data.sort_order || 'asc',
       itemsPerRow: Number(data.itemsPerRow || data.items_per_row) || 3,
-      showPagination: data.showPagination !== false && data.pagination !== false,
+      showPagination: data.showPagination !== false && data.show_pagination !== false && data.pagination !== false,
       introData: extractIntro(data, t, locale),
       locale,
       ...styleProps,
@@ -1609,7 +1654,33 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   layout_chrome: { component: LayoutChrome },
   list_report_home: {
     component: ListReportHome,
-    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const introData = extractIntro(data, t, locale);
+      const mainData = data.mainData && typeof data.mainData === 'object' ? data.mainData : null;
+
+      return passCmsData(
+        data,
+        styleProps,
+        {
+          name: data.name || 'home',
+          ...(mainData ? {
+            cmsData: {
+              ...mainData,
+              tabs: Array.isArray(mainData.tabs)
+                ? mainData.tabs.map((tab: Record<string, any>) => ({
+                    ...tab,
+                    label: t(tab.label) || tab.label || tab.value,
+                  }))
+                : mainData.tabs,
+              config: data.config || mainData.config || {},
+              ...(introData ? { introData } : {}),
+            },
+          } : {}),
+        },
+        t,
+        locale
+      );
+    },
   },
   logo_running: {
     component: LogoRunning,
@@ -1621,7 +1692,16 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   maps_coverage_v1: {
     component: MapsCoverageV1,
-    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
+    mapProps: ({ data, t, locale, styleProps }) => {
+      const mapped = passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale);
+      return {
+        ...mapped,
+        cmsData: {
+          ...(mapped.cmsData || {}),
+          mapData: data.mainData || data.mapData || data.coverageData || null,
+        },
+      };
+    },
   },
   navbar: {
     component: Navbar,
@@ -1651,9 +1731,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   news_feed: {
     component: NewsFeed,
-    mapProps: ({ data, styleProps }) => ({
+    mapProps: ({ data, t, locale, styleProps }) => ({
       categorySlug: data.categorySlug || data.category_slug || 'latest',
+      cmsData: {
+        ...data,
+        introData: extractIntro(data, t, locale),
+      },
       mainData: data.mainData || null,
+      layout: data.layout || 'list',
       ...styleProps,
     }),
   },
@@ -1703,7 +1788,16 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   report_grid: {
     component: ReportGrid,
-    mapProps: ({ data, styleProps }) => ({ data: data.data || data.mainData || [], ...styleProps }),
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      data: {
+        ...(data.mainData && typeof data.mainData === 'object' ? data.mainData : {}),
+        ...(data.data && typeof data.data === 'object' && !Array.isArray(data.data) ? data.data : {}),
+        config: data.config || data.mainData?.config || {},
+        introData: extractIntro(data, t, locale),
+        items: data.mainData?.items || data.data?.items || (Array.isArray(data.data) ? data.data : []),
+      },
+      ...styleProps,
+    }),
   },
   report_list_part: {
     component: ReportListPart,

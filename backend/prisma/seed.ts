@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { seedPages } from './seeds/pages.seed';
 import { seedFooter } from './seeds/footer.seed';
+import { seedMapCoverage } from './seeds/map-coverage.seed';
 
 const prisma = new PrismaClient();
 
@@ -1367,6 +1368,11 @@ async function main() {
   // PAGES - Sample Pages with Components
   // ============================================
   await seedPages();
+
+  // ============================================
+  // MAP COVERAGE - Initial Regions
+  // ============================================
+  await seedMapCoverage(prisma);
 
   // ============================================
   // FOOTER - Settings + Menus

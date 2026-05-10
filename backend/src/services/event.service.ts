@@ -25,7 +25,7 @@ const RELATED_NEWS_SELECT = {
   deleted_at: true,
 } as const;
 
-const EVENT_LIST_INCLUDE: Prisma.eventsInclude = {
+export const EVENT_LIST_INCLUDE: Prisma.eventsInclude = {
   _count: {
     select: {
       event_registrations: true,
@@ -280,7 +280,7 @@ function serializeRelatedNews(newsItem: any, locale?: string) {
   };
 }
 
-function serializeEvent(item: any, locale?: string) {
+export function serializeEvent(item: any, locale?: string) {
   if (!item) {
     return item;
   }
@@ -370,7 +370,7 @@ function serializeEvent(item: any, locale?: string) {
   };
 }
 
-function serializeEventList(items: any[], locale?: string) {
+export function serializeEventList(items: any[], locale?: string) {
   return items.map((item) => serializeEvent(item, locale));
 }
 
@@ -414,7 +414,7 @@ async function checkSlug(slug: string, excludeId?: string) {
   };
 }
 
-function buildStateWhere(state?: EventPublicState): Prisma.eventsWhereInput | undefined {
+export function buildStateWhere(state?: EventPublicState): Prisma.eventsWhereInput | undefined {
   if (!state || !['upcoming', 'ongoing', 'ended'].includes(state)) {
     return undefined;
   }

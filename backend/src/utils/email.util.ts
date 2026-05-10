@@ -1,7 +1,4 @@
-/**
- * Email utility for sending authentication emails
- * In production, integrate with email service provider (SendGrid, AWS SES, etc.)
- */
+import { sendAuthEmail } from '../services/mail.service';
 
 interface EmailOptions {
   to: string;
@@ -9,29 +6,10 @@ interface EmailOptions {
   html: string;
 }
 
-/**
- * Send email (mock implementation for development)
- * TODO: Integrate with actual email service in production
- */
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
-  console.log('📧 Email sent (development mode):');
-  console.log('To:', options.to);
-  console.log('Subject:', options.subject);
-  console.log('Content:', options.html);
-  
-  // In production, replace with actual email service
-  // Example with SendGrid:
-  // await sgMail.send({
-  //   to: options.to,
-  //   from: process.env.EMAIL_FROM,
-  //   subject: options.subject,
-  //   html: options.html
-  // });
+  await sendAuthEmail(options);
 };
 
-/**
- * Send verification email
- */
 export const sendVerificationEmail = async (
   email: string,
   verificationUrl: string
@@ -48,7 +26,7 @@ export const sendVerificationEmail = async (
         <h2 style="color: #007bff;">Welcome to LinkNet Corp!</h2>
         <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${verificationUrl}" 
+          <a href="${verificationUrl}"
              style="display: inline-block; padding: 12px 30px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px;">
             Verify Email Address
           </a>
@@ -67,13 +45,10 @@ export const sendVerificationEmail = async (
   await sendEmail({
     to: email,
     subject: 'Verify Your Email - LinkNet Corp',
-    html
+    html,
   });
 };
 
-/**
- * Send password reset email
- */
 export const sendPasswordResetEmail = async (
   email: string,
   resetUrl: string
@@ -90,7 +65,7 @@ export const sendPasswordResetEmail = async (
         <h2 style="color: #007bff;">Password Reset Request</h2>
         <p>You requested to reset your password. Click the button below to reset it:</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetUrl}" 
+          <a href="${resetUrl}"
              style="display: inline-block; padding: 12px 30px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px;">
             Reset Password
           </a>
@@ -109,13 +84,10 @@ export const sendPasswordResetEmail = async (
   await sendEmail({
     to: email,
     subject: 'Reset Your Password - LinkNet Corp',
-    html
+    html,
   });
 };
 
-/**
- * Send welcome email (after email verification)
- */
 export const sendWelcomeEmail = async (
   email: string,
   name: string
@@ -132,7 +104,7 @@ export const sendWelcomeEmail = async (
         <h2 style="color: #007bff;">Welcome to LinkNet Corp, ${name}!</h2>
         <p>Your email has been verified successfully. You can now access all features of your account.</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL}/login" 
+          <a href="${process.env.FRONTEND_URL}/login"
              style="display: inline-block; padding: 12px 30px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px;">
             Login to Your Account
           </a>
@@ -146,6 +118,6 @@ export const sendWelcomeEmail = async (
   await sendEmail({
     to: email,
     subject: 'Welcome to LinkNet Corp',
-    html
+    html,
   });
 };

@@ -13,6 +13,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const API_PREFIX = "/api/v1";
 
 const CSRF_TOKEN_KEY = "csrf_token";
+const REFRESH_ENDPOINT = `${API_URL}${API_PREFIX}/auth/refresh`;
+
+let refreshSessionPromise: Promise<void> | null = null;
 
 const getCookie = (name: string): string | null => {
   if (typeof window === "undefined") return null;
@@ -28,23 +31,59 @@ const getCookie = (name: string): string | null => {
   return null;
 };
 
+const buildAuthHeaders = (headers?: HeadersInit): HeadersInit => {
+  const csrfToken = getCookie(CSRF_TOKEN_KEY);
+
+  return {
+    "Content-Type": "application/json",
+    ...(csrfToken && { "X-CSRF-Token": csrfToken }),
+    ...headers,
+  };
+};
+
+export const refreshAuthSession = async (): Promise<void> => {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = (async () => {
+      let response: Response;
+
+      try {
+        response = await fetch(REFRESH_ENDPOINT, {
+          method: "POST",
+          credentials: "include",
+          headers: buildAuthHeaders(),
+        });
+      } catch (networkError) {
+        console.error("Network error while refreshing auth session:", networkError);
+        throw new Error("Tidak dapat memperpanjang sesi. Periksa koneksi Anda.");
+      }
+
+      const data = await response
+        .json()
+        .catch(() => ({ message: "Token refresh failed" }));
+
+      if (!response.ok || data?.success === false) {
+        throw createSessionExpiredError(data);
+      }
+    })().finally(() => {
+      refreshSessionPromise = null;
+    });
+  }
+
+  return refreshSessionPromise;
+};
+
 export class BaseService {
   protected async fetchWithAuth(url: string, options: RequestInit = {}) {
-    const csrfToken = getCookie(CSRF_TOKEN_KEY);
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      ...(csrfToken && { "X-CSRF-Token": csrfToken }),
-      ...options.headers,
-    };
+    const sendRequest = async () =>
+      fetch(url, {
+        ...options,
+        headers: buildAuthHeaders(options.headers),
+        credentials: "include",
+      });
 
     let response: Response;
     try {
-      response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: "include",
-      });
+      response = await sendRequest();
     } catch (networkError) {
       console.error("Network error in fetchWithAuth:", networkError);
       throw new Error("Tidak dapat terhubung ke server. Periksa koneksi Anda.");
@@ -56,8 +95,30 @@ export class BaseService {
         .catch(() => ({ message: "An error occurred" }));
 
       if (isUnauthorizedOrExpired(response.status, errorData)) {
-        dispatchSessionExpired({ status: response.status, error: errorData, url });
-        throw createSessionExpiredError(errorData);
+        try {
+          await refreshAuthSession();
+          response = await sendRequest();
+        } catch (refreshError) {
+          dispatchSessionExpired({ status: response.status, error: errorData, url });
+          throw refreshError instanceof Error
+            ? refreshError
+            : createSessionExpiredError(errorData);
+        }
+
+        if (response.ok) {
+          return response.json();
+        }
+
+        const retryErrorData = await response
+          .json()
+          .catch(() => ({ message: "An error occurred" }));
+
+        if (isUnauthorizedOrExpired(response.status, retryErrorData)) {
+          dispatchSessionExpired({ status: response.status, error: retryErrorData, url });
+          throw createSessionExpiredError(retryErrorData);
+        }
+
+        throw new Error(retryErrorData.message || "An error occurred");
       }
 
       let errorMessage = errorData.message || "An error occurred";

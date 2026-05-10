@@ -4,6 +4,7 @@ import React from 'react';
 import Intro from '../base/section/Intro';
 import CardNews from '../base/cards/CardNews';
 import CTAList from '../base/section/CTAList';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Import Swiper React components & styles
 import { useParams } from 'next/navigation';
@@ -58,7 +59,7 @@ export default function NewsFeatured({
 
   const { config, ctaList } = sectionData;
   const introData = sectionData.introData || sectionData.sectionIntro || sectionData.intro;
-  const source = sectionData.source || sectionData.data_source || 'manual';
+  const source = sectionData.source || 'manual';
   const selectedNewsIds = sectionData.news_ids || sectionData.newsIds || sectionData.selected_news_ids || sectionData.selectedNewsIds || [];
   const [clientHighlights, setClientHighlights] = React.useState([]);
   React.useEffect(() => {
@@ -154,7 +155,7 @@ export default function NewsFeatured({
       <div className="container mx-auto px-4 md:px-0">
 
         {/* Intro Section */}
-        {introData && (
+        {hasIntroContent(introData) && (
           <div className="mb-8 md:mb-8">
             <Intro
               as={introData.as || "h2"}

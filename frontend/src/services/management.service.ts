@@ -29,9 +29,13 @@ export interface Management {
   categoryId: string;
   name: string;
   slug: string;
-  position: string; // job title / role (text)
+  position?: string | null;
+  positionEn?: string | null;
+  positionId?: string | null;
   description?: string | null;
   photo?: string | null;
+  bioEn?: string | null;
+  bioId?: string | null;
   email?: string | null;
   phone?: string | null;
   linkedin?: string | null;
@@ -61,12 +65,12 @@ export interface CreateManagementData {
   name: string;
   slug?: string;
   categoryId: string;
-  position?: string;
+  positionEn?: string;
+  positionId?: string;
   description?: string;
   photo?: string;
-  email?: string;
-  phone?: string;
-  linkedin?: string;
+  bioEn?: string;
+  bioId?: string;
   order?: number;
   is_active?: boolean;
 }

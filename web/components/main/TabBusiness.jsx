@@ -10,6 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import Intro from '../base/section/Intro';
 import LinknetLink from '../base/Link';
+import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Import data dari file konfigurasi
 import { TAB_BUSINESS_DATA } from '@/data/components/tabBusiness';
@@ -92,7 +93,7 @@ export default function TabBusiness({
     >
 
       {/* --- PANGGIL COMPONENT INTRO --- */}
-      {introData && (
+      {hasIntroContent(introData) && (
         <div className="container mx-auto px-4 md:px-0 mb-10 lnGsapBusinessItem">
           <Intro
             as={introData.as || "h2"}
@@ -125,22 +126,21 @@ export default function TabBusiness({
 
                   {/* 1. Background Image & Gradient Overlay */}
                   <div className="absolute inset-0 w-full h-full">
-
-                      {/* MENGGUNAKAN <picture> UNTUK RESPONSIVE IMAGE
-                         Jika item.imageMobile ada, render saat ukuran layar < 768px (Mobile).
-                         Jika item.imageMobile kosong, browser otomatis melewati <source>
-                         dan langsung merender <img> fallback (Desktop image).
-                      */}
+                      {(item.image || item.imageMobile) ? (
                       <picture>
                         {item.imageMobile && (
                           <source media="(max-width: 767px)" srcSet={item.imageMobile} />
                         )}
                         <img
-                            src={item.image}
+                            src={item.image || item.imageMobile}
                             alt={`${item.title} Background`}
                             className="w-full h-full object-cover !object-[82%_90%]"
+                            loading="lazy"
                         />
                       </picture>
+                      ) : (
+                        <div className="h-full w-full bg-neutral-900" />
+                      )}
 
                       {/* Gradient gelap di kiri & bawah agar teks putih terbaca */}
                       <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/90 via-black/50 md:from-black/64 md:via-black/32 to-transparent" />

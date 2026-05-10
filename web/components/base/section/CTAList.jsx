@@ -40,6 +40,14 @@ function normalizeActionId(value) {
   return typeof value === 'string' ? value.trim().toLowerCase().replace(/_/g, '-') : '';
 }
 
+function resolveCtaText(value) {
+  if (value && typeof value === 'object') {
+    return value.en || value.id || value.label || value.text || '';
+  }
+
+  return value || '';
+}
+
 /**
  * Runtime renderer for CMS CTA lists.
  *
@@ -138,9 +146,11 @@ function CTAListContent({
     >
       {ctaList.map((cta, index) => {
         const linkType = cta.linkType || cta.link_type || (cta.action || cta.actionModal || cta.action_modal ? 'action-modal' : 'url');
-        const label = cta.label ?? cta.text ?? cta.button_text ?? cta.cta_text ?? '';
+        const label = resolveCtaText(cta.label ?? cta.text ?? cta.button_text ?? cta.cta_text ?? '');
         const href = cta.href || cta.url || cta.action || '#';
         const modalId = cta.actionModal || cta.action_modal || cta.action || cta.modalId || cta.modal_id || href;
+
+        if (!label) return null;
 
         return (
         <div key={index} className={itemClassName}>

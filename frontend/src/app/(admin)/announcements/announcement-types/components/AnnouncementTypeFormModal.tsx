@@ -17,6 +17,22 @@ interface AnnouncementTypeFormModalProps {
   announcementType?: AnnouncementType | null;
 }
 
+const DEFAULT_ANNOUNCEMENT_TYPE_FORM: CreateAnnouncementTypeData = {
+  name: "",
+  type: "List",
+  sortOrder: 0,
+  isActive: true,
+};
+
+function normalizeAnnouncementTypeForm(announcementType?: AnnouncementType | null): CreateAnnouncementTypeData {
+  return {
+    name: announcementType?.name ?? "",
+    type: announcementType?.type === "Grid" ? "Grid" : "List",
+    sortOrder: Number(announcementType?.sortOrder ?? 0),
+    isActive: announcementType?.isActive ?? true,
+  };
+}
+
 export default function AnnouncementTypeFormModal({
   isOpen,
   onClose,
@@ -25,30 +41,15 @@ export default function AnnouncementTypeFormModal({
   announcementType,
 }: AnnouncementTypeFormModalProps) {
   const toast = useToast();
-  const [formData, setFormData] = useState<CreateAnnouncementTypeData>({
-    name: "",
-    type: "List",
-    sortOrder: 0,
-    isActive: true,
-  });
+  const [formData, setFormData] = useState<CreateAnnouncementTypeData>(DEFAULT_ANNOUNCEMENT_TYPE_FORM);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       if (mode === "edit" && announcementType) {
-        setFormData({
-          name: announcementType.name,
-          type: announcementType.type,
-          sortOrder: announcementType.sortOrder,
-          isActive: announcementType.isActive,
-        });
+        setFormData(normalizeAnnouncementTypeForm(announcementType));
       } else {
-        setFormData({
-          name: "",
-          type: "List",
-          sortOrder: 0,
-          isActive: true,
-        });
+        setFormData(DEFAULT_ANNOUNCEMENT_TYPE_FORM);
       }
     }
   }, [isOpen, mode, announcementType]);
@@ -130,7 +131,7 @@ export default function AnnouncementTypeFormModal({
               type="text"
               id="name"
               name="name"
-              value={formData.name}
+              value={formData.name ?? ""}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -149,7 +150,7 @@ export default function AnnouncementTypeFormModal({
             <select
               id="type"
               name="type"
-              value={formData.type}
+              value={formData.type ?? "List"}
               onChange={handleChange}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
@@ -174,7 +175,7 @@ export default function AnnouncementTypeFormModal({
               type="number"
               id="sortOrder"
               name="sortOrder"
-              value={formData.sortOrder}
+              value={formData.sortOrder ?? 0}
               onChange={handleChange}
               min={0}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -187,7 +188,7 @@ export default function AnnouncementTypeFormModal({
               type="checkbox"
               id="isActive"
               name="isActive"
-              checked={formData.isActive}
+              checked={formData.isActive ?? true}
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />

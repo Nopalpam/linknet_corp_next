@@ -42,7 +42,7 @@ export enum ErrorCode {
 }
 
 export interface ErrorDetails {
-  [key: string]: string | string[] | ErrorDetails;
+  [key: string]: string | number | boolean | null | string[] | ErrorDetails | ErrorDetails[];
 }
 
 export interface ErrorResponse {
@@ -163,11 +163,19 @@ export class RateLimitError extends AppError {
  * Database Error (500)
  */
 export class DatabaseError extends AppError {
+  public readonly originalError?: Error;
+
   constructor(message: string = 'Database operation failed', originalError?: Error) {
-    const details = originalError
-      ? { originalError: originalError.message }
+    const prismaError = originalError as Error & { code?: string; meta?: Record<string, unknown> };
+    const details: ErrorDetails | undefined = originalError
+      ? {
+          originalError: originalError.message,
+          ...(prismaError.code ? { prismaCode: prismaError.code } : {}),
+          ...(prismaError.meta ? { prismaMeta: prismaError.meta as ErrorDetails } : {}),
+        }
       : undefined;
     super(message, 500, ErrorCode.DATABASE_ERROR, true, details);
+    this.originalError = originalError;
     Object.setPrototypeOf(this, DatabaseError.prototype);
   }
 }

@@ -26,6 +26,8 @@ export interface ReportType {
   _count?: {
     reportSections: number;
     reportItems: number;
+    report_sections?: number;
+    reports?: number;
   };
 }
 
@@ -47,8 +49,14 @@ export interface ReportSection {
     name: string;
     type: string;
   } | null;
+  report_types?: {
+    id: string;
+    name: string;
+    type?: string;
+  } | null;
   _count?: {
     reportItems: number;
+    reports?: number;
   };
   reportItems?: ReportItem[];
 }
