@@ -229,11 +229,7 @@ export default function ListReportHome({
                 </SwiperSlide>
               ))}
             </Swiper>
-          ) : (
-            <div className="w-full py-10 text-center text-neutral-500 lnGsapReportCard">
-              Belum ada data tersedia untuk kategori ini.
-            </div>
-          )}
+          ) : null}
         </div>
 
       </div>

@@ -7,6 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import faqData from '@/data/components/faq';
 import Icon from '../base/Icon';
 import Button from '../base/Button';
+import CTAList from '../base/section/CTAList';
 import Intro from '../base/section/Intro';
 
 // Register Plugin
@@ -35,11 +36,12 @@ export default function Faq({ cmsData = null }) {
         },
         // Support both faqList (new mapProps output) and items (old mapProps output)
         faqList: cmsData.faqList || cmsData.items || [],
+        ctaList: cmsData.ctaList || cmsData.cta_list || cmsData.buttons || [],
         textCTA: cmsData.textCTA || 'See More',
         textCTA_collapse: cmsData.textCTA_collapse || 'Show Less',
       }
     : faqData;
-  const { config, introData, faqList = [], textCTA, textCTA_collapse } = sourceData;
+  const { config, introData, faqList = [], ctaList = [], textCTA, textCTA_collapse } = sourceData;
 
   const toggleAccordion = (index) => {
     setActiveIndex(activeIndex === index ? null : index);
@@ -222,24 +224,38 @@ export default function Faq({ cmsData = null }) {
         </div>
 
         {/* --- CTA BUTTONS --- */}
-        <div ref={btnRef} className="mt-12 flex justify-center invisible">
-          {!showAll && faqList.length > initialItemsCount && (
-            <Button variant="secondary-outline" size='lg'
-              onClick={() => setShowAll(true)}
-              className="transition-all duration-300 transform active:scale-95"
-            >
-              {textCTA}
-            </Button>
+        <div ref={btnRef} className="mt-12 flex flex-col items-center gap-4 invisible">
+          {faqList.length > initialItemsCount && (
+            <div className="flex justify-center">
+              {!showAll && (
+                <Button variant="secondary-outline" size='lg'
+                  onClick={() => setShowAll(true)}
+                  className="transition-all duration-300 transform active:scale-95"
+                >
+                  {textCTA}
+                </Button>
+              )}
+
+              {showAll && (
+                 <Button variant='secondary-outline' size='lg'
+                   onClick={handleShowLess}
+                   disabled={isAnimating}
+                   className="transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                   {isAnimating ? 'Collapsing...' : textCTA_collapse}
+                 </Button>
+              )}
+            </div>
           )}
 
-          {showAll && (
-             <Button variant='secondary-outline' size='lg'
-               onClick={handleShowLess}
-               disabled={isAnimating}
-               className="transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-               {isAnimating ? 'Collapsing...' : textCTA_collapse}
-             </Button>
+          {ctaList.length > 0 && (
+            <CTAList
+              ctaList={ctaList}
+              align={introData.align || 'center'}
+              className="justify-center"
+              defaultVariant="secondary-outline"
+              defaultSize="lg"
+            />
           )}
         </div>
 

@@ -12,6 +12,28 @@ import { hasIntroContent } from '../../../shared/presentation/intro';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
+const DEFAULT_FORM_FIELDS = {
+  firstName: { label: 'First Name', required: true },
+  lastName: { label: 'Last Name', required: true },
+  email: { label: 'Email', required: true },
+  phone: { label: 'Phone', required: true },
+  role: { label: 'Role / Job Title', required: false },
+  company: { label: 'Company / Organization', required: false },
+  inquiry: { label: 'Inquiry type', required: true },
+  subject: { label: 'Subject', required: true },
+  message: { label: 'Message', required: true, maxlength: 500 },
+};
+
+function mergeFormFields(customFields) {
+  const custom = customFields && typeof customFields === 'object' ? customFields : {};
+  return Object.fromEntries(
+    Object.entries(DEFAULT_FORM_FIELDS).map(([key, value]) => [
+      key,
+      { ...value, ...(custom[key] || {}) },
+    ])
+  );
+}
+
 export default function ContactUs({
   cmsData = null,
   settings = null,
@@ -26,7 +48,7 @@ export default function ContactUs({
   
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '',
-    role: '', company: '', inquiry: '', message: '',
+    role: '', company: '', inquiry: '', subject: '', message: '',
   });
 
   const inquiryOptions = [
@@ -37,6 +59,7 @@ export default function ContactUs({
   ];
 
   const introData = useMemo(() => cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || null, [cmsData]);
+  const formFields = useMemo(() => mergeFormFields(cmsData?.form_fields || cmsData?.formFields), [cmsData]);
   const hasContactData = Boolean(contactSettings.email || contactSettings.primaryPhone?.number || contactSettings.address);
 
   useEffect(() => {
@@ -55,6 +78,8 @@ export default function ContactUs({
     };
   }, [locale, settings]);
 
+  if (cmsData?.show === false) return null;
+
   const handleChange = (e) => {
     const { id, value } = e.target;
     const key = id.replace('cu-', '');
@@ -62,7 +87,7 @@ export default function ContactUs({
   };
 
   const resetForm = (clearStatus = true) => {
-    setFormData({ firstName: '', lastName: '', email: '', phone: '', role: '', company: '', inquiry: '', message: '' });
+    setFormData({ firstName: '', lastName: '', email: '', phone: '', role: '', company: '', inquiry: '', subject: '', message: '' });
     setSubmitAttempted(false);
     if (clearStatus) setSubmitStatus(null);
   };
@@ -93,6 +118,7 @@ export default function ContactUs({
           role: formData.role,
           company: formData.company,
           inquiryType: formData.inquiry,
+          subject: formData.subject,
           message: formData.message,
         }),
       });
@@ -198,38 +224,38 @@ export default function ContactUs({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
                 
                 <Input 
-                  id="cu-firstName" label="First Name" required 
+                  id="cu-firstName" label={formFields.firstName.label} required={formFields.firstName.required !== false}
                   data-error="First name is required."
                   value={formData.firstName} onChange={handleChange}
                   submitAttempted={submitAttempted} 
                 />
                 <Input 
-                  id="cu-lastName" label="Last Name" required 
+                  id="cu-lastName" label={formFields.lastName.label} required={formFields.lastName.required !== false}
                   data-error="Last name is required."
                   value={formData.lastName} onChange={handleChange}
                   submitAttempted={submitAttempted}
                 />
 
                 <Input 
-                  id="cu-email" type="email" label="Email" required 
+                  id="cu-email" type="email" label={formFields.email.label} required={formFields.email.required !== false}
                   data-error="Email is required." data-error-email="Invalid email format."
                   value={formData.email} onChange={handleChange}
                   submitAttempted={submitAttempted}
                 />
                 <Input 
-                  id="cu-phone" type="tel" label="Phone" required 
+                  id="cu-phone" type="tel" label={formFields.phone.label} required={formFields.phone.required !== false}
                   data-validate="phone" data-autofmt="phone"
                   data-error="Phone is required." data-error-phone="Must start with 0 and contain at least 10 digits."
                   value={formData.phone} onChange={handleChange}
                   submitAttempted={submitAttempted}
                 />
 
-                <Input id="cu-role" label="Role / Job Title" value={formData.role} onChange={handleChange} submitAttempted={submitAttempted} />
-                <Input id="cu-company" label="Company / Organization" value={formData.company} onChange={handleChange} submitAttempted={submitAttempted} />
+                <Input id="cu-role" label={formFields.role.label} required={formFields.role.required === true} value={formData.role} onChange={handleChange} submitAttempted={submitAttempted} />
+                <Input id="cu-company" label={formFields.company.label} required={formFields.company.required === true} value={formData.company} onChange={handleChange} submitAttempted={submitAttempted} />
 
                 <div className="md:col-span-2">
                   <Select 
-                    id="cu-inquiry" label="Inquiry type" options={inquiryOptions} required 
+                    id="cu-inquiry" label={formFields.inquiry.label} options={inquiryOptions} required={formFields.inquiry.required !== false}
                     data-error="Please select one."
                     value={formData.inquiry} onChange={handleChange}
                     submitAttempted={submitAttempted}
@@ -237,8 +263,20 @@ export default function ContactUs({
                 </div>
 
                 <div className="md:col-span-2">
+                  <Input
+                    id="cu-subject"
+                    label={formFields.subject.label}
+                    required={formFields.subject.required !== false}
+                    data-error="Subject is required."
+                    value={formData.subject}
+                    onChange={handleChange}
+                    submitAttempted={submitAttempted}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
                   <Textarea 
-                    id="cu-message" label="Message" maxLength={500} required 
+                    id="cu-message" label={formFields.message.label} maxLength={Number(formFields.message.maxlength || formFields.message.maxLength || 500)} required={formFields.message.required !== false}
                     data-error="Message is required."
                     value={formData.message} onChange={handleChange}
                     submitAttempted={submitAttempted}

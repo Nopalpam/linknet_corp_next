@@ -33,6 +33,7 @@ export const submitContactForm = async (req: Request, res: Response) => {
       role,
       company,
       inquiryType,
+      subject,
       message,
     } = req.body;
 
@@ -55,6 +56,7 @@ export const submitContactForm = async (req: Request, res: Response) => {
         role: role || null,
         company: company || null,
         inquiryType: inquiryType.toUpperCase() as InquiryType,
+        subject,
         message,
         ipAddress,
         userAgent,
@@ -114,6 +116,7 @@ export const getAllContactSubmissions = async (req: Request, res: Response) => {
         { email: { contains: search as string, mode: 'insensitive' } },
         { firstName: { contains: search as string, mode: 'insensitive' } },
         { lastName: { contains: search as string, mode: 'insensitive' } },
+        { subject: { contains: search as string, mode: 'insensitive' } },
         { message: { contains: search as string, mode: 'insensitive' } },
       ];
     }

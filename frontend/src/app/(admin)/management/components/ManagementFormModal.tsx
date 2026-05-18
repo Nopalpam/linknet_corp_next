@@ -96,13 +96,13 @@ export default function ManagementFormModal({
     try {
       const payload: CreateManagementData = {
         name: formData.name.trim(),
-        positionEn: formData.positionEn.trim() || undefined,
-        positionId: formData.positionId.trim() || undefined,
+        positionEn: formData.positionEn.trim(),
+        positionId: formData.positionId.trim(),
         categoryId,
-        photo: formData.photo.trim() || undefined,
+        photo: formData.photo.trim(),
         description: buildLocalizedDescription(formData.descriptionEn, formData.descriptionId),
-        bioEn: formData.bioEn.trim() || undefined,
-        bioId: formData.bioId.trim() || undefined,
+        bioEn: formData.bioEn.trim(),
+        bioId: formData.bioId.trim(),
         is_active: formData.is_active,
       };
 
@@ -144,7 +144,7 @@ export default function ManagementFormModal({
 
   function buildLocalizedDescription(en: string, id: string) {
     const value = { en: en.trim(), id: id.trim() };
-    return value.en || value.id ? JSON.stringify(value) : undefined;
+    return value.en || value.id ? JSON.stringify(value) : "";
   }
 
   const LocaleTabs = ({

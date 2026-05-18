@@ -4,6 +4,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface LinknetMediaChannel {
   id: string;
+  number?: string | number;
   name: string;
   logo?: string;
   genre?: string[];
@@ -58,7 +59,9 @@ function normalizeMediaPayload(payload: any): LinknetMediaResponse {
   return {
     channels: Array.isArray(source?.channels) ? source.channels : [],
     reels: Array.isArray(source?.reels) ? source.reels : [],
-    genres: Array.isArray(source?.genres) ? source.genres : [],
+    genres: Array.isArray(source?.genres)
+      ? source.genres
+      : (Array.isArray(source?.genre) ? source.genre : []),
   };
 }
 

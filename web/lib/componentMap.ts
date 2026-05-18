@@ -430,6 +430,7 @@ const PackageList = dynamic(() => import('@/components/main/PackageList'));
 const ReportGrid = dynamic(() => import('@/components/main/ReportGrid'));
 const ReportListPart = dynamic(() => import('@/components/main/ReportListPart'));
 const SolutionServicesHome = dynamic(() => import('@/components/main/SolutionServicesHome'));
+const SolutionsList = dynamic(() => import('@/components/main/SolutionsList'));
 const SolutionsFiltered = dynamic(() => import('@/components/main/SolutionsFiltered'));
 const SolutionsServicesWithBackground = dynamic(() => import('@/components/main/SolutionsServicesWithBackground'));
 const TVChannelList = dynamic(() => import('@/components/main/TVChannelList'));
@@ -738,7 +739,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: ContactUs,
     mapProps: ({ data, t, locale, styleProps, pageContext }) => ({
       cmsData: {
+        show: data.show !== false,
         introData: extractIntro(data, t, locale),
+        form_fields: data.form_fields || data.formFields || null,
       },
       settings: pageContext?.publicSettings || null,
       locale,
@@ -1025,11 +1028,14 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         answer: t(item.content) || item.answer || '',
       }));
 
+      const ctaList = getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index));
+
       return {
         cmsData: {
           introData,
           faqList,
           config: data.config || {},
+          ...(ctaList.length > 0 ? { ctaList } : {}),
           textCTA: t(data.textCTA) || t(data.cta_text) || 'See More',
           textCTA_collapse: t(data.textCTA_collapse) || t(data.cta_text_collapse) || 'Show Less',
         },
@@ -1537,7 +1543,13 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   content_highlights: {
     component: ContentHighlights,
-    mapProps: ({ data, t, locale, styleProps }) => passCmsData(data, styleProps, { name: data.name || 'home' }, t, locale),
+    mapProps: ({ data, t, locale, styleProps }) => passCmsData(
+      data,
+      styleProps,
+      { name: data.name || 'home', mainData: data.mainData || null },
+      t,
+      locale
+    ),
   },
   event_content: {
     component: EventContent,
@@ -1705,9 +1717,10 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   },
   navbar: {
     component: Navbar,
-    mapProps: ({ data }) => ({
+    mapProps: ({ data, pageContext }) => ({
       menuData: data.menuData || data.menu_data || undefined,
       defaultLocale: data.defaultLocale || data.default_locale || 'en',
+      settings: pageContext?.publicSettings || null,
     }),
   },
   navbar_fiber: {
@@ -1804,6 +1817,18 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     mapProps: ({ data, styleProps }) => ({
       data: data.data || data.mainData || null,
       config: data.config || null,
+      ...styleProps,
+    }),
+  },
+  solutions_list: {
+    component: SolutionsList,
+    mapProps: ({ data, t, locale, styleProps }) => ({
+      cmsData: {
+        ...data,
+        introData: extractIntro(data, t, locale),
+      },
+      mainData: data.mainData || null,
+      locale,
       ...styleProps,
     }),
   },

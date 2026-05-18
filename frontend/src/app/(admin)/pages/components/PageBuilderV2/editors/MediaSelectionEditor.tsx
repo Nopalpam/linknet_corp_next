@@ -39,13 +39,14 @@ function getChannelOptions(channels: LinknetMediaChannel[]): MediaOption[] {
   return channels.map((channel) => {
     const genres = Array.isArray(channel.genre) ? channel.genre.join(', ') : '';
     const title = channel.name || String(channel.id);
+    const channelNumber = channel.number ? `CH ${channel.number}` : '';
 
     return {
       id: String(channel.id),
       title,
-      subtitle: genres,
+      subtitle: [channelNumber, genres].filter(Boolean).join(' - '),
       image: channel.logo,
-      searchText: [channel.id, channel.name, genres].filter(Boolean).join(' ').toLowerCase(),
+      searchText: [channel.id, channel.number, channel.name, genres].filter(Boolean).join(' ').toLowerCase(),
     };
   });
 }
@@ -72,12 +73,12 @@ function getReelItemOptions(reels: LinknetMediaReel[]): MediaOption[] {
 function getGenreOptions(genres: Array<LinknetMediaGenre | string>): MediaOption[] {
   return genres.map((genre, index) => {
     const name = typeof genre === 'string' ? genre : genre.name || String((genre as any).id || index);
-    const id = String(name);
+    const id = String(typeof genre === 'string' ? genre : ((genre as any).id ?? name));
 
     return {
       id,
       title: name,
-      subtitle: 'Genre',
+      subtitle: id !== name ? `Genre ID: ${id}` : 'Genre',
       searchText: [id, name].filter(Boolean).join(' ').toLowerCase(),
     };
   });
@@ -373,7 +374,6 @@ export function MediaHighlightCategoriesField({
         id: `category-${Date.now()}`,
         label: '',
         source_reel_name: '',
-        reel_item_ids: [],
       },
     ]);
   };
@@ -433,14 +433,7 @@ export function MediaHighlightCategoriesField({
               <MediaReelNameSelect
                 label="Use API Reel Name"
                 value={category.source_reel_name || ''}
-                onChange={(nextName) => updateCategory(index, { source_reel_name: nextName })}
-              />
-
-              <MediaIdsField
-                label="Reel Items"
-                value={category.reel_item_ids || []}
-                onChange={(ids) => updateCategory(index, { reel_item_ids: ids })}
-                kind="reel_item"
+                onChange={(nextName) => updateCategory(index, { source_reel_name: nextName, reel_item_ids: [] })}
               />
             </div>
           </div>

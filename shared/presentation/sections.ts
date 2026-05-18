@@ -142,8 +142,20 @@ export function mapBusinessTabPresentation(
           tagline: resolveField(tab, 'tagline'),
           title: resolveField(tab, 'title'),
           desc: resolveField(tab, 'description'),
-          image: typeof tab.background_image === 'string' ? tab.background_image : undefined,
-          imageMobile: typeof tab.background_image_mobile === 'string' ? tab.background_image_mobile : undefined,
+          image: typeof tab.background_image === 'string'
+            ? tab.background_image
+            : (typeof tab.backgroundImage === 'string' ? tab.backgroundImage : undefined),
+          imageMobile: typeof tab.background_image_mobile === 'string'
+            ? tab.background_image_mobile
+            : (
+              typeof tab.backgroundImageMobile === 'string'
+                ? tab.backgroundImageMobile
+                : (
+                  typeof tab.image_mobile === 'string'
+                    ? tab.image_mobile
+                    : (typeof tab.mobile_image === 'string' ? tab.mobile_image : undefined)
+                )
+            ),
           logoSrc: typeof tab.logo_image === 'string' ? tab.logo_image : undefined,
           textCTA: resolveField(tab, 'cta_text'),
           href: (typeof tab.cta_link === 'string' && tab.cta_link) || (typeof tab.href === 'string' && tab.href) || '#',

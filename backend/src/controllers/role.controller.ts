@@ -2,13 +2,76 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../types/error.types';
 import { invalidateRoleCache } from '../utils/rbac';
+import { PermissionsByModule, Role as RoleSlug } from '../constants/permissions';
 
 const prisma = new PrismaClient();
+
+const titleCase = (value: string) =>
+  value
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const permissionNameFromSlug = (slug: string) => {
+  const [module = '', action = ''] = slug.split('.');
+  return `${titleCase(action)} ${titleCase(module)}`.trim();
+};
+
+const permissionDescriptionFromSlug = (slug: string) => {
+  const [module = 'module', action = 'manage'] = slug.split('.');
+  return `${titleCase(action)} access for ${titleCase(module)}.`;
+};
+
+const getPermissionCatalog = () => Object.entries(PermissionsByModule).flatMap(([module, slugs]) => (
+  slugs.map((slug) => ({
+    module,
+    slug,
+    name: permissionNameFromSlug(slug),
+    description: permissionDescriptionFromSlug(slug),
+  }))
+));
+
+async function syncPermissionsFromCatalog() {
+  const catalog = getPermissionCatalog();
+  const permissions = await Promise.all(
+    catalog.map((permission) => prisma.permission.upsert({
+      where: { slug: permission.slug },
+      update: {
+        module: permission.module,
+        description: permission.description,
+      },
+      create: permission,
+    })),
+  );
+
+  const privilegedRoles = await prisma.role.findMany({
+    where: {
+      slug: { in: [RoleSlug.SUPER_ADMIN, RoleSlug.ADMIN] },
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+
+  if (privilegedRoles.length > 0 && permissions.length > 0) {
+    await prisma.rolePermission.createMany({
+      data: privilegedRoles.flatMap((role) => (
+        permissions.map((permission) => ({
+          roleId: role.id,
+          permissionId: permission.id,
+        }))
+      )),
+      skipDuplicates: true,
+    });
+  }
+}
 
 /**
  * Get all roles with their permissions
  */
 export const getRoles = async (_req: Request, res: Response) => {
+  await syncPermissionsFromCatalog();
+
   const roles = await prisma.role.findMany({
     where: {
       deletedAt: null,
@@ -360,6 +423,8 @@ export const deleteRole = async (req: Request, res: Response) => {
  * Get all permissions grouped by module
  */
 export const getPermissions = async (_req: Request, res: Response) => {
+  await syncPermissionsFromCatalog();
+
   const permissions = await prisma.permission.findMany({
     orderBy: [{ module: 'asc' }, { name: 'asc' }],
   });

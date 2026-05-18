@@ -109,6 +109,7 @@ export class ManagementController {
       const {
         name,
         slug,
+        position,
         positionEn,
         positionId,
         categoryId,
@@ -133,8 +134,8 @@ export class ManagementController {
       const management = await managementService.createManagement({
         name: name.trim(),
         slug: slug?.trim(),
-        positionEn: positionEn?.trim(),
-        positionId: positionId?.trim(),
+        positionEn: (positionEn ?? position)?.trim(),
+        positionId: (positionId ?? position)?.trim(),
         categoryId,
         photo,
         description: description?.trim(),
@@ -167,6 +168,7 @@ export class ManagementController {
       const {
         name,
         slug,
+        position,
         positionEn,
         positionId,
         categoryId,
@@ -188,6 +190,10 @@ export class ManagementController {
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
       if (slug !== undefined) updateData.slug = slug?.trim();
+      if (position !== undefined) {
+        updateData.positionEn = position?.trim();
+        updateData.positionId = position?.trim();
+      }
       if (positionEn !== undefined) updateData.positionEn = positionEn?.trim();
       if (positionId !== undefined) updateData.positionId = positionId?.trim();
       if (categoryId !== undefined) updateData.categoryId = categoryId;

@@ -126,15 +126,15 @@ export default function TabBusiness({
 
                   {/* 1. Background Image & Gradient Overlay */}
                   <div className="absolute inset-0 w-full h-full">
-                      {(item.image || item.imageMobile) ? (
+                      {(item.image || item.background_image || item.imageMobile || item.background_image_mobile || item.image_mobile || item.mobile_image) ? (
                       <picture>
-                        {item.imageMobile && (
-                          <source media="(max-width: 767px)" srcSet={item.imageMobile} />
+                        {(item.imageMobile || item.background_image_mobile || item.image_mobile || item.mobile_image) && (
+                          <source media="(max-width: 767px)" srcSet={item.imageMobile || item.background_image_mobile || item.image_mobile || item.mobile_image} />
                         )}
                         <img
-                            src={item.image || item.imageMobile}
+                            src={item.image || item.background_image || item.imageMobile || item.background_image_mobile || item.image_mobile || item.mobile_image}
                             alt={`${item.title} Background`}
-                            className="w-full h-full object-cover !object-[82%_90%]"
+                            className="h-full w-full object-cover object-center md:!object-[82%_90%]"
                             loading="lazy"
                         />
                       </picture>

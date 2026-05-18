@@ -14,6 +14,9 @@ export const getContactSubmissions = async (req: Request, res: Response) => {
       limit = 10, 
       search = '', 
       status = '', 
+      inquiryType = '',
+      dateFrom,
+      dateTo,
       sortBy = 'submittedAt', 
       sortOrder = 'desc' 
     } = req.query;
@@ -21,6 +24,11 @@ export const getContactSubmissions = async (req: Request, res: Response) => {
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const startOfNextMonth = new Date(startOfMonth);
+    startOfNextMonth.setMonth(startOfNextMonth.getMonth() + 1);
 
     // Build filter
     const where: any = {};
@@ -31,6 +39,8 @@ export const getContactSubmissions = async (req: Request, res: Response) => {
         { lastName: { contains: search as string, mode: 'insensitive' } },
         { email: { contains: search as string, mode: 'insensitive' } },
         { company: { contains: search as string, mode: 'insensitive' } },
+        { subject: { contains: search as string, mode: 'insensitive' } },
+        { message: { contains: search as string, mode: 'insensitive' } },
       ];
     }
 
@@ -38,39 +48,73 @@ export const getContactSubmissions = async (req: Request, res: Response) => {
       where.status = status;
     }
 
+    if (inquiryType) {
+      where.inquiryType = inquiryType;
+    }
+
+    if (dateFrom || dateTo) {
+      where.submittedAt = {
+        ...(dateFrom
+          ? {
+              gte: new Date(`${dateFrom as string}T00:00:00.000Z`),
+            }
+          : {}),
+        ...(dateTo
+          ? {
+              lte: new Date(`${dateTo as string}T23:59:59.999Z`),
+            }
+          : {}),
+      };
+    }
+
     // Get total count
-    const total = await prisma.contactUs.count({ where });
-
-    // Get submissions
-    const submissions = await prisma.contactUs.findMany({
-      where,
-      skip,
-      take: limitNum,
-      orderBy: {
-        [sortBy as string]: sortOrder,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        company: true,
-        inquiryType: true,
-        status: true,
-        submittedAt: true,
-        readAt: true,
-      },
-    });
-
-    // Calculate stats
-    const stats = await prisma.contactUs.groupBy({
-      by: ['status'],
-      _count: true,
-    });
+    const [total, totalThisMonth, submissions, stats] = await prisma.$transaction([
+      prisma.contactUs.count({ where }),
+      prisma.contactUs.count({
+        where: {
+          ...where,
+          submittedAt: {
+            gte: startOfMonth,
+            lt: startOfNextMonth,
+          },
+        },
+      }),
+      prisma.contactUs.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: {
+          [sortBy as string]: sortOrder,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          role: true,
+          company: true,
+          inquiryType: true,
+          subject: true,
+          message: true,
+          status: true,
+          submittedAt: true,
+          readAt: true,
+        },
+      }),
+      prisma.contactUs.groupBy({
+        by: ['status'],
+        where,
+        orderBy: {
+          status: 'asc',
+        },
+        _count: true,
+      }),
+    ]);
 
     const statusCounts = {
       total,
+      totalThisMonth,
       new: stats.find(s => s.status === ContactStatus.NEW)?._count || 0,
       read: stats.find(s => s.status === ContactStatus.READ)?._count || 0,
     };
@@ -233,6 +277,7 @@ export const exportContactSubmissions = async (req: Request, res: Response) => {
         { firstName: { contains: search as string, mode: 'insensitive' } },
         { lastName: { contains: search as string, mode: 'insensitive' } },
         { email: { contains: search as string, mode: 'insensitive' } },
+        { subject: { contains: search as string, mode: 'insensitive' } },
       ];
     }
 
@@ -257,6 +302,7 @@ export const exportContactSubmissions = async (req: Request, res: Response) => {
       'Role': sub.role || '-',
       'Company': sub.company || '-',
       'Inquiry Type': sub.inquiryType,
+      'Subject': sub.subject || '-',
       'Message': sub.message,
       'Status': sub.status,
       'IP Address': sub.ipAddress || '-',

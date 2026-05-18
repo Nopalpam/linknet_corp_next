@@ -4,7 +4,7 @@
   "description": "LinkNet Corp Backend API with Express.js and TypeScript",
   "main": "dist/server.js",
   "scripts": {
-    "predev": "prisma generate",
+    "predev": "node scripts/ensure-prisma-client.cjs",
     "dev": "nodemon src/server.ts",
     "build": "tsc && tsc-alias",
     "start": "node dist/server.js",

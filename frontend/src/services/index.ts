@@ -10,6 +10,7 @@ export * from './baseCrud.service';
 // Feature services
 export * from './auth.service';
 export * from './awards.service';
+export * from './solutions.service';
 export * from './management.service';
 export * from './users.service';
 export * from './roles.service';

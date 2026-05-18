@@ -40,8 +40,12 @@ function generateMediaToken(): string {
  */
 function loadFallbackData(): Record<string, unknown> | null {
   try {
-    const fallbackPath = path.resolve(__dirname, '../../..', 'contoh_return_api_media.json');
-    if (fs.existsSync(fallbackPath)) {
+    const fallbackPath = [
+      path.resolve(__dirname, '../../..', 'crawldatalinknetapimedia.txt'),
+      path.resolve(__dirname, '../../..', 'contoh_return_api_media.json'),
+    ].find((candidate) => fs.existsSync(candidate));
+
+    if (fallbackPath) {
       const raw = fs.readFileSync(fallbackPath, 'utf-8');
       return JSON.parse(raw);
     }

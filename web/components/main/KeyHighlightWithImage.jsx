@@ -78,7 +78,7 @@ export default function KeyHighlightWithImage({
     <section
       id={sectionId}
       ref={containerRef}
-      className={`lnSection__keyHighlightWithImage py-16 md:py-24 overflow-hidden bg-light-2 rounded-[40px]
+      className={`lnSection__keyHighlightWithImage py-16 md:py-24 overflow-hidden rounded-[40px]
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
         bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
         ${configClassName} ${className}`}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   BoxCubeIcon,
   CalenderIcon,
@@ -22,7 +23,8 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  permissions?: string[];
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean; permissions?: string[] }[];
 };
 
 type MenuSection = {
@@ -39,11 +41,13 @@ const menuSections: MenuSection[] = [
         icon: <GridIcon />,
         name: "Dashboard",
         path: "/",
+        permissions: ["dashboard.read"],
       },
       {
         icon: <PageIcon />,
         name: "Pages",
         path: "/pages",
+        permissions: ["pages.read"],
       },
     ],
   },
@@ -54,33 +58,42 @@ const menuSections: MenuSection[] = [
         icon: <BoxCubeIcon />,
         name: "Awards",
         path: "/awards",
+        permissions: ["awards.read"],
+      },
+      {
+        icon: <ListIcon />,
+        name: "Data Bank Solutions",
+        path: "/solutions",
+        permissions: ["solutions.read"],
       },
       {
         icon: <TableIcon />,
         name: "Management",
         path: "/management",
+        permissions: ["management.read"],
       },
       {
         icon: <GridIcon />,
         name: "Map Coverage Management",
         path: "/map-coverage",
+        permissions: ["map_coverage.read"],
       },
       {
         icon: <ListIcon />,
         name: "Reports",
         subItems: [
-          { name: "Report Types", path: "/reports/report-types" },
-          { name: "Report Sections", path: "/reports/report-sections" },
-          { name: "Report Items", path: "/reports/report-items" },
+          { name: "Report Types", path: "/reports/report-types", permissions: ["reports.read"] },
+          { name: "Report Sections", path: "/reports/report-sections", permissions: ["reports.read"] },
+          { name: "Report Items", path: "/reports/report-items", permissions: ["reports.read"] },
         ],
       },
       {
         icon: <ListIcon />,
         name: "Announcements",
         subItems: [
-          { name: "Announcements Types", path: "/announcements/announcement-types" },
-          { name: "Announcements Sections", path: "/announcements/announcement-sections" },
-          { name: "Announcements Items", path: "/announcements/announcement-items" },
+          { name: "Announcements Types", path: "/announcements/announcement-types", permissions: ["announcements.read"] },
+          { name: "Announcements Sections", path: "/announcements/announcement-sections", permissions: ["announcements.read"] },
+          { name: "Announcements Items", path: "/announcements/announcement-items", permissions: ["announcements.read"] },
         ],
       },
       // {
@@ -96,38 +109,42 @@ const menuSections: MenuSection[] = [
         icon: <PageIcon />,
         name: "News",
         subItems: [
-          { name: "News Category", path: "/news/category" },
-          { name: "News Data", path: "/news/data" },
-          { name: "News Highlight", path: "/news/highlight" },
+          { name: "News Category", path: "/news/category", permissions: ["news.read"] },
+          { name: "News Data", path: "/news/data", permissions: ["news.read"] },
+          { name: "News Highlight", path: "/news/highlight", permissions: ["news.read"] },
         ],
       },
       {
         icon: <CalenderIcon />,
         name: "Events",
         path: "/events",
+        permissions: ["events.read"],
       },
       {
         icon: <BoxCubeIcon />,
         name: "Career",
         path: "/careers",
+        permissions: ["careers.read"],
       },
       {
         icon: <TableIcon />,
         name: "Contact Us Data Bank",
         path: "/contact-data-bank",
+        permissions: ["contact_submissions.read"],
       },
       {
         icon: <PieChartIcon />,
         name: "Cookie Consents",
         path: "/cookie-consents",
+        permissions: ["cookie_consents.read"],
       },
       {
         icon: <ListIcon />,
         name: "Form Registration",
         subItems: [
-          { name: "Enterprise Forms", path: "/form-modules/enterprise" },
-          { name: "Fiber Forms", path: "/form-modules/fiber" },
-          { name: "Media Forms", path: "/form-modules/media" },
+          { name: "Enterprise Forms", path: "/form-modules/enterprise", permissions: ["form_modules.read"] },
+          { name: "Fiber Forms", path: "/form-modules/fiber", permissions: ["form_modules.read"] },
+          { name: "Media Forms", path: "/form-modules/media", permissions: ["form_modules.read"] },
           // { name: "All Submissions", path: "/form-modules/submissions" },
         ],
       },
@@ -145,45 +162,54 @@ const menuSections: MenuSection[] = [
         icon: <UserCircleIcon />,
         name: "Users Management",
         path: "/users-management",
+        permissions: ["users_management.read"],
       },
       {
         icon: <GridIcon />,
         name: "Roles & Permissions",
         path: "/roles-permissions",
+        permissions: ["role_management.read"],
       },
       {
         icon: <BoxCubeIcon />,
         name: "File Manager",
         path: "/file-manager",
+        permissions: ["files.read"],
       },
       {
         icon: <GridIcon />,
         name: "Data Components",
         path: "/component-visibility",
+        permissions: ["component_visibility.read"],
       },
       {
         icon: <TableIcon />,
         name: "Label Data Bank",
         path: "/data/label",
+        permissions: ["labels.read"],
       },
       {
         icon: <ListIcon />,
         name: "Log Activity",
         path: "/log-activity",
+        permissions: ["log_activity.read"],
       },
       {
         icon: <PlugInIcon />,
         name: "Settings Page",
         path: "/settings",
+        permissions: ["settings.read"],
       },
       {
         icon: <GridIcon />,
         name: "URL Redirection",
         path: "/url-redirection",
+        permissions: ["url_redirection.read"],
       },
       { icon: <GridIcon />, 
         name: "Menu Management", 
-        path: "/menu-management" 
+        path: "/menu-management",
+        permissions: ["menu_management.read"],
       },
       {
         icon: <PlugInIcon />,
@@ -197,6 +223,34 @@ const menuSections: MenuSection[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const { user } = useAuth();
+  const userPermissions = useMemo(() => new Set(user?.permissions || []), [user?.permissions]);
+  const isPrivilegedRole = user?.roles?.some((role) => role.slug === "super-admin") || userPermissions.has("*");
+
+  const canAccess = useCallback((permissions?: string[]) => {
+    if (!permissions || permissions.length === 0) return true;
+    if (isPrivilegedRole) return true;
+    return permissions.some((permission) => userPermissions.has(permission));
+  }, [isPrivilegedRole, userPermissions]);
+
+  const visibleMenuSections = useMemo(() => (
+    menuSections
+      .map((section) => {
+        const items = section.items
+          .map((item) => {
+            if (!item.subItems) return canAccess(item.permissions) ? item : null;
+
+            const subItems = item.subItems.filter((subItem) => canAccess(subItem.permissions || item.permissions));
+            if (subItems.length === 0 && !canAccess(item.permissions)) return null;
+
+            return { ...item, subItems };
+          })
+          .filter((item): item is NavItem => Boolean(item));
+
+        return { ...section, items };
+      })
+      .filter((section) => section.items.length > 0)
+  ), [canAccess]);
 
   const renderMenuItems = (items: NavItem[], sectionIndex: number) => (
     <ul className="flex flex-col gap-4">
@@ -330,7 +384,7 @@ const AppSidebar: React.FC = () => {
   const autoOpenSubmenu = useMemo(() => {
     let matchedKey: string | null = null;
 
-    menuSections.forEach((section, sectionIndex) => {
+    visibleMenuSections.forEach((section, sectionIndex) => {
       section.items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -343,7 +397,7 @@ const AppSidebar: React.FC = () => {
     });
 
     return matchedKey;
-  }, [pathname]);
+  }, [pathname, visibleMenuSections]);
 
   // Sync openSubmenu with autoOpenSubmenu when pathname changes
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(autoOpenSubmenu);
@@ -427,7 +481,7 @@ const AppSidebar: React.FC = () => {
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-6">
-            {menuSections.map((section, sectionIndex) => (
+            {visibleMenuSections.map((section, sectionIndex) => (
               <div key={sectionIndex}>
                 {section.label && (
                   <h2

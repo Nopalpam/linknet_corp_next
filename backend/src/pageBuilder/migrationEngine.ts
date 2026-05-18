@@ -32,6 +32,7 @@ export interface ComponentSyncResult {
   changed: boolean;
   logs: MigrationLogEntry[];
   errors: string[];
+  schemaDiffs: string[];
 }
 
 export interface ComponentValidationResult {
@@ -278,6 +279,7 @@ function normalizeListReportHome(data: Record<string, any>): void {
 function normalizeContactUsComponent(data: Record<string, any>): void {
   const intro = ensureIntro(data);
 
+  data.show = data.show !== false;
   intro.title = intro.title ?? data.title ?? { en: "We're Here to Help", id: 'Kami Siap Membantu' };
   intro.description = intro.description ?? data.description ?? {
     en: "We're here to assist you with any questions, concerns, or feedback you may have. Connect with us today!",
@@ -642,6 +644,40 @@ function readVersion(value: any): number {
   return Number.isFinite(rawVersion) && rawVersion >= 0 ? Math.trunc(rawVersion) : 0;
 }
 
+function typesCompatible(expected: string, value: any): boolean {
+  if (expected === 'null' || expected === 'unknown') return true;
+  if (expected === 'array') return Array.isArray(value);
+  if (expected === 'boolean') return typeof value === 'boolean';
+  if (expected === 'number') return typeof value === 'number';
+  if (expected === 'object') return isRecord(value) || typeof value === 'string';
+  if (expected === 'string') return typeof value === 'string' || isRecord(value);
+  return true;
+}
+
+function compareSchemaStructure(
+  componentType: string,
+  data: Record<string, any>,
+): string[] {
+  const schema = getComponentSchema(componentType);
+  if (!schema) return [];
+
+  const diffs: string[] = [];
+
+  for (const field of schema.fields) {
+    const value = getAtPath(data, field.path);
+    if (value === undefined) {
+      diffs.push(`missing field ${field.path}`);
+      continue;
+    }
+
+    if (!typesCompatible(field.type, value)) {
+      diffs.push(`type mismatch ${field.path}: expected ${field.type}`);
+    }
+  }
+
+  return diffs;
+}
+
 export function unwrapComponentData(componentType: string, payload: any): Record<string, any> {
   if (isEnvelope(payload)) {
     return isRecord(payload.data) ? deepClone(payload.data) : {};
@@ -694,9 +730,14 @@ export function syncComponentInstance(
   const now = new Date().toISOString();
   const latestVersion = schema?.version || 1;
   const existingEnvelope = isEnvelope(payload) ? payload : null;
-  const originalVersion = existingEnvelope ? readVersion(existingEnvelope._schema_version) : 0;
   const defaults = getDefaultValues(componentType);
   let data = unwrapComponentData(componentType, payload);
+  const initialSchemaDiffs = compareSchemaStructure(componentType, data);
+  const originalVersion = existingEnvelope
+    ? readVersion(existingEnvelope._schema_version)
+    : initialSchemaDiffs.length > 0
+      ? 0
+      : latestVersion;
   const before = JSON.stringify({
     _component: existingEnvelope?._component || componentType,
     _schema_version: originalVersion,
@@ -732,6 +773,7 @@ export function syncComponentInstance(
   }
 
   data = deepMergePreservingCustom(defaults, data);
+  const finalSchemaDiffs = compareSchemaStructure(componentType, data);
 
   const instance: ComponentDataEnvelope = {
     _component: componentType,
@@ -753,14 +795,17 @@ export function syncComponentInstance(
     _schema_version: instance._schema_version,
     data: instance.data,
   });
+  const dataChanged = before !== after && initialSchemaDiffs.length > 0;
+  const wasOutdated = originalVersion < latestVersion || initialSchemaDiffs.length > 0;
 
   return {
     instance,
     latestVersion,
     originalVersion,
-    wasOutdated: originalVersion < latestVersion,
-    changed: before !== after,
+    wasOutdated,
+    changed: dataChanged || finalSchemaDiffs.length > 0,
     logs,
     errors,
+    schemaDiffs: finalSchemaDiffs.length > 0 ? finalSchemaDiffs : initialSchemaDiffs,
   };
 }

@@ -17,9 +17,9 @@ const router = Router();
 router.post('/public/track-visit', publicRateLimiter, trackVisit);
 
 // CMS Dashboard routes (auth required)
-router.get('/cms/dashboard/visitors', authMiddleware, requirePermission(Permission.LOG_ACTIVITY_READ, Permission.SETTINGS_READ), getVisitorStats);
-router.get('/cms/dashboard/visitors/chart', authMiddleware, requirePermission(Permission.LOG_ACTIVITY_READ, Permission.SETTINGS_READ), getVisitorChartData);
-router.get('/cms/dashboard/content', authMiddleware, requirePermission(Permission.PAGES_READ, Permission.NEWS_READ, Permission.SETTINGS_READ), getContentOverview);
-router.get('/cms/dashboard/recent-activity', authMiddleware, requirePermission(Permission.LOG_ACTIVITY_READ), getRecentActivity);
+router.get('/cms/dashboard/visitors', authMiddleware, requirePermission(Permission.DASHBOARD_READ), getVisitorStats);
+router.get('/cms/dashboard/visitors/chart', authMiddleware, requirePermission(Permission.DASHBOARD_READ), getVisitorChartData);
+router.get('/cms/dashboard/content', authMiddleware, requirePermission(Permission.DASHBOARD_READ), getContentOverview);
+router.get('/cms/dashboard/recent-activity', authMiddleware, requirePermission(Permission.DASHBOARD_READ), getRecentActivity);
 
 export default router;

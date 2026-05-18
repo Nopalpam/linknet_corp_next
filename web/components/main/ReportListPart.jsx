@@ -36,8 +36,8 @@ export default function ReportListPart({ data, config, className = "", cardVaria
   const hasMore = items.length > MAX_VISIBLE;
   const normalizedCardVariant = cardVariant === 'cover' ? 'cover' : 'list';
   const itemGridClass = normalizedCardVariant === 'cover'
-    ? 'grid grid-cols-1 md:grid-cols-2 gap-x-[20px] gap-y-4 md:gap-y-[16px]'
-    : 'grid grid-cols-1 md:grid-cols-2 gap-x-[20px] gap-y-4 md:gap-y-[16px]';
+    ? 'grid grid-cols-1 gap-5 md:grid-cols-2'
+    : 'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4';
 
   const getPdfIcon = (type) => {
     return type === 'Consolidated'
@@ -48,7 +48,7 @@ export default function ReportListPart({ data, config, className = "", cardVaria
   return (
     <section
       id={sectionId}
-      className={`lnSection__reportListPart bg-white p-6 md:p-8 rounded-[20px] shadow-md
+      className={`lnSection__reportListPart rounded-[18px] border border-neutral-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] md:p-7
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
         bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
         ${configClassName} ${className}`}
@@ -56,13 +56,13 @@ export default function ReportListPart({ data, config, className = "", cardVaria
     >
 
       {/* HEADER SECTION (Tanpa Dropdown) */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="mb-5 flex flex-col justify-between gap-3 border-b border-neutral-100 pb-5 lg:flex-row lg:items-end">
           <div className="flex-1">
-            <h2 className="text-headline-h4 font-bold text-black mb-2">
+            <h2 className="text-headline-h5 md:text-headline-h4 font-bold text-black">
               {header.title}
             </h2>
             {header.desc && (
-              <p className="text-body-b4 text-secondary mb-6">
+              <p className="mt-2 max-w-3xl text-body-b5 md:text-body-b4 text-secondary">
                 {header.desc}
               </p>
             )}
@@ -90,7 +90,7 @@ export default function ReportListPart({ data, config, className = "", cardVaria
 
         {/* LOAD MORE BUTTON */}
         {hasMore && (
-          <div className="mt-10 flex justify-center">
+          <div className="mt-8 flex justify-center">
             <Button
                 variant='secondary-outline'
                 size='md'

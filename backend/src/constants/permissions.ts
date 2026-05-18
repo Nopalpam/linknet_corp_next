@@ -4,6 +4,9 @@
  */
 
 export const Permission = {
+  // Dashboard
+  DASHBOARD_READ: 'dashboard.read',
+
   // User Management
   USERS_MANAGEMENT_READ: 'users_management.read',
   USERS_MANAGEMENT_CREATE: 'users_management.create',
@@ -48,6 +51,7 @@ export const Permission = {
   EVENTS_CREATE: 'events.create',
   EVENTS_UPDATE: 'events.update',
   EVENTS_DELETE: 'events.delete',
+  EVENTS_PUBLISH: 'events.publish',
 
   // News Categories
   NEWS_CATEGORIES_READ: 'news_categories.read',
@@ -60,6 +64,7 @@ export const Permission = {
   ANNOUNCEMENTS_CREATE: 'announcements.create',
   ANNOUNCEMENTS_UPDATE: 'announcements.update',
   ANNOUNCEMENTS_DELETE: 'announcements.delete',
+  ANNOUNCEMENTS_PUBLISH: 'announcements.publish',
 
   // Announcement Types
   ANNOUNCEMENT_TYPES_READ: 'announcement_types.read',
@@ -72,6 +77,7 @@ export const Permission = {
   REPORTS_CREATE: 'reports.create',
   REPORTS_UPDATE: 'reports.update',
   REPORTS_DELETE: 'reports.delete',
+  REPORTS_PUBLISH: 'reports.publish',
 
   // Report Types
   REPORT_TYPES_READ: 'report_types.read',
@@ -84,12 +90,21 @@ export const Permission = {
   CAREERS_CREATE: 'careers.create',
   CAREERS_UPDATE: 'careers.update',
   CAREERS_DELETE: 'careers.delete',
+  CAREERS_PUBLISH: 'careers.publish',
 
   // Awards
   AWARDS_READ: 'awards.read',
   AWARDS_CREATE: 'awards.create',
   AWARDS_UPDATE: 'awards.update',
   AWARDS_DELETE: 'awards.delete',
+  AWARDS_PUBLISH: 'awards.publish',
+
+  // Data Bank Solutions
+  SOLUTIONS_READ: 'solutions.read',
+  SOLUTIONS_CREATE: 'solutions.create',
+  SOLUTIONS_UPDATE: 'solutions.update',
+  SOLUTIONS_DELETE: 'solutions.delete',
+  SOLUTIONS_PUBLISH: 'solutions.publish',
 
   // Management
   MANAGEMENT_READ: 'management.read',
@@ -102,6 +117,12 @@ export const Permission = {
   MANAGEMENT_CATEGORIES_CREATE: 'management_categories.create',
   MANAGEMENT_CATEGORIES_UPDATE: 'management_categories.update',
   MANAGEMENT_CATEGORIES_DELETE: 'management_categories.delete',
+
+  // Map Coverage
+  MAP_COVERAGE_READ: 'map_coverage.read',
+  MAP_COVERAGE_CREATE: 'map_coverage.create',
+  MAP_COVERAGE_UPDATE: 'map_coverage.update',
+  MAP_COVERAGE_DELETE: 'map_coverage.delete',
 
   // Contact Submissions
   CONTACT_SUBMISSIONS_READ: 'contact_submissions.read',
@@ -118,6 +139,25 @@ export const Permission = {
   FORM_SUBMISSIONS_READ: 'form_submissions.read',
   FORM_SUBMISSIONS_DELETE: 'form_submissions.delete',
 
+  // Cookie Consents
+  COOKIE_CONSENTS_READ: 'cookie_consents.read',
+  COOKIE_CONSENTS_DELETE: 'cookie_consents.delete',
+  COOKIE_CONSENTS_EXPORT: 'cookie_consents.export',
+
+  // Component Visibility
+  COMPONENT_VISIBILITY_READ: 'component_visibility.read',
+  COMPONENT_VISIBILITY_CREATE: 'component_visibility.create',
+  COMPONENT_VISIBILITY_UPDATE: 'component_visibility.update',
+  COMPONENT_VISIBILITY_DELETE: 'component_visibility.delete',
+  COMPONENT_VISIBILITY_SYNC: 'component_visibility.sync',
+
+  // Label Data Bank
+  LABELS_READ: 'labels.read',
+  LABELS_CREATE: 'labels.create',
+  LABELS_UPDATE: 'labels.update',
+  LABELS_DELETE: 'labels.delete',
+  LABELS_PUBLISH: 'labels.publish',
+
   // Files
   FILES_READ: 'files.read',
   FILES_CREATE: 'files.create',
@@ -133,6 +173,9 @@ export const Permission = {
   // Activity Logs
   LOG_ACTIVITY_READ: 'log_activity.read',
   LOG_ACTIVITY_DELETE: 'log_activity.delete',
+
+  // Analytics
+  ANALYTICS_READ: 'analytics.read',
 
   // URL Redirections
   URL_REDIRECTION_READ: 'url_redirection.read',
@@ -159,22 +202,30 @@ export type RoleSlug = (typeof Role)[keyof typeof Role];
  * Permission Modules
  */
 export const PermissionModule = {
+  DASHBOARD: 'dashboard',
   USERS_MANAGEMENT: 'users_management',
   ROLE_MANAGEMENT: 'role_management',
   SETTINGS: 'settings',
   MENU_MANAGEMENT: 'menu_management',
   PAGES: 'pages',
   NEWS: 'news',
+  EVENTS: 'events',
   ANNOUNCEMENTS: 'announcements',
   REPORTS: 'reports',
   CAREERS: 'careers',
   AWARDS: 'awards',
+  SOLUTIONS: 'solutions',
   MANAGEMENT: 'management',
+  MAP_COVERAGE: 'map_coverage',
   CONTACT_SUBMISSIONS: 'contact_submissions',
   FORM_MODULES: 'form_modules',
   FORM_SUBMISSIONS: 'form_submissions',
+  COOKIE_CONSENTS: 'cookie_consents',
+  COMPONENT_VISIBILITY: 'component_visibility',
+  LABELS: 'labels',
   FILES: 'files',
   LOG_ACTIVITY: 'log_activity',
+  ANALYTICS: 'analytics',
   URL_REDIRECTION: 'url_redirection',
 } as const;
 
@@ -184,6 +235,7 @@ export type PermissionModuleType = (typeof PermissionModule)[keyof typeof Permis
  * Group permissions by module for easier management
  */
 export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]> = {
+  dashboard: [Permission.DASHBOARD_READ],
   users_management: [
     Permission.USERS_MANAGEMENT_READ,
     Permission.USERS_MANAGEMENT_CREATE,
@@ -224,11 +276,19 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.NEWS_CATEGORIES_UPDATE,
     Permission.NEWS_CATEGORIES_DELETE,
   ],
+  events: [
+    Permission.EVENTS_READ,
+    Permission.EVENTS_CREATE,
+    Permission.EVENTS_UPDATE,
+    Permission.EVENTS_DELETE,
+    Permission.EVENTS_PUBLISH,
+  ],
   announcements: [
     Permission.ANNOUNCEMENTS_READ,
     Permission.ANNOUNCEMENTS_CREATE,
     Permission.ANNOUNCEMENTS_UPDATE,
     Permission.ANNOUNCEMENTS_DELETE,
+    Permission.ANNOUNCEMENTS_PUBLISH,
     Permission.ANNOUNCEMENT_TYPES_READ,
     Permission.ANNOUNCEMENT_TYPES_CREATE,
     Permission.ANNOUNCEMENT_TYPES_UPDATE,
@@ -239,6 +299,7 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.REPORTS_CREATE,
     Permission.REPORTS_UPDATE,
     Permission.REPORTS_DELETE,
+    Permission.REPORTS_PUBLISH,
     Permission.REPORT_TYPES_READ,
     Permission.REPORT_TYPES_CREATE,
     Permission.REPORT_TYPES_UPDATE,
@@ -249,12 +310,21 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.CAREERS_CREATE,
     Permission.CAREERS_UPDATE,
     Permission.CAREERS_DELETE,
+    Permission.CAREERS_PUBLISH,
   ],
   awards: [
     Permission.AWARDS_READ,
     Permission.AWARDS_CREATE,
     Permission.AWARDS_UPDATE,
     Permission.AWARDS_DELETE,
+    Permission.AWARDS_PUBLISH,
+  ],
+  solutions: [
+    Permission.SOLUTIONS_READ,
+    Permission.SOLUTIONS_CREATE,
+    Permission.SOLUTIONS_UPDATE,
+    Permission.SOLUTIONS_DELETE,
+    Permission.SOLUTIONS_PUBLISH,
   ],
   management: [
     Permission.MANAGEMENT_READ,
@@ -265,6 +335,12 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.MANAGEMENT_CATEGORIES_CREATE,
     Permission.MANAGEMENT_CATEGORIES_UPDATE,
     Permission.MANAGEMENT_CATEGORIES_DELETE,
+  ],
+  map_coverage: [
+    Permission.MAP_COVERAGE_READ,
+    Permission.MAP_COVERAGE_CREATE,
+    Permission.MAP_COVERAGE_UPDATE,
+    Permission.MAP_COVERAGE_DELETE,
   ],
   contact_submissions: [
     Permission.CONTACT_SUBMISSIONS_READ,
@@ -281,6 +357,25 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.FORM_SUBMISSIONS_READ,
     Permission.FORM_SUBMISSIONS_DELETE,
   ],
+  cookie_consents: [
+    Permission.COOKIE_CONSENTS_READ,
+    Permission.COOKIE_CONSENTS_DELETE,
+    Permission.COOKIE_CONSENTS_EXPORT,
+  ],
+  component_visibility: [
+    Permission.COMPONENT_VISIBILITY_READ,
+    Permission.COMPONENT_VISIBILITY_CREATE,
+    Permission.COMPONENT_VISIBILITY_UPDATE,
+    Permission.COMPONENT_VISIBILITY_DELETE,
+    Permission.COMPONENT_VISIBILITY_SYNC,
+  ],
+  labels: [
+    Permission.LABELS_READ,
+    Permission.LABELS_CREATE,
+    Permission.LABELS_UPDATE,
+    Permission.LABELS_DELETE,
+    Permission.LABELS_PUBLISH,
+  ],
   files: [
     Permission.FILES_READ,
     Permission.FILES_CREATE,
@@ -292,6 +387,7 @@ export const PermissionsByModule: Record<PermissionModuleType, PermissionSlug[]>
     Permission.FOLDERS_DELETE,
   ],
   log_activity: [Permission.LOG_ACTIVITY_READ, Permission.LOG_ACTIVITY_DELETE],
+  analytics: [Permission.ANALYTICS_READ],
   url_redirection: [
     Permission.URL_REDIRECTION_READ,
     Permission.URL_REDIRECTION_CREATE,

@@ -14,6 +14,15 @@ export interface PageComponent {
   order: number;
   settings: Record<string, any>;
   isVisible: boolean;
+  schemaStatus?: {
+    currentVersion: number;
+    targetVersion: number;
+    isOutdated: boolean;
+    changed: boolean;
+    operations: string[];
+    errors: string[];
+    warnings: string[];
+  };
 }
 
 /**
@@ -103,6 +112,7 @@ export type ComponentType =
   | 'package_list'
   | 'report_grid'
   | 'report_list_part'
+  | 'solutions_list'
   | 'solution_services_home'
   | 'solutions_filtered'
   | 'solutions_services_with_background'

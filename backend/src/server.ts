@@ -216,6 +216,10 @@ app.use(`${API_PREFIX}/cms/pages`, pageRoutes);
 import awardRoutes from '@routes/award.routes';
 app.use(`${API_PREFIX}`, awardRoutes);
 
+// Data Bank Solutions routes (CMS + Public)
+import dataBankSolutionRoutes from '@routes/dataBankSolution.routes';
+app.use(`${API_PREFIX}`, dataBankSolutionRoutes);
+
 // Management routes (CMS + Public)
 import managementRoutes from '@routes/management.routes';
 app.use(`${API_PREFIX}/cms/managements`, managementRoutes);

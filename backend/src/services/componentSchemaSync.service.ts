@@ -21,6 +21,7 @@ interface ComponentImpact {
   order: number;
   currentVersion: number;
   targetVersion: number;
+  isOutdated: boolean;
   changed: boolean;
   operations: string[];
   errors: string[];
@@ -43,7 +44,7 @@ interface SyncScanResult {
 function collectOperations(result: ComponentSyncResult): string[] {
   return result.logs.flatMap((entry) => (
     entry.operations.length > 0 ? entry.operations : [entry.description]
-  ));
+  )).concat(result.schemaDiffs);
 }
 
 function buildTargetVersions() {
@@ -111,6 +112,7 @@ export class ComponentSchemaSyncService {
             order: component.order,
             currentVersion: result.originalVersion,
             targetVersion: result.latestVersion,
+            isOutdated: result.wasOutdated,
             changed: result.changed,
             operations: collectOperations(result),
             errors: [...result.errors, ...validation.errors],
@@ -131,7 +133,7 @@ export class ComponentSchemaSyncService {
       dryRun: !options.persist,
       totalPages: pages.length,
       totalComponents,
-      outdatedComponents: impacts.filter((impact) => impact.currentVersion < impact.targetVersion).length,
+      outdatedComponents: impacts.filter((impact) => impact.isOutdated).length,
       changedComponents,
       failedComponents,
       targetVersions: buildTargetVersions(),

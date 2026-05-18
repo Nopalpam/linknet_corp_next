@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { refreshAuthSession } from './base.service';
 import {
   createSessionExpiredError,
   dispatchSessionExpired,
@@ -12,14 +13,29 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const API_PREFIX = '/api/v1';
+const CSRF_TOKEN_KEY = 'csrf_token';
 
 const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('auth_token');
 };
 
+const getCookie = (name: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  const nameEQ = `${name}=`;
+  const cookies = document.cookie.split(';');
+
+  for (const cookie of cookies) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith(nameEQ)) return trimmed.substring(nameEQ.length);
+  }
+
+  return null;
+};
+
 const api = axios.create({
   baseURL: `${API_URL}${API_PREFIX}`,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,16 +46,31 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const csrfToken = getCookie(CSRF_TOKEN_KEY);
+  if (csrfToken) {
+    config.headers['X-CSRF-Token'] = csrfToken;
+  }
   return config;
 });
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response?.status;
     const data = error.response?.data;
+    const originalRequest = error.config;
 
     if (status && isUnauthorizedOrExpired(status, data)) {
+      if (originalRequest && !(originalRequest as any)._retry) {
+        try {
+          (originalRequest as any)._retry = true;
+          await refreshAuthSession();
+          return api(originalRequest);
+        } catch {
+          // Fall through to the session modal dispatch below.
+        }
+      }
+
       dispatchSessionExpired({
         status,
         error: data,

@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 
 import Intro from '../base/section/Intro';
+import CTAList from '../base/section/CTAList';
 import Icon from '../base/Icon';
 import CardTVHighlight from '../base/cards/CardTVHighlight';
 import { TV_HIGHLIGHT_SLIDERS_DATA } from '@/data/components/tvHighlightSliders';
@@ -12,12 +13,24 @@ import { hasIntroContent } from '../../../shared/presentation/intro';
 import { useLinknetMedia } from '@/hooks/useLinknetMedia';
 import { resolveMediaHighlights } from '@/lib/mediaService';
 import MediaEmptyState from './MediaEmptyState';
+import { useParams } from 'next/navigation';
+
+function withLocale(href, locale) {
+  if (!href || !locale) return href;
+  if (href.startsWith('#') || href.startsWith('http') || href.startsWith(`/${locale}`)) {
+    return href;
+  }
+
+  return href.startsWith('/') ? `/${locale}${href}` : href;
+}
 
 export default function TVHighlightSliders({
   name = 'today-highlight',
   className = '',
   cmsData = null
 }) {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -31,7 +44,7 @@ export default function TVHighlightSliders({
 
   if (!sectionData) return null;
 
-  const { config, introData } = sectionData;
+  const { config, introData, ctaList = [] } = sectionData;
 
   const {
     sectionId,
@@ -46,6 +59,10 @@ export default function TVHighlightSliders({
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
+  const localizedCtaList = ctaList.map((cta) => ({
+    ...cta,
+    href: withLocale(cta.href, locale)
+  }));
 
   return (
     <section
@@ -168,6 +185,14 @@ export default function TVHighlightSliders({
           </div>
           )}
         </div>
+
+        <CTAList
+          ctaList={localizedCtaList}
+          align="center"
+          className="mt-10 md:mt-14"
+          ctaClassName="!rounded-full !border-neutral-200 !px-8 md:!px-10 !text-black hover:!border-neutral-300"
+          defaultSize="lg"
+        />
       </div>
     </section>
   );

@@ -62,13 +62,19 @@ export const submitContactValidation = [
     .withMessage('Inquiry type is required')
     .isIn(['BUSINESS', 'SUPPORT', 'CAREER', 'OTHERS'])
     .withMessage('Invalid inquiry type. Must be BUSINESS, SUPPORT, CAREER, or OTHERS'),
+
+  body('subject')
+    .trim()
+    .notEmpty()
+    .withMessage('Subject is required')
+    .isLength({ max: 200 })
+    .withMessage('Subject must not exceed 200 characters')
+    .escape(),
   
   body('message')
     .trim()
     .notEmpty()
     .withMessage('Message is required')
-    .isLength({ min: 10, max: 5000 })
-    .withMessage('Message must be between 10 and 5000 characters')
 ];
 
 /**
@@ -92,6 +98,16 @@ export const getContactSubmissionsValidation = [
     .trim()
     .isLength({ max: 200 })
     .withMessage('Search query too long'),
+
+  query('dateFrom')
+    .optional()
+    .isISO8601()
+    .withMessage('dateFrom must be a valid date'),
+
+  query('dateTo')
+    .optional()
+    .isISO8601()
+    .withMessage('dateTo must be a valid date'),
   
   query('inquiryType')
     .optional()

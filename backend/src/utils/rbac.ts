@@ -175,6 +175,8 @@ export const hasPermission = async (
   permission: PermissionSlug | string
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
+  const roles = await getUserRoles(userId);
+  if (roles.includes('super-admin')) return true;
   const permissions = await getUserPermissions(userId);
   return permissions.includes(permission);
 };
@@ -190,6 +192,8 @@ export const hasAnyPermission = async (
   permissions: (PermissionSlug | string)[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
+  const roles = await getUserRoles(userId);
+  if (roles.includes('super-admin')) return true;
   const userPermissions = await getUserPermissions(userId);
   return permissions.some((permission) => userPermissions.includes(permission));
 };
@@ -205,6 +209,8 @@ export const hasAllPermissions = async (
   permissions: (PermissionSlug | string)[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
+  const roles = await getUserRoles(userId);
+  if (roles.includes('super-admin')) return true;
   const userPermissions = await getUserPermissions(userId);
   return permissions.every((permission) => userPermissions.includes(permission));
 };

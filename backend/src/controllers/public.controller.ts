@@ -275,6 +275,104 @@ const serializeReport = (report: any) => ({
 
 const serializeReports = (reports: any[]) => reports.map(serializeReport);
 
+const DEFAULT_CONTENT_HIGHLIGHT_CATEGORIES = [
+  { label: 'Insight', value: 'business-insight', source: 'news', category_slug: 'press-release', is_visible: true },
+  { label: 'News', value: 'news', source: 'news', category_slug: 'news', is_visible: true },
+  { label: 'Event', value: 'event', source: 'events', category_slug: '', is_visible: true },
+];
+
+const normalizeContentHighlightCategories = (config: Record<string, any>) => {
+  const rawCategories = Array.isArray(config.categories) && config.categories.length > 0
+    ? config.categories
+    : DEFAULT_CONTENT_HIGHLIGHT_CATEGORIES;
+
+  return rawCategories
+    .map((category: any, index: number) => ({
+      label: readString(category || {}, ['label', 'name', 'title'], `Category ${index + 1}`),
+      value: readString(category || {}, ['value', 'slug', 'key'], `category-${index + 1}`),
+      source: readString(category || {}, ['source', 'type'], 'news').toLowerCase(),
+      category_slug: readString(category || {}, ['category_slug', 'categorySlug', 'slug']),
+      href: readString(category || {}, ['href', 'url']),
+      is_visible: readBoolean(category || {}, ['is_visible', 'isVisible', 'visible'], true),
+      sort_order: readNumber(category || {}, ['sort_order', 'sortOrder', 'order'], index, 0, 1000),
+      originalIndex: index,
+    }))
+    .filter((category: any) => category.is_visible !== false && category.value)
+    .sort((a: any, b: any) => a.sort_order - b.sort_order || a.originalIndex - b.originalIndex);
+};
+
+const serializeContentHighlightNews = (newsItem: any, locale = 'en') => {
+  const category = newsItem.news_categories;
+  return {
+    id: newsItem.id,
+    slug: newsItem.slug,
+    title: locale === 'id' ? newsItem.title_id || newsItem.title_en : newsItem.title_en || newsItem.title_id,
+    title_en: newsItem.title_en,
+    title_id: newsItem.title_id,
+    image: newsItem.news_thumbnail || '',
+    newsDate: newsItem.news_date,
+    news_date: newsItem.news_date,
+    author: newsItem.author || '',
+    excerpt: locale === 'id' ? newsItem.excerpt_id || newsItem.excerpt_en : newsItem.excerpt_en || newsItem.excerpt_id,
+    category: category ? {
+      id: category.id,
+      slug: category.slug,
+      name: locale === 'id' ? category.name_id || category.name_en : category.name_en || category.name_id,
+      name_en: category.name_en,
+      name_id: category.name_id,
+    } : null,
+  };
+};
+
+async function fetchContentHighlightsComponentData(config: Record<string, any>) {
+  const now = await getDatabaseNow();
+  const locale = readString(config, ['locale', 'lang'], 'en');
+  const limit = readLimit(config, 5, 20);
+  const categories = normalizeContentHighlightCategories(config);
+  const tabs = categories.map((category: any) => ({
+    label: category.label,
+    value: category.value,
+    source: category.source,
+    href: category.href,
+  }));
+  const items: Record<string, any[]> = {};
+
+  await Promise.all(categories.map(async (category: any) => {
+    if (category.source === 'event' || category.source === 'events') {
+      const events = await prisma.events.findMany({
+        where: { status: ContentStatus.PUBLISHED },
+        include: EVENT_LIST_INCLUDE,
+        orderBy: getEventOrderBy(config),
+        take: limit,
+      });
+      items[category.value] = serializeEventList(events, locale);
+      return;
+    }
+
+    const categoryWhere: Prisma.newsWhereInput = {};
+    if (category.category_slug) {
+      categoryWhere.news_categories = {
+        is: {
+          slug: category.category_slug,
+          is_active: true,
+          deleted_at: null,
+        },
+      };
+    }
+
+    const newsItems = await prisma.news.findMany({
+      where: publicNewsWhere(now, categoryWhere),
+      include: { news_categories: true },
+      orderBy: getNewsOrderBy(config),
+      take: limit,
+    });
+
+    items[category.value] = newsItems.map((item: any) => serializeContentHighlightNews(item, locale));
+  }));
+
+  return { tabs, items };
+}
+
 const serializeHomeReportCard = (report: any) => ({
   id: report.id,
   iconSrc: '/assets/icons/pdf-circle.svg',
@@ -610,6 +708,116 @@ async function fetchAnnouncementListComponentData(config: Record<string, any>) {
   };
 }
 
+const getSolutionOrderBy = (config: Record<string, any>) => {
+  const sort = readString(config, ['sort_by', 'sortBy', 'order_by', 'orderBy', 'order'], 'sort_order').toLowerCase();
+  const sortOrder = readSortOrder(config, sort === 'latest' ? 'desc' : 'asc');
+
+  if (sort === 'title' || sort === 'alphabetical') return [{ title: 'asc' as const }, { sortOrder: 'asc' as const }];
+  if (sort === 'latest' || sort === 'created_at' || sort === 'createdat') return [{ createdAt: 'desc' as const }, { sortOrder: 'asc' as const }];
+  if (sort === 'updated_at' || sort === 'updatedat') return [{ updatedAt: sortOrder }, { sortOrder: 'asc' as const }];
+
+  return [{ sortOrder: sortOrder }, { title: 'asc' as const }];
+};
+
+function serializeSolutionCategory(category: any, locale = 'en') {
+  return {
+    id: category.id,
+    type: category.type,
+    name: locale === 'id' ? category.nameId || category.name : category.nameEn || category.name,
+    name_id: category.nameId,
+    name_en: category.nameEn,
+    slug: category.slug,
+    icon: category.icon || '',
+    sortOrder: category.sortOrder || 0,
+  };
+}
+
+function serializeSolution(solution: any, locale = 'en') {
+  const categories = (solution.categories || [])
+    .map((relation: any) => relation.category)
+    .filter(Boolean)
+    .map((category: any) => serializeSolutionCategory(category, locale));
+  const industries = categories.filter((category: any) => category.type === 'INDUSTRY');
+  const businessScales = categories.filter((category: any) => category.type === 'BUSINESS_SCALE');
+  const businessNeeds = categories.filter((category: any) => category.type === 'BUSINESS_NEED');
+  const title = locale === 'id' ? solution.titleId || solution.title : solution.titleEn || solution.title;
+  const description = locale === 'id'
+    ? solution.descriptionId || solution.description || ''
+    : solution.descriptionEn || solution.description || '';
+
+  return {
+    id: solution.id,
+    slug: solution.slug,
+    title,
+    title_id: solution.titleId,
+    title_en: solution.titleEn,
+    description,
+    description_id: solution.descriptionId,
+    description_en: solution.descriptionEn,
+    image: solution.image || solution.bannerImage || '',
+    thumbnail: solution.image || solution.bannerImage || '',
+    bannerImage: solution.bannerImage || solution.image || '',
+    href: `/solutions/${solution.slug}`,
+    ctaList: Array.isArray(solution.ctaList) ? solution.ctaList : [],
+    sortOrder: solution.sortOrder,
+    categories,
+    industries,
+    businessScales,
+    businessNeeds,
+    industry: industries[0] || null,
+    businessScale: businessScales[0] || null,
+    tags: businessNeeds.map((need: any) => need.name),
+    category: industries[0]?.name || '',
+    categoryIcon: industries[0]?.icon || '',
+  };
+}
+
+async function fetchSolutionsComponentData(config: Record<string, any>) {
+  const db = prisma as any;
+  const page = readPage(config);
+  const limit = readLimit(config, 100, 200);
+  const locale = readString(config, ['locale', 'lang'], 'en');
+
+  const [solutions, total, taxonomies] = await Promise.all([
+    db.dataBankSolution.findMany({
+      where: {
+        status: ContentStatus.PUBLISHED,
+        deletedAt: null,
+      },
+      include: {
+        categories: {
+          include: { category: true },
+        },
+      },
+      orderBy: getSolutionOrderBy(config),
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    db.dataBankSolution.count({
+      where: {
+        status: ContentStatus.PUBLISHED,
+        deletedAt: null,
+      },
+    }),
+    db.dataBankSolutionCategory.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+      orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
+    }),
+  ]);
+
+  const items = solutions.map((solution: any) => serializeSolution(solution, locale));
+
+  return {
+    items,
+    solutions: items,
+    taxonomies: taxonomies.map((category: any) => serializeSolutionCategory(category, locale)),
+    pagination: buildPagination(page, limit, total),
+  };
+}
+
 // ============================================================================
 // MAIN COMPONENT DATA FETCHERS
 // ============================================================================
@@ -756,6 +964,8 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
           category,
         };
       }
+      case 'content_highlights':
+        return fetchContentHighlightsComponentData(componentConfig);
       case 'career_highlight': {
         const maxDisplay = componentConfig.max_display || 6;
         const careers = await prisma.careerContent.findMany({
@@ -819,6 +1029,8 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
         });
         return { awards };
       }
+      case 'solutions_list':
+        return fetchSolutionsComponentData(componentConfig);
       case 'awards_marquee': {
         const awardIds = Array.isArray(componentConfig.award_ids || componentConfig.awardIds)
           ? componentConfig.award_ids || componentConfig.awardIds

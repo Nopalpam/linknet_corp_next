@@ -81,12 +81,6 @@ export default function TVChannelSneakPeek({
 
   const activeChannels = channels
     .filter((item) => activeTab === 'all' || item.categories?.includes(activeTab))
-    .sort((a, b) => {
-      const byName = (a.channelName || '').localeCompare(b.channelName || '');
-      if (byName !== 0) return byName;
-
-      return (a.channelNumber || '').localeCompare(b.channelNumber || '');
-    })
     .slice(0, displayLimit);
 
   const localizedCtaList = ctaList.map((cta) => ({

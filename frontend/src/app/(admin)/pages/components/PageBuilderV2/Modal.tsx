@@ -42,6 +42,10 @@ interface PageBuilderContentProps {
 function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps) {
   const { state, saveComponents, clearError, addComponent, moveComponent } = usePageBuilder();
   const { isDirty, isSaving, error } = state;
+  const outdatedCount = state.components.filter((component) => {
+    const status = component.schemaStatus;
+    return Boolean(status?.isOutdated);
+  }).length;
 
   // Success toast state
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -118,6 +122,17 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
     }
   }, [saveComponents, onSaveSuccess]);
 
+  const handleSyncSchema = useCallback(async () => {
+    try {
+      await saveComponents();
+      setSaveSuccess(true);
+      if (saveSuccessTimerRef.current) clearTimeout(saveSuccessTimerRef.current);
+      saveSuccessTimerRef.current = setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      // Error is already set in state
+    }
+  }, [saveComponents]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -153,6 +168,14 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
           {isDirty && (
             <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded">
               Unsaved Changes
+            </span>
+          )}
+          {outdatedCount > 0 && (
+            <span
+              className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 rounded"
+              title="One or more components were loaded from an older stored schema. Existing data remains readable until synced."
+            >
+              {outdatedCount} Outdated
             </span>
           )}
         </div>
@@ -197,6 +220,18 @@ function PageBuilderContent({ onClose, onSaveSuccess }: PageBuilderContentProps)
             </kbd>
             <span>to save</span>
           </div>
+
+          {/* Save button */}
+          {outdatedCount > 0 && (
+            <button
+              onClick={handleSyncSchema}
+              disabled={isSaving}
+              title="Update current layout component data to the latest schema while preserving existing content."
+              className="px-4 py-2 text-sm font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-300"
+            >
+              {isSaving ? 'Syncing...' : 'Sync Schema'}
+            </button>
+          )}
 
           {/* Save button */}
           <button

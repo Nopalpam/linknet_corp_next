@@ -439,6 +439,7 @@ async function migrateContactUs(sql, tx) {
         role: role != null ? String(role) : null,
         company: company != null ? String(company) : null,
         inquiryType: mappedInquiryType,
+        subject: '',
         message: message != null ? String(message) : '',
         ipAddress: ipAddress != null ? String(ipAddress) : null,
         userAgent: userAgent != null ? String(userAgent) : null,

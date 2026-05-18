@@ -6,6 +6,8 @@
 import { Router } from 'express';
 import cookieConsentController from '../controllers/cookieConsent.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requirePermission } from '../middleware/rbac.middleware';
+import { Permission } from '../constants/permissions';
 
 const router = Router();
 
@@ -33,6 +35,7 @@ router.post(
 router.get(
   '/cms/cookie-consents',
   authMiddleware,
+  requirePermission(Permission.COOKIE_CONSENTS_READ),
   cookieConsentController.getConsents.bind(cookieConsentController)
 );
 
@@ -43,6 +46,7 @@ router.get(
 router.get(
   '/cms/cookie-consents/stats',
   authMiddleware,
+  requirePermission(Permission.COOKIE_CONSENTS_READ),
   cookieConsentController.getStats.bind(cookieConsentController)
 );
 
@@ -53,6 +57,7 @@ router.get(
 router.get(
   '/cms/cookie-consents/export',
   authMiddleware,
+  requirePermission(Permission.COOKIE_CONSENTS_EXPORT),
   cookieConsentController.exportConsents.bind(cookieConsentController)
 );
 
@@ -63,6 +68,7 @@ router.get(
 router.delete(
   '/cms/cookie-consents/:id',
   authMiddleware,
+  requirePermission(Permission.COOKIE_CONSENTS_DELETE),
   cookieConsentController.deleteConsent.bind(cookieConsentController)
 );
 
@@ -73,6 +79,7 @@ router.delete(
 router.post(
   '/cms/cookie-consents/destroy-multiple',
   authMiddleware,
+  requirePermission(Permission.COOKIE_CONSENTS_DELETE),
   cookieConsentController.deleteMultiple.bind(cookieConsentController)
 );
 

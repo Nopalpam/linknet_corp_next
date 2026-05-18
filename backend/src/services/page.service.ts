@@ -1,7 +1,7 @@
 import { Prisma, PageStatus, PageTemplate } from '@prisma/client';
 import prisma from '@config/database';
 import { AppError } from '../types/error.types';
-import { syncComponentInstance } from '../pageBuilder/migrationEngine';
+import { syncComponentInstance, validateComponentInstance } from '../pageBuilder/migrationEngine';
 
 const pageListSelect = {
   id: true,
@@ -55,10 +55,26 @@ const withRuntimeSyncedComponents = <T extends { components?: any[] }>(page: T):
 
   return {
     ...page,
-    components: page.components.map((component) => ({
-      ...component,
-      data: syncComponentInstance(component.type, component.data).instance,
-    })),
+    components: page.components.map((component) => {
+      const syncResult = syncComponentInstance(component.type, component.data);
+      const validation = validateComponentInstance(component.type, syncResult.instance);
+
+      return {
+        ...component,
+        data: syncResult.instance,
+        schemaStatus: {
+          currentVersion: syncResult.originalVersion,
+          targetVersion: syncResult.latestVersion,
+          isOutdated: syncResult.wasOutdated,
+          changed: syncResult.changed,
+          operations: syncResult.logs.flatMap((entry) => (
+            entry.operations.length > 0 ? entry.operations : [entry.description]
+          )).concat(syncResult.schemaDiffs),
+          errors: [...syncResult.errors, ...validation.errors],
+          warnings: validation.warnings,
+        },
+      };
+    }),
   };
 };
 

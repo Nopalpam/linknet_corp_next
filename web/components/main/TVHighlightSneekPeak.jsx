@@ -37,6 +37,23 @@ function getLoopedItem(items, index) {
   return items[normalizedIndex];
 }
 
+function getDesktopHighlightEntries(items, activeIndex) {
+  if (items.length <= 5) {
+    const center = Math.floor(items.length / 2);
+    return items.map((item, index) => ({
+      item,
+      offset: index - center,
+    }));
+  }
+
+  return [-2, -1, 0, 1, 2]
+    .map((offset) => ({
+      item: getLoopedItem(items, activeIndex + offset),
+      offset,
+    }))
+    .filter((entry) => entry.item);
+}
+
 function subscribeToMobileViewport(callback) {
   if (typeof window === 'undefined') {
     return () => {};
@@ -93,9 +110,12 @@ export default function TVHighlightSneekPeak({
     ctaList = []
   } = sectionData || {};
   const itemGroups = apiItemGroups;
-  const logoRows = mediaData?.channels?.length
-    ? buildChannelLogoRows(mediaData.channels, mediaSettings)
-    : [];
+  const logoRows = useMemo(
+    () => mediaData?.channels?.length
+      ? buildChannelLogoRows(mediaData.channels, mediaSettings)
+      : [],
+    [mediaData?.channels, mediaSettings]
+  );
 
   const {
     sectionId,
@@ -114,6 +134,7 @@ export default function TVHighlightSneekPeak({
   const defaultTab = itemGroups[config?.initialTab] ? config.initialTab : groupKeys[0] || '';
   const currentTab = itemGroups[activeTab] ? activeTab : defaultTab;
   const activeItems = itemGroups[currentTab]?.items || [];
+  const desktopHighlightEntries = getDesktopHighlightEntries(activeItems, activeSlide);
 
   const localizedCtaList = ctaList.map((cta) => ({
     ...cta,
@@ -150,7 +171,7 @@ export default function TVHighlightSneekPeak({
     setActiveSlide(isMobile ? 0 : Math.floor(nextItems.length / 2));
   }, [currentTab, isMobile, itemGroups]);
 
-  if (!sectionData) return null;
+  if (!sectionData || sectionData.show === false) return null;
 
   return (
     <section
@@ -288,10 +309,7 @@ export default function TVHighlightSneekPeak({
               </Swiper>
             ) : activeItems.length > 0 ? (
               <div className="hidden md:flex md:items-center md:justify-center md:gap-3 xl:gap-3">
-                {[-2, -1, 0, 1, 2].map((offset) => {
-                  const item = getLoopedItem(activeItems, activeSlide + offset);
-
-                  if (!item) return null;
+                {desktopHighlightEntries.map(({ item, offset }) => {
                   const desktopLevel = Math.min(Math.abs(offset), 3);
                   const scale = desktopScaleMap[desktopLevel];
                   const opacity = desktopOpacityMap[desktopLevel];
@@ -305,7 +323,7 @@ export default function TVHighlightSneekPeak({
 
                   return (
                     <div
-                      key={`${item.id}-${offset}`}
+                      key={item.id}
                       className={cx('w-full shrink-0', widthClass)}
                       style={{
                         transform: `scale(${scale})`,

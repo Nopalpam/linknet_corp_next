@@ -5,32 +5,63 @@
 
 import { BaseService } from './base.service';
 
-export interface ContactSubmission {
+export type ContactSubmissionStatus = 'NEW' | 'READ';
+
+export interface ContactSubmissionListItem {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
+  role?: string;
+  company?: string;
+  inquiryType: 'BUSINESS' | 'SUPPORT' | 'CAREER' | 'OTHERS';
   subject: string;
   message: string;
-  status: 'NEW' | 'READ' | 'REPLIED' | 'ARCHIVED';
-  ipAddress?: string;
-  userAgent?: string;
-  createdAt: string;
-  updatedAt: string;
+  status: ContactSubmissionStatus;
+  submittedAt: string;
+  readAt?: string | null;
 }
 
 export interface SubmitContactFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
+  role?: string;
+  company?: string;
+  inquiryType: 'BUSINESS' | 'SUPPORT' | 'CAREER' | 'OTHERS';
   subject: string;
   message: string;
 }
 
 export interface GetContactSubmissionsParams {
-  status?: 'NEW' | 'READ' | 'REPLIED' | 'ARCHIVED';
+  status?: ContactSubmissionStatus;
   page?: number;
   limit?: number;
+  search?: string;
+  inquiryType?: ContactSubmissionListItem['inquiryType'];
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface GetContactSubmissionsResponse {
+  success: boolean;
+  data: {
+    submissions: ContactSubmissionListItem[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+    stats: {
+      total: number;
+      totalThisMonth: number;
+      new: number;
+      read: number;
+    };
+  };
 }
 
 class ContactService extends BaseService {
@@ -47,19 +78,15 @@ class ContactService extends BaseService {
   /**
    * Get all contact submissions (CMS)
    */
-  async getAllContactSubmissions(params?: GetContactSubmissionsParams): Promise<{ 
-    data: ContactSubmission[];
-    pagination?: {
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    }
-  }> {
+  async getAllContactSubmissions(params?: GetContactSubmissionsParams): Promise<GetContactSubmissionsResponse> {
     const queryParams = new URLSearchParams();
     if (params?.status) queryParams.append('status', params.status);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.inquiryType) queryParams.append('inquiryType', params.inquiryType);
+    if (params?.dateFrom) queryParams.append('dateFrom', params.dateFrom);
+    if (params?.dateTo) queryParams.append('dateTo', params.dateTo);
 
     const queryString = queryParams.toString();
     const url = queryString 
@@ -72,7 +99,7 @@ class ContactService extends BaseService {
   /**
    * Get single contact submission by ID (CMS)
    */
-  async getContactSubmissionById(id: string): Promise<{ data: ContactSubmission }> {
+  async getContactSubmissionById(id: string): Promise<{ data: ContactSubmissionListItem }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/contactus/${id}`));
   }
 
@@ -86,14 +113,24 @@ class ContactService extends BaseService {
   }
 
   /**
+   * Delete multiple contact submissions (CMS)
+   */
+  async bulkDeleteContactSubmissions(ids: string[]): Promise<{ message: string; deletedCount: number }> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/contactus/destroy-multiple'), {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
+  /**
    * Update contact submission status (CMS)
    */
   async updateContactStatus(
     id: string, 
-    status: 'NEW' | 'READ' | 'REPLIED' | 'ARCHIVED'
-  ): Promise<{ data: ContactSubmission; message: string }> {
+    status: ContactSubmissionStatus
+  ): Promise<{ data: ContactSubmissionListItem; message: string }> {
     return this.fetchWithAuth(this.getApiUrl(`/cms/contactus/${id}/status`), {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify({ status }),
     });
   }

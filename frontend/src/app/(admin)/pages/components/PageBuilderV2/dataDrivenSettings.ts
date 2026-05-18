@@ -9,6 +9,14 @@ const COMMON_SETTINGS = [
 const DATA_DRIVEN_ALLOWED_FIELDS: Record<string, string[]> = {
   contact_us: [
     'introData',
+    'form_fields',
+  ],
+  content_highlights: [
+    ...COMMON_SETTINGS,
+    'categories',
+    'limit',
+    'sort_by',
+    'sort_direction',
   ],
   news_highlight: [
     ...COMMON_SETTINGS,
@@ -180,6 +188,48 @@ const DATA_DRIVEN_ALLOWED_FIELDS: Record<string, string[]> = {
     'show_pagination',
     'columns',
   ],
+  solutions_list: [
+    'introData',
+    'order_by',
+    'sort_direction',
+    'show_filter_industry',
+    'show_filter_business_scale',
+    'show_filter_business_needs',
+    'max_data_per_category',
+  ],
+  tv_channel_list: [
+    ...COMMON_SETTINGS,
+    'channel_ids',
+    'genre_ids',
+    'limit',
+    'sort_by',
+    'sort_direction',
+    'tabs',
+  ],
+  tv_channel_sneak_peek: [
+    ...COMMON_SETTINGS,
+    'channel_ids',
+    'genre_ids',
+    'limit',
+    'sort_by',
+    'sort_direction',
+  ],
+  tv_highlight_sliders: [
+    ...COMMON_SETTINGS,
+    'reel_item_ids',
+    'limit',
+    'sort_by',
+    'sort_direction',
+  ],
+  tv_highlight_sneek_peak: [
+    ...COMMON_SETTINGS,
+    'show',
+    'highlight_categories',
+    'logo_display_limit',
+    'limit',
+    'sort_by',
+    'sort_direction',
+  ],
 };
 
 const LEGACY_DROP_KEYS = [
@@ -205,6 +255,11 @@ const FIELD_ALIASES: Record<string, Record<string, string[]>> = {
   news_featured: {
     sort_by: ['sort_by', 'sort', 'order'],
     sort_direction: ['sort_direction', 'sort_order'],
+  },
+  content_highlights: {
+    limit: ['limit', 'max_data', 'maxData', 'per_page', 'perPage'],
+    sort_by: ['sort_by', 'sortBy', 'sort', 'order'],
+    sort_direction: ['sort_direction', 'sortDirection', 'sort_order', 'sortOrder'],
   },
   news_list: {
     category_id: ['category_id', 'categoryId'],
@@ -292,6 +347,42 @@ const FIELD_ALIASES: Record<string, Record<string, string[]>> = {
     sort_direction: ['sort_direction', 'sort_order'],
     show_pagination: ['show_pagination', 'showPagination'],
   },
+  solutions_list: {
+    order_by: ['order_by', 'orderBy', 'sort_by', 'sortBy', 'order'],
+    sort_direction: ['sort_direction', 'sortDirection', 'sort_order'],
+    show_filter_industry: ['show_filter_industry', 'showFilterIndustry'],
+    show_filter_business_scale: ['show_filter_business_scale', 'showFilterBusinessScale'],
+    show_filter_business_needs: ['show_filter_business_needs', 'showFilterBusinessNeeds'],
+    max_data_per_category: ['max_data_per_category', 'maxDataPerCategory', 'limit', 'max_data', 'maxData'],
+  },
+  tv_channel_list: {
+    channel_ids: ['channel_ids', 'channelIds'],
+    genre_ids: ['genre_ids', 'genreIds', 'genre_names', 'genreNames', 'genres'],
+    limit: ['limit', 'displayLimit', 'display_limit', 'max_data', 'maxData'],
+    sort_by: ['sort_by', 'sortBy', 'sort', 'order'],
+    sort_direction: ['sort_direction', 'sortDirection', 'sort_order'],
+  },
+  tv_channel_sneak_peek: {
+    channel_ids: ['channel_ids', 'channelIds'],
+    genre_ids: ['genre_ids', 'genreIds', 'genre_names', 'genreNames', 'genres'],
+    limit: ['limit', 'displayLimit', 'display_limit', 'max_data', 'maxData'],
+    sort_by: ['sort_by', 'sortBy', 'sort', 'order'],
+    sort_direction: ['sort_direction', 'sortDirection', 'sort_order'],
+  },
+  tv_highlight_sliders: {
+    reel_item_ids: ['reel_item_ids', 'reelItemIds', 'highlight_item_ids', 'highlightItemIds'],
+    limit: ['limit', 'displayLimit', 'display_limit', 'max_data', 'maxData'],
+    sort_by: ['sort_by', 'sortBy', 'sort', 'order'],
+    sort_direction: ['sort_direction', 'sortDirection', 'sort_order'],
+  },
+  tv_highlight_sneek_peak: {
+    show: ['show', 'is_visible', 'isVisible', 'visible'],
+    highlight_categories: ['highlight_categories', 'highlightCategories', 'categories'],
+    logo_display_limit: ['logo_display_limit', 'logoDisplayLimit', 'show_data_per', 'showDataPer'],
+    limit: ['limit', 'displayLimit', 'display_limit', 'max_data', 'maxData'],
+    sort_by: ['sort_by', 'sortBy', 'sort', 'order'],
+    sort_direction: ['sort_direction', 'sortDirection', 'sort_order'],
+  },
 };
 
 export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = {
@@ -331,6 +422,12 @@ export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = 
     sort_by: 'Sort Featured News By',
     sort_direction: 'Sort Direction',
   },
+  content_highlights: {
+    categories: 'Content Categories',
+    limit: 'Items per Category',
+    sort_by: 'Sort Content By',
+    sort_direction: 'Sort Direction',
+  },
   events_list: {
     state: 'Event State',
     limit: 'Number of Events',
@@ -353,6 +450,35 @@ export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = 
     source: 'Coverage Source',
     widgetData: 'Widget Copy',
   },
+  tv_channel_list: {
+    channel_ids: 'Channel IDs',
+    genre_ids: 'Genre IDs',
+    limit: 'Show Data Per',
+    tabs: 'Channel Tabs',
+  },
+  tv_channel_sneak_peek: {
+    channel_ids: 'Channel IDs',
+    genre_ids: 'Genre IDs',
+    limit: 'Show Data Per',
+  },
+  tv_highlight_sliders: {
+    reel_item_ids: 'Reel Items',
+    limit: 'Show Data Per',
+  },
+  tv_highlight_sneek_peak: {
+    show: 'Show Section',
+    highlight_categories: 'Reel Name Categories',
+    logo_display_limit: 'Logo Show Data Per',
+    limit: 'Highlight Show Data Per',
+  },
+  solutions_list: {
+    order_by: 'Order By',
+    sort_direction: 'Sort Direction',
+    show_filter_industry: 'Show Industry Filter',
+    show_filter_business_scale: 'Show Business Scale Filter',
+    show_filter_business_needs: 'Show Business Needs Filter',
+    max_data_per_category: 'Max Data per Category',
+  },
 };
 
 export const DATA_DRIVEN_FIELD_HELPERS: Record<string, Record<string, string>> = {
@@ -372,12 +498,19 @@ export const DATA_DRIVEN_FIELD_HELPERS: Record<string, Record<string, string>> =
   news_highlight: {
     source: 'CMS Highlights uses the News Highlight module. Selected News enables manual curated picks.',
   },
+  content_highlights: {
+    categories: 'Drag to reorder categories. Turn Is Visible off to hide a category from the public tabs.',
+  },
   list_report_home: {
     tabs: 'Segment tabs shown in the homepage report carousel.',
-    items: 'Manual child items grouped by each tab value. Empty arrays render as an empty state.',
+    items: 'Manual child items grouped by each tab value. Empty arrays render no cards on the public page.',
   },
   maps_coverage_v1: {
     source: 'Detailed province/city data is managed in Map Coverage Management.',
+  },
+  solutions_list: {
+    order_by: 'Solutions are loaded automatically from CMS Data Bank Solutions.',
+    max_data_per_category: 'Limits visible cards in each industry group after filtering.',
   },
 };
 

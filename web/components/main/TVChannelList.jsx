@@ -79,12 +79,6 @@ export default function TVChannelList({
         return [item.channelName, item.channelNumber]
           .filter(Boolean)
           .some((value) => value.toLowerCase().includes(keyword));
-      })
-      .sort((a, b) => {
-        const byName = (a.channelName || '').localeCompare(b.channelName || '');
-        if (byName !== 0) return byName;
-
-        return (a.channelNumber || '').localeCompare(b.channelNumber || '');
       });
   }, [channels, currentTab, searchValue]);
 

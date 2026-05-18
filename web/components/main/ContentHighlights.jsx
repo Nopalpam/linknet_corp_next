@@ -12,16 +12,15 @@ import CardEvent from '../base/cards/CardEvent';
 import CTAList from '../base/section/CTAList';
 import Icon from '../base/Icon';
 
-import { CONTENT_HIGHLIGHT_DATA } from '@/data/components/contentHighlight';
-import { NEWS_LIST } from '@/data/components/newsList';
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
-const TAB_OPTIONS = [
-  { label: 'Insight', value: 'business-insight' },
-  { label: 'News', value: 'news' },
-  { label: 'Event', value: 'event' },
+const DEFAULT_CATEGORIES = [
+  { label: 'Insight', value: 'business-insight', source: 'news', category_slug: 'press-release', is_visible: true },
+  { label: 'News', value: 'news', source: 'news', category_slug: 'news', is_visible: true },
+  { label: 'Event', value: 'event', source: 'events', category_slug: '', is_visible: true },
 ];
+
+const EMPTY_SECTION_DATA = {};
 
 const VIEW_ALL_CONFIG = {
   'business-insight': {
@@ -56,19 +55,70 @@ function sortByDateDesc(items, getDate) {
   });
 }
 
+function normalizeCategory(category, index) {
+  if (!category || typeof category !== 'object') return null;
+  const value = String(category.value || category.slug || category.key || `category-${index + 1}`).trim();
+  if (!value) return null;
+
+  return {
+    label: category.label || category.name || category.title || value,
+    value,
+    source: String(category.source || category.type || (value === 'event' ? 'events' : 'news')).toLowerCase(),
+    categorySlug: category.category_slug || category.categorySlug || category.slug || '',
+    href: category.href || category.url || '',
+    isVisible: category.is_visible !== false && category.isVisible !== false && category.visible !== false,
+    sortOrder: Number.isFinite(Number(category.sort_order ?? category.sortOrder ?? category.order))
+      ? Number(category.sort_order ?? category.sortOrder ?? category.order)
+      : index,
+    originalIndex: index,
+  };
+}
+
+function normalizeCategories(cmsData) {
+  const source = Array.isArray(cmsData?.categories) && cmsData.categories.length > 0
+    ? cmsData.categories
+    : DEFAULT_CATEGORIES;
+
+  return source
+    .map(normalizeCategory)
+    .filter((category) => category?.isVisible)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.originalIndex - b.originalIndex);
+}
+
+function normalizeNewsItem(item, locale) {
+  const category = item.category || item.news_categories || {};
+  return {
+    ...item,
+    title: locale === 'id' ? item.title_id || item.titleId || item.title : item.title_en || item.titleEn || item.title,
+    image: item.image || item.news_thumbnail || item.thumbnail || '',
+    newsDate: item.newsDate || item.news_date || item.published_at || item.created_at,
+    category,
+  };
+}
+
+function normalizeEventItem(item, locale) {
+  return {
+    ...item,
+    title: locale === 'id' ? item.title_id || item.titleId || item.title : item.title_en || item.titleEn || item.title,
+    cover_image: item.cover_image || item.coverImage || item.image || '',
+  };
+}
+
 export default function ContentHighlights({
   name = 'home',
   className = '',
   cmsData = null,
+  mainData = null,
 }) {
   const params = useParams();
   const locale = params?.locale || 'en';
-  const sectionData = cmsData || CONTENT_HIGHLIGHT_DATA[name] || {};
-  const [activeTab, setActiveTab] = useState(TAB_OPTIONS[0].value);
+  const sectionData = cmsData || EMPTY_SECTION_DATA;
+  const categories = useMemo(() => normalizeCategories(sectionData), [sectionData]);
+  const [activeTab, setActiveTab] = useState(categories[0]?.value || '');
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
-  const [eventItems, setEventItems] = useState([]);
+  const [fetchedItems, setFetchedItems] = useState({});
 
   const { config, introData } = sectionData;
   const {
@@ -85,50 +135,74 @@ export default function ContentHighlights({
   };
 
   useEffect(() => {
-    let cancelled = false;
-    const qp = new URLSearchParams({
-      limit: '5',
-      sortBy: 'start_date',
-      sortOrder: 'desc',
-      locale: String(locale),
-    });
+    if (categories.length > 0 && !categories.some((category) => category.value === activeTab)) {
+      setActiveTab(categories[0].value);
+    }
+  }, [activeTab, categories]);
 
-    fetch(`${API_BASE_URL}/events?${qp.toString()}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (!cancelled) setEventItems(json?.data || []);
+  useEffect(() => {
+    if (mainData?.items) return;
+    let cancelled = false;
+    const limit = Number(sectionData.limit || sectionData.max_data || 5) || 5;
+    const sortBy = sectionData.sort_by || sectionData.sortBy || 'published_at';
+    const sortOrder = String(sectionData.sort_direction || sectionData.sortDirection || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
+
+    Promise.all(categories.map(async (category) => {
+      const qp = new URLSearchParams({ limit: String(limit), locale: String(locale) });
+      if (category.source === 'events' || category.source === 'event') {
+        qp.set('sortBy', 'start_date');
+        qp.set('sortOrder', sortOrder);
+        const res = await fetch(`${API_BASE_URL}/events?${qp.toString()}`);
+        const json = res.ok ? await res.json() : null;
+        return [category.value, (json?.data || []).map((item) => normalizeEventItem(item, locale))];
+      }
+
+      qp.set('page', '1');
+      qp.set('sortBy', String(sortBy));
+      qp.set('sortOrder', sortOrder);
+      const url = category.categorySlug
+        ? `${API_BASE_URL}/public/news/category/${encodeURIComponent(category.categorySlug)}?${qp.toString()}`
+        : `${API_BASE_URL}/public/news?${qp.toString()}`;
+      const res = await fetch(url);
+      const json = res.ok ? await res.json() : null;
+      return [category.value, (json?.data || []).map((item) => normalizeNewsItem(item, locale))];
+    }))
+      .then((entries) => {
+        if (!cancelled) setFetchedItems(Object.fromEntries(entries));
       })
       .catch(() => {
-        if (!cancelled) setEventItems([]);
+        if (!cancelled) setFetchedItems({});
       });
 
     return () => {
       cancelled = true;
     };
-  }, [locale]);
+  }, [categories, locale, mainData, sectionData.limit, sectionData.max_data, sectionData.sort_by, sectionData.sortBy, sectionData.sort_direction, sectionData.sortDirection]);
 
   const contentByTab = useMemo(() => {
-    const activeNews = NEWS_LIST.filter((item) => item.status === 'active');
-    const activeEvents = eventItems.filter((item) => item.publishStatus !== 'draft' && item.status !== 'DRAFT');
+    const serverItems = mainData?.items && typeof mainData.items === 'object' ? mainData.items : null;
+    const sourceItems = serverItems || fetchedItems;
+    const limit = Number(sectionData.limit || sectionData.max_data || 5) || 5;
 
-    return {
-      'business-insight': sortByDateDesc(
-        activeNews.filter((item) => item.category?.slug === 'press-release'),
-        (item) => item.newsDate || item.createdDate
-      ).slice(0, 5),
-      news: sortByDateDesc(
-        activeNews.filter((item) => item.category?.slug === 'news'),
-        (item) => item.newsDate || item.createdDate
-      ).slice(0, 5),
-      event: sortByDateDesc(
-        activeEvents,
-        (item) => item.start_date || item.startDate || item.date || item.end_date || item.endDate
-      ).slice(0, 5),
-    };
-  }, [eventItems]);
+    return categories.reduce((acc, category) => {
+      const rawItems = Array.isArray(sourceItems?.[category.value]) ? sourceItems[category.value] : [];
+      const isEvent = category.source === 'event' || category.source === 'events';
+      acc[category.value] = sortByDateDesc(
+        rawItems.map((item) => isEvent ? normalizeEventItem(item, locale) : normalizeNewsItem(item, locale)),
+        (item) => isEvent
+          ? item.start_date || item.startDate || item.date || item.end_date || item.endDate
+          : item.newsDate || item.news_date || item.createdDate || item.created_at
+      ).slice(0, limit);
+      return acc;
+    }, {});
+  }, [categories, fetchedItems, locale, mainData, sectionData.limit, sectionData.max_data]);
 
   const activeItems = contentByTab[activeTab] || [];
-  const activeViewAll = VIEW_ALL_CONFIG[activeTab] || VIEW_ALL_CONFIG['business-insight'];
+  const activeCategory = categories.find((category) => category.value === activeTab);
+  const activeViewAll = {
+    ...(VIEW_ALL_CONFIG[activeTab] || VIEW_ALL_CONFIG['business-insight']),
+    ...(activeCategory?.href ? { href: activeCategory.href } : {}),
+  };
   const swiperBreakpoints = activeTab === 'event'
     ? {
         0: {
@@ -161,7 +235,7 @@ export default function ContentHighlights({
     setIsEnd(swiper.isEnd);
   };
 
-  if (!sectionData || Object.keys(sectionData).length === 0) return null;
+  if (categories.length === 0) return null;
 
   const ctaList = Array.isArray(sectionData.ctaList) && sectionData.ctaList.length > 0
     ? sectionData.ctaList
@@ -197,7 +271,7 @@ export default function ContentHighlights({
 
           <div className="flex justify-start lg:justify-end shrink-0">
             <SegmentPicker
-              options={TAB_OPTIONS}
+              options={categories.map((category) => ({ label: category.label, value: category.value }))}
               value={activeTab}
               onChange={setActiveTab}
             />
@@ -223,7 +297,7 @@ export default function ContentHighlights({
                 {activeItems.map((item) => (
                   <SwiperSlide key={`${activeTab}-${item.id}`} className="!h-auto">
                     <div className="h-full">
-                      {activeTab === 'event' ? (
+                      {activeCategory?.source === 'event' || activeCategory?.source === 'events' ? (
                         <CardEvent
                           href={withLocale(`/events/${item.slug}`, locale)}
                           image={item.cover_image || item.image || item.thumbnailImage}
@@ -239,7 +313,7 @@ export default function ContentHighlights({
                         <CardNews
                           variant="featured"
                           image={item.image}
-                          badgeText={activeTab === 'business-insight' ? 'Business Insight' : 'News'}
+                          badgeText={activeCategory?.label || item.category?.name || 'News'}
                           title={item.title}
                           author={item.author}
                           date={item.newsDate}

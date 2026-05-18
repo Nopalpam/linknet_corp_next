@@ -271,6 +271,48 @@ function unwrapSchemaEnvelope(componentType: string, settings: Record<string, an
   return settings;
 }
 
+function pageComponentsFromApi(page: { components?: any[] } | null | undefined): PageComponent[] {
+  return (page?.components || [])
+    .map((dbComp, index): PageComponent | null => {
+      const normalizedType = normalizeComponentType(dbComp.type) || dbComp.type;
+
+      let settings: Record<string, any>;
+      try {
+        settings = typeof dbComp.data === 'string'
+          ? JSON.parse(dbComp.data)
+          : (dbComp.data || {});
+      } catch {
+        console.error(`[Load] Failed to parse settings for component ${dbComp.id}`);
+        const defaultSettings = getDefaultSettings(normalizedType);
+        if (!defaultSettings) return null;
+        settings = defaultSettings;
+      }
+
+      const defaultSettings = getDefaultSettings(normalizedType);
+      const normalizedSettings = normalizeComponentSettings(
+        normalizedType,
+        unwrapSchemaEnvelope(normalizedType, settings),
+        defaultSettings,
+      );
+
+      const component: PageComponent = {
+        id: dbComp.id,
+        type: normalizedType,
+        order: dbComp.order ?? index,
+        settings: normalizedSettings,
+        isVisible: dbComp.isVisible ?? true,
+      };
+
+      if (dbComp.schemaStatus) {
+        component.schemaStatus = dbComp.schemaStatus;
+      }
+
+      return component;
+    })
+    .filter((component): component is PageComponent => component !== null)
+    .sort((a, b) => a.order - b.order);
+}
+
 // =============================================================================
 // REDUCER
 // =============================================================================
@@ -292,6 +334,7 @@ function pageBuilderReducer(
         ...state,
         components: action.components,
         isLoading: false,
+        isSaving: false,
         isDirty: false,
         error: null,
       };
@@ -319,6 +362,15 @@ function pageBuilderReducer(
         order: action.index ?? state.components.length,
         settings: normalizeDataDrivenSettings(action.componentType, canonicalizeComponentSettings(defaultSettings)),
         isVisible: true,
+        schemaStatus: {
+          currentVersion: 1,
+          targetVersion: 1,
+          isOutdated: false,
+          changed: false,
+          operations: [],
+          errors: [],
+          warnings: [],
+        },
       };
 
       // Insert at specified index or append
@@ -418,6 +470,21 @@ function pageBuilderReducer(
     case 'SAVE_SUCCESS':
       return {
         ...state,
+        components: state.components.map((component) => component.schemaStatus
+          ? {
+              ...component,
+              schemaStatus: {
+                ...component.schemaStatus,
+                currentVersion: component.schemaStatus.targetVersion,
+                isOutdated: false,
+                changed: false,
+                operations: [],
+                errors: [],
+                warnings: [],
+              },
+            }
+          : component
+        ),
         isSaving: false,
         isDirty: false,
         error: null,
@@ -495,46 +562,7 @@ export function PageBuilderProvider({
 
       try {
         const response = await pagesService.getPageById(pageId);
-        const page = response.data;
-
-        // Transform database components to PageComponent format
-        const components: PageComponent[] = (page.components || [])
-          .map((dbComp, index) => {
-            // Normalize type from database
-            const normalizedType = normalizeComponentType(dbComp.type) || dbComp.type;
-
-            // Parse settings from database (could be string or object)
-            let settings: Record<string, any>;
-            try {
-              settings = typeof dbComp.data === 'string' 
-                ? JSON.parse(dbComp.data) 
-                : (dbComp.data || {});
-            } catch {
-              console.error(`[Load] Failed to parse settings for component ${dbComp.id}`);
-              const defaultSettings = getDefaultSettings(normalizedType);
-              if (!defaultSettings) {
-                return null;
-              }
-              settings = defaultSettings;
-            }
-
-            const defaultSettings = getDefaultSettings(normalizedType);
-            const normalizedSettings = normalizeComponentSettings(
-              normalizedType,
-              unwrapSchemaEnvelope(normalizedType, settings),
-              defaultSettings,
-            );
-
-            return {
-              id: dbComp.id,
-              type: normalizedType,
-              order: dbComp.order ?? index,
-              settings: normalizedSettings,
-              isVisible: dbComp.isVisible ?? true,
-            };
-          })
-          .filter((c): c is PageComponent => c !== null)
-          .sort((a, b) => a.order - b.order);
+        const components = pageComponentsFromApi(response.data);
 
         dispatch({ type: 'LOAD_SUCCESS', components });
       } catch (error) {
@@ -587,6 +615,10 @@ export function PageBuilderProvider({
     dispatch({ type: 'SAVE_START' });
 
     try {
+      const previouslySelected = selectedComponentId
+        ? state.components.find((component) => component.id === selectedComponentId)
+        : null;
+
       // Transform state components to API format
       const componentsToSave = state.components.map((comp) => ({
         type: comp.type,
@@ -594,8 +626,21 @@ export function PageBuilderProvider({
         isVisible: comp.isVisible,
       }));
 
-      await pagesService.savePageComponents(pageId, componentsToSave);
-      dispatch({ type: 'SAVE_SUCCESS' });
+      const response = await pagesService.savePageComponents(pageId, componentsToSave);
+      const savedComponents = pageComponentsFromApi(response.data);
+
+      if (savedComponents.length > 0) {
+        dispatch({ type: 'LOAD_SUCCESS', components: savedComponents });
+        if (previouslySelected) {
+          const nextSelected = savedComponents.find((component) => (
+            component.type === previouslySelected.type &&
+            component.order === previouslySelected.order
+          ));
+          setSelectedComponentId(nextSelected?.id || null);
+        }
+      } else {
+        dispatch({ type: 'SAVE_SUCCESS' });
+      }
     } catch (error) {
       console.error('[Save] Failed to save components:', error);
       dispatch({
@@ -604,7 +649,7 @@ export function PageBuilderProvider({
       });
       throw error; // Re-throw so caller can handle
     }
-  }, [pageId, state.components]);
+  }, [pageId, selectedComponentId, state.components]);
 
   // Computed values
   const getComponent = useCallback(

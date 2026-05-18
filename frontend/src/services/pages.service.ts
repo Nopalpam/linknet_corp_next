@@ -63,6 +63,15 @@ export interface PageComponent {
   data: Record<string, any>;
   order: number;
   isVisible?: boolean;
+  schemaStatus?: {
+    currentVersion: number;
+    targetVersion: number;
+    isOutdated: boolean;
+    changed: boolean;
+    operations: string[];
+    errors: string[];
+    warnings: string[];
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -236,6 +245,18 @@ class PagesService extends BaseService {
     return this.fetchWithAuth(this.getApiUrl(`/cms/pages/${id}/components`), {
       method: 'PUT',
       body: JSON.stringify({ components }),
+    });
+  }
+
+  async dryRunComponentSchemaSync(): Promise<{ success: boolean; data: any }> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/pages/components/schema-sync/dry-run'), {
+      method: 'POST',
+    });
+  }
+
+  async syncAllComponentSchemas(): Promise<{ success: boolean; message: string; data: any }> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/pages/components/schema-sync'), {
+      method: 'POST',
     });
   }
 

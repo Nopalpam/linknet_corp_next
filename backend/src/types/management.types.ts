@@ -40,6 +40,7 @@ export interface CreateManagementDTO {
   categoryId: string;
   name: string;
   slug?: string;
+  position?: string;
   positionEn?: string;
   positionId?: string;
   description?: string;
@@ -57,6 +58,7 @@ export interface UpdateManagementDTO {
   categoryId?: string;
   name?: string;
   slug?: string;
+  position?: string;
   positionEn?: string;
   positionId?: string;
   description?: string;

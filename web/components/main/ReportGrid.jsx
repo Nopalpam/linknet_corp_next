@@ -119,7 +119,7 @@ export default function ReportGrid({
   return (
     <section
       id={sectionId}
-      className={`lnSection__reportGrid py-16 md:py-24
+      className={`lnSection__reportGrid bg-light-2 py-12 md:py-20
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
         bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
         ${configClassName} ${className}`}
@@ -131,7 +131,7 @@ export default function ReportGrid({
         {/* HEADER SECTION */}
         {/* ========================================= */}
   {hasIntroContent(introData) && (
-          <div className="mb-12 md:mb-16">
+          <div className="mb-8 md:mb-12">
             <Intro
               as={introData.as || "h2"}
               label={introData.label}
@@ -146,7 +146,7 @@ export default function ReportGrid({
         {/* GRID KARTU REPORT */}
         {/* ========================================= */}
         {currentItems && currentItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10 md:mb-14">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 md:gap-6 mb-10 md:mb-14">
             {currentItems.map((item, index) => (
               <CardReport
                 key={item.id || index}
@@ -165,7 +165,7 @@ export default function ReportGrid({
             ))}
           </div>
         ) : (
-          <p className="text-center text-neutral-500 py-10">No reports available at the moment.</p>
+          <div className="min-h-[180px]" />
         )}
 
         {/* ========================================= */}
@@ -178,7 +178,7 @@ export default function ReportGrid({
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-full hover:border-neutral-300 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Previous
             </button>
@@ -195,7 +195,7 @@ export default function ReportGrid({
                       ? 'bg-warning text-black'
                       : page === '...'
                         ? 'bg-transparent text-neutral-400 cursor-default'
-                        : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                        : 'bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50'
                   }`}
                 >
                   {page}
@@ -212,7 +212,7 @@ export default function ReportGrid({
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-6 py-2 text-sm font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 text-sm font-semibold text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

@@ -69,12 +69,15 @@ function transformMenuData(cmsMenus, locale) {
     });
 }
 
-export default function Navbar({ menuData, defaultLocale = 'id' }) {
+export default function Navbar({ menuData, defaultLocale = 'id', settings = null }) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const navItems = transformMenuData(menuData, locale) || enterpriseNavItems;
+  const cmsNavItems = transformMenuData(menuData, locale);
+  const navItems = cmsNavItems?.length ? cmsNavItems : enterpriseNavItems;
+  const branding = settings?.general_branding?.branding || settings?.branding || {};
+  const logoSrc = branding.logo_dark || branding.logo || '/assets/logos/logo-linknet-enterprise.png';
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -265,7 +268,7 @@ export default function Navbar({ menuData, defaultLocale = 'id' }) {
           <div className="lnNavbar__left flex items-center gap-8">
             <div className="lnNavbar__brand flex-shrink-0">
               <img
-                src="/assets/logos/logo-linknet-enterprise.png"
+                src={logoSrc}
                 alt="Link Net"
                 className="h-8.5 w-auto"
               />

@@ -10,7 +10,23 @@ export default function FooterMain({
   cmsFooterData = null,
   className = ""
 }) {
-  const main = cmsFooterData || MAIN_FOOTER_DATA[name];
+  const fallback = MAIN_FOOTER_DATA[name];
+  const main = cmsFooterData
+    ? {
+        ...fallback,
+        ...cmsFooterData,
+        contact: {
+          ...(fallback?.contact || {}),
+          ...(cmsFooterData.contact || {}),
+        },
+        menus: Array.isArray(cmsFooterData.menus) && cmsFooterData.menus.length > 0
+          ? cmsFooterData.menus
+          : fallback?.menus || [],
+        socials: Array.isArray(cmsFooterData.socials) && cmsFooterData.socials.length > 0
+          ? cmsFooterData.socials
+          : fallback?.socials || [],
+      }
+    : fallback;
 
   if (!main) return null;
 

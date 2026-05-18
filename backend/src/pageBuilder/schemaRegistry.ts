@@ -38,11 +38,16 @@ const LATEST_SCHEMA_VERSIONS: Record<string, number> = {
   hero: 2,
   hero_section: 2,
   information_list: 2,
-  list_report_home: 2,
+  list_report_home: 3,
   milestone: 2,
   maps_coverage_v1: 2,
   report_grid: 2,
+  solutions_list: 1,
   stock_information: 2,
+  tv_channel_list: 2,
+  tv_channel_sneak_peek: 2,
+  tv_highlight_sliders: 2,
+  tv_highlight_sneek_peak: 2,
   usp_grid_slider: 2,
 };
 

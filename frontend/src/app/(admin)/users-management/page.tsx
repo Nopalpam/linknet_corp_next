@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { usersService, User, GetUsersParams } from "@/services/users.service";
 import { rolesService, Role } from "@/services/roles.service";
 import { useToast } from "@/context/ToastContext";
+import { isSessionExpiredError } from "@/lib/sessionExpired";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { DataTable, TableColumn } from "@/components/DataTable/DataTable";
 import { DataTablePagination } from "@/components/DataTable/DataTablePagination";
@@ -67,6 +68,9 @@ export default function UsersManagementPage() {
         setTotalPages(response.pagination.totalPages);
         setTotalItems(response.pagination.total);
       } catch (err: any) {
+        if (isSessionExpiredError(err)) {
+          return;
+        }
         const errorMsg = err.response?.data?.message || err.message || "Failed to fetch users";
         toast.error(errorMsg);
         setUsers([]);

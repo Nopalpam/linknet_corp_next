@@ -1,153 +1,119 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useToast } from "@/context/ToastContext";
+import { DataTablePagination } from "@/components/DataTable/DataTablePagination";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
+import { isSessionExpiredError } from "@/lib/sessionExpired";
+import { contactService, ContactSubmissionListItem } from "@/services/contact.service";
 import ContactDataTable from "./components/ContactDataTable";
 import ContactDetailModal from "./components/ContactDetailModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import BulkDeleteModal from "@/components/BulkDeleteModal";
 
-export type ContactStatus = "NEW" | "READ" | "REPLIED";
+export type ContactStatus = "NEW" | "READ";
 
 export interface ContactData {
   id: string;
   name: string;
   email: string;
   phone: string;
+  inquiryTypeLabel: string;
   subject: string;
   message: string;
   status: ContactStatus;
   createdAt: string;
+  company?: string;
+  role?: string;
+  inquiryType?: ContactSubmissionListItem["inquiryType"];
 }
 
-// Mock data untuk demo
-const mockContactData: ContactData[] = [
-  {
-    id: "1",
-    name: "Ahmad Rizki",
-    email: "ahmad.rizki@example.com",
-    phone: "+62 812-3456-7890",
-    subject: "Pertanyaan tentang Layanan Fiber",
-    message: "Halo, saya ingin menanyakan tentang paket fiber untuk area Jakarta Selatan. Apakah sudah tersedia? Berapa biaya instalasi dan biaya bulanannya? Terima kasih.",
-    status: "NEW",
-    createdAt: "2024-02-03T10:30:00Z",
-  },
-  {
-    id: "2",
-    name: "Siti Nurhaliza",
-    email: "siti.nurhaliza@example.com",
-    phone: "+62 813-9876-5432",
-    subject: "Kendala Koneksi Internet",
-    message: "Selamat siang, saya mengalami masalah koneksi internet yang sering putus sejak kemarin. Mohon bantuan untuk pengecekan. Nomor pelanggan: 12345678.",
-    status: "READ",
-    createdAt: "2024-02-02T14:15:00Z",
-  },
-  {
-    id: "3",
-    name: "Budi Santoso",
-    email: "budi.santoso@example.com",
-    phone: "+62 821-1111-2222",
-    subject: "Inquiry Corporate Package",
-    message: "Dear Linknet Team, we are interested in corporate internet package for our office with 50 employees. Please send us the details and pricing. Best regards.",
-    status: "REPLIED",
-    createdAt: "2024-02-01T09:00:00Z",
-  },
-  {
-    id: "4",
-    name: "Dewi Lestari",
-    email: "dewi.lestari@example.com",
-    phone: "+62 856-4444-5555",
-    subject: "Request Upgrade Paket",
-    message: "Halo, saya ingin upgrade paket internet dari 30 Mbps ke 100 Mbps. Bagaimana prosedurnya dan apakah ada biaya tambahan?",
-    status: "NEW",
-    createdAt: "2024-01-31T16:45:00Z",
-  },
-  {
-    id: "5",
-    name: "Eko Prasetyo",
-    email: "eko.prasetyo@example.com",
-    phone: "+62 878-7777-8888",
-    subject: "Komplain Tagihan",
-    message: "Saya menerima tagihan yang tidak sesuai dengan paket yang saya gunakan. Mohon dilakukan pengecekan ulang. Tagihan bulan ini Rp 750.000 padahal paket saya Rp 500.000.",
-    status: "READ",
-    createdAt: "2024-01-30T11:20:00Z",
-  },
-  {
-    id: "6",
-    name: "Fitri Handayani",
-    email: "fitri.handayani@example.com",
-    phone: "+62 811-2222-3333",
-    subject: "Permintaan Pemasangan Baru",
-    message: "Saya ingin memasang internet Linknet di rumah baru saya di Tangerang. Mohon informasi ketersediaan dan jadwal pemasangan. Alamat lengkap terlampir.",
-    status: "REPLIED",
-    createdAt: "2024-01-29T13:50:00Z",
-  },
-  {
-    id: "7",
-    name: "Gunawan Wijaya",
-    email: "gunawan.wijaya@example.com",
-    phone: "+62 812-5555-6666",
-    subject: "Request Technical Support",
-    message: "Good morning, I'm experiencing slow internet speed since yesterday. My current package is 50 Mbps but I'm only getting 10-15 Mbps. Please help check.",
-    status: "NEW",
-    createdAt: "2024-01-28T08:30:00Z",
-  },
-  {
-    id: "8",
-    name: "Hani Kartika",
-    email: "hani.kartika@example.com",
-    phone: "+62 857-8888-9999",
-    subject: "Pertanyaan Promo",
-    message: "Halo, apakah saat ini ada promo untuk pelanggan baru? Saya tertarik dengan paket 100 Mbps. Mohon info lengkapnya. Terima kasih.",
-    status: "READ",
-    createdAt: "2024-01-27T15:10:00Z",
-  },
-  {
-    id: "9",
-    name: "Indra Kusuma",
-    email: "indra.kusuma@example.com",
-    phone: "+62 822-3333-4444",
-    subject: "Permintaan Invoice",
-    message: "Mohon dikirimkan invoice pembayaran untuk bulan Januari 2024. Email invoice belum saya terima. Nomor pelanggan: 87654321.",
-    status: "REPLIED",
-    createdAt: "2024-01-26T10:00:00Z",
-  },
-  {
-    id: "10",
-    name: "Jessica Tamara",
-    email: "jessica.tamara@example.com",
-    phone: "+62 813-5555-7777",
-    subject: "Komplain Kualitas Layanan",
-    message: "Internet sering down pada jam kerja (09:00-17:00). Sudah menghubungi customer service beberapa kali tapi masalah belum teratasi. Mohon tindak lanjut segera.",
-    status: "NEW",
-    createdAt: "2024-01-25T09:30:00Z",
-  },
-  {
-    id: "11",
-    name: "Kurniawan Putra",
-    email: "kurniawan.putra@example.com",
-    phone: "+62 856-9999-1111",
-    subject: "Info Paket Business",
-    message: "Saya tertarik dengan paket bisnis untuk usaha saya. Mohon informasi mengenai dedicated bandwidth dan SLA yang ditawarkan. Terima kasih.",
-    status: "READ",
-    createdAt: "2024-01-24T14:20:00Z",
-  },
-  {
-    id: "12",
-    name: "Linda Wijayanti",
-    email: "linda.wijayanti@example.com",
-    phone: "+62 821-4444-5555",
-    subject: "Permintaan Pindah Alamat",
-    message: "Saya akan pindah rumah dalam 2 minggu ke depan. Bagaimana prosedur untuk pindah alamat pemasangan internet? Apakah ada biaya tambahan?",
-    status: "REPLIED",
-    createdAt: "2024-01-23T16:00:00Z",
-  },
-];
+const INQUIRY_TYPE_LABEL: Record<ContactSubmissionListItem["inquiryType"], string> = {
+  BUSINESS: "Business Inquiry",
+  SUPPORT: "Technical Support",
+  CAREER: "Career",
+  OTHERS: "Others",
+};
+
+const mapSubmissionToContactData = (submission: ContactSubmissionListItem): ContactData => ({
+  id: submission.id,
+  name: `${submission.firstName} ${submission.lastName}`.trim(),
+  email: submission.email,
+  phone: submission.phone || "-",
+  inquiryTypeLabel: INQUIRY_TYPE_LABEL[submission.inquiryType],
+  subject: submission.subject || "-",
+  message: submission.message,
+  status: submission.status,
+  createdAt: submission.submittedAt,
+  company: submission.company,
+  role: submission.role,
+  inquiryType: submission.inquiryType,
+});
+
+const CONTACT_FETCH_LIMIT = 100;
+
+interface DatePickerFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+}
+
+function DatePickerField({ label, value, onChange, min, max }: DatePickerFieldProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const id = `contact-data-bank-${label.replace(/\s+/g, "-").toLowerCase()}`;
+
+  const openPicker = useCallback(() => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    input.focus();
+    try {
+      input.showPicker?.();
+    } catch {
+      // Browser may block showPicker without a direct user gesture.
+    }
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-1" onClick={openPicker}>
+      <label
+        htmlFor={id}
+        className="block cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300"
+        onClick={openPicker}
+      >
+        {label}
+      </label>
+      <input
+        id={id}
+        ref={inputRef}
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(event.target.value)}
+        onFocus={openPicker}
+        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      />
+    </div>
+  );
+}
 
 export default function ContactDataBankPage() {
-  const [contacts] = useState<ContactData[]>(mockContactData);
+  const toast = useToast();
+  const [contacts, setContacts] = useState<ContactData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalMessagesThisMonth, setTotalMessagesThisMonth] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<ContactStatus | "ALL">("ALL");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [selectedInquiryType, setSelectedInquiryType] = useState<"" | ContactSubmissionListItem["inquiryType"]>("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -158,49 +124,63 @@ export default function ContactDataBankPage() {
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null);
 
-  // Filter contacts based on search and status
-  const filteredContacts = useMemo(() => {
-    return contacts.filter((contact) => {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        contact.name.toLowerCase().includes(query) ||
-        contact.email.toLowerCase().includes(query) ||
-        contact.phone.toLowerCase().includes(query) ||
-        contact.subject.toLowerCase().includes(query);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
 
-      const matchesStatus = filterStatus === "ALL" || contact.status === filterStatus;
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-      // Date filter
-      let matchesDate = true;
-      if (dateFrom || dateTo) {
-        const contactDate = new Date(contact.createdAt);
-        
-        if (dateFrom) {
-          const fromDate = new Date(dateFrom);
-          fromDate.setHours(0, 0, 0, 0);
-          matchesDate = matchesDate && contactDate >= fromDate;
-        }
-        
-        if (dateTo) {
-          const toDate = new Date(dateTo);
-          toDate.setHours(23, 59, 59, 999);
-          matchesDate = matchesDate && contactDate <= toDate;
-        }
+  const fetchContacts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await contactService.getAllContactSubmissions({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearchQuery || undefined,
+        inquiryType: selectedInquiryType || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+      });
+
+      const nextContacts = response.data.submissions.map(mapSubmissionToContactData);
+
+      setContacts(nextContacts);
+      setTotalMessagesThisMonth(response.data.stats.totalThisMonth);
+      setTotalItems(response.data.pagination.total);
+      setTotalPages(response.data.pagination.totalPages || 1);
+      setSelectedIds((currentIds) => currentIds.filter((id) => nextContacts.some((contact) => contact.id === id)));
+    } catch (err: any) {
+      if (isSessionExpiredError(err)) {
+        return;
       }
 
-      return matchesSearch && matchesStatus && matchesDate;
-    });
-  }, [contacts, searchQuery, filterStatus, dateFrom, dateTo]);
+      toast.error(err?.message || "Gagal memuat data Contact Us");
+      setContacts([]);
+      setTotalMessagesThisMonth(0);
+      setTotalItems(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, dateFrom, dateTo, debouncedSearchQuery, itemsPerPage, selectedInquiryType, toast]);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, dateFrom, dateTo, itemsPerPage, selectedInquiryType]);
 
   // Calculate statistics
   const statistics = useMemo(() => {
     return {
-      total: contacts.length,
-      new: contacts.filter((c) => c.status === "NEW").length,
-      read: contacts.filter((c) => c.status === "READ").length,
-      replied: contacts.filter((c) => c.status === "REPLIED").length,
+      total: totalItems,
+      totalThisMonth: totalMessagesThisMonth,
     };
-  }, [contacts]);
+  }, [totalItems, totalMessagesThisMonth]);
 
   // Handle view detail
   const handleView = (contact: ContactData) => {
@@ -221,46 +201,141 @@ export default function ContactDataBankPage() {
   };
 
   // Handle delete confirm (mockup - just show success)
-  const handleDeleteConfirm = () => {
-    // In real implementation, call API here
-    console.log("Delete contact:", selectedContact?.id);
+  const handleDeleteConfirm = async () => {
+    if (!selectedContact) {
+      return;
+    }
+
+    await contactService.deleteContactSubmission(selectedContact.id);
+    setContacts((currentContacts) =>
+      currentContacts.filter((contact) => contact.id !== selectedContact.id)
+    );
+    setSelectedIds((currentIds) => currentIds.filter((id) => id !== selectedContact.id));
     setIsDeleteModalOpen(false);
     setSelectedContact(null);
-    // Show success toast (would be implemented)
+    toast.success("Pesan Contact Us berhasil dihapus");
   };
 
-  // Handle bulk delete confirm (mockup)
   const handleBulkDeleteConfirm = async () => {
-    // In real implementation, call API here
-    console.log("Bulk delete contacts:", selectedIds);
+    const idsToDelete = [...selectedIds];
+    if (idsToDelete.length === 0) {
+      return;
+    }
+
+    await contactService.bulkDeleteContactSubmissions(idsToDelete);
+    setContacts((currentContacts) =>
+      currentContacts.filter((contact) => !idsToDelete.includes(contact.id))
+    );
     setIsBulkDeleteModalOpen(false);
     setSelectedIds([]);
-    // Show success toast (would be implemented)
+    toast.success(`${idsToDelete.length} pesan Contact Us berhasil dihapus`);
   };
 
-  // Handle export (mockup)
-  const handleExport = () => {
-    console.log("Exporting contacts...");
-    // In real implementation, generate and download CSV/Excel
-    alert("Export feature will be implemented with backend integration");
-  };
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
+  }, []);
+
+  const buildExportRows = useCallback((rows: ContactData[]) => {
+    return rows.map((contact) => ({
+      Name: contact.name,
+      Email: contact.email,
+      Phone: contact.phone || "-",
+      Company: contact.company || "-",
+      Role: contact.role || "-",
+      "Inquiry Type": contact.inquiryType ? INQUIRY_TYPE_LABEL[contact.inquiryType] : "-",
+      Subject: contact.subject,
+      Message: contact.message,
+      "Submitted At": new Date(contact.createdAt).toLocaleString("id-ID"),
+    }));
+  }, []);
+
+  const fetchExportRows = useCallback(async (scope: "all" | "filtered") => {
+    const submissions: ContactSubmissionListItem[] = [];
+    let exportPage = 1;
+    let exportTotalPages = 1;
+
+    do {
+      const response = await contactService.getAllContactSubmissions({
+        page: exportPage,
+        limit: CONTACT_FETCH_LIMIT,
+        search: scope === "filtered" ? debouncedSearchQuery || undefined : undefined,
+        inquiryType: scope === "filtered" ? selectedInquiryType || undefined : undefined,
+        dateFrom: scope === "filtered" ? dateFrom || undefined : undefined,
+        dateTo: scope === "filtered" ? dateTo || undefined : undefined,
+      });
+
+      submissions.push(...response.data.submissions);
+      exportTotalPages = response.data.pagination.totalPages || 1;
+      exportPage += 1;
+    } while (exportPage <= exportTotalPages);
+
+    return submissions.map(mapSubmissionToContactData);
+  }, [dateFrom, dateTo, debouncedSearchQuery, selectedInquiryType]);
+
+  const handleExport = useCallback(async (format: "csv" | "xlsx", scope: "all" | "filtered") => {
+    const sourceRows = await fetchExportRows(scope);
+
+    if (sourceRows.length === 0) {
+      toast.error("Tidak ada data Contact Us untuk diekspor");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      setExportMenuOpen(false);
+
+      const XLSX = await import("xlsx");
+      const exportRows = buildExportRows(sourceRows);
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const scopeLabel = scope === "all" ? "all" : "filtered";
+
+      if (format === "csv") {
+        const csv = `\uFEFF${XLSX.utils.sheet_to_csv(worksheet)}`;
+        downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `contact-us-${scopeLabel}-${timestamp}.csv`);
+        return;
+      }
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Contact Us");
+      const fileBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      downloadBlob(
+        new Blob([fileBuffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        `contact-us-${scopeLabel}-${timestamp}.xlsx`
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal mengekspor data Contact Us");
+    } finally {
+      setExporting(false);
+    }
+  }, [buildExportRows, downloadBlob, fetchExportRows, toast]);
 
   // Handle clear filters
   const handleClearFilters = () => {
     setSearchQuery("");
-    setFilterStatus("ALL");
+    setSelectedInquiryType("");
     setDateFrom("");
     setDateTo("");
   };
 
-  const hasActiveFilters = searchQuery || filterStatus !== "ALL" || dateFrom || dateTo;
+  const hasActiveFilters = Boolean(searchQuery || selectedInquiryType || dateFrom || dateTo);
 
   return (
     <div className="space-y-6">
       <PageBreadCrumb pageTitle="Contact Us Data Bank" />
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Total Messages */}
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center justify-between">
@@ -290,15 +365,15 @@ export default function ContactDataBankPage() {
           </div>
         </div>
 
-        {/* New Messages */}
+        {/* Total Messages in This Month */}
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                New Messages
+                Total Messages in this Month
               </p>
               <p className="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {statistics.new}
+                {statistics.totalThisMonth}
               </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900">
@@ -313,70 +388,6 @@ export default function ContactDataBankPage() {
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Read Messages */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Read Messages
-              </p>
-              <p className="mt-2 text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {statistics.read}
-              </p>
-            </div>
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900">
-              <svg
-                className="w-6 h-6 text-yellow-600 dark:text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Replied Messages */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Replied Messages
-              </p>
-              <p className="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">
-                {statistics.replied}
-              </p>
-            </div>
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900">
-              <svg
-                className="w-6 h-6 text-green-600 dark:text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
             </div>
@@ -420,33 +431,68 @@ export default function ContactDataBankPage() {
                   </button>
                 )}
                 
-                <button
-                  onClick={handleExport}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="relative">
+                  <button
+                    onClick={() => setExportMenuOpen((open) => !open)}
+                    disabled={exporting}
+                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white rounded-lg transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  Export Data
-                </button>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    {exporting ? "Exporting..." : "Export Data"}
+                  </button>
+                  {exportMenuOpen && (
+                    <div className="absolute right-0 z-10 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                      <button
+                        type="button"
+                        onClick={() => handleExport("csv", "all")}
+                        className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                      >
+                        Export All as CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExport("xlsx", "all")}
+                        className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                      >
+                        Export All as XLSX
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExport("csv", "filtered")}
+                        className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                      >
+                        Export Filtered as CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExport("xlsx", "filtered")}
+                        className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                      >
+                        Export Filtered as XLSX
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Filters */}
           <div className="mt-6 space-y-4">
-            {/* Row 1: Search and Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Row 1: Search + Inquiry Type */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -461,20 +507,20 @@ export default function ContactDataBankPage() {
                 />
               </div>
 
-              {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Filter by Status
+                  Inquiry Type
                 </label>
                 <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as ContactStatus | "ALL")}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  value={selectedInquiryType}
+                  onChange={(event) => setSelectedInquiryType(event.target.value as "" | ContactSubmissionListItem["inquiryType"])}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 >
-                  <option value="ALL">All Status</option>
-                  <option value="NEW">New</option>
-                  <option value="READ">Read</option>
-                  <option value="REPLIED">Replied</option>
+                  <option value="">All Inquiry Types</option>
+                  <option value="BUSINESS">{INQUIRY_TYPE_LABEL.BUSINESS}</option>
+                  <option value="SUPPORT">{INQUIRY_TYPE_LABEL.SUPPORT}</option>
+                  <option value="CAREER">{INQUIRY_TYPE_LABEL.CAREER}</option>
+                  <option value="OTHERS">{INQUIRY_TYPE_LABEL.OTHERS}</option>
                 </select>
               </div>
             </div>
@@ -483,15 +529,11 @@ export default function ContactDataBankPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Date From */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Date From
-                </label>
-                <input
-                  type="date"
+                <DatePickerField
+                  label="Date From"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={setDateFrom}
                   max={dateTo || undefined}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
                 {dateFrom && (
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -506,15 +548,11 @@ export default function ContactDataBankPage() {
 
               {/* Date To */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Date To
-                </label>
-                <input
-                  type="date"
+                <DatePickerField
+                  label="Date To"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={setDateTo}
                   min={dateFrom || undefined}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
                 {dateTo && (
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -555,7 +593,7 @@ export default function ContactDataBankPage() {
           </div>
 
           {/* Info Banner */}
-          {filteredContacts.length !== contacts.length && (
+          {(Boolean(debouncedSearchQuery || dateFrom || dateTo) || totalItems > contacts.length) && (
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <div className="flex items-center gap-2">
                 <svg
@@ -572,7 +610,7 @@ export default function ContactDataBankPage() {
                   />
                 </svg>
                 <span className="text-sm text-blue-800 dark:text-blue-300">
-                  Menampilkan {filteredContacts.length} dari {contacts.length} pesan
+                  Menampilkan {contacts.length} dari {totalItems} pesan
                 </span>
               </div>
             </div>
@@ -581,14 +619,31 @@ export default function ContactDataBankPage() {
 
         {/* Table - Wrapped in overflow container */}
         <div className="overflow-x-auto">
-          <ContactDataTable
-            data={filteredContacts}
-            selectedIds={selectedIds}
-            onSelectionChange={setSelectedIds}
-            onView={handleView}
-            onDelete={handleDelete}
-          />
+          {loading ? (
+            <div className="flex items-center justify-center p-10 text-sm text-gray-500 dark:text-gray-400">
+              Memuat data Contact Us...
+            </div>
+          ) : (
+            <ContactDataTable
+              data={contacts}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onView={handleView}
+              onDelete={handleDelete}
+            />
+          )}
         </div>
+
+        {!loading && (
+          <DataTablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onLimitChange={setItemsPerPage}
+          />
+        )}
       </div>
 
       {/* Modals */}

@@ -754,6 +754,17 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
   const isSelected = selectedComponentId === componentId;
   const registryEntry = getRegistryEntry(component.type);
   const displayName = registryEntry?.name || component.type.replace(/_/g, ' ');
+  const schemaStatus = component.schemaStatus;
+  const needsSchemaSync = Boolean(schemaStatus?.isOutdated);
+  const schemaTooltip = schemaStatus
+    ? [
+        `Stored schema v${schemaStatus.currentVersion}`,
+        `Latest schema v${schemaStatus.targetVersion}`,
+        ...schemaStatus.operations.slice(0, 4),
+        ...schemaStatus.warnings.slice(0, 2),
+        ...schemaStatus.errors.slice(0, 2),
+      ].join('\n')
+    : '';
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -780,6 +791,14 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-2">
           {displayName}
         </span>
+        {needsSchemaSync && (
+          <span
+            className="mr-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
+            title={schemaTooltip}
+          >
+            Outdated
+          </span>
+        )}
         
         {/* Visibility toggle */}
         <button
@@ -834,12 +853,23 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
       {/* Component Selection Wrapper */}
       <div
         onClick={() => selectComponent(componentId)}
-        className={`cursor-pointer rounded-lg transition-all ${
+        className={`relative cursor-pointer rounded-lg transition-all ${
           isSelected
             ? 'ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-gray-900'
-            : 'hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-600'
+            : needsSchemaSync
+              ? 'ring-1 ring-orange-200 hover:ring-2 hover:ring-orange-300 dark:ring-orange-900/60 dark:hover:ring-orange-700'
+              : 'hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-600'
         }`}
       >
+        {needsSchemaSync && (
+          <div
+            className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-[11px] font-semibold text-orange-700 shadow-sm dark:border-orange-800 dark:bg-orange-900/80 dark:text-orange-200"
+            title={schemaTooltip}
+          >
+            <span aria-hidden="true">!</span>
+            Outdated
+          </div>
+        )}
         <ComponentPreview
           type={component.type}
           settings={component.settings}

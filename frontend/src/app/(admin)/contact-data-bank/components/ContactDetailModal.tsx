@@ -12,7 +12,6 @@ export default function ContactDetailModal({ contact, onClose }: ContactDetailMo
     const styles = {
       NEW: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       READ: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      REPLIED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
     };
     return styles[status as keyof typeof styles] || styles.NEW;
   };
@@ -127,7 +126,7 @@ export default function ContactDetailModal({ contact, onClose }: ContactDetailMo
                 href={`tel:${contact.phone}`}
                 className="text-brand-600 dark:text-brand-400 hover:underline"
               >
-                {contact.phone}
+                {contact.phone || "-"}
               </a>
             </div>
           </div>
@@ -158,28 +157,38 @@ export default function ContactDetailModal({ contact, onClose }: ContactDetailMo
           </div>
         </div>
 
-        {/* Subject */}
-        <div>
-          <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-            Subject
-          </label>
-          <div className="flex items-start gap-2">
-            <svg
-              className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              />
-            </svg>
-            <p className="text-gray-900 dark:text-white font-medium">
-              {contact.subject}
-            </p>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-500 dark:text-gray-400">
+              Inquiry Type
+            </label>
+            <div className="inline-flex rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              {contact.inquiryTypeLabel}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-500 dark:text-gray-400">
+              Subject
+            </label>
+            <div className="flex items-start gap-2">
+              <svg
+                className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                />
+              </svg>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {contact.subject}
+              </p>
+            </div>
           </div>
         </div>
 

@@ -8,10 +8,10 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/', checkPermission(Permission.MANAGEMENT_READ), MapCoverageController.getAll);
-router.get('/:id', checkPermission(Permission.MANAGEMENT_READ), MapCoverageController.getById);
-router.post('/', checkPermission(Permission.MANAGEMENT_CREATE), MapCoverageController.create);
-router.put('/:id', checkPermission(Permission.MANAGEMENT_UPDATE), MapCoverageController.update);
-router.delete('/:id', checkPermission(Permission.MANAGEMENT_DELETE), MapCoverageController.delete);
+router.get('/', checkPermission(Permission.MAP_COVERAGE_READ), MapCoverageController.getAll);
+router.get('/:id', checkPermission(Permission.MAP_COVERAGE_READ), MapCoverageController.getById);
+router.post('/', checkPermission(Permission.MAP_COVERAGE_CREATE), MapCoverageController.create);
+router.put('/:id', checkPermission(Permission.MAP_COVERAGE_UPDATE), MapCoverageController.update);
+router.delete('/:id', checkPermission(Permission.MAP_COVERAGE_DELETE), MapCoverageController.delete);
 
 export default router;

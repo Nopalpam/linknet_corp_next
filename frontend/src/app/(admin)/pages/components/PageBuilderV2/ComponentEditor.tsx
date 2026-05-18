@@ -19,6 +19,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
 import { isMultilingual, ComponentSettings } from './types';
@@ -46,6 +47,11 @@ const TYPE_SPECIFIC_EDITORS: Record<string, React.ComponentType<{ settings: any;
   ckeditor: CkeditorEditor,
   information_list: InformationListEditor,
 };
+
+const RichTextEditor = dynamic(
+  () => import('@/components/ui/ckeditor/CKEditorWrapper'),
+  { ssr: false, loading: () => <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" /> }
+);
 
 // =============================================================================
 // FIELD HELPERS & CLASSIFICATION
@@ -108,6 +114,7 @@ const FIELD_HELPERS: Record<string, string> = {
   reel_item_ids: 'Pilih highlight/program dari Media API. Reel Name otomatis mengikuti item yang dipilih.',
   highlight_categories: 'Buat kategori dan pilih Reel Items untuk tiap kategori.',
   logo_channel_ids: 'Pilih channel logo dari Media API untuk marquee. Jika kosong, marquee tidak ditampilkan.',
+  logo_display_limit: 'Logo channel ditampilkan acak dari Media API tanpa pilihan manual.',
   source: 'Data source for this component.',
   itemsPerRow: 'Number of event cards per row on desktop.',
   showPagination: 'Show frontend pagination controls when more CMS events are available.',
@@ -225,6 +232,13 @@ function getSortByOptions(componentType?: string): SelectOption[] {
         { value: 'issue_date', label: 'Issue date' },
         { value: 'year', label: 'Award year' },
         { value: 'title', label: 'Award title' },
+      ];
+    case 'solutions_list':
+      return [
+        { value: 'sort_order', label: 'CMS sort order' },
+        { value: 'title', label: 'Solution title' },
+        { value: 'latest', label: 'Newest first' },
+        { value: 'updated_at', label: 'Last updated' },
       ];
     default:
       return ['latest', 'oldest', 'alphabetical'];
@@ -654,10 +668,69 @@ function FieldWrapper({ children, helper }: { children: React.ReactNode; helper?
 
 function MultilingualField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
   const isHtml = isHtmlField('', value);
+  const [activeLanguage, setActiveLanguage] = useState<'en' | 'id'>('en');
   const InputEl = isHtml ? 'textarea' : 'input';
   const extraProps = isHtml ? { rows: 3 } : {};
   const placeholder = getPlaceholder(fieldKey);
   const helper = getHelperText(fieldKey, componentType);
+
+  if (isHtml) {
+    return (
+      <FieldWrapper helper={helper || 'Supports rich text / HTML content'}>
+        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-3">
+          <button
+            type="button"
+            onClick={() => setActiveLanguage('en')}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeLanguage === 'en'
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+              EN
+            </span>
+            English
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveLanguage('id')}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeLanguage === 'id'
+                ? 'border-red-600 text-red-600 dark:border-red-400 dark:text-red-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+              ID
+            </span>
+            Indonesia
+          </button>
+        </div>
+
+        <div className={activeLanguage === 'en' ? 'block' : 'hidden'}>
+          <RichTextEditor
+            key={`${fieldKey}-editor-en`}
+            value={value?.en || ''}
+            onChange={(data) => onChange({ ...value, en: data })}
+            placeholder={placeholder ? `${placeholder} (English)` : 'Enter English content here...'}
+            minHeight="300px"
+          />
+        </div>
+
+        <div className={activeLanguage === 'id' ? 'block' : 'hidden'}>
+          <RichTextEditor
+            key={`${fieldKey}-editor-id`}
+            value={value?.id || ''}
+            onChange={(data) => onChange({ ...value, id: data })}
+            placeholder={placeholder ? `${placeholder} (Indonesia)` : 'Masukkan konten Bahasa Indonesia di sini...'}
+            minHeight="300px"
+          />
+        </div>
+      </FieldWrapper>
+    );
+  }
 
   return (
     <FieldWrapper helper={helper}>
@@ -1958,7 +2031,7 @@ function renderField(
   if (key === 'size_hero') {
     return { element: <SelectField key={key} {...fieldProps} options={['lnHero__medium', 'lnHero__small']} />, wide: false };
   }
-  if (key === 'order' || key === 'sort_by') {
+  if (key === 'order' || key === 'sort_by' || key === 'order_by') {
     const options = getSortByOptions(componentType);
     return { element: <SelectField key={key} {...fieldProps} options={options} />, wide: false };
   }
@@ -1988,6 +2061,9 @@ function renderField(
   }
   if (key === 'category_sort_by' || key === 'categorySortBy') {
     return { element: <SelectField key={key} {...fieldProps} options={['default', 'label_asc', 'label_desc', 'slug_asc', 'slug_desc']} />, wide: false };
+  }
+  if (key === 'logo_display_limit' || key === 'logoDisplayLimit' || key === 'show_data_per' || key === 'showDataPer') {
+    return { element: <SelectField key={key} {...fieldProps} options={['10', '15', '20', '25']} />, wide: false };
   }
   if (key === 'category_id' || key === 'categoryId' || key === 'category_slug' || key === 'categorySlug') {
     return { element: <NewsCategorySelectField key={key} {...fieldProps} />, wide: false };

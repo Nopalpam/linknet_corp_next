@@ -22,8 +22,7 @@ import {
 
 const router = Router();
 const requireAnalyticsAccess = requirePermission(
-  Permission.LOG_ACTIVITY_READ,
-  Permission.SETTINGS_READ,
+  Permission.ANALYTICS_READ,
 );
 
 // All analytics routes require authentication (CMS only)

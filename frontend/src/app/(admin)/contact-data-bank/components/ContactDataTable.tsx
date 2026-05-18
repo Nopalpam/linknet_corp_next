@@ -1,5 +1,5 @@
 import React from "react";
-import { ContactData, ContactStatus } from "../page";
+import { ContactData } from "../page";
 
 interface ContactDataTableProps {
   data: ContactData[];
@@ -33,22 +33,6 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
     } else {
       onSelectionChange([...selectedIds, id]);
     }
-  };
-
-  const getStatusBadge = (status: ContactStatus) => {
-    const styles = {
-      NEW: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      READ: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      REPLIED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-    };
-
-    return (
-      <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}
-      >
-        {status}
-      </span>
-    );
   };
 
   const formatDate = (dateString: string) => {
@@ -92,10 +76,10 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
 
   return (
     <div className="w-full">
-      <table className="w-full min-w-[800px]">
+      <table className="w-full table-fixed min-w-[640px]">
         <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <tr>
-            <th className="w-12 px-6 py-3">
+            <th className="w-10 px-3 py-3">
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -108,25 +92,19 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
                 className="w-4 h-4 text-brand-600 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-              Nama Pengirim
+            <th className="w-[28%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+              Pengirim
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-              Email
+            <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+              Inquiry Type
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-              No. Telepon
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+            <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
               Subject
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+            <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
               Tanggal
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-              Status
-            </th>
-            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+            <th className="w-[16%] px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
               Aksi
             </th>
           </tr>
@@ -137,7 +115,7 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
               key={contact.id}
               className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
-              <td className="px-6 py-4">
+              <td className="px-3 py-4 align-top">
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(contact.id)}
@@ -145,43 +123,42 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
                   className="w-4 h-4 text-brand-600 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                 />
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-4 align-top">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">
                   {contact.name}
                 </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
                   {contact.email}
                 </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {contact.phone}
+                <div className="truncate text-xs text-gray-500 dark:text-gray-400">
+                  {contact.phone || "-"}
                 </div>
               </td>
-              <td className="px-6 py-4">
-                <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate">
+              <td className="px-3 py-4 align-top">
+                <div className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  {contact.inquiryTypeLabel}
+                </div>
+              </td>
+              <td className="px-3 py-4 align-top">
+                <div className="truncate text-sm text-gray-900 dark:text-white">
                   {contact.subject}
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-4 align-top whitespace-nowrap">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(contact.createdAt)}
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {getStatusBadge(contact.status)}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-center">
-                <div className="flex items-center justify-center gap-2">
+              <td className="px-3 py-4 align-top whitespace-nowrap text-center">
+                <div className="flex items-center justify-center gap-1.5">
                   <button
                     onClick={() => onView(contact)}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors whitespace-nowrap"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white transition-colors hover:bg-brand-700"
                     title="View Details"
+                    aria-label={`View ${contact.name}`}
                   >
                     <svg
-                      className="w-4 h-4 mr-1"
+                      className="h-4 w-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -199,15 +176,15 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
                         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       />
                     </svg>
-                    View
                   </button>
                   <button
                     onClick={() => onDelete(contact)}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors whitespace-nowrap"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white transition-colors hover:bg-red-700"
                     title="Delete"
+                    aria-label={`Delete ${contact.name}`}
                   >
                     <svg
-                      className="w-4 h-4 mr-1"
+                      className="h-4 w-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -219,7 +196,6 @@ const ContactDataTable: React.FC<ContactDataTableProps> = ({
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       />
                     </svg>
-                    Delete
                   </button>
                 </div>
               </td>

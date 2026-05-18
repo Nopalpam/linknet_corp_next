@@ -526,6 +526,7 @@ model ContactUs {
   role        String?
   company     String?
   inquiryType InquiryType   @map("inquiry_type")
+  subject     String        @default("")
   message     String
   status      ContactStatus @default(NEW)
   ipAddress   String?       @map("ip_address")
@@ -1335,6 +1336,74 @@ model MapCoverageRegion {
   @@map("map_coverage_regions")
 }
 
+model DataBankSolution {
+  id          String                         @id @default(uuid())
+  title       String
+  titleId     String?                        @map("title_id")
+  titleEn     String?                        @map("title_en")
+  slug        String                         @unique
+  description String?
+  descriptionId String?                      @map("description_id")
+  descriptionEn String?                      @map("description_en")
+  image       String?
+  bannerImage String?                        @map("banner_image")
+  ctaList     Json                           @default("[]") @map("cta_list")
+  sortOrder   Int                            @default(0) @map("sort_order")
+  status      ContentStatus                  @default(DRAFT)
+  publishedAt DateTime?                      @map("published_at")
+  createdBy   String?                        @map("created_by")
+  updatedBy   String?                        @map("updated_by")
+  createdAt   DateTime                       @default(now()) @map("created_at")
+  updatedAt   DateTime                       @updatedAt @map("updated_at")
+  deletedAt   DateTime?                      @map("deleted_at")
+  categories  DataBankSolutionCategoryRelation[]
+
+  @@index([slug])
+  @@index([sortOrder])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([deletedAt])
+  @@map("data_bank_solutions")
+}
+
+model DataBankSolutionCategory {
+  id          String                         @id @default(uuid())
+  type        DataBankSolutionCategoryType
+  name        String
+  nameId      String?                        @map("name_id")
+  nameEn      String?                        @map("name_en")
+  slug        String
+  icon        String?
+  description String?
+  sortOrder   Int                            @default(0) @map("sort_order")
+  isActive    Boolean                        @default(true) @map("is_active")
+  createdAt   DateTime                       @default(now()) @map("created_at")
+  updatedAt   DateTime                       @updatedAt @map("updated_at")
+  deletedAt   DateTime?                      @map("deleted_at")
+  solutions   DataBankSolutionCategoryRelation[]
+
+  @@unique([type, slug])
+  @@index([type])
+  @@index([sortOrder])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("data_bank_solution_categories")
+}
+
+model DataBankSolutionCategoryRelation {
+  id         String                   @id @default(uuid())
+  solutionId String                   @map("solution_id")
+  categoryId String                   @map("category_id")
+  createdAt  DateTime                 @default(now()) @map("created_at")
+  solution   DataBankSolution         @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  category   DataBankSolutionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([solutionId, categoryId])
+  @@index([solutionId])
+  @@index([categoryId])
+  @@map("data_bank_solution_category_relations")
+}
+
 model LabelGroup {
   id         String      @id @default(uuid())
   parentName String      @unique @map("parent_name")
@@ -1386,6 +1455,12 @@ enum ComponentVisibilityStatus {
 enum LabelStatus {
   ACTIVE
   INACTIVE
+}
+
+enum DataBankSolutionCategoryType {
+  INDUSTRY
+  BUSINESS_SCALE
+  BUSINESS_NEED
 }
 
 enum UserStatus {

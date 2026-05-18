@@ -14,7 +14,7 @@ router.use(authMiddleware);
  */
 router.get(
   '/',
-  checkPermission(Permission.PAGES_READ),
+  checkPermission(Permission.COMPONENT_VISIBILITY_READ),
   ComponentVisibilityController.getAll
 );
 
@@ -25,7 +25,7 @@ router.get(
  */
 router.get(
   '/inactive-keys',
-  checkPermission(Permission.PAGES_READ),
+  checkPermission(Permission.COMPONENT_VISIBILITY_READ),
   ComponentVisibilityController.getInactiveKeys
 );
 
@@ -34,7 +34,7 @@ router.get(
  */
 router.get(
   '/:id',
-  checkPermission(Permission.PAGES_READ),
+  checkPermission(Permission.COMPONENT_VISIBILITY_READ),
   ComponentVisibilityController.getById
 );
 
@@ -44,7 +44,7 @@ router.get(
  */
 router.post(
   '/',
-  checkPermission(Permission.PAGES_CREATE),
+  checkPermission(Permission.COMPONENT_VISIBILITY_CREATE),
   ComponentVisibilityController.create
 );
 
@@ -54,7 +54,7 @@ router.post(
  */
 router.post(
   '/sync',
-  checkPermission(Permission.PAGES_UPDATE),
+  checkPermission(Permission.COMPONENT_VISIBILITY_SYNC),
   ComponentVisibilityController.syncFromRegistry
 );
 
@@ -64,7 +64,7 @@ router.post(
  */
 router.post(
   '/bulk-toggle',
-  checkPermission(Permission.PAGES_UPDATE),
+  checkPermission(Permission.COMPONENT_VISIBILITY_UPDATE),
   ComponentVisibilityController.bulkToggle
 );
 
@@ -73,7 +73,7 @@ router.post(
  */
 router.put(
   '/:id',
-  checkPermission(Permission.PAGES_UPDATE),
+  checkPermission(Permission.COMPONENT_VISIBILITY_UPDATE),
   ComponentVisibilityController.update
 );
 
@@ -82,7 +82,7 @@ router.put(
  */
 router.patch(
   '/:id/toggle',
-  checkPermission(Permission.PAGES_UPDATE),
+  checkPermission(Permission.COMPONENT_VISIBILITY_UPDATE),
   ComponentVisibilityController.toggleStatus
 );
 
