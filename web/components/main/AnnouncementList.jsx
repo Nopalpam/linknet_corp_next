@@ -347,37 +347,44 @@ export default function AnnouncementList({
 
         {/* Pagination */}
         {showPagination && totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-10">
+          <div className="flex justify-center items-center gap-2 mt-4 pt-4">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Previous
             </button>
-            {getPageNumbers().map((page, idx) =>
-              page === '...' ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-secondary">...</span>
-              ) : (
+
+            <div className="hidden sm:flex items-center gap-2 mx-2">
+              {getPageNumbers().map((page, idx) => (
                 <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                    currentPage === page
-                      ? 'bg-brand-600 text-white'
-                      : 'border border-gray-200 hover:bg-gray-50 text-gray-700'
+                  key={idx}
+                  onClick={() => typeof page === 'number' ? handlePageChange(page) : null}
+                  disabled={page === '...'}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full font-medium transition-colors ${
+                    page === currentPage
+                      ? 'bg-warning text-black'
+                      : page === '...'
+                        ? 'bg-transparent text-neutral-400 cursor-default'
+                        : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
                   }`}
                 >
                   {page}
                 </button>
-              )
-            )}
+              ))}
+            </div>
+
+            <span className="sm:hidden text-sm font-medium text-neutral-500 mx-2">
+              Page {currentPage} of {totalPages}
+            </span>
+
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 text-sm font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              Next
             </button>
           </div>
         )}

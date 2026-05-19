@@ -11,11 +11,55 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Register plugin
 gsap.registerPlugin(ScrollTrigger);
 
+function resolveText(value, fallback = '') {
+  if (value && typeof value === 'object') return value.en || value.id || fallback;
+  return typeof value === 'string' ? value : fallback;
+}
+
+function normalizeVisionMissionItems(data = {}) {
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    return data.items.map((item, index) => ({
+      ...item,
+      label: resolveText(item.label, index === 0 ? 'OUR VISION' : 'OUR MISSION'),
+      title: resolveText(item.title),
+      description: resolveText(item.description),
+      image: item.image || item.imageUrl || item.image_url || '',
+      align: item.align || (index === 0 ? 'left' : 'right'),
+    }));
+  }
+
+  const items = [];
+  if (data.vision) {
+    items.push({
+      id: 'vision',
+      label: resolveText(data.vision.label, 'OUR VISION'),
+      title: resolveText(data.vision.title),
+      description: resolveText(data.vision.description),
+      image: data.vision.image || '',
+      align: data.vision.align || 'left',
+    });
+  }
+  if (Array.isArray(data.missions)) {
+    data.missions.forEach((mission, index) => {
+      items.push({
+        id: `mission-${index}`,
+        label: resolveText(mission.label, 'OUR MISSION'),
+        title: resolveText(mission.title),
+        description: resolveText(mission.description),
+        image: mission.image || '',
+        align: mission.align || (index % 2 === 0 ? 'right' : 'left'),
+      });
+    });
+  }
+  return items;
+}
+
 export default function VisionMission({ name = 'about', cmsData = null, className = '' }) {
   const containerRef = useRef(null); // Ref untuk membatasi scope animasi GSAP
 
   // 1. Gunakan optional chaining (?.) untuk mencegah error jika 'about' tidak ada
   const data = cmsData || VISION_MISSION_DATA?.[name] || VISION_MISSION_DATA?.about;
+  const normalizedItems = normalizeVisionMissionItems(data);
   const {
     sectionId,
     className: configClassName = "",
@@ -32,7 +76,7 @@ export default function VisionMission({ name = 'about', cmsData = null, classNam
   // Setup Animasi GSAP
   useEffect(() => {
     // Jika data tidak valid, jangan jalankan animasi
-    if (!data || !data.items || data.items.length < 2) return;
+    if (!data || normalizedItems.length < 2) return;
 
     // Gunakan gsap.context agar animasi aman di React (termasuk saat unmount)
     let ctx = gsap.context(() => {
@@ -56,27 +100,14 @@ export default function VisionMission({ name = 'about', cmsData = null, classNam
 
     // Cleanup function untuk mencegah memory leak
     return () => ctx.revert();
-  }, [data]);
+  }, [data, normalizedItems.length]);
 
   // 2. PROTEKSI: Jika data tidak ada, atau items tidak ada, jangan render isi grid
-  if (!data || !data.items || data.items.length < 2) {
-    return (
-      <section
-        id={sectionId}
-        className={`lnSection__visionMission py-16 px-4 md:px-8 bg-white text-center
-          bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
-          ${configClassName} ${className}`}
-        style={sectionStyle}
-      >
-        <p className="text-red-500">Data Vision & Mission tidak ditemukan atau belum lengkap.</p>
-      </section>
-    );
-  }
+  if (!data || normalizedItems.length < 2) return null;
 
   // Jika aman, baru ambil array-nya
-  const vision = data.items[0];
-  const mission = data.items[1];
+  const vision = normalizedItems[0];
+  const mission = normalizedItems[1];
 
   return (
     <section

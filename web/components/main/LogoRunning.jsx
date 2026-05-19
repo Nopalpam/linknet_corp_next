@@ -8,11 +8,27 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // Import Komponen & Data
 import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
+import CTAList from '../base/section/CTAList';
 import { LOGO_RUNNING_DATA } from '@/data/components/logoRunning'; 
 import { hasIntroContent } from '../../../shared/presentation/intro';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
+
+function normalizeLogoItem(logo = {}, index = 0) {
+  const resolveText = (value, fallback = '') => {
+    if (value && typeof value === 'object') return value.en || value.id || fallback;
+    return typeof value === 'string' ? value : fallback;
+  };
+  const image = logo.image || logo.img || logo.src || logo.url || '';
+  const altImage = resolveText(logo.altImage || logo.alt_image || logo.alt || logo.name || logo.title, `Logo ${index + 1}`);
+
+  return {
+    id: logo.id || `${altImage}-${index}`,
+    image,
+    altImage,
+  };
+}
 
 export default function LogoRunning({ 
   name = 'default', 
@@ -52,7 +68,15 @@ export default function LogoRunning({
 
   if (!sectionData) return null;
 
-  const { config, introData, logos } = sectionData;
+  const { config, introData, ctaList } = sectionData;
+  const logos = (Array.isArray(sectionData.logos)
+    ? sectionData.logos
+    : Array.isArray(sectionData.items)
+      ? sectionData.items
+      : Array.isArray(sectionData.logo_items)
+        ? sectionData.logo_items
+        : []
+  ).map(normalizeLogoItem).filter((logo) => logo.image);
   const {
     sectionId,
     className: configClassName = "",
@@ -68,7 +92,7 @@ export default function LogoRunning({
   };
 
   // Duplikasi logo array agar animasi marquee tidak terputus (seamless loop)
-  const duplicatedLogos = logos ? [...logos, ...logos, ...logos] : [];
+  const duplicatedLogos = logos.length > 0 ? [...logos, ...logos, ...logos] : [];
 
   return (
     <section
@@ -101,7 +125,7 @@ export default function LogoRunning({
         
         {/* HEADER SECTION DENGAN COMPONENT INTRO */}
         {hasIntroContent(introData) && (
-          <div className="lnGsapLogoItem mb-8 md:mb-10">
+          <div className="lnGsapLogoItem mb-8 md:mb-12">
             <Intro 
               as={introData.as || "h2"}
               label={introData.label}
@@ -119,14 +143,27 @@ export default function LogoRunning({
             <div className="lnAnimateRunningMarqueeLogos items-center gap-12 md:gap-20">
               {duplicatedLogos.map((logo, idx) => (
                 <img 
-                  key={`${logo.name}-${idx}`} 
-                  src={logo.img} 
-                  alt={logo.name} 
-                  title={logo.name}
-                  className="h-8 md:h-8.5 object-contain hover:scale-105 transition-transform duration-300 cursor-pointer" 
+                  key={`${logo.id}-${idx}`}
+                  src={logo.image}
+                  alt={logo.altImage}
+                  title={logo.altImage}
+                  className="h-7 md:h-10 object-contain hover:scale-105 transition-transform duration-300 cursor-pointer"
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {ctaList && ctaList.length > 0 && (
+          <div className="lnGsapLogoItem mt-8 flex justify-center md:mt-10">
+            <CTAList
+              ctaList={ctaList}
+              align="center"
+              stackOnMobile
+              ctaClassName="w-full sm:w-auto"
+              className="justify-center gap-5"
+              defaultSize="lg"
+            />
           </div>
         )}
 

@@ -26,6 +26,7 @@ import { isMultilingual, ComponentSettings } from './types';
 import { CkeditorEditor } from './editors/CkeditorEditor';
 import { CtaListModule, isCtaListItem } from './editors/CtaListModule';
 import { InformationListEditor } from './editors/InformationListEditor';
+import { ListReportHomeEditor } from './editors/ListReportHomeEditor';
 import { MediaGenreField, MediaHighlightCategoriesField, MediaIdsField } from './editors/MediaSelectionEditor';
 import { ICON_OPTIONS } from './iconOptions';
 import { awardsService, Award } from '@/services/awards.service';
@@ -46,6 +47,7 @@ import {
 const TYPE_SPECIFIC_EDITORS: Record<string, React.ComponentType<{ settings: any; onChange: (s: any) => void }>> = {
   ckeditor: CkeditorEditor,
   information_list: InformationListEditor,
+  list_report_home: ListReportHomeEditor,
 };
 
 const RichTextEditor = dynamic(
@@ -81,10 +83,15 @@ const TYPE_HIDDEN_FIELDS: Record<string, string[]> = {
   news_list: ['category_slug', 'categorySlug'],
   news_teaser: ['categorySlug', 'category_slug'],
   navbar_newsroom: ['introData', 'sectionIntro', 'intro'],
+  info_contacts: ['title', 'description'],
+  vision_mission: ['vision', 'missions', 'layout', 'columns'],
   report_list: ['report_type_slug', 'report_section_slug'],
   report_grid: ['report_type_slug', 'report_section_slug', 'data'],
   report_list_part: ['report_type_slug', 'report_section_slug', 'data'],
   announcement_list: ['announcement_type_slug', 'announcement_section_slug'],
+  list_report_home: ['name', 'source', 'data_source', 'layout'],
+  logo_running: ['name'],
+  logo_running_with_border: ['name'],
 };
 
 /** Helper text for technical/non-obvious fields */
@@ -1452,6 +1459,14 @@ const EMPTY_ARRAY_ITEM_TEMPLATES: Record<string, any> = {
     label: { en: '', id: '' },
     value: '',
     url: '',
+  },
+  logos: {
+    image: '',
+    altImage: '',
+  },
+  logo_items: {
+    image: '',
+    altImage: '',
   },
   services: {
     icon: '',

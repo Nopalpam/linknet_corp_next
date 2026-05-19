@@ -433,7 +433,11 @@ export class AnnouncementService {
   }
 
   async getAnnouncementSectionsList(typeId?: string) {
-    const where: any = { deletedAt: null, isActive: true };
+    const where: any = {
+      deletedAt: null,
+      isActive: true,
+      announcement_types: { is: { deletedAt: null, isActive: true } },
+    };
     if (typeId) {
       where.type_id = typeId;
     }

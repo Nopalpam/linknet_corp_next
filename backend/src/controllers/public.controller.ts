@@ -144,7 +144,10 @@ const publicNewsWhere = (now: Date, extra: Prisma.newsWhereInput = {}): Prisma.n
   status: ContentStatus.PUBLISHED,
   visibility: 'PUBLIC',
   deleted_at: null,
-  AND: [{ OR: [{ published_at: null }, { published_at: { lte: now } }] }],
+  AND: [
+    { OR: [{ published_at: null }, { published_at: { lte: now } }] },
+    { news_categories: { is: { is_active: true, deleted_at: null } } },
+  ],
   ...extra,
 });
 
@@ -449,7 +452,11 @@ async function buildReportWhere(config: Record<string, any>, now: Date): Promise
     status: ContentStatus.PUBLISHED,
     is_active: true,
     deleted_at: null,
-    AND: [{ OR: [{ published_at: null }, { published_at: { lte: now } }] }],
+    AND: [
+      { OR: [{ published_at: null }, { published_at: { lte: now } }] },
+      { OR: [{ type_id: null }, { report_types: { is: { isActive: true, deletedAt: null } } }] },
+      { OR: [{ section_id: null }, { report_sections: { is: { isActive: true, deletedAt: null, report_types: { is: { isActive: true, deletedAt: null } } } } }] },
+    ],
   };
 
   const typeId = readString(config, ['report_type_id', 'reportTypeId', 'type_id', 'typeId', 'category_id', 'categoryId']);
@@ -458,13 +465,20 @@ async function buildReportWhere(config: Record<string, any>, now: Date): Promise
   if (typeId) {
     where.type_id = typeId;
   } else if (typeSlug) {
-    where.report_types = { is: { slug: typeSlug } };
+    where.report_types = { is: { slug: typeSlug, isActive: true, deletedAt: null } };
   }
 
   if (sectionId) {
     where.section_id = sectionId;
   } else if (sectionSlug) {
-    where.report_sections = { is: { slug: sectionSlug } };
+    where.report_sections = {
+      is: {
+        slug: sectionSlug,
+        isActive: true,
+        deletedAt: null,
+        report_types: { is: { isActive: true, deletedAt: null } },
+      },
+    };
   }
 
   return where;
@@ -489,11 +503,7 @@ async function fetchReportsComponentData(config: Record<string, any>, mode: 'gri
         take: limit,
       }),
       prisma.announcements.findMany({
-        where: {
-          status: ContentStatus.PUBLISHED,
-          is_active: true,
-          deleted_at: null,
-        },
+        where: buildAnnouncementWhere({}),
         include: { announcement_sections: { include: { announcement_types: true } }, announcement_types: true },
         orderBy: getAnnouncementOrderBy(config),
         take: limit,
@@ -507,7 +517,7 @@ async function fetchReportsComponentData(config: Record<string, any>, mode: 'gri
           { label: 'Announcement', value: 'announcement' },
         ];
     const manualItems = isPlainObject(config.items) ? config.items : {};
-    const hasManualItems = Object.values(manualItems).some((value) => Array.isArray(value));
+    const hasManualItems = Object.values(manualItems).some((value) => Array.isArray(value) && value.length > 0);
     const reportItems = hasManualItems && Array.isArray(manualItems.report)
       ? manualItems.report
       : reports.map(serializeHomeReportCard);
@@ -579,7 +589,7 @@ async function fetchReportListComponentData(config: Record<string, any>) {
       orderBy: { position: 'asc' },
     }),
     prisma.reportSection.findMany({
-      where: { isActive: true, deletedAt: null },
+      where: { isActive: true, deletedAt: null, report_types: { is: { isActive: true, deletedAt: null } } },
       include: { report_types: true },
       orderBy: { position: 'asc' },
     }),
@@ -642,7 +652,15 @@ function buildAnnouncementWhere(config: Record<string, any>): Prisma.announcemen
     is_active: true,
     deleted_at: null,
   };
-  const and: Prisma.announcementsWhereInput[] = [];
+  const and: Prisma.announcementsWhereInput[] = [
+    { OR: [{ type_id: null }, { announcement_types: { is: { isActive: true, deletedAt: null } } }] },
+    {
+      OR: [
+        { section_id: null },
+        { announcement_sections: { is: { isActive: true, deletedAt: null, announcement_types: { is: { isActive: true, deletedAt: null } } } } },
+      ],
+    },
+  ];
 
   if (typeId) {
     and.push({
@@ -654,8 +672,8 @@ function buildAnnouncementWhere(config: Record<string, any>): Prisma.announcemen
   } else if (typeSlug) {
     and.push({
       OR: [
-        { announcement_types: { is: { slug: typeSlug } } },
-        { announcement_sections: { is: { announcement_types: { is: { slug: typeSlug } } } } },
+        { announcement_types: { is: { slug: typeSlug, isActive: true, deletedAt: null } } },
+        { announcement_sections: { is: { announcement_types: { is: { slug: typeSlug, isActive: true, deletedAt: null } } } } },
       ],
     });
   }
@@ -663,7 +681,7 @@ function buildAnnouncementWhere(config: Record<string, any>): Prisma.announcemen
   if (sectionId) {
     and.push({ section_id: sectionId });
   } else if (sectionSlug) {
-    and.push({ announcement_sections: { is: { slug: sectionSlug } } });
+    and.push({ announcement_sections: { is: { slug: sectionSlug, isActive: true, deletedAt: null } } });
   }
 
   if (and.length) {
@@ -693,7 +711,7 @@ async function fetchAnnouncementListComponentData(config: Record<string, any>) {
       orderBy: { position: 'asc' },
     }),
     prisma.announcementSection.findMany({
-      where: { isActive: true, deletedAt: null },
+      where: { isActive: true, deletedAt: null, announcement_types: { is: { isActive: true, deletedAt: null } } },
       include: { announcement_types: true },
       orderBy: { position: 'asc' },
     }),
@@ -986,7 +1004,11 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
       }
       case 'management_list': {
         const managements = await prisma.management.findMany({
-          where: { is_active: true, deleted_at: null },
+          where: {
+            is_active: true,
+            deleted_at: null,
+            managementCategory: { is: { is_active: true, deleted_at: null } },
+          },
           include: { managementCategory: true },
           orderBy: { order: 'asc' },
         });

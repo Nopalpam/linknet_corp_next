@@ -1046,35 +1046,51 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   vision_mission: {
     component: VisionMission,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        introData: extractIntro(data, t, locale),
-        items: [
-          ...(data.vision
-            ? [{
-                id: 'vision',
-                label: 'VISION',
-                title: t(data.vision.title),
-                description: t(data.vision.description),
-                image: data.vision.image || undefined,
-                align: 'left' as const,
-              }]
-            : []),
-          ...(Array.isArray(data.missions)
-            ? data.missions.map((m: any, idx: number) => ({
-                id: `mission-${idx}`,
-                label: 'MISSION',
-                title: t(m.title),
-                description: t(m.description),
-                image: m.image || undefined,
-                align: idx % 2 === 0 ? 'right' : 'left',
-              }))
-            : []),
-        ],
-      },
-      className: data.custom_class || '',
-      ...styleProps,
-    }),
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const directItems = Array.isArray(data.items)
+        ? data.items.map((item: any, idx: number) => ({
+            id: item.id || `vision-mission-${idx}`,
+            label: t(item.label) || (idx === 0 ? 'OUR VISION' : 'OUR MISSION'),
+            title: t(item.title),
+            description: t(item.description),
+            image: item.image || item.imageUrl || item.image_url || undefined,
+            align: item.align || (idx === 0 ? 'left' : 'right'),
+          }))
+        : [];
+
+      const legacyItems = directItems.length > 0 ? [] : [
+        ...(data.vision
+          ? [{
+              id: 'vision',
+              label: t(data.vision.label) || 'OUR VISION',
+              title: t(data.vision.title),
+              description: t(data.vision.description),
+              image: data.vision.image || undefined,
+              align: data.vision.align || 'left',
+            }]
+          : []),
+        ...(Array.isArray(data.missions)
+          ? data.missions.map((m: any, idx: number) => ({
+              id: `mission-${idx}`,
+              label: t(m.label) || 'OUR MISSION',
+              title: t(m.title),
+              description: t(m.description),
+              image: m.image || undefined,
+              align: m.align || (idx % 2 === 0 ? 'right' : 'left'),
+            }))
+          : []),
+      ];
+
+      return {
+        cmsData: {
+          introData: extractIntro(data, t, locale),
+          items: directItems.length > 0 ? directItems : legacyItems,
+          config: data.config || {},
+        },
+        className: data.custom_class || '',
+        ...styleProps,
+      };
+    },
   },
 
   maps_coverage: {

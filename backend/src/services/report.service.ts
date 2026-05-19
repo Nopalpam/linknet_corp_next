@@ -481,7 +481,11 @@ export class ReportService {
   }
 
   async getReportSectionsList(typeId?: string) {
-    const where: any = { deletedAt: null, isActive: true };
+    const where: any = {
+      deletedAt: null,
+      isActive: true,
+      report_types: { is: { deletedAt: null, isActive: true } },
+    };
     if (typeId) {
       where.type_id = typeId;
     }

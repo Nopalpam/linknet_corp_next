@@ -126,8 +126,6 @@ const DATA_DRIVEN_ALLOWED_FIELDS: Record<string, string[]> = {
   ],
   list_report_home: [
     ...COMMON_SETTINGS,
-    'name',
-    'source',
     'tabs',
     'items',
     'report_type_id',
@@ -439,7 +437,6 @@ export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = 
   list_report_home: {
     tabs: 'Tabs',
     items: 'Child Items per Tab',
-    source: 'Data Source',
     title: 'Title',
     desc: 'Desc',
     ctaList: 'CTA List',

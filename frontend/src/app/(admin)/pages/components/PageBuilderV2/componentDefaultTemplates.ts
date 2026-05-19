@@ -511,13 +511,18 @@ export const highlightingRealInitiativesDefaults = withCommon({
 // ─── 9. info_contacts (from infoContact.js) ─────────────────────────
 
 export const infoContactsDefaults = withCommon({
-  title: {
-    en: 'Get More Information about Linknet EnterpriseCo',
-    id: 'Dapatkan Informasi Lebih Lanjut tentang Linknet EnterpriseCo',
-  },
-  description: {
-    en: 'Have questions or need more information? Our team is here to help. Reach out to us and we\'ll respond as soon as possible.',
-    id: 'Punya pertanyaan atau butuh informasi lebih? Tim kami siap membantu. Hubungi kami dan kami akan merespons sesegera mungkin.',
+  introData: {
+    as: 'h2',
+    label: { en: '', id: '' },
+    title: {
+      en: 'Get More Information about Linknet EnterpriseCo',
+      id: 'Dapatkan Informasi Lebih Lanjut tentang Linknet EnterpriseCo',
+    },
+    description: {
+      en: 'Have questions or need more information? Our team is here to help. Reach out to us and we\'ll respond as soon as possible.',
+      id: 'Punya pertanyaan atau butuh informasi lebih? Tim kami siap membantu. Hubungi kami dan kami akan merespons sesegera mungkin.',
+    },
+    align: 'center',
   },
   contact_items: [
     {
@@ -641,7 +646,8 @@ export const joinFirstSquadDefaults = withCommon({
 // ─── 12. vision_mission (from visionMission.js) ────────────────────
 
 export const visionMissionDefaults = withCommon({
-  intro: {
+  introData: {
+    as: 'h2',
     label: { en: '', id: '' },
     title: {
       en: 'Our Vision & Mission',
@@ -650,25 +656,31 @@ export const visionMissionDefaults = withCommon({
     description: { en: '', id: '' },
     align: 'center',
   },
-  vision: {
-    title: {
-      en: 'By 2027, to be the 1st choice in every business we do.',
-      id: 'Pada 2027, menjadi pilihan pertama di setiap bisnis yang kami lakukan.',
-    },
-    description: {
-      en: '*Through the 4C\'s (Coverage, Capability, Cost, Capacity)',
-      id: '*Melalui 4C (Coverage, Capability, Cost, Capacity)',
-    },
-    image: '/assets/images/vision-wind.jpg',
-  },
-  missions: [
+  items: [
     {
+      id: 'vision',
+      label: { en: 'OUR VISION', id: 'VISI KAMI' },
+      title: {
+        en: 'By 2027, to be the 1st choice in every business we do.',
+        id: 'Pada 2027, menjadi pilihan pertama di setiap bisnis yang kami lakukan.',
+      },
+      description: {
+        en: '*Through the 4C\'s (Coverage, Capability, Cost, Capacity)',
+        id: '*Melalui 4C (Coverage, Capability, Cost, Capacity)',
+      },
+      image: '/assets/images/vision-wind.jpg',
+      align: 'left',
+    },
+    {
+      id: 'mission',
+      label: { en: 'OUR MISSION', id: 'MISI KAMI' },
       title: {
         en: 'To transform lives by providing innovative and exceptional broadband and media services and solutions.',
         id: 'Mentransformasi kehidupan dengan menyediakan layanan dan solusi broadband serta media yang inovatif dan luar biasa.',
       },
       description: { en: '', id: '' },
       image: '/assets/images/mission-city.jpg',
+      align: 'right',
     },
   ],
 });

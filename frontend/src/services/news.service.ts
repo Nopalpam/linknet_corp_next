@@ -192,7 +192,7 @@ class NewsContentService extends BaseCrudService<News> {
     search?: string;
     limit?: number;
   }): Promise<PaginatedResponse<News>> {
-    return this.getPaginated({
+    return this.getActiveNews({
       page: 1,
       limit: params?.limit || 20,
       search: params?.search,

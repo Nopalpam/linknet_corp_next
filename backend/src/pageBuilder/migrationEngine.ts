@@ -276,6 +276,114 @@ function normalizeListReportHome(data: Record<string, any>): void {
   }
 }
 
+function normalizeListReportHomeClean(data: Record<string, any>): void {
+  ensureIntro(data);
+  normalizeListReportHome(data);
+  ['name', 'source', 'data_source', 'layout'].forEach((key) => {
+    if (data[key] !== undefined) delete data[key];
+  });
+}
+
+function normalizeInfoContactsSettings(data: Record<string, any>): void {
+  const intro = ensureIntro(data);
+  intro.as = intro.as || 'h2';
+  intro.align = intro.align || 'center';
+  if (intro.title === undefined && data.title !== undefined) intro.title = data.title;
+  if (intro.description === undefined && data.description !== undefined) intro.description = data.description;
+  if (intro.label === undefined) intro.label = '';
+
+  const contactItems = Array.isArray(data.contact_items)
+    ? data.contact_items
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+
+  data.contact_items = contactItems.map((item: Record<string, any>, index: number) => ({
+    id: item.id || `contact-item-${index + 1}`,
+    type: item.type || '',
+    icon: item.icon || '',
+    label: item.label ?? { en: '', id: '' },
+    value: item.value ?? item.text ?? '',
+    url: item.url ?? item.href ?? '',
+    target: item.target ?? '_blank',
+  }));
+
+  ['title', 'description', 'items'].forEach((key) => {
+    if (data[key] !== undefined) delete data[key];
+  });
+}
+
+function normalizeLogoRunningSettings(data: Record<string, any>): void {
+  ensureIntro(data);
+  const logos = Array.isArray(data.logos)
+    ? data.logos
+    : Array.isArray(data.items)
+      ? data.items
+      : Array.isArray(data.logo_items)
+        ? data.logo_items
+        : [];
+
+  data.logos = logos.map((logo: Record<string, any>, index: number) => ({
+    id: logo.id || `logo-${index + 1}`,
+    image: logo.image ?? logo.img ?? logo.src ?? logo.url ?? '',
+    altImage: logo.altImage ?? logo.alt_image ?? logo.alt ?? logo.name ?? logo.title ?? '',
+  }));
+
+  if (!Array.isArray(data.ctaList)) {
+    data.ctaList = Array.isArray(data.cta_list)
+      ? data.cta_list
+      : Array.isArray(data.ctaButtons)
+        ? data.ctaButtons
+        : [];
+  }
+
+  ['name', 'items', 'logo_items', 'cta_list', 'ctaButtons', 'cta_buttons'].forEach((key) => {
+    if (data[key] !== undefined) delete data[key];
+  });
+}
+
+function normalizeVisionMissionSettings(data: Record<string, any>): void {
+  ensureIntro(data);
+  const directItems = Array.isArray(data.items) ? data.items : [];
+  const legacyItems = directItems.length > 0
+    ? []
+    : [
+        ...(isRecord(data.vision)
+          ? [{
+              id: 'vision',
+              label: data.vision.label ?? { en: 'OUR VISION', id: 'VISI KAMI' },
+              title: data.vision.title ?? '',
+              description: data.vision.description ?? '',
+              image: data.vision.image ?? '',
+              align: data.vision.align ?? 'left',
+            }]
+          : []),
+        ...(Array.isArray(data.missions)
+          ? data.missions.map((mission: Record<string, any>, index: number) => ({
+              id: mission.id || `mission-${index + 1}`,
+              label: mission.label ?? { en: 'OUR MISSION', id: 'MISI KAMI' },
+              title: mission.title ?? '',
+              description: mission.description ?? '',
+              image: mission.image ?? '',
+              align: mission.align ?? (index % 2 === 0 ? 'right' : 'left'),
+            }))
+          : []),
+      ];
+
+  data.items = (directItems.length > 0 ? directItems : legacyItems).map((item: Record<string, any>, index: number) => ({
+    id: item.id || (index === 0 ? 'vision' : `mission-${index}`),
+    label: item.label ?? (index === 0 ? { en: 'OUR VISION', id: 'VISI KAMI' } : { en: 'OUR MISSION', id: 'MISI KAMI' }),
+    title: item.title ?? '',
+    description: item.description ?? '',
+    image: item.image ?? item.imageUrl ?? item.image_url ?? '',
+    align: item.align ?? (index === 0 ? 'left' : 'right'),
+  }));
+
+  ['vision', 'missions', 'layout', 'columns'].forEach((key) => {
+    if (data[key] !== undefined) delete data[key];
+  });
+}
+
 function normalizeContactUsComponent(data: Record<string, any>): void {
   const intro = ensureIntro(data);
 
@@ -495,6 +603,18 @@ const MIGRATIONS: Record<string, Record<number, ComponentMigration>> = {
       operations: [{ type: 'addField', path: 'info_sections', value: [] }],
     },
   },
+  info_contacts: {
+    1: {
+      toVersion: 1,
+      description: 'Move Info Contact title into intro data and normalize dynamic contact items.',
+      operations: [{ type: 'transform', description: 'Normalize Info Contact settings.', run: normalizeInfoContactsSettings }],
+    },
+    2: {
+      toVersion: 2,
+      description: 'Remove legacy top-level title and description fields.',
+      operations: [{ type: 'transform', description: 'Clean legacy Info Contact fields.', run: normalizeInfoContactsSettings }],
+    },
+  },
   contact_us: {
     1: {
       toVersion: 1,
@@ -524,6 +644,35 @@ const MIGRATIONS: Record<string, Record<number, ComponentMigration>> = {
       toVersion: 3,
       description: 'Normalize child items to title, desc, CTA list, and year.',
       operations: [{ type: 'transform', description: 'Normalize List Report Home child item fields.', run: normalizeListReportHome }],
+    },
+    4: {
+      toVersion: 4,
+      description: 'Remove unused List Report Home layout, name, and data source settings.',
+      operations: [{ type: 'transform', description: 'Clean List Report Home settings.', run: normalizeListReportHomeClean }],
+    },
+  },
+  logo_running: {
+    1: {
+      toVersion: 1,
+      description: 'Normalize logo marquee items.',
+      operations: [{ type: 'transform', description: 'Normalize logo item image and alt fields.', run: normalizeLogoRunningSettings }],
+    },
+    2: {
+      toVersion: 2,
+      description: 'Remove legacy name preset and add CTA list support.',
+      operations: [{ type: 'transform', description: 'Clean Logo Running settings.', run: normalizeLogoRunningSettings }],
+    },
+  },
+  logo_running_with_border: {
+    1: {
+      toVersion: 1,
+      description: 'Normalize bordered logo marquee items.',
+      operations: [{ type: 'transform', description: 'Normalize logo item image and alt fields.', run: normalizeLogoRunningSettings }],
+    },
+    2: {
+      toVersion: 2,
+      description: 'Remove legacy name preset and add CTA list support.',
+      operations: [{ type: 'transform', description: 'Clean Logo Running Border settings.', run: normalizeLogoRunningSettings }],
     },
   },
   maps_coverage_v1: {
@@ -558,6 +707,18 @@ const MIGRATIONS: Record<string, Record<number, ComponentMigration>> = {
         { type: 'addField', path: 'card_style', value: 'cover' },
         { type: 'addField', path: 'display_image', value: true },
       ],
+    },
+  },
+  vision_mission: {
+    1: {
+      toVersion: 1,
+      description: 'Normalize Vision Mission into reference item list.',
+      operations: [{ type: 'transform', description: 'Normalize Vision Mission items.', run: normalizeVisionMissionSettings }],
+    },
+    2: {
+      toVersion: 2,
+      description: 'Remove legacy layout and nested vision/mission fields.',
+      operations: [{ type: 'transform', description: 'Clean Vision Mission settings.', run: normalizeVisionMissionSettings }],
     },
   },
   stock_information: {

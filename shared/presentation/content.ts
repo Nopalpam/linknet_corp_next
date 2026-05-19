@@ -134,11 +134,16 @@ export function mapInfoContactsPresentation(
   options: ContentPresentationOptions
 ): InfoContactsPresentation {
   const { resolveField, introData } = options;
+  const contactItems = Array.isArray(data?.contact_items)
+    ? data?.contact_items
+    : Array.isArray(data?.items)
+      ? data?.items
+      : [];
 
   return {
     introData: buildSharedIntroData(data, resolveField, introData),
-    items: Array.isArray(data?.contact_items)
-      ? data.contact_items.map((item: Record<string, any>, index: number) => ({
+    items: contactItems
+      .map((item: Record<string, any>, index: number) => ({
           id: item.id || `contact-item-${index}`,
           icon: typeof item.icon === 'string' ? item.icon : '',
           label: resolveField(item, 'label'),
@@ -146,7 +151,6 @@ export function mapInfoContactsPresentation(
           href: (typeof item.url === 'string' && item.url) || (typeof item.href === 'string' && item.href) || '',
           target: typeof item.target === 'string' && item.target ? item.target : '_blank',
         }))
-      : [],
   };
 }
 

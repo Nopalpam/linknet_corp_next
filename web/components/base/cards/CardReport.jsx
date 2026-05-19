@@ -37,17 +37,17 @@ export default function CardReport({
   // ==========================================
   if (variant === 'list') {
     const actionHref = suffixHref || downloadUrl;
-    const actionIcon = suffixIcon || <Icon name="download" className='text-current' style={{ '--icon-size': '20px' }} />;
+    const actionIcon = suffixIcon || <Icon name="download" className='text-secondary' style={{ '--icon-size': '24px' }} />;
     const hasMeta = normalizedBadges.length > 0 || category || date;
 
     return (
       <div
-        className={`lnCardReport lnCardReport--list group flex items-center gap-4 rounded-[14px] border border-neutral-100 bg-white p-3 md:p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:border-neutral-200 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] ${className}`}
+        className={`lnCardReport lnCardReport--list flex items-center gap-4 group !pr-5 md:px-3 py-3 rounded-[16px] hover:bg-neutral-50 transition-colors duration-300 ${className}`}
       >
         {/* Left: Icon Badge */}
-        <div className="lnCardReport__iconWrap flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FFF7D8]">
+        <div className="lnCardReport__iconWrap shrink-0 w-10 h-10 md:w-10 md:h-10 flex items-center justify-center">
           {icon ? (
-            <img src={icon} alt="PDF Icon" className="lnCardReport__icon h-9 w-9 object-contain" />
+            <img src={icon} alt="PDF Icon" className="lnCardReport__icon w-full h-full object-cover" />
           ) : (
             // Fallback jika tidak ada icon
             <span className="lnCardReport__iconFallback text-pink-600 font-bold text-xs">PDF</span>
@@ -61,17 +61,17 @@ export default function CardReport({
           rel="noopener noreferrer"
           className="lnCardReport__body flex flex-col flex-1 min-w-0"
         >
-          <h3 className="lnCardReport__title text-body-b4 font-semibold leading-snug text-neutral-950 transition-colors group-hover:text-black">
+          <h3 className="lnCardReport__title text-body-b4 text-black font-regular transition-colors">
             {safeTitle}
           </h3>
           
           {hasMeta ? (
-            <div className="lnCardReport__meta mt-2 flex flex-wrap items-center gap-2 text-caption-c1 text-neutral-500 md:mt-3">
+            <div className="lnCardReport__meta flex flex-wrap items-center gap-3 text-sm text-neutral-400 mt-2 md:mt-3">
               {/* Badges Pill */}
               {normalizedBadges.map((badge, index) => (
                 <span 
                   key={index} 
-                  className="lnCardReport__badge rounded-full bg-[#FFF2B3] px-3 py-1 text-caption-c1 font-semibold text-black transition-colors"
+                  className="lnCardReport__badge px-3 py-1 bg-neutral-50 text-black font-medium rounded-full text-caption-c1 transition-colors group-hover:bg-yellow-500"
                 >
                   {badge}
                 </span>
@@ -79,7 +79,7 @@ export default function CardReport({
               
               {/* Meta Text */}
               {category && <span className="lnCardReport__metaText">{category}</span>}
-              {date && <span className="lnCardReport__metaText before:mr-2 before:inline-block before:h-1 before:w-1 before:rounded-full before:bg-neutral-300 before:align-middle before:content-['']">{date}</span>}
+              {date && <span className="lnCardReport__metaText">{date}</span>}
             </div>
           ) : null}
         </a>
@@ -90,7 +90,7 @@ export default function CardReport({
             target={suffixTarget}
             rel={suffixRel}
             aria-label={suffixLabel}
-            className="lnCardReport__suffixAction ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-100 bg-neutral-50 text-neutral-700 transition-colors duration-300 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black"
+            className="lnCardReport__suffixAction ml-auto mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center text-black transition-colors duration-300 hover:text-yellow-500"
           >
             {typeof actionIcon === 'string' ? (
               <img src={actionIcon} alt="" className="h-8 w-8 object-contain" aria-hidden="true" />
@@ -107,48 +107,45 @@ export default function CardReport({
   // VARIANT 1: COVER CARD (Gambar Atas)
   // ==========================================
   return (
-    <div className={`lnCardReport lnCardReport--cover group flex min-h-[210px] flex-col overflow-hidden rounded-[16px] border border-neutral-100 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-neutral-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] sm:min-h-[230px] ${className}`}>
+    <div className={`lnCardReport lnCardReport--cover flex flex-row bg-white rounded-[16px] h-[180px] shadow-md border border-neutral-50 overflow-hidden transition-shadow duration-300 ${className}`}>
       
-      {/* Top: Cover Image */}
-      <div className="lnCardReport__coverMedia relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-light-2">
+      {/* Left: Cover Image */}
+      <div className="lnCardReport__coverMedia w-[120px] h-auto shrink-0 relative m-1.5">
         {hasImage ? (
           <img 
             src={image} 
             alt={safeTitle} 
-            className="lnCardReport__coverImage h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+            className="lnCardReport__coverImage w-full h-full object-cover rounded-[12px]"
             loading="lazy"
           />
         ) : (
-          <div className="lnCardReport__coverImage lnCardReport__coverImage--fallback flex h-full w-full items-center justify-center bg-light-2">
+          <div className="lnCardReport__coverImage lnCardReport__coverImage--fallback flex h-full w-full items-center justify-center rounded-[12px] bg-light-2">
             <Icon name="download" className="text-secondary" style={{ '--icon-size': '32px' }} />
           </div>
         )}
-        {year && (
-          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-caption-c1 font-bold text-black shadow-sm backdrop-blur">
-            {year}
-          </span>
-        )}
       </div>
 
-      {/* Bottom: Content */}
-      <div className="lnCardReport__coverBody relative z-10 flex flex-1 flex-col justify-between gap-5 bg-white p-4 md:p-5">
+      {/* Right: Content */}
+      <div className="lnCardReport__coverBody p-4 !pl-3 md:p-4 flex flex-col !justify-between flex-1 bg-white relative z-10">
         
         <div className="lnCardReport__coverIntro">
-          <p className="lnCardReport__title line-clamp-3 text-body-b4 font-semibold leading-snug text-neutral-950">
+          {year && (
+            <h3 className="lnCardReport__year text-headline-h5 font-bold text-black mb-1">
+              {year}
+            </h3>
+          )}
+
+          <p className="lnCardReport__title text-body-b4 text-black font-regular mb-4 line-clamp-2">
             {safeTitle}
           </p>
         </div>
 
-        <div className="lnCardReport__coverFooter mt-auto flex items-center justify-between gap-3">
+        <div className="lnCardReport__coverFooter mt-auto">
           {/* {fileSize && (
             <p className="text-caption-c1 text-neutral-400 mb-2">
               File size: {fileSize}
             </p>
           )} */}
-          {fileSize ? (
-            <span className="text-caption-c1 text-neutral-400">{fileSize}</span>
-          ) : <span />}
-          
           <LinknetLink
             href={downloadUrl}
             variant='secondary-plain'
@@ -156,7 +153,7 @@ export default function CardReport({
             iconLeft={<Icon name="download" />}
             target="_blank"
             rel="noopener noreferrer"
-            className="lnCardReport__download !gap-1.5 !py-0 font-semibold hover:!text-yellow-500"
+            className="lnCardReport__download !py-0 !gap-1.5 hover:!text-yellow-500"
           >
             Download
           </LinknetLink>

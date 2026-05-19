@@ -37,8 +37,11 @@ const LATEST_SCHEMA_VERSIONS: Record<string, number> = {
   announcement_list: 2,
   hero: 2,
   hero_section: 2,
+  info_contacts: 2,
   information_list: 2,
-  list_report_home: 3,
+  list_report_home: 4,
+  logo_running: 2,
+  logo_running_with_border: 2,
   milestone: 2,
   maps_coverage_v1: 2,
   report_grid: 2,
@@ -49,6 +52,7 @@ const LATEST_SCHEMA_VERSIONS: Record<string, number> = {
   tv_highlight_sliders: 2,
   tv_highlight_sneek_peak: 2,
   usp_grid_slider: 2,
+  vision_mission: 2,
 };
 
 const REGISTRY_UPDATED_AT = '2026-05-10T00:00:00.000Z';

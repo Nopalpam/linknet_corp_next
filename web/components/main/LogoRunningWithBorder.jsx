@@ -15,6 +15,21 @@ import { hasIntroContent } from '../../../shared/presentation/intro';
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
+function normalizeLogoItem(logo = {}, index = 0) {
+  const resolveText = (value, fallback = '') => {
+    if (value && typeof value === 'object') return value.en || value.id || fallback;
+    return typeof value === 'string' ? value : fallback;
+  };
+  const image = logo.image || logo.img || logo.src || logo.url || '';
+  const altImage = resolveText(logo.altImage || logo.alt_image || logo.alt || logo.name || logo.title, `Logo ${index + 1}`);
+
+  return {
+    id: logo.id || `${altImage}-${index}`,
+    image,
+    altImage,
+  };
+}
+
 export default function LogoRunningWithBorder({ 
   name = 'default', 
   className = "",
@@ -53,7 +68,15 @@ export default function LogoRunningWithBorder({
 
   if (!sectionData) return null;
 
-  const { config, introData, logos, ctaList } = sectionData;
+  const { config, introData, ctaList } = sectionData;
+  const logos = (Array.isArray(sectionData.logos)
+    ? sectionData.logos
+    : Array.isArray(sectionData.items)
+      ? sectionData.items
+      : Array.isArray(sectionData.logo_items)
+        ? sectionData.logo_items
+        : []
+  ).map(normalizeLogoItem).filter((logo) => logo.image);
   const {
     sectionId,
     className: configClassName = "",
@@ -68,7 +91,7 @@ export default function LogoRunningWithBorder({
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
   };
 
-  const duplicatedLogos = logos ? [...logos, ...logos, ...logos] : [];
+  const duplicatedLogos = logos.length > 0 ? [...logos, ...logos, ...logos] : [];
 
   return (
     <section 
@@ -98,7 +121,7 @@ export default function LogoRunningWithBorder({
       `}} />
 
       <div className="container">
-        <div className="py-8 md:py-8 px-6 md:px-12 bg-white border border-neutral rounded-[16px] md:rounded-[24px] overflow-hidden flex flex-col items-start gap-10 md:gap-14 w-full">
+        <div className="py-4 md:py-8 px-6 md:px-12 bg-white border border-neutral rounded-[16px] md:rounded-[24px] overflow-hidden flex flex-col items-start gap-10 md:gap-14 w-full">
         
             {/* HEADER SECTION DENGAN COMPONENT INTRO */}
             {hasIntroContent(introData) && (
@@ -117,13 +140,13 @@ export default function LogoRunningWithBorder({
             {/* LOGO MARQUEE SECTION */}
             {duplicatedLogos.length > 0 && (
             <div className="lnGsapRunningItem w-full overflow-hidden relative [mask-image:_linear-gradient(to_right,transparent_0,_black_150px,_black_calc(100%-150px),transparent_100%)]">
-                <div className="lnAnimateRunningMarqueeLogos items-center gap-12 md:gap-20">
+                <div className="lnAnimateRunningMarqueeLogos items-center gap-12 md:gap-14">
                 {duplicatedLogos.map((logo, idx) => (
                     <img 
-                    key={`${logo.name}-${idx}`} 
-                    src={logo.img} 
-                    alt={logo.name} 
-                    title={logo.name}
+                    key={`${logo.id}-${idx}`}
+                    src={logo.image}
+                    alt={logo.altImage}
+                    title={logo.altImage}
                     className="h-8 md:h-10 object-contain hover:scale-105 transition-transform duration-300 cursor-pointer grayscale-0 opacity-90 hover:opacity-100" 
                     />
                 ))}
@@ -133,13 +156,13 @@ export default function LogoRunningWithBorder({
 
             {/* CTA LIST SECTION */}
             {ctaList && ctaList.length > 0 && (
-              <div className="lnGsapRunningItem w-full">
+              <div className="lnGsapRunningItem">
                 <CTAList
                   ctaList={ctaList}
                   align="left"
                   stackOnMobile
                   ctaClassName="w-full sm:w-auto"
-                  className="justify-center sm:justify-start gap-5"
+                  className="justify-start gap-5"
                   defaultSize="lg"
                 />
               </div>

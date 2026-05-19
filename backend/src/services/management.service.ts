@@ -89,7 +89,11 @@ export class ManagementService {
    * Get active managements (Public)
    */
   async getActiveManagements(categoryId?: string) {
-    const where: any = { is_active: true, deleted_at: null };
+    const where: any = {
+      is_active: true,
+      deleted_at: null,
+      managementCategory: { is: { is_active: true, deleted_at: null } },
+    };
     if (categoryId) where.categoryId = categoryId;
     return prisma.management.findMany({
       where,

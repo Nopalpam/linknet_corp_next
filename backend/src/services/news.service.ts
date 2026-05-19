@@ -178,7 +178,10 @@ function publicNewsWhere(now: Date): Prisma.newsWhereInput {
     status: 'PUBLISHED',
     visibility: 'PUBLIC',
     deleted_at: null,
-    AND: [{ OR: [{ published_at: null }, { published_at: { lte: now } }] }],
+    AND: [
+      { OR: [{ published_at: null }, { published_at: { lte: now } }] },
+      { news_categories: { is: { is_active: true, deleted_at: null } } },
+    ],
   };
 }
 

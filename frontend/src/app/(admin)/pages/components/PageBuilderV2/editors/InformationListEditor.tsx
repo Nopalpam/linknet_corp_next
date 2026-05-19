@@ -29,11 +29,13 @@ function TextField({
   value,
   onChange,
   placeholder,
+  disabled = false,
 }: {
   label: string;
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -41,8 +43,9 @@ function TextField({
       <input
         value={value || ''}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
       />
     </div>
   );
@@ -169,47 +172,34 @@ function SearchableArticleSelect({
   value: Record<string, any>;
   onChange: (patch: Record<string, any>) => void;
 }) {
-  const [query, setQuery] = useState('');
   const [newsItems, setNewsItems] = useState<News[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    const timer = window.setTimeout(() => {
-      setLoading(true);
-      newsService
-        .searchForSelection({
-          limit: 20,
-          search: query.trim() || undefined,
-        })
-        .then((response) => {
-          if (mounted) setNewsItems(Array.isArray(response.data) ? response.data : []);
-        })
-        .catch(() => {
-          if (mounted) setNewsItems([]);
-        })
-        .finally(() => {
-          if (mounted) setLoading(false);
-        });
-    }, 250);
+    setLoading(true);
+    newsService
+      .searchForSelection({ limit: 50 })
+      .then((response) => {
+        if (mounted) setNewsItems(Array.isArray(response.data) ? response.data : []);
+      })
+      .catch(() => {
+        if (mounted) setNewsItems([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
     return () => {
       mounted = false;
-      window.clearTimeout(timer);
     };
-  }, [query]);
+  }, []);
 
   const selectedStillLoaded = newsItems.some((news) => news.id === value.articleId);
 
   return (
     <div className="space-y-2">
       <FieldLabel>Article</FieldLabel>
-      <input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search by article title..."
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-      />
       <select
         value={value.articleId || ''}
         onChange={(event) => {
@@ -222,7 +212,7 @@ function SearchableArticleSelect({
         }}
         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
       >
-        <option value="">{loading ? 'Searching articles...' : 'Select article'}</option>
+        <option value="">{loading ? 'Loading active articles...' : 'Select article'}</option>
         {value.articleId && !selectedStillLoaded && (
           <option value={value.articleId}>{asLangText(value.articleName).en || value.articleId}</option>
         )}
@@ -273,7 +263,13 @@ export function ArticleListModule({
               <MultiTextField label="Article Name" value={item.articleName} onChange={(nextValue) => update({ articleName: nextValue })} />
             )}
             <div className="sm:col-span-2">
-              <TextField label="URL" value={item.url || ''} onChange={(nextValue) => update({ url: nextValue })} placeholder="https://..." />
+              <TextField
+                label="URL"
+                value={item.url || ''}
+                onChange={(nextValue) => update({ url: nextValue })}
+                placeholder="https://..."
+                disabled={item.source === 'database'}
+              />
             </div>
           </div>
         );

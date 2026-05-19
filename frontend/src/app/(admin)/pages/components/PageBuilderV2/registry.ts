@@ -435,8 +435,13 @@ const SYNCED_MAIN_COMPONENTS: ComponentRegistryEntry[] = [
     icon: 'FaFileInvoice',
     category: 'main',
     defaultData: withCommon({
-      name: 'home',
-      source: 'cms_reports_announcements',
+      introData: {
+        as: 'h2',
+        label: { en: '', id: '' },
+        title: { en: 'Reports & Announcements', id: 'Laporan & Pengumuman' },
+        description: { en: '', id: '' },
+        align: 'left',
+      },
       tabs: [
         { label: { en: 'Report', id: 'Laporan' }, value: 'report' },
         { label: { en: 'Announcement', id: 'Pengumuman' }, value: 'announcement' },
@@ -452,8 +457,45 @@ const SYNCED_MAIN_COMPONENTS: ComponentRegistryEntry[] = [
       sort_direction: 'desc',
     }),
   }),
-  syncedMainComponent('logo_running', 'Logo Running', '@/components/main/LogoRunning', { icon: 'FaImage', defaultData: withCommon({ name: 'default' }) }),
-  syncedMainComponent('logo_running_with_border', 'Logo Running With Border', '@/components/main/LogoRunningWithBorder', { icon: 'FaImage', defaultData: withCommon({ name: 'default' }) }),
+  syncedMainComponent('logo_running', 'Logo Running', '@/components/main/LogoRunning', {
+    icon: 'FaImage',
+    defaultData: withCommon({
+      introData: {
+        as: 'h2',
+        label: { en: 'Client', id: 'Klien' },
+        title: { en: 'From SME to national corporations, over 35,000 businesses in Indonesia trust us.', id: 'Dari UKM hingga korporasi nasional, lebih dari 35.000 bisnis di Indonesia mempercayai kami.' },
+        description: { en: '', id: '' },
+        align: 'center',
+      },
+      logos: [{ image: '', altImage: '' }],
+      ctaList: [],
+    }),
+  }),
+  syncedMainComponent('logo_running_with_border', 'Logo Running With Border', '@/components/main/LogoRunningWithBorder', {
+    icon: 'FaImage',
+    defaultData: withCommon({
+      introData: {
+        as: 'h2',
+        label: { en: '', id: '' },
+        title: { en: 'Our Strategic Partnerships', id: 'Kemitraan Strategis Kami' },
+        description: { en: '', id: '' },
+        align: 'left',
+      },
+      logos: [{ image: '', altImage: '' }],
+      ctaList: [
+        {
+          text: { en: '', id: '' },
+          variant: 'secondary-outline',
+          size: 'lg',
+          iconLeft: '',
+          iconRight: '',
+          href: '',
+          link_type: 'url',
+          action_modal: '',
+        },
+      ],
+    }),
+  }),
   syncedMainComponent('maps_coverage_v1', 'Maps Coverage V1', '@/components/main/MapsCoverage-v1', { icon: 'FaMapMarkedAlt', category: 'main' }),
   syncedMainComponent('navbar', 'Navbar', '@/components/main/Navbar', { icon: 'FaListAlt' }),
   syncedMainComponent('navbar_fiber', 'Navbar Fiber', '@/components/main/NavbarFiber', { icon: 'FaListAlt' }),
