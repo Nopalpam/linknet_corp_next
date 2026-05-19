@@ -527,9 +527,9 @@ const INFO_CONTACTS: ComponentTypeDefinition = {
       align: 'center',
     },
     contact_items: [
-      { type: 'phone', icon: 'phone', label: { en: 'Phone', id: 'Telepon' }, value: '+62 21 2996 0808', url: 'tel:+622129960808' },
-      { type: 'email', icon: 'mail', label: { en: 'Email', id: 'Email' }, value: 'info@linknet.co.id', url: 'mailto:info@linknet.co.id' },
-      { type: 'address', icon: 'pin-location', label: { en: 'Address', id: 'Alamat' }, value: 'Jakarta, Indonesia', url: '' },
+      { type: 'phone', icon: 'phone', label: { en: 'Phone', id: 'Telepon' }, value: { en: '+62 21 2996 0808', id: '+62 21 2996 0808' }, url: 'tel:+622129960808' },
+      { type: 'email', icon: 'mail', label: { en: 'Email', id: 'Email' }, value: { en: 'info@linknet.co.id', id: 'info@linknet.co.id' }, url: 'mailto:info@linknet.co.id' },
+      { type: 'address', icon: 'pin-location', label: { en: 'Address', id: 'Alamat' }, value: { en: 'Jakarta, Indonesia', id: 'Jakarta, Indonesia' }, url: '' },
     ],
   }),
 };
@@ -1568,7 +1568,18 @@ const SYNCED_MAIN_COMPONENTS: ComponentTypeDefinition[] = [
         align: 'center',
       },
       logos: [{ image: '', altImage: '' }],
-      ctaList: [],
+      ctaList: [
+        {
+          text: { en: '', id: '' },
+          variant: 'secondary-outline',
+          size: 'lg',
+          iconLeft: '',
+          iconRight: '',
+          href: '',
+          link_type: 'url',
+          action_modal: '',
+        },
+      ],
     }),
   }),
   syncedMainComponent('logo_running_with_border', 'Logo Running With Border', '@/components/main/LogoRunningWithBorder', {

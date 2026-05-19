@@ -149,6 +149,21 @@ function valuesMatch(left: any, right: any): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function normalizeLocalizedText(value: any): { en: string; id: string } {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const en = value.en ?? value.label ?? value.title ?? value.name ?? value.id ?? '';
+    const id = value.id ?? value.label ?? value.title ?? value.name ?? value.en ?? '';
+
+    return {
+      en: en == null || typeof en === 'object' ? '' : String(en),
+      id: id == null || typeof id === 'object' ? '' : String(id),
+    };
+  }
+
+  const text = value == null ? '' : String(value);
+  return { en: text, id: text };
+}
+
 function normalizeLegacyCta(settings: Record<string, any>) {
   const label = settings.cta_label ?? settings.button_label ?? settings.cta_text ?? settings.button_text ?? settings.textCTA ?? settings.ctaText ?? '';
   const href = settings.cta_href ?? settings.button_href ?? settings.cta_link ?? settings.button_link ?? settings.button_url ?? settings.cta_url ?? settings.ctaLink ?? '';
@@ -205,6 +220,21 @@ function canonicalizeComponentSettings(settings: Record<string, any>) {
   }
   for (const key of Object.keys(next)) {
     if (LEGACY_SINGLE_BUTTON_FIELD_KEYS.has(key)) delete next[key];
+  }
+
+  if (Array.isArray(next.contact_items)) {
+    next.contact_items = next.contact_items.map((item: Record<string, any>, index: number) => ({
+      ...(item || {}),
+      id: item?.id || `contact-item-${index + 1}`,
+      type: item?.type ?? '',
+      icon: item?.icon ?? '',
+      iconLeft: item?.iconLeft ?? item?.icon_left ?? item?.icon ?? '',
+      iconRight: item?.iconRight ?? item?.icon_right ?? '',
+      label: normalizeLocalizedText(item?.label),
+      value: normalizeLocalizedText(item?.value ?? item?.text),
+      url: item?.url ?? item?.href ?? '',
+      target: item?.target ?? '_blank',
+    }));
   }
 
   return next;

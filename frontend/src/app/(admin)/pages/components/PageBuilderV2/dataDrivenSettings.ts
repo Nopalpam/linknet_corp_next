@@ -128,11 +128,6 @@ const DATA_DRIVEN_ALLOWED_FIELDS: Record<string, string[]> = {
     ...COMMON_SETTINGS,
     'tabs',
     'items',
-    'report_type_id',
-    'report_section_id',
-    'limit',
-    'sort_by',
-    'sort_direction',
   ],
   maps_coverage_v1: [
     ...COMMON_SETTINGS,
@@ -436,11 +431,15 @@ export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = 
   },
   list_report_home: {
     tabs: 'Tabs',
-    items: 'Child Items per Tab',
+    items: 'Items List',
     title: 'Title',
     desc: 'Desc',
     ctaList: 'CTA List',
     year: 'Year',
+  },
+  info_contacts: {
+    contact_items: 'Contact Items',
+    value: 'Text',
   },
   maps_coverage_v1: {
     name: 'Preset Name',

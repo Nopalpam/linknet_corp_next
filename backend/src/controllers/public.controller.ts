@@ -376,9 +376,11 @@ async function fetchContentHighlightsComponentData(config: Record<string, any>) 
   return { tabs, items };
 }
 
+const DEFAULT_HOME_REPORT_ICON = 'http://localhost:3001/assets/icons/pdf-circle.svg';
+
 const serializeHomeReportCard = (report: any) => ({
   id: report.id,
-  iconSrc: '/assets/icons/pdf-circle.svg',
+  iconSrc: DEFAULT_HOME_REPORT_ICON,
   title: report.report_types?.name || report.report_sections?.name || report.title || '',
   description: report.report_sections?.description || report.description || report.title || '',
   ctaText: 'View More',
@@ -388,7 +390,7 @@ const serializeHomeReportCard = (report: any) => ({
 
 const serializeHomeAnnouncementCard = (announcement: any) => ({
   id: announcement.id,
-  iconSrc: '/assets/icons/pdf-circle.svg',
+  iconSrc: DEFAULT_HOME_REPORT_ICON,
   title: announcement.announcement_types?.name || announcement.announcement_sections?.name || announcement.title || '',
   description: announcement.description || announcement.title || '',
   ctaText: 'View More',
@@ -516,20 +518,20 @@ async function fetchReportsComponentData(config: Record<string, any>, mode: 'gri
           { label: 'Report', value: 'report' },
           { label: 'Announcement', value: 'announcement' },
         ];
-    const manualItems = isPlainObject(config.items) ? config.items : {};
-    const hasManualItems = Object.values(manualItems).some((value) => Array.isArray(value) && value.length > 0);
-    const reportItems = hasManualItems && Array.isArray(manualItems.report)
-      ? manualItems.report
+    const hasConfiguredItems = isPlainObject(config.items);
+    const manualItems = hasConfiguredItems ? config.items : {};
+    const reportItems = hasConfiguredItems
+      ? (Array.isArray(manualItems.report) ? manualItems.report : [])
       : reports.map(serializeHomeReportCard);
-    const announcementItems = hasManualItems && Array.isArray(manualItems.announcement)
-      ? manualItems.announcement
+    const announcementItems = hasConfiguredItems
+      ? (Array.isArray(manualItems.announcement) ? manualItems.announcement : [])
       : announcements.map(serializeHomeAnnouncementCard);
     const items = configuredTabs.reduce<Record<string, any[]>>((acc, tab) => {
       const value = String(tab.value || '').trim();
       if (!value) return acc;
       if (value === 'report') acc[value] = reportItems;
       else if (value === 'announcement') acc[value] = announcementItems;
-      else if (hasManualItems) acc[value] = Array.isArray(manualItems[value]) ? manualItems[value] : [];
+      else if (hasConfiguredItems) acc[value] = Array.isArray(manualItems[value]) ? manualItems[value] : [];
       else {
         acc[value] = serializeReports(reports.filter((report) => report.report_types?.slug === value));
       }

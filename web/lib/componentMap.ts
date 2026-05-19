@@ -1685,29 +1685,48 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     mapProps: ({ data, t, locale, styleProps }) => {
       const introData = extractIntro(data, t, locale);
       const mainData = data.mainData && typeof data.mainData === 'object' ? data.mainData : null;
+      const source = mainData || data;
+      const tabs = Array.isArray(source.tabs)
+        ? source.tabs.map((tab: Record<string, any>, index: number) => ({
+            ...tab,
+            label: t(tab.label) || tab.label || tab.value || `Tab ${index + 1}`,
+            value: typeof tab.value === 'string' ? tab.value : `tab-${index + 1}`,
+          }))
+        : [];
+      const rawItems = source.items && typeof source.items === 'object' && !Array.isArray(source.items)
+        ? source.items
+        : {};
+      const items = tabs.reduce<Record<string, any[]>>((acc, tab: Record<string, any>) => {
+        const tabValue = tab.value || '';
+        if (!tabValue) return acc;
+        const tabItems = Array.isArray(rawItems[tabValue]) ? rawItems[tabValue] : [];
 
-      return passCmsData(
+        acc[tabValue] = tabItems.map((item: Record<string, any>, itemIndex: number) => ({
+          ...item,
+          id: item.id || `${tabValue}-${itemIndex}`,
+          iconSrc: item.iconSrc || item.icon_src || item.icon || undefined,
+          title: localizeField(item, 'title', t, locale),
+          desc: localizeField(item, 'desc', t, locale) || localizeField(item, 'description', t, locale),
+          description: localizeField(item, 'description', t, locale) || localizeField(item, 'desc', t, locale),
+          year: item.year == null ? '' : String(item.year),
+          ctaList: getRawCtaList(item).map((cta, ctaIndex) => normalizeCtaItem(cta, t, ctaIndex)),
+        }));
+
+        return acc;
+      }, {});
+
+      return {
         data,
-        styleProps,
-        {
-          name: data.name || 'home',
-          ...(mainData ? {
-            cmsData: {
-              ...mainData,
-              tabs: Array.isArray(mainData.tabs)
-                ? mainData.tabs.map((tab: Record<string, any>) => ({
-                    ...tab,
-                    label: t(tab.label) || tab.label || tab.value,
-                  }))
-                : mainData.tabs,
-              config: data.config || mainData.config || {},
-              ...(introData ? { introData } : {}),
-            },
-          } : {}),
+        cmsData: {
+          ...source,
+          tabs,
+          items,
+          config: data.config || source.config || {},
+          ...(introData ? { introData } : {}),
         },
-        t,
-        locale
-      );
+        name: data.name || 'home',
+        ...styleProps,
+      };
     },
   },
   logo_running: {

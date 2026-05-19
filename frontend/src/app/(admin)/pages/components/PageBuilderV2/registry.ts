@@ -468,7 +468,18 @@ const SYNCED_MAIN_COMPONENTS: ComponentRegistryEntry[] = [
         align: 'center',
       },
       logos: [{ image: '', altImage: '' }],
-      ctaList: [],
+      ctaList: [
+        {
+          text: { en: '', id: '' },
+          variant: 'secondary-outline',
+          size: 'lg',
+          iconLeft: '',
+          iconRight: '',
+          href: '',
+          link_type: 'url',
+          action_modal: '',
+        },
+      ],
     }),
   }),
   syncedMainComponent('logo_running_with_border', 'Logo Running With Border', '@/components/main/LogoRunningWithBorder', {

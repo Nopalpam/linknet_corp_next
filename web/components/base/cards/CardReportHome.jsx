@@ -1,9 +1,19 @@
 'use client';
 
 import LinknetLink from '../Link'; 
+import Icon from '../Icon';
+
+const DEFAULT_REPORT_ICON_SRC = 'http://localhost:3001/assets/icons/pdf-circle.svg';
+
+function isImageSource(value) {
+  return /^https?:\/\//i.test(value)
+    || value.startsWith('/')
+    || value.startsWith('data:')
+    || /\.(svg|png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(value);
+}
 
 export default function CardReportHome({
-  iconSrc = "/assets/icons/icon-pdf-circle.svg", 
+  iconSrc = "", 
   title = "",
   description = "",
   ctaText = "",
@@ -15,6 +25,7 @@ export default function CardReportHome({
   const primaryCta = Array.isArray(ctaList) && ctaList.length > 0 ? ctaList[0] : null;
   const label = primaryCta?.label || primaryCta?.text || ctaText;
   const href = primaryCta?.href || primaryCta?.url || ctaLink;
+  const resolvedIcon = iconSrc || DEFAULT_REPORT_ICON_SRC;
 
   return (
    <div 
@@ -26,11 +37,19 @@ export default function CardReportHome({
         
         {/* Icon */}
         <div className="lnCardReportHome__iconWrap w-full h-auto mb-6">
-          <img 
-            src={iconSrc} 
-            alt={title ? `${title} icon` : 'Report icon'} 
-            className="lnCardReportHome__icon w-12 h-12 object-contain"
-          />
+          {isImageSource(resolvedIcon) ? (
+            <img
+              src={resolvedIcon}
+              alt={title ? `${title} icon` : 'Report icon'}
+              className="lnCardReportHome__icon w-12 h-12 object-contain"
+            />
+          ) : (
+            <Icon
+              name={resolvedIcon}
+              className="lnCardReportHome__icon text-secondary"
+              style={{ '--icon-size': '48px' }}
+            />
+          )}
         </div>
 
         {/* Title */}

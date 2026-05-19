@@ -40,7 +40,6 @@
     "flatted": "^3.4.2",
     "picomatch": "^4.0.4",
     "minimatch": "^9.0.7",
-    "ajv": "^8.18.0",
     "immutable": "^5.1.5",
     "postcss": "^8.5.14"
   }

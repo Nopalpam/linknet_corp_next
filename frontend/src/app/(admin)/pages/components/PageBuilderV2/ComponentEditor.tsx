@@ -18,7 +18,7 @@
 
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { usePageBuilder } from './context';
 import { getRegistryEntry } from './registry';
@@ -438,7 +438,22 @@ function hasTopLevelSingleButtonFields(data: Record<string, any>): boolean {
   return hasText || hasLink;
 }
 
-function normalizeSettingsForEditor(data: Record<string, any> | undefined): Record<string, any> {
+function normalizeLocalizedText(value: any): { en: string; id: string } {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const en = value.en ?? value.label ?? value.title ?? value.name ?? value.id ?? '';
+    const id = value.id ?? value.label ?? value.title ?? value.name ?? value.en ?? '';
+
+    return {
+      en: en == null || typeof en === 'object' ? '' : String(en),
+      id: id == null || typeof id === 'object' ? '' : String(id),
+    };
+  }
+
+  const text = value == null ? '' : String(value);
+  return { en: text, id: text };
+}
+
+function normalizeSettingsForEditor(data: Record<string, any> | undefined, componentType?: string): Record<string, any> {
   const normalized: Record<string, any> = { ...(data || {}) };
   const introSource = normalized.introData || normalized.sectionIntro || normalized.intro;
 
@@ -486,6 +501,32 @@ function normalizeSettingsForEditor(data: Record<string, any> | undefined): Reco
     if (LEGACY_SINGLE_BUTTON_FIELD_KEYS.has(key)) {
       delete normalized[key];
     }
+  }
+
+  if (componentType === 'info_contacts') {
+    const contactItems = Array.isArray(normalized.contact_items)
+      ? normalized.contact_items
+      : Array.isArray(normalized.items)
+        ? normalized.items
+        : [];
+
+    normalized.contact_items = contactItems.map((item: Record<string, any>) => {
+      const { icon, icon_left, icon_right, type, ...rest } = item || {};
+
+      return {
+        ...rest,
+        iconLeft: rest.iconLeft ?? icon_left ?? icon ?? '',
+        iconRight: rest.iconRight ?? icon_right ?? '',
+        label: normalizeLocalizedText(item.label),
+        value: normalizeLocalizedText(item.value ?? item.text),
+      };
+    });
+
+    delete normalized.items;
+  }
+
+  if (componentType === 'logo_running' || componentType === 'logo_running_with_border') {
+    normalized.ctaList = Array.isArray(normalized.ctaList) ? normalized.ctaList : [];
   }
 
   return normalized;
@@ -602,11 +643,12 @@ function isActionModalField(key: string): boolean {
   ].includes(key);
 }
 
-function shouldHideField(key: string, data: Record<string, any>): boolean {
+function shouldHideField(key: string, data: Record<string, any>, componentType?: string, objectKey?: string): boolean {
+  const isInfoContactItem = componentType === 'info_contacts' && objectKey === 'contact_items';
   const linkType = data.link_type ?? data.linkType;
   if (linkType === 'action-modal' && (key === 'href' || key === 'url')) return true;
   if (isActionModalField(key) && linkType !== 'action-modal') return true;
-  if (isCtaListItem(data) && (key === 'icon' || key === 'iconLeft' || key === 'icon_left' || key === 'iconRight' || key === 'icon_right')) return true;
+  if (!isInfoContactItem && isCtaListItem(data) && (key === 'icon' || key === 'iconLeft' || key === 'icon_left' || key === 'iconRight' || key === 'icon_right')) return true;
 
   const source = data.source;
   if (key === 'reel_names' || key === 'reelNames') return true;
@@ -884,14 +926,13 @@ function SelectField({ label, value, onChange, options, fieldKey, componentType 
 
 function NewsCategorySelectField({ label, value, onChange, fieldKey }: FieldProps) {
   const [categories, setCategories] = useState<NewsCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const useSlugValue = fieldKey === 'categorySlug' || fieldKey === 'category_slug';
   const currentValue = typeof value === 'string' ? value : '';
 
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     newsCategoryService
       .getActiveCategories()
       .then((response) => {
@@ -938,13 +979,12 @@ function NewsCategorySelectField({ label, value, onChange, fieldKey }: FieldProp
 
 function ReportTypeSelectField({ label, value, onChange }: FieldProps) {
   const [types, setTypes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const currentValue = typeof value === 'string' ? value : '';
 
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     reportService
       .getReportTypesList()
       .then((response) => {
@@ -987,14 +1027,13 @@ function ReportTypeSelectField({ label, value, onChange }: FieldProps) {
 
 function ReportSectionSelectField({ label, value, onChange, contextData }: FieldProps) {
   const [sections, setSections] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const reportTypeId = typeof contextData?.report_type_id === 'string' ? contextData.report_type_id : '';
   const currentValue = typeof value === 'string' ? value : '';
 
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     reportService
       .getReportSectionsList(reportTypeId || undefined)
       .then((response) => {
@@ -1037,13 +1076,12 @@ function ReportSectionSelectField({ label, value, onChange, contextData }: Field
 
 function AnnouncementTypeSelectField({ label, value, onChange }: FieldProps) {
   const [types, setTypes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const currentValue = typeof value === 'string' ? value : '';
 
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     announcementService
       .getAnnouncementTypesList()
       .then((response) => {
@@ -1086,14 +1124,13 @@ function AnnouncementTypeSelectField({ label, value, onChange }: FieldProps) {
 
 function AnnouncementSectionSelectField({ label, value, onChange, contextData }: FieldProps) {
   const [sections, setSections] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const announcementTypeId = typeof contextData?.announcement_type_id === 'string' ? contextData.announcement_type_id : '';
   const currentValue = typeof value === 'string' ? value : '';
 
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     announcementService
       .getAnnouncementSectionsList(announcementTypeId || undefined)
       .then((response) => {
@@ -1136,7 +1173,7 @@ function AnnouncementSectionSelectField({ label, value, onChange, contextData }:
 
 function NewsIdsField({ label, value, onChange }: FieldProps) {
   const [newsItems, setNewsItems] = useState<News[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const selectedIds = Array.isArray(value) ? value.filter(Boolean) : [];
   const selectedSet = new Set(selectedIds);
@@ -1154,7 +1191,6 @@ function NewsIdsField({ label, value, onChange }: FieldProps) {
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     newsService
       .getActiveNews({ page: 1, limit: 100, sortBy: 'news_date', sortOrder: 'desc' })
       .then((response) => {
@@ -1309,7 +1345,7 @@ function IconField({ label, value, onChange, fieldKey, componentType }: FieldPro
 
 function AwardIdsField({ label, value, onChange }: FieldProps) {
   const [awards, setAwards] = useState<Award[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const selectedIds = Array.isArray(value) ? value : [];
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -1324,7 +1360,6 @@ function AwardIdsField({ label, value, onChange }: FieldProps) {
   useEffect(() => {
     let mounted = true;
 
-    setLoading(true);
     awardsService
       .getAllAwards('ACTIVE')
       .then((response) => {
@@ -1454,10 +1489,10 @@ const EMPTY_ARRAY_ITEM_TEMPLATES: Record<string, any> = {
     },
   },
   contact_items: {
-    type: '',
-    icon: '',
+    iconLeft: '',
+    iconRight: '',
     label: { en: '', id: '' },
-    value: '',
+    value: { en: '', id: '' },
     url: '',
   },
   logos: {
@@ -1575,6 +1610,15 @@ const CONTEXTUAL_ARRAY_ITEM_TEMPLATES: Record<string, Record<string, any>> = {
       text: { en: '', id: '' },
     },
   },
+  info_contacts: {
+    contact_items: {
+      iconLeft: '',
+      iconRight: '',
+      label: { en: '', id: '' },
+      value: { en: '', id: '' },
+      url: '',
+    },
+  },
 };
 
 const CTA_ARRAY_KEYS = new Set(['ctaList', 'cta_list', 'cta_buttons']);
@@ -1624,7 +1668,7 @@ function getEmptyArrayItemTemplate(fieldKey: string, templateValue?: any, compon
 }
 
 function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue, componentType }: FieldProps) {
-  const items = Array.isArray(value) ? value : [];
+  const items = useMemo(() => (Array.isArray(value) ? value : []), [value]);
   const [collapsed, setCollapsed] = useState(items.length > 3);
   const [minimizedItems, setMinimizedItems] = useState<Record<number, boolean>>(() => {
     // Default: minimize all items if there are many
@@ -2167,6 +2211,9 @@ function renderField(
 }
 
 const CONTEXTUAL_FIELD_ORDER: Record<string, Record<string, string[]>> = {
+  info_contacts: {
+    contact_items: ['iconLeft', 'iconRight', 'label', 'value', 'url', 'target'],
+  },
   usp_grid_slider: {
     items: ['logo', 'title', 'desc', 'ctaList', 'bodyTitle', 'list'],
   },
@@ -2230,9 +2277,23 @@ function ObjectFields({
   objectKey?: string;
   componentType?: string;
 }) {
-  const editorData = data || {};
+  const editorData = componentType === 'info_contacts' && objectKey === 'contact_items'
+    ? (() => {
+        const { icon, icon_left, icon_right, type, ...rest } = data || {};
 
-  if (isCtaListItem(editorData)) {
+        return {
+          ...rest,
+          iconLeft: rest.iconLeft ?? icon_left ?? icon ?? '',
+          iconRight: rest.iconRight ?? icon_right ?? '',
+          label: normalizeLocalizedText(data?.label),
+          value: normalizeLocalizedText(data?.value ?? data?.text),
+        };
+      })()
+    : (data || {});
+
+  const isInfoContactItem = componentType === 'info_contacts' && objectKey === 'contact_items';
+
+  if (!isInfoContactItem && isCtaListItem(editorData)) {
     return (
       <div className={`${depth > 0 ? 'pl-3 border-l-2 border-brand-200 dark:border-brand-800/40' : ''}`}>
         <CtaListModule value={editorData} onChange={onChange} />
@@ -2271,7 +2332,7 @@ function ObjectFields({
   const entries = orderObjectFieldEntries(
     Object.entries(editorData).filter(([key]) =>
       !excludeKeys.includes(key) &&
-      !shouldHideField(key, visibilityContext) &&
+      !shouldHideField(key, visibilityContext, componentType, objectKey) &&
       !shouldHideContextualField(key, componentType, objectKey)
     ),
     componentType,
@@ -2416,7 +2477,7 @@ export function ComponentEditor() {
   const defaultSettings = registryEntry?.defaultData || {};
 
   const handleSettingsChange = (newSettings: ComponentSettings) => {
-    const normalizedSettings = normalizeSettingsForEditor(newSettings);
+    const normalizedSettings = normalizeSettingsForEditor(newSettings, selectedComponent.type);
     updateComponent(
       selectedComponentId,
       isDataDrivenComponent(selectedComponent.type)
@@ -2426,7 +2487,7 @@ export function ComponentEditor() {
   };
 
   // Categorize fields into groups
-  const normalizedSelectedSettings = normalizeSettingsForEditor(selectedComponent.settings || {});
+  const normalizedSelectedSettings = normalizeSettingsForEditor(selectedComponent.settings || {}, selectedComponent.type);
   const settings = isDataDrivenComponent(selectedComponent.type) ? normalizeDataDrivenSettings(selectedComponent.type, {
     ...(selectedComponent.type === 'awards_marquee' ? { award_ids: [] } : {}),
     ...(['news_highlight', 'news_featured'].includes(selectedComponent.type) ? { news_ids: [] } : {}),
@@ -2512,12 +2573,19 @@ export function ComponentEditor() {
       {/* Editor Form — type-specific or grouped sections */}
       <div className="flex-1 overflow-y-auto scroll-smooth">
         {TYPE_SPECIFIC_EDITORS[selectedComponent.type] ? (
-          <div className="p-4">
-            {React.createElement(TYPE_SPECIFIC_EDITORS[selectedComponent.type], {
+          selectedComponent.type === 'list_report_home' ? (
+            React.createElement(TYPE_SPECIFIC_EDITORS[selectedComponent.type], {
               settings,
               onChange: handleSettingsChange,
-            })}
-          </div>
+            })
+          ) : (
+            <div className="p-4">
+              {React.createElement(TYPE_SPECIFIC_EDITORS[selectedComponent.type], {
+                settings,
+                onChange: handleSettingsChange,
+              })}
+            </div>
+          )
         ) : (
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {activeGroups.map(([groupKey, groupData], idx) => {

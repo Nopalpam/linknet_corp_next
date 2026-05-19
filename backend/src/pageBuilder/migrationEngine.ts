@@ -298,12 +298,29 @@ function normalizeInfoContactsSettings(data: Record<string, any>): void {
       ? data.items
       : [];
 
+  const normalizeLocalizedText = (value: any): { en: string; id: string } => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const en = value.en ?? value.label ?? value.title ?? value.name ?? value.id ?? '';
+      const id = value.id ?? value.label ?? value.title ?? value.name ?? value.en ?? '';
+
+      return {
+        en: en == null || typeof en === 'object' ? '' : String(en),
+        id: id == null || typeof id === 'object' ? '' : String(id),
+      };
+    }
+
+    const text = value == null ? '' : String(value);
+    return { en: text, id: text };
+  };
+
   data.contact_items = contactItems.map((item: Record<string, any>, index: number) => ({
     id: item.id || `contact-item-${index + 1}`,
     type: item.type || '',
     icon: item.icon || '',
-    label: item.label ?? { en: '', id: '' },
-    value: item.value ?? item.text ?? '',
+    iconLeft: item.iconLeft ?? item.icon_left ?? item.icon ?? '',
+    iconRight: item.iconRight ?? item.icon_right ?? '',
+    label: normalizeLocalizedText(item.label),
+    value: normalizeLocalizedText(item.value ?? item.text),
     url: item.url ?? item.href ?? '',
     target: item.target ?? '_blank',
   }));

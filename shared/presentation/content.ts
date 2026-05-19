@@ -26,6 +26,8 @@ export type SharedDocumentSection = {
 export type SharedContactItem = {
   id?: string;
   icon?: string;
+  iconLeft?: string;
+  iconRight?: string;
   label?: string;
   value?: string;
   href?: string;
@@ -143,9 +145,11 @@ export function mapInfoContactsPresentation(
   return {
     introData: buildSharedIntroData(data, resolveField, introData),
     items: contactItems
-      .map((item: Record<string, any>, index: number) => ({
+        .map((item: Record<string, any>, index: number) => ({
           id: item.id || `contact-item-${index}`,
           icon: typeof item.icon === 'string' ? item.icon : '',
+          iconLeft: typeof item.iconLeft === 'string' ? item.iconLeft : (typeof item.icon_left === 'string' ? item.icon_left : ''),
+          iconRight: typeof item.iconRight === 'string' ? item.iconRight : (typeof item.icon_right === 'string' ? item.icon_right : ''),
           label: resolveField(item, 'label'),
           value: resolveField(item, 'value'),
           href: (typeof item.url === 'string' && item.url) || (typeof item.href === 'string' && item.href) || '',

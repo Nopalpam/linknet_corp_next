@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Intro from '../base/section/Intro';
 import SegmentPicker from '../base/SegmentPicker';
 import CardReportHome from '../base/cards/CardReportHome';
@@ -14,16 +14,25 @@ import 'swiper/css';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-// Import data konfigurasi
-import { LIST_REPORT_HOME_DATA } from '@/data/components/listReportHome';
-
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
+
+const EMPTY_LIST_REPORT_HOME_DATA = {
+  config: {},
+  introData: null,
+  tabs: [],
+  items: {},
+};
 
 function firstValue(source, keys, fallback = '') {
   for (const key of keys) {
     const value = source?.[key];
-    if (value !== undefined && value !== null && value !== '') return value;
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const localized = value.id ?? value.en ?? value.label ?? value.title ?? value.name ?? '';
+      if (localized !== undefined && localized !== null && localized !== '') return String(localized);
+      continue;
+    }
+    if (value !== undefined && value !== null && value !== '') return String(value);
   }
   return fallback;
 }
@@ -38,7 +47,7 @@ function normalizeCtaList(item = {}) {
       href: firstValue(cta, ['href', 'url', 'ctaLink', 'cta_link'], '#'),
       variant: cta.variant || 'secondary-outline',
       size: cta.size || 'md',
-    })).filter((cta) => cta.label || cta.text || cta.href);
+    })).filter((cta) => cta.label || cta.text);
   }
 
   const label = firstValue(item, ['ctaText', 'cta_text', 'buttonText', 'button_text']);
@@ -49,7 +58,7 @@ function normalizeCtaList(item = {}) {
 function normalizeReportHomeItem(item = {}, index = 0) {
   return {
     id: item.id || `report-home-${index}`,
-    iconSrc: firstValue(item, ['iconSrc', 'icon_src', 'icon']),
+    iconSrc: firstValue(item, ['iconSrc', 'icon_src', 'icon'], null),
     title: firstValue(item, ['title']),
     desc: firstValue(item, ['desc', 'description']),
     ctaList: normalizeCtaList(item),
@@ -66,14 +75,14 @@ export default function ListReportHome({
   const containerRef = useRef(null); // Ref untuk scope GSAP
 
   // Ambil data berdasarkan key 'name'
-  const sectionData = cmsData || LIST_REPORT_HOME_DATA[name];
-
-  // Set default tab yang aktif saat komponen pertama kali di-render
-  useEffect(() => {
-    if (sectionData?.tabs?.length > 0) {
-      setActiveTab(sectionData.tabs[0].value);
-    }
-  }, [sectionData]);
+  const hasCmsData = cmsData !== null && cmsData !== undefined;
+  const sectionData = hasCmsData ? cmsData : EMPTY_LIST_REPORT_HOME_DATA;
+  const tabs = useMemo(() => (Array.isArray(sectionData?.tabs) ? sectionData.tabs : []), [sectionData]);
+  const activeTabValue = useMemo(() => {
+    if (tabs.length === 0) return '';
+    const hasActiveTab = tabs.some((tab) => tab.value === activeTab);
+    return hasActiveTab ? activeTab : tabs[0].value;
+  }, [activeTab, tabs]);
 
   // =========================================
   // SETUP ANIMASI GSAP 1: Initial Scroll Header
@@ -104,7 +113,7 @@ export default function ListReportHome({
   // SETUP ANIMASI GSAP 2: Swiper Cards (Scroll & Tab Change)
   // =========================================
   useEffect(() => {
-    if (!activeTab) return;
+    if (!activeTabValue) return;
 
     let ctx = gsap.context(() => {
       // Tambahkan ScrollTrigger di dalam fromTo agar saat awal load,
@@ -130,12 +139,12 @@ export default function ListReportHome({
     }, containerRef);
 
     return () => ctx.revert();
-  }, [activeTab]);
+  }, [activeTabValue]);
 
   // Cegah error jika data tidak ditemukan
   if (!sectionData) return null;
 
-  const { config, introData, tabs, items } = sectionData;
+  const { config, introData, items } = sectionData;
   const {
     sectionId,
     className: configClassName = '',
@@ -150,8 +159,8 @@ export default function ListReportHome({
   };
 
   // Mengambil daftar array card sesuai dengan tab yang sedang aktif
-  const activeItems = Array.isArray(items?.[activeTab])
-    ? items[activeTab].map(normalizeReportHomeItem)
+  const activeItems = Array.isArray(items?.[activeTabValue])
+    ? items[activeTabValue].map(normalizeReportHomeItem)
     : [];
 
   return (
@@ -188,7 +197,7 @@ export default function ListReportHome({
             <div className="flex justify-start lg:justify-end shrink-0 lnGsapReportHeader">
               <SegmentPicker
                 options={tabs}
-                value={activeTab}
+                value={activeTabValue}
                 onChange={(selectedValue) => setActiveTab(selectedValue)}
               />
             </div>

@@ -81,7 +81,6 @@
     "flatted": "^3.4.2",
     "picomatch": "^4.0.4",
     "minimatch": "^9.0.7",
-    "ajv": "^8.18.0",
     "follow-redirects": "^1.15.12",
     "postcss": "^8.5.14"
   }

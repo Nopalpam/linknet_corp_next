@@ -30,6 +30,33 @@ function normalizeLogoItem(logo = {}, index = 0) {
   };
 }
 
+function normalizeCtaList(sectionData = {}) {
+  const ctaSource = sectionData.ctaList
+    || sectionData.cta_list
+    || sectionData.ctaButtons
+    || sectionData.cta_buttons
+    || sectionData.buttons;
+
+  if (Array.isArray(ctaSource)) return ctaSource;
+
+  const text = sectionData.cta_text || sectionData.ctaText || sectionData.button_text || sectionData.buttonText;
+  const href = sectionData.cta_link || sectionData.ctaLink || sectionData.cta_url || sectionData.ctaUrl || sectionData.button_link || sectionData.buttonLink;
+
+  if (!text && !href) return [];
+
+  return [{
+    text,
+    href: href || '#',
+    variant: sectionData.cta_variant || sectionData.ctaVariant || sectionData.button_variant || 'primary',
+    size: sectionData.cta_size || sectionData.ctaSize || sectionData.button_size || 'lg',
+    iconLeft: sectionData.cta_icon_left || sectionData.ctaIconLeft || sectionData.button_icon_left || '',
+    iconRight: sectionData.cta_icon_right || sectionData.ctaIconRight || sectionData.button_icon_right || '',
+    link_type: sectionData.cta_link_type || sectionData.ctaLinkType || sectionData.link_type || 'url',
+    action_modal: sectionData.cta_action_modal || sectionData.ctaActionModal || sectionData.action_modal || '',
+    target: sectionData.cta_target || sectionData.ctaTarget || sectionData.target,
+  }];
+}
+
 export default function LogoRunning({ 
   name = 'default', 
   className = "",
@@ -68,7 +95,8 @@ export default function LogoRunning({
 
   if (!sectionData) return null;
 
-  const { config, introData, ctaList } = sectionData;
+  const { config, introData } = sectionData;
+  const ctaList = normalizeCtaList(sectionData);
   const logos = (Array.isArray(sectionData.logos)
     ? sectionData.logos
     : Array.isArray(sectionData.items)
