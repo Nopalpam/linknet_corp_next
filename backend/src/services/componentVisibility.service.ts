@@ -63,15 +63,47 @@ export class ComponentVisibilityService {
   }
 
   /**
-   * Get active component keys (for filtering Page Builder)
+   * Get component keys explicitly marked INACTIVE.
+   * Components without a visibility row remain ACTIVE for backward compatibility.
+   */
+  static async getInactiveComponentKeys(): Promise<Set<string>> {
+    try {
+      const inactiveEntries = await prisma.componentVisibility.findMany({
+        where: { status: 'INACTIVE' },
+        select: { componentKey: true },
+      });
+      return new Set(inactiveEntries.map((e) => e.componentKey));
+    } catch {
+      return new Set();
+    }
+  }
+
+  /**
+   * Backward-compatible alias kept for older call sites.
    */
   static async getActiveComponentKeys(): Promise<Set<string>> {
-    const inactiveEntries = await prisma.componentVisibility.findMany({
-      where: { status: 'INACTIVE' },
-      select: { componentKey: true },
+    return this.getInactiveComponentKeys();
+  }
+
+  static async isComponentTypeActive(componentKey: string): Promise<boolean> {
+    const entry = await prisma.componentVisibility.findUnique({
+      where: { componentKey },
+      select: { status: true },
     });
-    // Returns keys that are explicitly INACTIVE (rest default to ACTIVE)
-    return new Set(inactiveEntries.map((e) => e.componentKey));
+
+    return !entry || entry.status === 'ACTIVE';
+  }
+
+  static async assertComponentTypeActive(componentKey: string) {
+    const isActive = await this.isComponentTypeActive(componentKey);
+    if (!isActive) {
+      throw new AppError(`Component '${componentKey}' is inactive and cannot be used`, 400);
+    }
+  }
+
+  static async getVisibleComponentTypes() {
+    const inactiveKeys = await this.getInactiveComponentKeys();
+    return ALL_COMPONENT_TYPES.filter((componentType) => !inactiveKeys.has(componentType.type));
   }
 
   /**

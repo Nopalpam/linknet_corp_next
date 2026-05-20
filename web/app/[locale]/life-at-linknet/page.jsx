@@ -9,13 +9,22 @@ import VisionMission from '@/components/main/VisionMission';
 import Milestone from '@/components/main/Milestone';
 import AwardsFeed from '@/components/main/AwardsFeed';
 import AwardSneakPeek from '@/components/main/AwardSneakPeek';
+import { getPublicSettings } from '@/lib/cmsApi';
+import { buildBasicMetadata } from '@/lib/seo';
 
 
-// Anda bisa menambahkan metadata untuk SEO di sini
-export const metadata = {
-  title: "Let's Discover the Possibilities Together!",
-  description: 'Kumpulan berita, siaran pers, dan program CSR terbaru dari Link Net.',
-};
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  const publicSettings = await getPublicSettings();
+
+  return buildBasicMetadata({
+    title: "Let's Discover the Possibilities Together!",
+    description: 'Life at Link Net, culture, people, and career stories.',
+    locale,
+    path: 'life-at-linknet',
+    publicSettings,
+  });
+}
 
 export default function CareerPage() {
   return (

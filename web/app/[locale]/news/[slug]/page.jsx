@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getPublicNews, getPublicNewsBySlug, getPublicSettings } from '@/lib/cmsApi';
 import NewsDetail from '@/components/main/NewsDetail';
 import NewsRelated from '@/components/main/NewsRelated';
+import { buildBasicMetadata, stripHtml } from '@/lib/seo';
 
 // Fungsi untuk meningkatkan performa SEO & Speed (Next.js 15+)
 export async function generateStaticParams() {
@@ -12,24 +13,28 @@ export async function generateStaticParams() {
 // Fungsi untuk Meta Data Dinamis (SEO)
 export async function generateMetadata({ params }) {
   const { locale, slug } = await params;
-  const article = await getPublicNewsBySlug(slug, { track: false });
+  const [article, publicSettings] = await Promise.all([
+    getPublicNewsBySlug(slug, { track: false }),
+    getPublicSettings(),
+  ]);
 
   if (!article) return { title: 'News Not Found' };
 
   const localizedTitle = locale === 'id' && article.title_id ? article.title_id : (article.title_en || article.title || 'News');
   const localizedExcerpt = locale === 'id' && article.excerpt_id ? article.excerpt_id : (article.excerpt_en || article.excerpt || '');
   const title = article.meta_title || localizedTitle;
-  const description = article.meta_description || article.meta_desc || localizedExcerpt || undefined;
+  const description = article.meta_description || article.meta_desc || stripHtml(localizedExcerpt) || undefined;
 
-  return {
+  return buildBasicMetadata({
     title,
     description,
-    openGraph: {
-      title,
-      description,
-      images: article.news_thumbnail ? [article.news_thumbnail] : undefined,
-    },
-  };
+    keywords: article.meta_keywords,
+    image: article.news_thumbnail,
+    locale,
+    path: `news/${slug}`,
+    publicSettings,
+    titleAbsolute: Boolean(article.meta_title),
+  });
 }
 
 export default async function NewsDetailPage({ params }) {

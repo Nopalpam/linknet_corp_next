@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { ContentStatus, Prisma, PrismaClient, PageStatus } from '@prisma/client';
-import { isMainComponent, ALL_COMPONENT_TYPES } from '../constants/componentDefaults';
+import { isMainComponent } from '../constants/componentDefaults';
 import { syncComponentInstance } from '../pageBuilder/migrationEngine';
 import { getComponentSchema } from '../pageBuilder/schemaRegistry';
 import { MapCoverageService } from '../services/mapCoverage.service';
+import { ComponentVisibilityService } from '../services/componentVisibility.service';
 import {
   buildStateWhere as buildEventStateWhere,
   EVENT_LIST_INCLUDE,
@@ -37,6 +38,7 @@ const pageRenderSelect = {
   createdAt: true,
   updatedAt: true,
   components: {
+    where: { isVisible: true },
     orderBy: {
       order: 'asc' as const,
     },
@@ -68,6 +70,12 @@ const normalizePublicPageSlug = (value: string): string => {
   }
 
   return segments.join('/');
+};
+
+const filterInactiveComponents = async (components: any[]) => {
+  const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
+  if (inactiveKeys.size === 0) return components;
+  return components.filter((component) => !inactiveKeys.has(component.type));
 };
 
 const toJsonSafeValue = (value: any): any => {
@@ -1104,9 +1112,11 @@ export const getAvailableComponents = async (
   res: Response
 ): Promise<void> => {
   try {
+    const componentTypes = await ComponentVisibilityService.getVisibleComponentTypes();
+
     res.json({
       success: true,
-      data: ALL_COMPONENT_TYPES.map((ct) => ({
+      data: componentTypes.map((ct) => ({
         schemaVersion: getComponentSchema(ct.type)?.version || 1,
         fields: getComponentSchema(ct.type)?.fields || [],
         metadata: getComponentSchema(ct.type)?.metadata || {},
@@ -1158,8 +1168,10 @@ export const getPublicPageBySlug = async (
     }
 
     // For MAIN components, fetch additional data
+    const visibleComponents = await filterInactiveComponents(page.components);
+
     const componentsWithData = await Promise.all(
-      page.components.map(async (c: any) => {
+      visibleComponents.map(async (c: any) => {
         const synced = syncComponentInstance(c.type, c.data);
         const componentData = synced.instance.data;
         const base = {
@@ -1256,7 +1268,7 @@ export const getPagePreview = async (
       success: true,
       data: {
         ...page,
-        components: page.components.map((c: any) => ({
+        components: (await filterInactiveComponents(page.components)).map((c: any) => ({
           id: c.id,
           type: c.type,
           data: syncComponentInstance(c.type, c.data).instance,

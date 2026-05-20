@@ -61,17 +61,20 @@ export async function generateMetadata({
     return { title: "Page Not Found" };
   }
 
+  const title = page.metaTitle || page.title || "Page";
+  const description = page.metaDescription || undefined;
+
   return {
-    title: page.metaTitle || page.title,
-    description: page.metaDescription || undefined,
+    title: page.metaTitle ? { absolute: title } : title,
+    description,
     keywords: page.metaKeywords || undefined,
     robots: {
       index: !page.noindex,
       follow: !page.nofollow,
     },
     openGraph: {
-      title: page.metaTitle || page.title,
-      description: page.metaDescription || undefined,
+      title,
+      description,
       images: page.ogImage ? [{ url: page.ogImage }] : undefined,
     },
   };

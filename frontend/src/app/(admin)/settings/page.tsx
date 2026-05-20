@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import { settingsService } from "@/services";
+import { logActivityService, settingsService } from "@/services";
 
 const CKEditorWrapper = dynamic(() => import("@/components/ui/ckeditor/CKEditorWrapper"), {
   ssr: false,
@@ -28,6 +28,8 @@ type ArrayFieldConfig = {
   emptyItem: Record<string, string>;
   fields: Array<{ key: string; label: string; type?: string; options?: string[] }>;
 };
+
+type LogCleanupMode = "olderThan" | "range" | "all";
 
 const TAB_CONFIGS = [
   {
@@ -77,6 +79,12 @@ const TAB_CONFIGS = [
     label: "Pages",
     description: "Pengaturan preview URL untuk halaman yang dibuat melalui Page Builder.",
     groups: ["pages"],
+  },
+  {
+    id: "maintenance",
+    label: "Maintenance",
+    description: "Cleanup data operasional CMS seperti activity log agar database tetap ringan.",
+    groups: [],
   },
 ];
 
@@ -228,6 +236,13 @@ const SettingsPage = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [editedValues, setEditedValues] = useState<Record<string, { key: string; value: any }>>({});
   const [activeGroup, setActiveGroup] = useState("");
+  const [logCleanupMode, setLogCleanupMode] = useState<LogCleanupMode>("olderThan");
+  const [logDaysToKeep, setLogDaysToKeep] = useState(90);
+  const [logDateFrom, setLogDateFrom] = useState("");
+  const [logDateTo, setLogDateTo] = useState("");
+  const [confirmLogCleanupOpen, setConfirmLogCleanupOpen] = useState(false);
+  const [logCleanupPending, setLogCleanupPending] = useState(false);
+  const [logCleanupSummary, setLogCleanupSummary] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -301,6 +316,52 @@ const SettingsPage = () => {
     }
   };
 
+  const openLogCleanupConfirm = () => {
+    setError(null);
+    setSuccess(null);
+
+    if (logCleanupMode === "olderThan" && (!Number.isFinite(logDaysToKeep) || logDaysToKeep <= 0)) {
+      setError("Days to keep harus lebih dari 0");
+      return;
+    }
+
+    if (logCleanupMode === "range" && !logDateFrom && !logDateTo) {
+      setError("Pilih minimal start date atau end date untuk delete by range");
+      return;
+    }
+
+    setConfirmLogCleanupOpen(true);
+  };
+
+  const confirmLogCleanup = async () => {
+    setLogCleanupPending(true);
+    setError(null);
+    setSuccess(null);
+    setLogCleanupSummary(null);
+
+    try {
+      const response =
+        logCleanupMode === "olderThan"
+          ? await logActivityService.cleanupOldLogs(logDaysToKeep)
+          : await logActivityService.deleteActivityLogs(
+              logCleanupMode === "all"
+                ? { mode: "all" }
+                : { mode: "range", dateFrom: logDateFrom || undefined, dateTo: logDateTo || undefined }
+            );
+
+      const deletedCount = (response as any).data?.deletedCount ?? (response as any).deletedCount ?? 0;
+      const summary = `Log activity cleanup selesai. ${deletedCount} log dihapus.`;
+      setLogCleanupSummary(summary);
+      setSuccess(summary);
+      setConfirmLogCleanupOpen(false);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error: any) {
+      setError(error.message || "Gagal menghapus log activity");
+    } finally {
+      setLogCleanupPending(false);
+    }
+  };
+
   const groupedSettings = useMemo(() => {
     const grouped = settings.filter((setting) => !DEPRECATED_KEYS.has(setting.key)).reduce((acc, setting) => {
       const group = setting.group || setting.key.split(".")[0] || "general";
@@ -318,7 +379,7 @@ const SettingsPage = () => {
     return TAB_CONFIGS.map((tab) => [
       tab.id,
       tab.groups.flatMap((group) => groupedSettings[group] || []).sort(sortSettings),
-    ] as [string, Setting[]]).filter(([, tabSettings]) => tabSettings.length > 0);
+    ] as [string, Setting[]]).filter(([group, tabSettings]) => group === "maintenance" || tabSettings.length > 0);
   }, [groupedSettings]);
 
   useEffect(() => {
@@ -585,6 +646,128 @@ const SettingsPage = () => {
     }
   };
 
+  const renderMaintenancePanel = () => (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-900/30">
+        <div className="flex flex-col gap-1">
+          <h4 className="text-base font-semibold text-black dark:text-white">Log Activity Cleanup</h4>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Soft-delete log activity yang sudah tidak dibutuhkan. Data tidak disentuh sampai admin mengonfirmasi.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <label className="rounded-lg border border-stroke bg-white p-4 dark:border-strokedark dark:bg-boxdark">
+            <div className="flex items-start gap-3">
+              <input
+                type="radio"
+                name="logCleanupMode"
+                value="olderThan"
+                checked={logCleanupMode === "olderThan"}
+                onChange={() => setLogCleanupMode("olderThan")}
+                className="mt-1"
+              />
+              <div>
+                <p className="text-sm font-medium text-black dark:text-white">Delete older logs</p>
+                <p className="mt-1 text-xs text-gray-500">Hapus log lebih lama dari jumlah hari tertentu.</p>
+              </div>
+            </div>
+          </label>
+          <label className="rounded-lg border border-stroke bg-white p-4 dark:border-strokedark dark:bg-boxdark">
+            <div className="flex items-start gap-3">
+              <input
+                type="radio"
+                name="logCleanupMode"
+                value="range"
+                checked={logCleanupMode === "range"}
+                onChange={() => setLogCleanupMode("range")}
+                className="mt-1"
+              />
+              <div>
+                <p className="text-sm font-medium text-black dark:text-white">Delete by date range</p>
+                <p className="mt-1 text-xs text-gray-500">Hapus log berdasarkan tanggal awal dan/atau akhir.</p>
+              </div>
+            </div>
+          </label>
+          <label className="rounded-lg border border-danger/30 bg-danger/5 p-4 dark:border-danger/40">
+            <div className="flex items-start gap-3">
+              <input
+                type="radio"
+                name="logCleanupMode"
+                value="all"
+                checked={logCleanupMode === "all"}
+                onChange={() => setLogCleanupMode("all")}
+                className="mt-1"
+              />
+              <div>
+                <p className="text-sm font-medium text-danger">Delete all logs</p>
+                <p className="mt-1 text-xs text-gray-500">Hapus semua activity log aktif dengan soft delete.</p>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {logCleanupMode === "olderThan" && (
+            <label className="space-y-2">
+              <span className="text-sm font-medium text-black dark:text-white">Days to keep</span>
+              <input
+                type="number"
+                min={1}
+                value={logDaysToKeep}
+                onChange={(event) => setLogDaysToKeep(Number(event.target.value))}
+                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+              />
+            </label>
+          )}
+
+          {logCleanupMode === "range" && (
+            <>
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-black dark:text-white">Start date</span>
+                <input
+                  type="date"
+                  value={logDateFrom}
+                  onChange={(event) => setLogDateFrom(event.target.value)}
+                  className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-black dark:text-white">End date</span>
+                <input
+                  type="date"
+                  value={logDateTo}
+                  onChange={(event) => setLogDateTo(event.target.value)}
+                  className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+                />
+              </label>
+            </>
+          )}
+        </div>
+
+        {logCleanupSummary && (
+          <div className="mt-4 rounded-lg border border-success/20 bg-success/10 p-3 text-sm font-medium text-success">
+            {logCleanupSummary}
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Semua proses menggunakan soft delete agar cleanup tetap aman.
+          </p>
+          <button
+            type="button"
+            onClick={openLogCleanupConfirm}
+            disabled={logCleanupPending}
+            className="inline-flex items-center justify-center rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {logCleanupPending ? "Deleting..." : "Delete Log Activity"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <>
@@ -633,7 +816,7 @@ const SettingsPage = () => {
           </div>
         )}
 
-        {settings.length > 0 ? (
+        {groupEntries.length > 0 ? (
           <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside className="lg:sticky lg:top-6 lg:self-start">
               <div className="rounded-lg border border-stroke bg-white p-3 shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -695,45 +878,51 @@ const SettingsPage = () => {
                   {activeTabConfig?.description}
                 </p>
                 <p className="mt-2 text-xs text-gray-400">
-                  {activeSettings.length} setting{activeSettings.length === 1 ? "" : "s"}
+                  {activeGroup === "maintenance"
+                    ? "Maintenance tools"
+                    : `${activeSettings.length} setting${activeSettings.length === 1 ? "" : "s"}`}
                 </p>
               </div>
 
-              <div className="space-y-8">
-                {Object.entries(groupedActiveSettings).map(([section, sectionSettings]) => (
-                  <div key={section || "default"} className="space-y-4">
-                    {section && (
-                      <div className="border-b border-gray-100 pb-2 dark:border-gray-800">
-                        <h4 className="text-sm font-semibold text-black dark:text-white">{section}</h4>
-                      </div>
-                    )}
-                    <div className="grid gap-6 md:grid-cols-2">
-                      {sectionSettings.map((setting) => (
-                        <div
-                          key={setting.id}
-                          className={`space-y-2 rounded-lg border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-900/30 ${
-                            isWideSetting(setting) ? "md:col-span-2" : ""
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <label className="text-sm font-medium text-black dark:text-white">{getFieldLabel(setting)}</label>
-                              <p className="mt-0.5 break-words text-xs text-gray-400">{setting.key}</p>
-                              {setting.description && (
-                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{setting.description}</p>
+              {activeGroup === "maintenance" ? (
+                renderMaintenancePanel()
+              ) : (
+                <div className="space-y-8">
+                  {Object.entries(groupedActiveSettings).map(([section, sectionSettings]) => (
+                    <div key={section || "default"} className="space-y-4">
+                      {section && (
+                        <div className="border-b border-gray-100 pb-2 dark:border-gray-800">
+                          <h4 className="text-sm font-semibold text-black dark:text-white">{section}</h4>
+                        </div>
+                      )}
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {sectionSettings.map((setting) => (
+                          <div
+                            key={setting.id}
+                            className={`space-y-2 rounded-lg border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-900/30 ${
+                              isWideSetting(setting) ? "md:col-span-2" : ""
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <label className="text-sm font-medium text-black dark:text-white">{getFieldLabel(setting)}</label>
+                                <p className="mt-0.5 break-words text-xs text-gray-400">{setting.key}</p>
+                                {setting.description && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{setting.description}</p>
+                                )}
+                              </div>
+                              {setting.isPublic && (
+                                <span className="shrink-0 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Public</span>
                               )}
                             </div>
-                            {setting.isPublic && (
-                              <span className="shrink-0 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Public</span>
-                            )}
+                            {renderInput(setting)}
                           </div>
-                          {renderInput(setting)}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         ) : (
@@ -742,6 +931,40 @@ const SettingsPage = () => {
           </div>
         )}
       </div>
+
+      {confirmLogCleanupOpen && (
+        <div className="fixed inset-0 z-99999 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+            <h3 className="text-lg font-semibold text-black dark:text-white">Confirm Log Cleanup</h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              This action will soft-delete matching activity logs. Continue?
+            </p>
+            <div className="mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+              {logCleanupMode === "olderThan" && `Delete logs older than ${logDaysToKeep} day(s).`}
+              {logCleanupMode === "range" && `Delete logs from ${logDateFrom || "the beginning"} to ${logDateTo || "now"}.`}
+              {logCleanupMode === "all" && "Delete all active activity logs."}
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmLogCleanupOpen(false)}
+                disabled={logCleanupPending}
+                className="rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-strokedark dark:text-gray-300 dark:hover:bg-white/[0.03]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogCleanup}
+                disabled={logCleanupPending}
+                className="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {logCleanupPending ? "Deleting..." : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

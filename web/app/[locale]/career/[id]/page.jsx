@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import CareerDetail from '@/components/main/CareerDetail'; // Sesuaikan path ini
+import { getPublicSettings } from '@/lib/cmsApi';
+import { buildBasicMetadata } from '@/lib/seo';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -60,7 +62,10 @@ async function getRelatedCareers(career, limit = 4) {
 export async function generateMetadata({ params }) {
   const resolvedParams = await params; // Wajib di-await di Next.js 14/15
   const { id, locale } = resolvedParams;
-  const career = await getCareerBySlug(id);
+  const [career, publicSettings] = await Promise.all([
+    getCareerBySlug(id),
+    getPublicSettings(),
+  ]);
 
   if (!career) return { title: 'Career Not Found | Link Net' };
 
@@ -70,10 +75,13 @@ export async function generateMetadata({ params }) {
 
   const plainDescription = stripHtml(localizedDescription).substring(0, 160);
 
-  return {
+  return buildBasicMetadata({
     title: `We're Hiring ${career.position}`,
     description: plainDescription || 'Career opportunity at Link Net',
-  };
+    locale,
+    path: `career/${id}`,
+    publicSettings,
+  });
 }
 
 // 3. KOMPONEN UTAMA (Wajib tangkap 'id')

@@ -32,6 +32,7 @@ import {
 } from './registry';
 import { normalizeDataDrivenSettings } from './dataDrivenSettings';
 import { pagesService } from '@/services/pages.service';
+import { componentVisibilityService } from '@/services/componentVisibility.service';
 import { DEFAULT_SECTION_INTRO } from '../../../../../../../shared/presentation/intro';
 
 // =============================================================================
@@ -560,6 +561,8 @@ interface PageBuilderContextValue {
   // Computed
   getComponent: (id: string) => PageComponent | undefined;
   selectedComponent: PageComponent | null;
+  inactiveComponentTypes: Set<string>;
+  isComponentTypeActive: (type: string) => boolean;
 }
 
 const PageBuilderContext = createContext<PageBuilderContextValue | null>(null);
@@ -584,6 +587,7 @@ export function PageBuilderProvider({
 
   // Separate selection state (not part of persistence)
   const [selectedComponentId, setSelectedComponentId] = React.useState<string | null>(null);
+  const [inactiveComponentTypes, setInactiveComponentTypes] = React.useState<Set<string>>(new Set());
 
   // Load page components on mount
   useEffect(() => {
@@ -591,8 +595,14 @@ export function PageBuilderProvider({
       dispatch({ type: 'LOAD_START' });
 
       try {
-        const response = await pagesService.getPageById(pageId);
-        const components = pageComponentsFromApi(response.data);
+        const [response, visibilityResponse] = await Promise.all([
+          pagesService.getPageById(pageId),
+          componentVisibilityService.getInactiveKeys(),
+        ]);
+        const inactiveTypes = new Set(visibilityResponse.data || []);
+        setInactiveComponentTypes(inactiveTypes);
+        const components = pageComponentsFromApi(response.data)
+          .filter((component) => !inactiveTypes.has(component.type));
 
         dispatch({ type: 'LOAD_SUCCESS', components });
       } catch (error) {
@@ -611,8 +621,13 @@ export function PageBuilderProvider({
 
   // Actions
   const addComponent = useCallback((type: string, index?: number) => {
+    if (inactiveComponentTypes.has(type)) {
+      console.warn(`[PageBuilder] Component '${type}' is inactive and cannot be added.`);
+      return;
+    }
+
     dispatch({ type: 'ADD_COMPONENT', componentType: type, index });
-  }, []);
+  }, [inactiveComponentTypes]);
 
   const removeComponent = useCallback((id: string) => {
     dispatch({ type: 'REMOVE_COMPONENT', componentId: id });
@@ -650,14 +665,17 @@ export function PageBuilderProvider({
         : null;
 
       // Transform state components to API format
-      const componentsToSave = state.components.map((comp) => ({
-        type: comp.type,
-        data: comp.settings,
-        isVisible: comp.isVisible,
-      }));
+      const componentsToSave = state.components
+        .filter((comp) => !inactiveComponentTypes.has(comp.type))
+        .map((comp) => ({
+          type: comp.type,
+          data: comp.settings,
+          isVisible: comp.isVisible,
+        }));
 
       const response = await pagesService.savePageComponents(pageId, componentsToSave);
-      const savedComponents = pageComponentsFromApi(response.data);
+      const savedComponents = pageComponentsFromApi(response.data)
+        .filter((component) => !inactiveComponentTypes.has(component.type));
 
       if (savedComponents.length > 0) {
         dispatch({ type: 'LOAD_SUCCESS', components: savedComponents });
@@ -679,7 +697,12 @@ export function PageBuilderProvider({
       });
       throw error; // Re-throw so caller can handle
     }
-  }, [pageId, selectedComponentId, state.components]);
+  }, [inactiveComponentTypes, pageId, selectedComponentId, state.components]);
+
+  const isComponentTypeActive = useCallback(
+    (type: string) => !inactiveComponentTypes.has(type),
+    [inactiveComponentTypes]
+  );
 
   // Computed values
   const getComponent = useCallback(
@@ -704,6 +727,8 @@ export function PageBuilderProvider({
     clearError,
     getComponent,
     selectedComponent,
+    inactiveComponentTypes,
+    isComponentTypeActive,
   };
 
   return (

@@ -885,8 +885,10 @@ function CanvasComponent({ componentId, index }: CanvasComponentProps) {
 // =============================================================================
 
 export function Canvas() {
-  const { state, selectComponent, addComponent } = usePageBuilder();
+  const { state, selectComponent, addComponent, isComponentTypeActive } = usePageBuilder();
   const { components, isLoading, error } = state;
+  const canAddHero = isComponentTypeActive('hero_section');
+  const canAddTextBlock = isComponentTypeActive('text_block');
 
   // Make the canvas a droppable area for new components from sidebar
   const { setNodeRef: setDropRef, isOver: isCanvasOver } = useDroppable({
@@ -969,20 +971,26 @@ export function Canvas() {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Drag components from the sidebar or click below to get started.
             </p>
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => addComponent('hero_section')}
-                className="px-4 py-2 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-              >
-                + Add Hero
-              </button>
-              <button
-                onClick={() => addComponent('text_block')}
-                className="px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                + Add Text Block
-              </button>
-            </div>
+            {(canAddHero || canAddTextBlock) && (
+              <div className="flex justify-center gap-3">
+                {canAddHero && (
+                  <button
+                    onClick={() => addComponent('hero_section')}
+                    className="px-4 py-2 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+                  >
+                    + Add Hero
+                  </button>
+                )}
+                {canAddTextBlock && (
+                  <button
+                    onClick={() => addComponent('text_block')}
+                    className="px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    + Add Text Block
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

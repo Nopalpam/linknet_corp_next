@@ -118,7 +118,7 @@ export default function ReportListPage({
   showTypeFilter = true,
   showStatusFilter = true,
   showYearFilter = true,
-  showSectionFilter = true,
+  showSectionFilter = false,
   showPagination = true,
   layout = 'list',
   cardStyle = 'default',
@@ -179,15 +179,13 @@ export default function ReportListPage({
   // A. AUTO-GENERATE FILTER OPTIONS
   // ==========================================
   const generatedFilters = useMemo(() => {
-    const types = new Set();
     const statuses = new Set();
     const years = new Set();
-    const sections = new Set();
+    const dataTypes = new Set();
 
     rawData.forEach(group => {
-      if (group.header?.title) sections.add(group.header.title);
       (group.items || []).forEach(item => {
-        if (item.reportType) types.add(item.reportType);
+        if (item.dataType) dataTypes.add(item.dataType);
         if (item.auditStatus) statuses.add(item.auditStatus);
         if (item.year || item.date) {
           const year = item.year || new Date(item.date).getFullYear();
@@ -198,22 +196,40 @@ export default function ReportListPage({
 
     const filters = [];
 
-    if (showTypeFilter && types.size > 0) {
-      filters.push({ key: 'reportType', placeholder: 'Report Type', options: Array.from(types).map(t => ({ label: t, value: t })) });
-    }
-    if (showSectionFilter && sections.size > 0) {
-      filters.push({ key: 'sectionName', placeholder: 'Report Section', options: Array.from(sections).map(s => ({ label: s, value: s })) });
-    }
-    if (showStatusFilter && statuses.size > 0) {
-      filters.push({ key: 'auditStatus', placeholder: 'Audit Status', options: Array.from(statuses).map(s => ({ label: s, value: s })) });
-    }
     if (showYearFilter && years.size > 0) {
       const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
       filters.push({ key: 'year', placeholder: 'Year', options: sortedYears.map(y => ({ label: y, value: y })) });
     }
+    if (showTypeFilter) {
+      const requiredDataTypes = ['Consolidated', 'Interim'];
+      const orderedDataTypes = [
+        ...requiredDataTypes,
+        ...Array.from(dataTypes).filter((type) => !requiredDataTypes.includes(type)),
+      ];
+      filters.push({
+        key: 'dataType',
+        placeholder: 'Report Type',
+        options: orderedDataTypes.map((type) => ({ label: type, value: type })),
+      });
+    }
+    if (showStatusFilter) {
+      const requiredStatuses = ['Audited', 'Unaudited', 'Limited Review'];
+      const orderedStatuses = [
+        ...requiredStatuses.filter((status) => status === 'Limited Review' || statuses.has(status)),
+        ...Array.from(statuses).filter((status) => !requiredStatuses.includes(status)),
+      ];
+
+      if (orderedStatuses.length > 0) {
+        filters.push({
+          key: 'auditStatus',
+          placeholder: 'Audit Status',
+          options: orderedStatuses.map((status) => ({ label: status, value: status })),
+        });
+      }
+    }
 
     return filters;
-  }, [rawData, showTypeFilter, showSectionFilter, showStatusFilter, showYearFilter]);
+  }, [rawData, showTypeFilter, showStatusFilter, showYearFilter]);
 
 
   // ==========================================

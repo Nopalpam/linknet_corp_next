@@ -715,7 +715,7 @@ export default function ComponentVisibilityPage() {
           <ul className="mt-1 list-disc space-y-1 pl-5 text-xs">
             <li>
               Components marked as <strong>INACTIVE</strong> are hidden from the
-              Page Builder component selector.
+              Page Builder selector, canvas load, and public rendering.
             </li>
             <li>
               Components <strong>not in this table</strong> default to ACTIVE.
@@ -725,8 +725,8 @@ export default function ComponentVisibilityPage() {
               Changes take effect immediately for any new Page Builder session.
             </li>
             <li>
-              This does <strong>not</strong> affect pages already using a component
-              — only the component picker is filtered.
+              Existing inactive component records stay in the database, but they
+              cannot be added or saved again until reactivated.
             </li>
           </ul>
         </div>

@@ -2,6 +2,7 @@ import { Prisma, PageStatus, PageTemplate } from '@prisma/client';
 import prisma from '@config/database';
 import { AppError } from '../types/error.types';
 import { syncComponentInstance, validateComponentInstance } from '../pageBuilder/migrationEngine';
+import { ComponentVisibilityService } from './componentVisibility.service';
 
 const pageListSelect = {
   id: true,
@@ -78,6 +79,18 @@ const withRuntimeSyncedComponents = <T extends { components?: any[] }>(page: T):
   };
 };
 
+const withoutInactiveComponents = <T extends { components?: any[] }>(
+  page: T,
+  inactiveKeys: Set<string>
+): T => {
+  if (!Array.isArray(page.components) || inactiveKeys.size === 0) return page;
+
+  return {
+    ...page,
+    components: page.components.filter((component) => !inactiveKeys.has(component.type)),
+  };
+};
+
 const parsePageStatus = (status?: string): PageStatus | undefined => {
   if (!status) return undefined;
   return Object.values(PageStatus).includes(status as PageStatus)
@@ -133,7 +146,8 @@ export class PageService {
       select: pageDetailSelect,
     });
     if (!page) throw new AppError('Page not found', 404);
-    return normalizePageResponse(withRuntimeSyncedComponents(page));
+    const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
+    return normalizePageResponse(withRuntimeSyncedComponents(withoutInactiveComponents(page, inactiveKeys)));
   }
 
   async getPageHistory(id: string, page = 1, perPage = 10) {
@@ -249,7 +263,9 @@ export class PageService {
         },
       }
     });
-    return page ? withRuntimeSyncedComponents(page) : page;
+    if (!page) return page;
+    const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
+    return withRuntimeSyncedComponents(withoutInactiveComponents(page, inactiveKeys));
   }
 
   /**
@@ -303,7 +319,7 @@ export class PageService {
         if (existing && existing.id !== id) throw new AppError('Slug already exists', 400);
     }
 
-    return await prisma.page.update({
+    const updatedPage = await prisma.page.update({
       where: { id },
       data: {
         title: data.title,
@@ -329,7 +345,10 @@ export class PageService {
         updatedAt: new Date()
       },
       select: pageDetailSelect,
-    }).then((page) => normalizePageResponse(withRuntimeSyncedComponents(page)));
+    });
+
+    const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
+    return normalizePageResponse(withRuntimeSyncedComponents(withoutInactiveComponents(updatedPage, inactiveKeys)));
   }
 
   /**
@@ -343,7 +362,7 @@ export class PageService {
   }
 
   /**
-   * Save page components (Replace All Strategy)
+   * Save page components.
    * 
    * Maps to legacy page_components table structure:
    * - component_type → type
@@ -351,8 +370,8 @@ export class PageService {
    * - sort_order → order (derived from array index)
    * - is_visible → isVisible
    * 
-   * Uses a transactional delete-all + create-many approach
-   * to ensure atomic replacement of all components.
+   * Active components are replaced atomically. Existing inactive component
+   * records are preserved for backward compatibility and data safety.
    */
   async savePageComponents(pageId: string, components: any[], userId?: string) {
     // Verify page exists
@@ -368,9 +387,28 @@ export class PageService {
       components: JSON.stringify(components, null, 2)
     });
 
+    const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
+    const submittedInactiveTypes = Array.from(new Set(
+      (components || [])
+        .map((component) => component?.type)
+        .filter((type) => type && inactiveKeys.has(type))
+    ));
+
+    if (submittedInactiveTypes.length > 0) {
+      throw new AppError(
+        `Inactive components cannot be saved: ${submittedInactiveTypes.join(', ')}`,
+        400
+      );
+    }
+
     return await prisma.$transaction(async (tx) => {
-        // Delete existing components for this page
-        await tx.pageComponent.deleteMany({ where: { pageId } });
+        // Replace only active components. Inactive records stay stored but hidden.
+        await tx.pageComponent.deleteMany({
+          where: {
+            pageId,
+            ...(inactiveKeys.size > 0 ? { type: { notIn: Array.from(inactiveKeys) } } : {}),
+          },
+        });
 
         // Insert new components with correct sort_order
         if (components && components.length > 0) {
@@ -402,7 +440,9 @@ export class PageService {
 
         console.log('✅ Components saved successfully:', result?.components?.length || 0);
         
-        return result ? normalizePageResponse(withRuntimeSyncedComponents(result)) : result;
+        return result
+          ? normalizePageResponse(withRuntimeSyncedComponents(withoutInactiveComponents(result, inactiveKeys)))
+          : result;
     });
   }
 }

@@ -1,7 +1,8 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { getLocalizedPageTitle, getPageBySlug } from '@/lib/cmsApi';
+import { getPageBySlug, getPublicSettings } from '@/lib/cmsApi';
 import PageRenderer from '@/components/PageRenderer';
+import { buildCmsPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,22 +23,16 @@ function mapPageComponents(page) {
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
-  const page = await getPageBySlug(PAGE_SLUG);
+  const [page, publicSettings] = await Promise.all([
+    getPageBySlug(PAGE_SLUG),
+    getPublicSettings(),
+  ]);
 
   if (!page) {
     return { title: 'Page Not Found' };
   }
 
-  return {
-    title: page.metaTitle || getLocalizedPageTitle(page, locale),
-    description: page.metaDescription || undefined,
-    keywords: page.metaKeywords || undefined,
-    robots: {
-      index: !page.noindex,
-      follow: !page.nofollow,
-    },
-    openGraph: page.ogImage ? { images: [{ url: page.ogImage }] } : undefined,
-  };
+  return buildCmsPageMetadata({ page, locale, publicSettings, path: PAGE_SLUG });
 }
 
 export default async function NewsPage({ params }) {

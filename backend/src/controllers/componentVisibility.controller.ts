@@ -23,13 +23,13 @@ export class ComponentVisibilityController {
   }
 
   /**
-   * GET /api/cms/component-visibility/active-keys
-   * Returns array of component keys that are INACTIVE (for client-side filtering)
+   * GET /api/cms/component-visibility/inactive-keys
+   * Returns component keys that are INACTIVE for Page Builder filtering.
    * Lightweight endpoint used by Page Builder
    */
   static async getInactiveKeys(_req: Request, res: Response, next: NextFunction) {
     try {
-      const inactiveKeys = await ComponentVisibilityService.getActiveComponentKeys();
+      const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
       res.json({ success: true, data: Array.from(inactiveKeys) });
     } catch (error) {
       next(error);

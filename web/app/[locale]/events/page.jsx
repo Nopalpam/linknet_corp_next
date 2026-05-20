@@ -1,10 +1,20 @@
 import EventsList from '@/components/main/EventsList';
+import { getPublicSettings } from '@/lib/cmsApi';
 import { getEvents } from '@/lib/eventsApi';
+import { buildBasicMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'Events | Link Net',
-  description: 'Published Link Net events and upcoming activities.',
-};
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  const publicSettings = await getPublicSettings();
+
+  return buildBasicMetadata({
+    title: 'Events',
+    description: 'Published Link Net events and upcoming activities.',
+    locale,
+    path: 'events',
+    publicSettings,
+  });
+}
 
 const VALID_STATES = ['all', 'upcoming', 'ongoing', 'ended'];
 const DEFAULT_LIMIT = 12;

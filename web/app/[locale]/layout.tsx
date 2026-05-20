@@ -17,6 +17,13 @@ import ModalCookies from "@/components/base/modals/ModalCookies";
 import OmniChannelWidget from "@/components/main/OmniChannelWidget";
 import VisitorTracker from "@/components/VisitorTracker";
 import { getHeaderMenus, getFooterMenus, getPublicSettings } from "@/lib/cmsApi";
+import {
+  DEFAULT_OG_IMAGE,
+  DEFAULT_SITE_DESCRIPTION,
+  DEFAULT_SITE_TITLE,
+  normalizeKeywords,
+  resolveMetadataBase,
+} from "@/lib/seo";
 
 const toBoolean = (value: unknown) => value === true || value === 'true';
 const localizedValue = (value: any, locale: string, fallback = '') => {
@@ -30,25 +37,22 @@ const localizedValue = (value: any, locale: string, fallback = '') => {
 
 const fallbackMetadata = {
   // Update Base URL sesuai domain Anda
-  metadataBase: new URL('https://onestream.co.id'), 
+  metadataBase: new URL('https://www.linknet.co.id'),
 
   title: {
-    default: "PT Link Net Tbk - We LINK the nation for better lives",
+    default: DEFAULT_SITE_TITLE,
     template: "%s - PT Link Net Tbk"
   },
 
   // Deskripsi digabung agar efisien:
-  description: "Hadirkan bioskop di rumah dengan One Stream. Tersedia varian Smart Box Android TV praktis dan One Stream+ dengan Audio by Bang & Olufsen & Dolby Vision-Atmos.",
+  description: DEFAULT_SITE_DESCRIPTION,
 
   keywords: [
-    "One Stream",
-    "One Stream+",
-    "Android TV Box", 
-    "Smart TV Box", 
-    "Audio by Bang & Olufsen", // Keyword Premium
-    "Dolby Vision Atmos",   // Keyword Premium
-    "Google Certified TV Box",
-    "Set Top Box Premium"
+    "Link Net",
+    "PT Link Net Tbk",
+    "internet",
+    "broadband",
+    "connectivity"
   ],
 
   robots: {
@@ -62,22 +66,22 @@ const fallbackMetadata = {
 
   twitter: {
     card: 'summary_large_image',
-    title: "One Stream & One Stream+ Solusi OTT Fleksibel untuk Bisnis dan Hiburan di Rumah",
-    description: "Hadirkan bioskop di rumah dengan One Stream. Audio by Bang & Olufsen & Dolby Vision-Atmos.",
-    images: ['/assets/img/og_image.jpg'], // Gunakan gambar yang sama
+    title: DEFAULT_SITE_TITLE,
+    description: DEFAULT_SITE_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
   },
 
   openGraph: {
-    title: "One Stream & One Stream+ Solusi OTT Fleksibel untuk Bisnis dan Hiburan di Rumah",
-    description: "Mendorong pertumbuhan bisnis sekaligus menghadirkan pengalaman menonton kelas dunia dengan teknologi hiburan premium tanpa batas.",
-    url: 'https://onestream.co.id',
-    siteName: 'One Stream',
+    title: DEFAULT_SITE_TITLE,
+    description: DEFAULT_SITE_DESCRIPTION,
+    url: 'https://www.linknet.co.id',
+    siteName: DEFAULT_SITE_TITLE,
     images: [
       {
-        url: '/assets/img/og_image.jpg', // Ganti dengan foto yang menampilkan kedua box
+        url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'One Stream and One Stream+ Devices',
+        alt: DEFAULT_SITE_TITLE,
       },
     ],
     locale: 'id_ID',
@@ -150,16 +154,16 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   const seo = publicSettings.seo || {};
   const analytics = publicSettings.analytics || {};
 
-  const siteTitle = localizedValue(generalBranding.site?.title, locale, fallbackMetadata.openGraph.siteName);
+  const siteTitle = localizedValue(generalBranding.site?.title, locale, DEFAULT_SITE_TITLE);
   const titleSuffix = localizedValue(generalBranding.site?.title_suffix, locale, '- PT Link Net Tbk');
   const metaTitle = localizedValue(seo.meta_title, locale, siteTitle);
   const metaDescription = localizedValue(seo.meta_description, locale, localizedValue(generalBranding.site?.description, locale, fallbackMetadata.description));
-  const keywords = Array.isArray(seo.meta_keywords) ? seo.meta_keywords : fallbackMetadata.keywords;
+  const keywords = normalizeKeywords(seo.meta_keywords) || fallbackMetadata.keywords;
   const thumbnail = seo.thumbnail || fallbackMetadata.openGraph.images?.[0]?.url;
   const favicon = generalBranding.branding?.favicon || fallbackMetadata.icons.icon;
 
   return {
-    metadataBase: fallbackMetadata.metadataBase,
+    metadataBase: resolveMetadataBase(publicSettings),
     title: {
       default: metaTitle,
       template: `%s ${titleSuffix}`.trim(),

@@ -3,6 +3,7 @@ import {
   getActivityLogs,
   getActivityLogById,
   deleteActivityLog,
+  deleteActivityLogsBulk,
   cleanupOldLogs,
   getActivityLogStats,
   getUserActivityTimeline,
@@ -37,6 +38,20 @@ router.get('/stats', authorize('log_activity.read'), getActivityLogStats);
 router.get('/user/:userId/timeline', authorize('log_activity.read'), getUserActivityTimeline);
 
 /**
+ * @route   POST /api/cms/log-activity/bulk-delete
+ * @desc    Soft delete all logs or logs in a date range
+ * @access  Private (requires 'log_activity.delete' permission)
+ */
+router.post('/bulk-delete', authorize('log_activity.delete'), deleteActivityLogsBulk);
+
+/**
+ * @route   POST /api/cms/log-activity/cleanup
+ * @desc    Cleanup old logs (soft delete logs older than X days)
+ * @access  Private (requires 'log_activity.delete' permission)
+ */
+router.post('/cleanup', authorize('log_activity.delete'), cleanupOldLogs);
+
+/**
  * @route   GET /api/cms/log-activity/:id
  * @desc    Get activity log by ID with diff view
  * @access  Private (requires 'log_activity.read' permission)
@@ -49,12 +64,5 @@ router.get('/:id', authorize('log_activity.read'), getActivityLogById);
  * @access  Private (requires 'log_activity.delete' permission)
  */
 router.delete('/:id', authorize('log_activity.delete'), deleteActivityLog);
-
-/**
- * @route   POST /api/cms/log-activity/cleanup
- * @desc    Cleanup old logs (soft delete logs older than X days)
- * @access  Private (requires 'log_activity.delete' permission)
- */
-router.post('/cleanup', authorize('log_activity.delete'), cleanupOldLogs);
 
 export default router;

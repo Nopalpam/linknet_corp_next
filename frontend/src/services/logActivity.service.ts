@@ -46,6 +46,12 @@ export interface GetActivityLogsParams {
   dateTo?: string;
 }
 
+export interface DeleteActivityLogsParams {
+  mode: 'all' | 'range';
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 class LogActivityService extends BaseService {
   /**
    * Get activity logs with filters
@@ -123,7 +129,17 @@ class LogActivityService extends BaseService {
   async cleanupOldLogs(daysToKeep: number = 90): Promise<{ message: string; deletedCount: number }> {
     return this.fetchWithAuth(this.getApiUrl('/cms/log-activity/cleanup'), {
       method: 'POST',
-      body: JSON.stringify({ daysToKeep }),
+      body: JSON.stringify({ days: daysToKeep, daysToKeep }),
+    });
+  }
+
+  /**
+   * Bulk delete activity logs using a soft-delete workflow.
+   */
+  async deleteActivityLogs(params: DeleteActivityLogsParams): Promise<{ message: string; data?: { deletedCount: number } }> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/log-activity/bulk-delete'), {
+      method: 'POST',
+      body: JSON.stringify(params),
     });
   }
 }

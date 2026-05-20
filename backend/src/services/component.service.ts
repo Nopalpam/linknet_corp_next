@@ -11,6 +11,7 @@ import {
 } from '../constants/componentDefaults';
 import { syncComponentInstance } from '../pageBuilder/migrationEngine';
 import { getComponentSchema } from '../pageBuilder/schemaRegistry';
+import { ComponentVisibilityService } from './componentVisibility.service';
 
 // Initialize Ajv
 const ajv = new Ajv({ allErrors: true, verbose: true });
@@ -103,10 +104,14 @@ export class ComponentService {
       },
     });
 
-    return components.map((component) => ({
-      ...component,
-      data: syncComponentInstance(component.type, component.data).instance,
-    }));
+    const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
+
+    return components
+      .filter((component) => !inactiveKeys.has(component.type))
+      .map((component) => ({
+        ...component,
+        data: syncComponentInstance(component.type, component.data).instance,
+      }));
   }
 
   /**
@@ -147,6 +152,8 @@ export class ComponentService {
     if (!hasSchema && !hasTypeMap) {
       throw new AppError(`Unknown component type: ${data.componentType}`, 400);
     }
+
+    await ComponentVisibilityService.assertComponentTypeActive(data.componentType);
 
     // If no component data provided, use defaults from the type map
     let componentData = data.componentData;
@@ -216,6 +223,8 @@ export class ComponentService {
     // If updating component type or data, validate
     const componentType = data.componentType || existing.type;
     let componentData = data.componentData || existing.data;
+
+    await ComponentVisibilityService.assertComponentTypeActive(componentType);
 
     // Sanitize component data if being updated
     if (data.componentData) {
@@ -328,17 +337,7 @@ export class ComponentService {
    * Components not in the table default to ACTIVE (backward compatible).
    */
   static async getComponentTypes() {
-    // Fetch the set of INACTIVE component keys from DB
-    let inactiveKeys: Set<string> = new Set();
-    try {
-      const inactiveEntries = await prisma.componentVisibility.findMany({
-        where: { status: 'INACTIVE' },
-        select: { componentKey: true },
-      });
-      inactiveKeys = new Set(inactiveEntries.map((e) => e.componentKey));
-    } catch {
-      // If the table doesn't exist yet (pre-migration), return all components
-    }
+    const inactiveKeys = await ComponentVisibilityService.getInactiveComponentKeys();
 
     return ALL_COMPONENT_TYPES
       .filter((ct) => !inactiveKeys.has(ct.type))

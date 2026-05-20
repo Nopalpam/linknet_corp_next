@@ -17,7 +17,20 @@ const ApiResponse = {
 };
 
 const prisma = new PrismaClient();
-const ALLOW_AUDIT_LOG_DELETION = process.env.ALLOW_AUDIT_LOG_DELETION === 'true';
+
+const isAuditLogDeletionAllowed = () => process.env.ALLOW_AUDIT_LOG_DELETION !== 'false';
+
+const parsePositiveInteger = (value: unknown, fallback: number) => {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.trunc(parsed);
+};
+
+const parseOptionalDate = (value: unknown) => {
+  if (!value) return undefined;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
 
 /**
  * Get paginated activity logs with filters
@@ -182,7 +195,7 @@ export async function getActivityLogById(req: Request, res: Response, next: Next
  */
 export async function deleteActivityLog(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    if (!ALLOW_AUDIT_LOG_DELETION) {
+    if (!isAuditLogDeletionAllowed()) {
       res.status(403).json(ApiResponse.error('Audit log deletion is disabled by security policy'));
       return;
     }
@@ -212,20 +225,82 @@ export async function deleteActivityLog(req: Request, res: Response, next: NextF
 }
 
 /**
+ * Bulk soft delete activity logs.
+ * POST /api/cms/log-activity/bulk-delete
+ */
+export async function deleteActivityLogsBulk(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!isAuditLogDeletionAllowed()) {
+      res.status(403).json(ApiResponse.error('Audit log deletion is disabled by security policy'));
+      return;
+    }
+
+    const {
+      mode = 'range',
+      dateFrom,
+      dateTo,
+    } = req.body || {};
+
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (mode === 'all') {
+      // Intentionally no extra where clause.
+    } else if (mode === 'range') {
+      const from = parseOptionalDate(dateFrom);
+      const to = parseOptionalDate(dateTo);
+
+      if (!from && !to) {
+        res.status(400).json(ApiResponse.error('dateFrom or dateTo is required for range deletion'));
+        return;
+      }
+
+      where.createdAt = {};
+      if (from) where.createdAt.gte = from;
+      if (to) where.createdAt.lte = to;
+    } else {
+      res.status(400).json(ApiResponse.error('mode must be "all" or "range"'));
+      return;
+    }
+
+    const result = await prisma.logActivity.updateMany({
+      where,
+      data: { deletedAt: new Date() },
+    });
+
+    res.json(
+      ApiResponse.success(
+        {
+          deletedCount: result.count,
+          mode,
+          dateFrom: where.createdAt?.gte,
+          dateTo: where.createdAt?.lte,
+        },
+        `Deleted ${result.count} activity logs`,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Cleanup old logs
  * POST /api/cms/log-activity/cleanup
  */
 export async function cleanupOldLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    if (!ALLOW_AUDIT_LOG_DELETION) {
+    if (!isAuditLogDeletionAllowed()) {
       res.status(403).json(ApiResponse.error('Audit log cleanup is disabled by security policy'));
       return;
     }
 
-    const { days = 90 } = req.body;
+    const { days, daysToKeep } = req.body || {};
+    const daysToRetain = parsePositiveInteger(daysToKeep ?? days, 90);
 
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
+    cutoffDate.setDate(cutoffDate.getDate() - daysToRetain);
 
     const result = await prisma.logActivity.updateMany({
       where: {
@@ -245,7 +320,7 @@ export async function cleanupOldLogs(req: Request, res: Response, next: NextFunc
           deletedCount: result.count,
           cutoffDate,
         },
-        `Cleaned up ${result.count} logs older than ${days} days`,
+        `Cleaned up ${result.count} logs older than ${daysToRetain} days`,
       ),
     );
   } catch (error) {

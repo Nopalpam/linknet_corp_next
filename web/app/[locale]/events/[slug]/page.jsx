@@ -1,27 +1,31 @@
 import { notFound } from 'next/navigation';
 import EventDetail from '@/components/main/EventDetail';
 import { getEventBySlug, getEvents } from '@/lib/eventsApi';
+import { getPublicSettings } from '@/lib/cmsApi';
+import { buildBasicMetadata, stripHtml } from '@/lib/seo';
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  const event = await getEventBySlug(slug, { locale });
+  const { locale, slug } = await params;
+  const [event, publicSettings] = await Promise.all([
+    getEventBySlug(slug, { locale }),
+    getPublicSettings(),
+  ]);
 
   if (!event) {
     return {
-      title: 'Event Not Found | Link Net',
+      title: 'Event Not Found',
       description: 'The requested event could not be found.',
     };
   }
 
-  return {
-    title: `${event.title} | Link Net Events`,
-    description: event.excerpt ? event.excerpt.replace(/<[^>]*>/g, ' ').slice(0, 160) : 'Event detail from Link Net.',
-    openGraph: {
-      title: `${event.title} | Link Net Events`,
-      description: event.excerpt ? event.excerpt.replace(/<[^>]*>/g, ' ').slice(0, 160) : 'Event detail from Link Net.',
-      images: event.cover_image ? [event.cover_image] : [],
-    },
-  };
+  return buildBasicMetadata({
+    title: event.title,
+    description: event.excerpt ? stripHtml(event.excerpt).slice(0, 160) : 'Event detail from Link Net.',
+    image: event.cover_image,
+    locale,
+    path: `events/${slug}`,
+    publicSettings,
+  });
 }
 
 export default async function EventDetailPage({ params }) {

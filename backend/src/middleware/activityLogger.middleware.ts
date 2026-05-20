@@ -72,6 +72,12 @@ function getActionFromMethod(method: string, path: string): string {
   if (path.includes('/login')) return 'login';
   if (path.includes('/logout')) return 'logout';
   if (path.includes('/register')) return 'register';
+  if (path.includes('/publish')) return 'publish';
+  if (path.includes('/unpublish')) return 'unpublish';
+  if (path.includes('/toggle-status') || path.includes('/toggle')) return 'status_change';
+  if (path.includes('/bulk-delete') || path.includes('/destroy-multiple')) return 'delete';
+  if (path.includes('/cleanup')) return 'delete';
+  if (path.includes('/sync')) return 'update';
 
   // Map HTTP methods to actions
   switch (methodUpper) {
@@ -126,6 +132,71 @@ function getClientIp(req: Request): string {
   );
 }
 
+const IMPORTANT_CMS_MODULES = new Set([
+  'announcements',
+  'announcement-items',
+  'announcement-sections',
+  'announcement-types',
+  'awards',
+  'careers',
+  'component-visibility',
+  'contactus',
+  'contact-us',
+  'cookie-consents',
+  'events',
+  'labels',
+  'footer',
+  'form-modules',
+  'management',
+  'managements',
+  'map-coverage',
+  'menu',
+  'news',
+  'news-categories',
+  'news-highlights',
+  'pages',
+  'reports',
+  'report-items',
+  'report-sections',
+  'report-types',
+  'roles',
+  'settings',
+  'solutions',
+  'url-redirects',
+  'url-redirection',
+  'users',
+]);
+
+const NOISY_PATH_SEGMENTS = [
+  '/clear-cache',
+  '/dry-run',
+  '/preview',
+  '/reorder',
+  '/schema-sync',
+  '/stats',
+  '/update-order',
+  '/validate',
+];
+
+function shouldAutoLogRequest(req: Request): boolean {
+  const method = req.method.toUpperCase();
+  const path = req.path.toLowerCase();
+
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return false;
+  if (path.includes('/log-activity')) return false;
+  if (NOISY_PATH_SEGMENTS.some((segment) => path.includes(segment))) return false;
+
+  if (path.includes('/auth/')) {
+    // Login/logout are logged explicitly by the auth controller.
+    return false;
+  }
+
+  if (!path.includes('/cms/')) return false;
+
+  const module = getModuleFromPath(path);
+  return IMPORTANT_CMS_MODULES.has(module) || method === 'DELETE';
+}
+
 /**
  * Middleware to automatically log CRUD operations
  * Place after authentication middleware to capture user info
@@ -149,6 +220,10 @@ export function autoLogActivity(options: {
 
     // Skip logging for activity log endpoints to avoid recursion
     if (req.path.includes('/log-activity')) {
+      return next();
+    }
+
+    if (!shouldAutoLogRequest(req)) {
       return next();
     }
 
@@ -195,6 +270,8 @@ export function autoLogActivity(options: {
       if (!logData.recordId && data?.data?.id) {
         logData.recordId = data.data.id;
       }
+
+      logData.userId = logData.userId || (req as any).user?.id;
 
       // For UPDATE operations, capture new data from response
       if (action === 'update' && data?.data) {

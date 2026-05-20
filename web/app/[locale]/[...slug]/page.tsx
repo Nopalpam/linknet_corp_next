@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
-import { getLocalizedPageTitle, getPageBySlug, getPublicSettings, getPublishedSlugs } from '@/lib/cmsApi';
+import { getPageBySlug, getPublicSettings } from '@/lib/cmsApi';
 import PageRenderer from '@/components/PageRenderer';
 import type { Metadata } from 'next';
+import { buildCmsPageMetadata } from '@/lib/seo';
 
 // Force dynamic rendering — always fetch fresh data from CMS
 export const dynamic = 'force-dynamic';
@@ -24,14 +25,6 @@ function normalizeCmsSlug(slug: string[]): string {
   return segments.join('/');
 }
 
-function localizedValue(value: any, locale: string, fallback = ''): string {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    return value[locale] || value.en || value.id || fallback;
-  }
-
-  return value || fallback;
-}
-
 /**
  * Generate metadata from CMS page data
  */
@@ -47,28 +40,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Page Not Found' };
   }
 
-  const seo = publicSettings.seo || {};
-  const titleSuffix = localizedValue(publicSettings.general_branding?.site?.title_suffix, locale);
-  const isHomepage = slugPath === '' || slugPath === 'homepage' || slugPath === 'home';
-  const localizedPageTitle = getLocalizedPageTitle(page, locale);
-  const baseTitle = page.metaTitle || localizedValue(seo.meta_title, locale) || localizedPageTitle;
-  const title = !page.metaTitle && !isHomepage && titleSuffix && !baseTitle.includes(titleSuffix)
-    ? `${baseTitle} ${titleSuffix}`.trim()
-    : baseTitle;
-  const description = page.metaDescription || localizedValue(seo.meta_description, locale) || undefined;
-  const keywords = page.metaKeywords || seo.meta_keywords || undefined;
-  const thumbnail = page.metaThumbnail || page.ogImage || seo.thumbnail || undefined;
-
-  return {
-    title,
-    description,
-    keywords,
-    robots: {
-      index: !page.noindex,
-      follow: !page.nofollow,
-    },
-    openGraph: thumbnail ? { title, description, images: [{ url: thumbnail }] } : { title, description },
-  };
+  return buildCmsPageMetadata({
+    page,
+    locale,
+    publicSettings,
+    path: slugPath,
+  });
 }
 
 /**
