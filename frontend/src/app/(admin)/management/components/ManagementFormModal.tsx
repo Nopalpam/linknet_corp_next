@@ -8,6 +8,7 @@ import {
   Management,
   CreateManagementData,
 } from "@/services/management.service";
+import MediaPathInput from "@/components/media/MediaPathInput";
 
 const CKEditorWrapper = dynamic(() => import("@/components/ui/ckeditor/CKEditorWrapper"), {
   ssr: false,
@@ -248,12 +249,14 @@ export default function ManagementFormModal({
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Photo URL
               </label>
-              <input
+              <MediaPathInput
                 type="url"
                 value={formData.photo}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                onChange={(value) => setFormData({ ...formData, photo: value })}
+                inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 placeholder="https://example.com/photo.jpg"
+                buttonLabel="Choose Photo from File Manager"
+                pickerTitle="Choose Management Photo"
               />
             </div>
 

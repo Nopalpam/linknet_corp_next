@@ -2,7 +2,7 @@
  * File Management Routes
  * 
  * Backend endpoints for file management (File Manager Ready).
- * These endpoints are designed to work with any File Manager UI (custom or Flmngr).
+ * These endpoints are designed to work with the internal custom file manager UI.
  * 
  * Endpoints:
  *   GET    /api/v1/files              — List files (DB or storage)

@@ -11,6 +11,7 @@ import React from 'react';
 import { HeroSettings } from '../types';
 import { CtaListModule } from './CtaListModule';
 import { SortableListEditor } from './SortableListEditor';
+import MediaPickerButton from '@/components/media/MediaPickerButton';
 
 interface HeroEditorProps {
   settings: HeroSettings;
@@ -68,6 +69,13 @@ export const HeroEditor: React.FC<HeroEditorProps> = ({ settings, onChange }) =>
           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
           placeholder="https://example.com/image.jpg"
         />
+        <div className="mt-2">
+          <MediaPickerButton
+            kind="image"
+            title="Choose Hero Background"
+            onSelect={(url) => updateField('backgroundImage', url)}
+          />
+        </div>
         {settings.backgroundImage && (
           <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
             {/* eslint-disable-next-line @next/next/no-img-element */}

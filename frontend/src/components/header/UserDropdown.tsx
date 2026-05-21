@@ -6,9 +6,16 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useAuth } from "@/context/AuthContext";
 
+const FALLBACK_AVATAR = "/images/user/owner1.jpg";
+
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const { user, logout, isLoading, forceLogout, isAuthValidated } = useAuth();
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [user?.avatar]);
 
   // ✅ Auto-close dropdown when user becomes invalid
   useEffect(() => {
@@ -49,9 +56,8 @@ export default function UserDropdown() {
 
   // ✅ CRITICAL: Safe fallback dengan validasi ketat
   const displayName = user?.name || user?.firstName || "Unknown User";
-  console.log('UserDropdown Render - User:', user, 'DisplayName:', displayName);
   const displayEmail = user?.email || "No email";
-  const displayAvatar = user?.avatar || "/images/user/owner1.jpg";
+  const displayAvatar = avatarFailed ? FALLBACK_AVATAR : user?.avatar || FALLBACK_AVATAR;
 
   // ✅ Show loading state during auth validation
   if (!isAuthValidated || isLoading) {
@@ -91,10 +97,9 @@ export default function UserDropdown() {
             src={displayAvatar}
             alt={displayName}
             priority
-            onError={(e) => {
-              // Fallback if image fails to load
-              e.currentTarget.src = "/images/user/owner1.jpg";
-            }}
+            unoptimized
+            className="h-11 w-11 object-cover"
+            onError={() => setAvatarFailed(true)}
           />
         </span>
 

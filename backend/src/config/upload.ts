@@ -21,11 +21,11 @@ const imageFileFilter = (
 
 // Multer configuration for avatar upload
 export const avatarUpload = multer({
-  storage: storage,
+  storage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024 // 2MB max size
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB max size
+  },
 });
 
 // Error messages for multer errors
@@ -33,7 +33,7 @@ export const getMulterErrorMessage = (error: any): string => {
   if (error instanceof multer.MulterError) {
     switch (error.code) {
       case 'LIMIT_FILE_SIZE':
-        return 'File size exceeds 2MB limit';
+        return 'File size exceeds 5MB limit';
       case 'LIMIT_FILE_COUNT':
         return 'Too many files uploaded';
       case 'LIMIT_UNEXPECTED_FILE':

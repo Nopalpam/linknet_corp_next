@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { logActivityService, settingsService } from "@/services";
+import MediaPickerButton from "@/components/media/MediaPickerButton";
 
 const CKEditorWrapper = dynamic(() => import("@/components/ui/ckeditor/CKEditorWrapper"), {
   ssr: false,
@@ -223,6 +224,18 @@ const FIELD_SECTIONS: Record<string, string> = {
   "footer.closingSentence_default.overline": "Closing Sentence",
   "footer.closingSentence_default.title": "Closing Sentence",
   "footer.closingSentence_default.description": "Closing Sentence",
+};
+
+const isMediaArrayField = (field: ArrayFieldConfig["fields"][number]) => {
+  const key = field.key.toLowerCase();
+  const label = field.label.toLowerCase();
+  return /image|thumbnail|icon|logo|favicon|cover|banner|photo|poster/.test(key) || /image|thumbnail|icon|logo|favicon|cover|banner|photo|poster/.test(label);
+};
+
+const isMediaSetting = (setting: Setting) => {
+  const key = setting.key.toLowerCase();
+  const label = (setting.label || "").toLowerCase();
+  return /image|thumbnail|icon|logo|favicon|cover|banner|photo|poster/.test(key) || /image|thumbnail|icon|logo|favicon|cover|banner|photo|poster/.test(label);
 };
 
 const SettingsPage = () => {
@@ -462,12 +475,22 @@ const SettingsPage = () => {
                       ))}
                     </select>
                   ) : (
-                    <input
-                      type={field.type || "text"}
-                      value={item?.[field.key] || ""}
-                      onChange={(event) => updateItem(index, field.key, event.target.value)}
-                      className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type={field.type || "text"}
+                        value={item?.[field.key] || ""}
+                        onChange={(event) => updateItem(index, field.key, event.target.value)}
+                        className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+                      />
+                      {isMediaArrayField(field) && (
+                        <MediaPickerButton
+                          kind="image"
+                          label="Choose from File Manager"
+                          title={`Choose ${field.label}`}
+                          onSelect={(url) => updateItem(index, field.key, url)}
+                        />
+                      )}
+                    </div>
                   )}
                 </label>
               ))}
@@ -612,6 +635,11 @@ const SettingsPage = () => {
               placeholder="Image URL"
               className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
             />
+            <MediaPickerButton
+              kind="image"
+              title={`Choose ${getFieldLabel(setting)}`}
+              onSelect={(url) => handleValueChange(setting.id, setting.key, url)}
+            />
             {currentValue && (
               <div className="relative h-20 w-32 overflow-hidden rounded border border-stroke dark:border-strokedark">
                 <Image src={currentValue} alt="Preview" fill className="object-contain" />
@@ -636,12 +664,21 @@ const SettingsPage = () => {
         );
       default:
         return (
-          <input
-            type={setting.key.includes("email") ? "email" : "text"}
-            value={currentValue ?? ""}
-            onChange={(event) => handleValueChange(setting.id, setting.key, event.target.value)}
-            className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
-          />
+          <div className="space-y-2">
+            <input
+              type={setting.key.includes("email") ? "email" : "text"}
+              value={currentValue ?? ""}
+              onChange={(event) => handleValueChange(setting.id, setting.key, event.target.value)}
+              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+            />
+            {isMediaSetting(setting) && (
+              <MediaPickerButton
+                kind="image"
+                title={`Choose ${getFieldLabel(setting)}`}
+                onSelect={(url) => handleValueChange(setting.id, setting.key, url)}
+              />
+            )}
+          </div>
         );
     }
   };

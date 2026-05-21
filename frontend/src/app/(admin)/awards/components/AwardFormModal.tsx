@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { awardsServiceNew, Award, CreateAwardData } from "@/services/awards.service.new";
 import { useToast } from "@/context/ToastContext";
+import MediaPathInput from "@/components/media/MediaPathInput";
 
 function getDisplayImageSrc(value?: string | null): string {
   const src = value?.trim();
@@ -229,14 +230,15 @@ export default function AwardFormModal({
             >
               Top Logo URL
             </label>
-            <input
-              type="text"
+            <MediaPathInput
               id="topLogo"
               name="topLogo"
               value={formData.topLogo || ''}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              onChange={(value) => setFormData((prev) => ({ ...prev, topLogo: value }))}
               placeholder="/assets/logos/awards/logo-swa.png"
+              inputClassName="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              buttonLabel="Choose Logo from File Manager"
+              pickerTitle="Choose Award Logo"
             />
             {formData.topLogo && (
               <div className="mt-2 h-12 w-24">
@@ -260,14 +262,15 @@ export default function AwardFormModal({
             >
               Image URL
             </label>
-            <input
-              type="text"
+            <MediaPathInput
               id="image"
               name="image"
-              value={formData.image}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              value={formData.image || ''}
+              onChange={(value) => setFormData((prev) => ({ ...prev, image: value }))}
               placeholder="Enter image URL"
+              inputClassName="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              buttonLabel="Choose Image from File Manager"
+              pickerTitle="Choose Award Image"
             />
             {formData.image && (
               <div className="mt-2 h-20 w-20">

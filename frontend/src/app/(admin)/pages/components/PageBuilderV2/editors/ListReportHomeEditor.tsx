@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import { CtaListModule } from './CtaListModule';
 import { SortableListEditor } from './SortableListEditor';
+import MediaPickerButton from '@/components/media/MediaPickerButton';
+import { MediaPickerKind } from '@/components/media/MediaPickerModal';
 
 type LangText = string | { en?: string; id?: string };
 const DEFAULT_REPORT_ICON_PATH = 'http://localhost:3001/assets/icons/pdf-circle.svg';
@@ -25,23 +27,34 @@ function TextField({
   onChange,
   placeholder,
   type = 'text',
+  mediaKind,
 }: {
   label: string;
   value?: string | number;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  mediaKind?: MediaPickerKind;
 }) {
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      <input
-        type={type}
-        value={value ?? ''}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-      />
+      <div className="space-y-2">
+        <input
+          type={type}
+          value={value ?? ''}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        />
+        {mediaKind && (
+          <MediaPickerButton
+            kind={mediaKind}
+            title={`Choose ${label}`}
+            onSelect={(url) => onChange(url)}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -103,13 +116,21 @@ function IconModeField({
         <option value="custom">Custom image path</option>
       </select>
       {mode === 'custom' && (
-        <input
-          type="text"
-          value={currentValue}
-          placeholder="/assets/icons/example.svg"
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-        />
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={currentValue}
+            placeholder="/assets/icons/example.svg"
+            onChange={(event) => onChange(event.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          />
+          <MediaPickerButton
+            kind="image"
+            label="Choose Icon from File Manager"
+            title={`Choose ${label}`}
+            onSelect={(url) => onChange(url)}
+          />
+        </div>
       )}
     </div>
   );
@@ -356,7 +377,7 @@ export function ListReportHomeEditor({
 
       <EditorSection title="Items / Lists" count={2} icon={<ItemsIcon />}>
         <div className="space-y-6">
-          <SortableListEditor
+          <SortableListEditor<Record<string, any>>
             label="Tabs"
             items={tabs}
             onChange={updateTabs}
@@ -372,7 +393,7 @@ export function ListReportHomeEditor({
             )}
           />
 
-          <SortableListEditor
+          <SortableListEditor<Record<string, any>>
             label="Items List"
             items={itemList}
             onChange={updateItemList}
@@ -405,8 +426,8 @@ export function ListReportHomeEditor({
         <div className="grid gap-3 sm:grid-cols-2">
           <TextField label="Section ID" value={config.sectionId} onChange={(value) => updateConfig({ sectionId: value })} />
           <TextField label="Class Name" value={config.className} onChange={(value) => updateConfig({ className: value })} />
-          <TextField label="Background Image" value={config.bgImage} onChange={(value) => updateConfig({ bgImage: value })} />
-          <TextField label="Background Image Mobile" value={config.bgImageMobile} onChange={(value) => updateConfig({ bgImageMobile: value })} />
+          <TextField label="Background Image" value={config.bgImage} onChange={(value) => updateConfig({ bgImage: value })} mediaKind="image" />
+          <TextField label="Background Image Mobile" value={config.bgImageMobile} onChange={(value) => updateConfig({ bgImageMobile: value })} mediaKind="image" />
           <TextField label="Background Position Classes" value={config.bgPositionClasses} onChange={(value) => updateConfig({ bgPositionClasses: value })} />
           <TextField label="Background Size Class" value={config.bgSizeClass} onChange={(value) => updateConfig({ bgSizeClass: value })} />
         </div>

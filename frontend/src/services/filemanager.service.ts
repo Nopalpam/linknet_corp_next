@@ -42,6 +42,18 @@ export type FileItem = {
   } | null;
 };
 
+export type MediaFolder = {
+  id: string;
+  name: string;
+  path: string;
+  parentId?: string | null;
+  fileCount?: number;
+  childCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  children?: MediaFolder[];
+};
+
 export type FileListResponse = {
   success: boolean;
   data: {
@@ -73,29 +85,58 @@ export type FileDetailResponse = {
   };
 };
 
+export type FolderListResponse = {
+  success: boolean;
+  data: {
+    items: MediaFolder[];
+  };
+};
+
+export type FolderMutationResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    folder: MediaFolder;
+  };
+};
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const nameEq = `${name}=`;
+
+  for (const cookie of document.cookie.split(';')) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith(nameEq)) {
+      return trimmed.substring(nameEq.length);
+    }
+  }
+
+  return null;
+};
+
 class FileManagerService extends BaseService {
   /**
    * Upload files
    */
-  async uploadFiles(files: File[], folder?: string): Promise<FileUploadResponse> {
-    const url = this.getApiUrl('/fm/upload');
+  async uploadFiles(files: File[], folderId?: string): Promise<FileUploadResponse> {
+    const url = this.getApiUrl('/media/upload');
 
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('files', file);
     });
-    if (folder) {
-      formData.append('folder', folder);
+    if (folderId) {
+      formData.append('folderId', folderId);
     }
 
-    // Get token
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const csrfToken = getCookie('csrf_token');
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
       },
+      credentials: 'include',
       body: formData,
     });
 
@@ -134,7 +175,8 @@ class FileManagerService extends BaseService {
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
-    const url = this.getApiUrl(`/fm?${searchParams.toString()}`);
+    const query = searchParams.toString();
+    const url = this.getApiUrl(`/media/files${query ? `?${query}` : ''}`);
     return this.fetchWithAuth(url, { method: 'GET' });
   }
 
@@ -142,7 +184,7 @@ class FileManagerService extends BaseService {
    * Get file details
    */
   async getFile(id: string): Promise<FileDetailResponse> {
-    const url = this.getApiUrl(`/fm/${id}`);
+    const url = this.getApiUrl(`/media/files/${id}`);
     return this.fetchWithAuth(url, { method: 'GET' });
   }
 
@@ -150,7 +192,7 @@ class FileManagerService extends BaseService {
    * Get download URL for a file
    */
   async getDownloadUrl(id: string): Promise<{ success: boolean; data: { downloadUrl: string; filename: string } }> {
-    const url = this.getApiUrl(`/fm/${id}?download=true`);
+    const url = this.getApiUrl(`/media/files/${id}?download=true`);
     return this.fetchWithAuth(url, { method: 'GET' });
   }
 
@@ -158,7 +200,37 @@ class FileManagerService extends BaseService {
    * Delete a file
    */
   async deleteFile(id: string): Promise<{ success: boolean; message: string }> {
-    const url = this.getApiUrl(`/fm/${id}`);
+    const url = this.getApiUrl(`/media/files/${id}`);
+    return this.fetchWithAuth(url, { method: 'DELETE' });
+  }
+
+  /**
+   * List folders
+   */
+  async listFolders(): Promise<FolderListResponse> {
+    const url = this.getApiUrl('/media/folders');
+    return this.fetchWithAuth(url, { method: 'GET' });
+  }
+
+  /**
+   * Create a folder
+   */
+  async createFolder(name: string, parentId?: string): Promise<FolderMutationResponse> {
+    const url = this.getApiUrl('/media/folders');
+    return this.fetchWithAuth(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        ...(parentId ? { parentId } : {}),
+      }),
+    });
+  }
+
+  /**
+   * Delete a folder
+   */
+  async deleteFolder(id: string): Promise<{ success: boolean; message: string }> {
+    const url = this.getApiUrl(`/media/folders/${id}`);
     return this.fetchWithAuth(url, { method: 'DELETE' });
   }
 }

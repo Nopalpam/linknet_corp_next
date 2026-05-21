@@ -24,6 +24,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { menuService, MenuItem, MenuPosition, MenuType, CreateMenuData } from '@/services/menu.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import MediaPickerButton from '@/components/media/MediaPickerButton';
 
 interface MenuFormModalProps {
   isOpen: boolean;
@@ -411,6 +412,14 @@ export default function MenuFormModal({
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="icon-name or URL"
                   />
+                  <div className="mt-2">
+                    <MediaPickerButton
+                      kind="image"
+                      label="Choose Icon from File Manager"
+                      title="Choose Menu Icon"
+                      onSelect={(url) => setFormData({ ...formData, icon: url })}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -431,6 +440,13 @@ export default function MenuFormModal({
                     onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                     placeholder="https://example.com/image.jpg"
                   />
+                  <div className="mt-2">
+                    <MediaPickerButton
+                      kind="image"
+                      title="Choose Menu Image"
+                      onSelect={(url) => setFormData({ ...formData, image: url })}
+                    />
+                  </div>
                 </div>
 
                 <div className="col-span-2">

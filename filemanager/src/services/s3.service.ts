@@ -4,12 +4,13 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
   GetObjectCommand,
+  HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { s3Client, AWS_BUCKET_NAME, CDN_URL } from '../config/aws.config';
-import { UploadedFile, FileListItem, BulkDeleteResult } from '../types';
+import { UploadedFile, FileListItem, BulkDeleteResult, StoredObjectMetadata } from '../types';
 
 /**
  * Build the public URL for a given S3 object key.
@@ -31,6 +32,31 @@ const buildPublicUrl = (key: string): string => {
 const sanitizeFolder = (folder: string): string =>
   folder.replace(/[^a-zA-Z0-9_/-]/g, '').replace(/\.{2,}/g, '').replace(/^\/|\/$/g, '');
 
+const sanitizeBaseName = (filename: string): string => {
+  const parsedName = path.parse(filename).name;
+  const normalized = parsedName
+    .normalize('NFKD')
+    .replace(/[^\x00-\x7F]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-_.]+|[-_.]+$/g, '')
+    .toLowerCase();
+
+  return normalized || 'file';
+};
+
+const sanitizeExtension = (filename: string): string => {
+  const extension = path.extname(filename).toLowerCase();
+  return /^\.[a-z0-9]{1,10}$/.test(extension) ? extension : '';
+};
+
+const buildObjectKey = (folder: string, originalName: string): string => {
+  const safeFolder = sanitizeFolder(folder) || 'uploads';
+  const safeBaseName = sanitizeBaseName(originalName);
+  const extension = sanitizeExtension(originalName);
+  return `${safeFolder}/${uuidv4()}-${safeBaseName}${extension}`;
+};
+
 /**
  * Upload a single file to S3.
  */
@@ -38,9 +64,7 @@ export const uploadFile = async (
   file: Express.Multer.File,
   folder = 'uploads'
 ): Promise<UploadedFile> => {
-  const safeFolder = sanitizeFolder(folder) || 'uploads';
-  const ext = path.extname(file.originalname).toLowerCase();
-  const key = `${safeFolder}/${uuidv4()}${ext}`;
+  const key = buildObjectKey(folder, file.originalname);
 
   const command = new PutObjectCommand({
     Bucket: AWS_BUCKET_NAME,
@@ -112,6 +136,24 @@ export const generateSignedUrl = async (
   });
 
   return getSignedUrl(s3Client, command, { expiresIn });
+};
+
+export const getObjectMetadata = async (key: string): Promise<StoredObjectMetadata> => {
+  const command = new HeadObjectCommand({
+    Bucket: AWS_BUCKET_NAME,
+    Key: key,
+  });
+
+  const response = await s3Client.send(command);
+
+  return {
+    key,
+    url: buildPublicUrl(key),
+    size: response.ContentLength ?? 0,
+    mimeType: response.ContentType ?? null,
+    lastModified: response.LastModified?.toISOString() ?? null,
+    eTag: response.ETag ?? null,
+  };
 };
 
 /**

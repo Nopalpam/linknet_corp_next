@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import {
   getProfile,
   updateProfile,
@@ -8,7 +8,7 @@ import {
   deleteAccount
 } from '../controllers/profile.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { avatarUpload } from '../config/upload';
+import { avatarUpload, getMulterErrorMessage } from '../config/upload';
 import { scanUploadedFiles } from '../middleware/upload.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 import {
@@ -18,6 +18,20 @@ import {
 } from '../validators/profile.validator';
 
 const router = Router();
+
+const handleAvatarUpload = (req: Request, res: Response, next: NextFunction): void => {
+  avatarUpload.single('avatar')(req, res, (error: unknown) => {
+    if (!error) {
+      next();
+      return;
+    }
+
+    res.status(400).json({
+      success: false,
+      message: getMulterErrorMessage(error),
+    });
+  });
+};
 
 /**
  * All profile routes require authentication
@@ -30,7 +44,7 @@ router.get('/', authMiddleware, getProfile);
 router.put('/', authMiddleware, updateProfileValidation, validateRequest, updateProfile);
 
 // Upload/Update avatar
-router.put('/avatar', authMiddleware, avatarUpload.single('avatar'), scanUploadedFiles, updateAvatar);
+router.put('/avatar', authMiddleware, handleAvatarUpload, scanUploadedFiles, updateAvatar);
 
 // Delete avatar
 router.delete('/avatar', authMiddleware, deleteAvatar);

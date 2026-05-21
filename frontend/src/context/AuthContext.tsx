@@ -14,6 +14,7 @@ import {
   dispatchSessionResumed,
   isSessionExpiredError,
 } from "@/lib/sessionExpired";
+import { normalizeBackendAssetUrl } from "@/lib/backendAssetUrl";
 
 type User = {
   id: string;
@@ -132,7 +133,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!savedUser) return false;
 
     try {
-      setUser(JSON.parse(savedUser));
+      const cachedUser = JSON.parse(savedUser);
+      setUser({
+        ...cachedUser,
+        avatar: normalizeBackendAssetUrl(cachedUser.avatar),
+      });
       return true;
     } catch {
       localStorage.removeItem(AUTH_USER_KEY);
@@ -204,7 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: `${userData.firstName} ${userData.lastName}`.trim(),
             firstName: userData.firstName,
             lastName: userData.lastName,
-            avatar: userData.avatar,
+            avatar: normalizeBackendAssetUrl(userData.avatar),
             status: userData.status,
             roles: userData.roles,
             permissions: userData.permissions,
@@ -225,7 +230,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Mock mode: restore from localStorage
         const savedUser = localStorage.getItem(AUTH_USER_KEY);
         if (savedUser) {
-          setUser(JSON.parse(savedUser));
+          const cachedUser = JSON.parse(savedUser);
+          setUser({
+            ...cachedUser,
+            avatar: normalizeBackendAssetUrl(cachedUser.avatar),
+          });
         }
       }
     } catch (error: any) {
@@ -319,7 +328,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 name: `${userData.firstName} ${userData.lastName}`.trim(),
                 firstName: userData.firstName,
                 lastName: userData.lastName,
-                avatar: userData.avatar,
+                avatar: normalizeBackendAssetUrl(userData.avatar),
                 status: userData.status,
                 roles: userData.roles,
                 permissions: userData.permissions,
@@ -346,7 +355,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const savedUser = localStorage.getItem(AUTH_USER_KEY);
           if (savedUser) {
             console.log('✅ Mock mode - user restored from cache');
-            setUser(JSON.parse(savedUser));
+            const cachedUser = JSON.parse(savedUser);
+            setUser({
+              ...cachedUser,
+              avatar: normalizeBackendAssetUrl(cachedUser.avatar),
+            });
           }
         }
       } catch (error) {
@@ -439,7 +452,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name: userData.name || `${userData.firstName} ${userData.lastName}`.trim(),
           firstName: userData.firstName,
           lastName: userData.lastName,
-          avatar: userData.avatar,
+          avatar: normalizeBackendAssetUrl(userData.avatar),
           status: userData.status,
           roles: userData.roles || [],
           permissions: userData.permissions || [],
@@ -550,7 +563,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: userData.name || `${userData.firstName} ${userData.lastName}`.trim(),
         firstName: userData.firstName,
         lastName: userData.lastName,
-        avatar: userData.avatar,
+        avatar: normalizeBackendAssetUrl(userData.avatar),
         status: userData.status,
         roles: userData.roles || [],
         permissions: userData.permissions || [],

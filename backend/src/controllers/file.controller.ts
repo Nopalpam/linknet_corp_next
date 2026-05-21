@@ -12,7 +12,7 @@
  * 
  * ⚠️ CATATAN:
  *   - Endpoint ini belum terkoneksi ke UI (File Manager UI belum dibuat)
- *   - Endpoint ini siap digunakan oleh Flmngr atau custom file manager
+ *   - Endpoint ini siap digunakan oleh custom file manager internal
  *   - Untuk S3, listing via ListObjectsV2; untuk local, via filesystem
  */
 

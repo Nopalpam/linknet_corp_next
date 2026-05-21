@@ -177,6 +177,10 @@ export default function UsersManagementPage() {
                 width={40}
                 height={40}
                 className="object-cover"
+                unoptimized
+                onError={(event) => {
+                  event.currentTarget.src = "/images/user/owner1.jpg";
+                }}
               />
             ) : (
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ICON_OPTIONS } from '../iconOptions';
+import MediaPickerButton from '@/components/media/MediaPickerButton';
 
 const CTA_VARIANT_OPTIONS = [
   'primary',
@@ -156,20 +157,38 @@ function IconSelectField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const selectedIcon = ICON_OPTIONS.includes(value as any) ? value : '';
+  const customPath = selectedIcon ? '' : value || '';
+
   return (
     <FieldWrapper helper="Uses the existing icon data bank. Path values are still accepted for backward compatibility.">
       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
-      <select
-        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-        value={ICON_OPTIONS.includes(value as any) ? value : ''}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {ICON_OPTIONS.map((option) => (
-          <option key={option} value={option}>
-            {labelize(option)}
-          </option>
-        ))}
-      </select>
+      <div className="space-y-2">
+        <select
+          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+          value={selectedIcon}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          {ICON_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {labelize(option)}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder="/assets/icons/example.svg"
+          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+          value={customPath}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <MediaPickerButton
+          kind="image"
+          label="Choose Icon from File Manager"
+          title={`Choose ${label}`}
+          onSelect={(url) => onChange(url)}
+        />
+      </div>
     </FieldWrapper>
   );
 }

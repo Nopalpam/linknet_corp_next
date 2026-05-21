@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { CtaListModule } from './CtaListModule';
 import { newsService, News } from '@/services/news.service';
 import { SortableListEditor } from './SortableListEditor';
+import MediaPickerButton from '@/components/media/MediaPickerButton';
+import { MediaPickerKind } from '@/components/media/MediaPickerModal';
 
 const RichTextEditor = dynamic(
   () => import('@/components/ui/ckeditor/CKEditorWrapper'),
@@ -30,23 +32,34 @@ function TextField({
   onChange,
   placeholder,
   disabled = false,
+  mediaKind,
 }: {
   label: string;
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  mediaKind?: MediaPickerKind;
 }) {
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      <input
-        value={value || ''}
-        placeholder={placeholder}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
-      />
+      <div className="space-y-2">
+        <input
+          value={value || ''}
+          placeholder={placeholder}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
+        />
+        {mediaKind && !disabled && (
+          <MediaPickerButton
+            kind={mediaKind}
+            title={`Choose ${label}`}
+            onSelect={(url) => onChange(url)}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -156,7 +169,7 @@ export function DocumentListModule({
             <MultiTextField label="Document Name" value={item.documentName} onChange={(nextValue) => update({ documentName: nextValue })} />
             <TextField label="Sub Desc" value={item.subDesc || ''} onChange={(nextValue) => update({ subDesc: nextValue })} />
             <div className="sm:col-span-2">
-              <TextField label="URL" value={item.url || ''} onChange={(nextValue) => update({ url: nextValue })} placeholder="https://..." />
+              <TextField label="URL" value={item.url || ''} onChange={(nextValue) => update({ url: nextValue })} placeholder="https://..." mediaKind="any" />
             </div>
           </div>
         );

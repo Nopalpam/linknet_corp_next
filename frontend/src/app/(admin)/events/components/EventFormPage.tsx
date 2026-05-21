@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CKEditorWrapper from "@/components/ui/ckeditor/CKEditorWrapper";
 import MultiSelect from "@/components/form/MultiSelect";
+import MediaPickerButton from "@/components/media/MediaPickerButton";
 import { useToast } from "@/context/ToastContext";
 import { fileManagerService } from "@/services/filemanager.service";
 import { News, newsService } from "@/services/news.service";
@@ -780,6 +781,13 @@ function ImageField({
           >
             {uploading ? "Uploading..." : "Choose Image"}
           </label>
+          <div className="mt-2">
+            <MediaPickerButton
+              kind="image"
+              title={`Choose ${label}`}
+              onSelect={(url) => onChange(url)}
+            />
+          </div>
           <input
             type="text"
             value={value}

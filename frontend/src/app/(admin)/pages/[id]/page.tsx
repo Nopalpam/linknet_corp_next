@@ -22,6 +22,7 @@ import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { PageBuilderModal } from "../components/PageBuilderV2";
 import { normalizeComponentType, getLocalizedValue } from "../components/PageBuilderV2";
+import MediaPathInput from "@/components/media/MediaPathInput";
 
 type ContentTab = "content" | "settings";
 
@@ -571,13 +572,14 @@ export default function EditPagePage() {
                         <label htmlFor="metaThumbnail" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Meta Thumbnail
                         </label>
-                        <input
+                        <MediaPathInput
                           id="metaThumbnail"
-                          type="text"
                           value={formData.metaThumbnail || ""}
-                          onChange={(e) => setFormData({ ...formData, metaThumbnail: e.target.value })}
-                          className={inputClass}
+                          onChange={(value) => setFormData({ ...formData, metaThumbnail: value })}
+                          inputClassName={inputClass}
                           placeholder="/uploads/seo/thumbnail.jpg"
+                          buttonLabel="Choose Meta Thumbnail from File Manager"
+                          pickerTitle="Choose Meta Thumbnail"
                         />
                       </div>
                       <div className="flex flex-wrap gap-4">

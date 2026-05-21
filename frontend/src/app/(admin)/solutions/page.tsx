@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import { useToast } from "@/context/ToastContext";
+import MediaPathInput from "@/components/media/MediaPathInput";
 import {
   DataBankSolution,
   SolutionCategory,
@@ -421,8 +422,8 @@ export default function SolutionsPage() {
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Image / Thumbnail" value={formData.image || ""} onChange={(value) => updateField("image", value)} placeholder="/assets/bg/example.jpg" />
-                    <Field label="Banner Image" value={formData.bannerImage || ""} onChange={(value) => updateField("bannerImage", value)} placeholder="/assets/bg/example-banner.jpg" />
+                    <MediaField label="Image / Thumbnail" value={formData.image || ""} onChange={(value) => updateField("image", value)} placeholder="/assets/bg/example.jpg" />
+                    <MediaField label="Banner Image" value={formData.bannerImage || ""} onChange={(value) => updateField("bannerImage", value)} placeholder="/assets/bg/example-banner.jpg" />
                   </div>
 
                   {(formData.image || formData.bannerImage) && (
@@ -518,6 +519,21 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white ${compact ? "py-2" : ""}`}
+      />
+    </div>
+  );
+}
+
+function MediaField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+      <MediaPathInput
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        pickerTitle={`Choose ${label}`}
+        inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
       />
     </div>
   );

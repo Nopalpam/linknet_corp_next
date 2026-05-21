@@ -188,6 +188,10 @@ app.use(`${API_PREFIX}/filemanager`, filemanagerRoutes);
 import filemanagerV2Routes from '@routes/filemanagerV2.routes';
 app.use(`${API_PREFIX}/fm`, filemanagerV2Routes);
 
+// Media routes (browser-facing gateway to the internal filemanager media service)
+import mediaRoutes from '@routes/media.routes';
+app.use(`${API_PREFIX}/media`, mediaRoutes);
+
 // Upload routes (unified S3/Azure/Local upload + presigned URLs)
 import uploadRoutes from '@routes/upload.routes';
 app.use(`${API_PREFIX}/upload`, uploadRoutes);

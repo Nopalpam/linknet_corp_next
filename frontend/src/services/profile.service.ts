@@ -9,6 +9,7 @@ import {
   dispatchSessionExpired,
   isUnauthorizedOrExpired,
 } from "@/lib/sessionExpired";
+import { normalizeBackendAssetUrl } from "@/lib/backendAssetUrl";
 
 export interface UserProfile {
   id: string;
@@ -53,15 +54,7 @@ class ProfileService extends BaseService {
    */
   private normalizeAvatarUrl(avatar: string | null): string | null {
     if (!avatar) return null;
-    
-    // If already absolute URL, return as is
-    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-      return avatar;
-    }
-    
-    // If relative URL, prepend backend URL
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    return `${backendUrl}${avatar.startsWith('/') ? avatar : `/${avatar}`}`;
+    return normalizeBackendAssetUrl(avatar);
   }
 
   /**
@@ -102,7 +95,7 @@ class ProfileService extends BaseService {
   /**
    * Upload avatar
    */
-  async updateAvatar(file: File): Promise<{ data: UserProfile; message: string }> {
+  async updateAvatar(file: File): Promise<{ data: Pick<UserProfile, "avatar"> & { updatedAt?: string }; message: string }> {
     const formData = new FormData();
     formData.append('avatar', file);
 
@@ -151,7 +144,10 @@ class ProfileService extends BaseService {
     const result = await response.json();
     return {
       ...result,
-      data: this.processProfileData(result.data),
+      data: {
+        ...result.data,
+        avatar: this.normalizeAvatarUrl(result.data?.avatar || null),
+      },
     };
   }
 

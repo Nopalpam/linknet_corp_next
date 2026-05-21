@@ -187,6 +187,46 @@ const ENV_VARS: EnvVarConfig[] = [
     validator: (value) => ['true', 'false'].includes(value),
   },
   {
+    name: 'MEDIA_ROOT_PREFIX',
+    required: false,
+    defaultValue: 'cms/shared',
+    description: 'Root S3 prefix for the shared CMS media library',
+  },
+  {
+    name: 'FILEMANAGER_INTERNAL_URL',
+    required: false,
+    defaultValue: 'http://localhost:3000',
+    description: 'Internal base URL for the dedicated filemanager service',
+    validator: (value) => value.startsWith('http://') || value.startsWith('https://'),
+  },
+  {
+    name: 'FILEMANAGER_API_KEY',
+    required: false,
+    description: 'Internal API key used by the backend to access the filemanager service',
+  },
+  {
+    name: 'AWS_REGION',
+    required: false,
+    description: 'AWS region for S3-backed storage',
+  },
+  {
+    name: 'AWS_S3_BUCKET',
+    required: false,
+    description: 'S3 bucket name for file storage',
+  },
+  {
+    name: 'AWS_S3_PUBLIC_URL',
+    required: false,
+    description: 'Optional CloudFront or custom CDN URL for public S3 files',
+    validator: (value) => value.startsWith('http://') || value.startsWith('https://'),
+  },
+  {
+    name: 'AWS_S3_ENDPOINT',
+    required: false,
+    description: 'Optional custom S3-compatible endpoint',
+    validator: (value) => value.startsWith('http://') || value.startsWith('https://'),
+  },
+  {
     name: 'S3_ALLOW_PUBLIC_ACL',
     required: false,
     defaultValue: 'false',
@@ -394,6 +434,31 @@ export function validateEnvironment(): ValidationResult {
     (variables.MFA_ENABLED || process.env.MFA_ENABLED || '').toLowerCase()
   );
   const mfaProvider = (variables.MFA_PROVIDER || process.env.MFA_PROVIDER || 'local').toLowerCase();
+  const storageDriver = (variables.STORAGE_DRIVER || process.env.STORAGE_DRIVER || 'local').toLowerCase();
+  const presignedUploadEnabled = (variables.PRESIGNED_UPLOAD_ENABLED || process.env.PRESIGNED_UPLOAD_ENABLED) === 'true';
+
+  if (storageDriver === 's3' || presignedUploadEnabled) {
+    const missingS3Vars = ['AWS_REGION', 'AWS_S3_BUCKET'].filter(
+      (name) => !(variables[name] || process.env[name])
+    );
+
+    if (missingS3Vars.length > 0) {
+      errors.push(
+        `S3 storage is enabled but missing: ${missingS3Vars.join(', ')}`
+      );
+    }
+  }
+
+  if ((process.env.AWS_ACCESS_KEY_ID || process.env.AWS_SECRET_ACCESS_KEY) && storageDriver === 's3') {
+    warnings.push(
+      'Static AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY detected. Prefer IRSA or the default AWS credential chain for production.'
+    );
+  }
+
+  if (!(variables.FILEMANAGER_INTERNAL_URL || process.env.FILEMANAGER_INTERNAL_URL)) {
+    errors.push('FILEMANAGER_INTERNAL_URL must be configured for the internal media service');
+  }
+
   if (mfaEnabled && mfaProvider === 'keycloak') {
     const missingKeycloakVars = [
       'KEYCLOAK_URL',
@@ -446,6 +511,14 @@ export function validateEnvironment(): ValidationResult {
 
     if ((variables.AZURE_BLOB_PUBLIC_ACCESS || process.env.AZURE_BLOB_PUBLIC_ACCESS) === 'true') {
       warnings.push('AZURE_BLOB_PUBLIC_ACCESS=true exposes blob URLs publicly and should be explicitly approved');
+    }
+
+    if (storageDriver === 's3' && (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_SECRET_ACCESS_KEY)) {
+      errors.push('Static AWS credentials must not be configured in production when STORAGE_DRIVER=s3. Use IRSA instead.');
+    }
+
+    if (!(variables.FILEMANAGER_API_KEY || process.env.FILEMANAGER_API_KEY)) {
+      errors.push('FILEMANAGER_API_KEY must be configured in production for the internal media service');
     }
 
     if (!(variables.LINKNET_MEDIA_TOKEN_SALT || process.env.LINKNET_MEDIA_TOKEN_SALT)) {

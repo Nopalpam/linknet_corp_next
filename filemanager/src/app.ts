@@ -8,8 +8,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import fileRoutes from './routes/file.routes';
+import mediaRoutes from './routes/media.routes';
 import { apiKeyAuth } from './middleware/auth.middleware';
 import { sendError } from './utils/response.util';
+import { AWS_BUCKET_NAME, CDN_URL } from './config/aws.config';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -53,10 +55,19 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // ── Health check (no auth required) ──────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    media: {
+      storage: 's3',
+      bucket: AWS_BUCKET_NAME,
+      cdnConfigured: Boolean(CDN_URL),
+    },
+  });
 });
 
 // ── API routes ────────────────────────────────────────────────────
+app.use('/api/media', apiKeyAuth, mediaRoutes);
 app.use('/api', apiKeyAuth, fileRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────

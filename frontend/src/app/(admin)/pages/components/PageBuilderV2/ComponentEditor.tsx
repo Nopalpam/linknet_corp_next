@@ -29,6 +29,8 @@ import { InformationListEditor } from './editors/InformationListEditor';
 import { ListReportHomeEditor } from './editors/ListReportHomeEditor';
 import { MediaGenreField, MediaHighlightCategoriesField, MediaIdsField } from './editors/MediaSelectionEditor';
 import { ICON_OPTIONS } from './iconOptions';
+import MediaPickerButton from '@/components/media/MediaPickerButton';
+import { MediaPickerKind } from '@/components/media/MediaPickerModal';
 import { awardsService, Award } from '@/services/awards.service';
 import { newsCategoryService, newsService, NewsCategory, News } from '@/services/news.service';
 import { reportService } from '@/services/report.service';
@@ -598,6 +600,37 @@ function isIconField(key: string): boolean {
   return ICON_FIELD_KEYS.some((iconKey) => normalized === iconKey.toLowerCase());
 }
 
+function isMediaPathField(key: string): boolean {
+  const normalized = key.toLowerCase();
+  const exactImageKeys = new Set(['src', 'image', 'img', 'photo', 'thumbnail', 'poster', 'favicon']);
+  if (exactImageKeys.has(normalized)) return true;
+
+  return [
+    'image',
+    'img',
+    'thumbnail',
+    'thumb',
+    'photo',
+    'poster',
+    'backgroundimage',
+    'background_image',
+    'bgimage',
+    'bg_image',
+    'logo',
+    'iconsrc',
+    'iconurl',
+    'icon_url',
+  ].some((token) => normalized.includes(token));
+}
+
+function getMediaKindForField(key: string): MediaPickerKind {
+  const normalized = key.toLowerCase();
+  if (normalized.includes('pdf') || normalized.includes('document')) return 'pdf';
+  if (normalized.includes('video')) return 'video';
+  if (normalized.includes('audio')) return 'audio';
+  return 'image';
+}
+
 function uniqueOptions(options: string[]): string[] {
   return Array.from(new Set(options));
 }
@@ -814,6 +847,28 @@ function StringField({ label, value, onChange, fieldKey, componentType }: FieldP
   const isHtml = isHtmlField(fieldKey, value);
   const placeholder = getPlaceholder(fieldKey);
   const helper = getHelperText(fieldKey, componentType);
+
+  if (!isHtml && isMediaPathField(fieldKey)) {
+    return (
+      <FieldWrapper helper={helper}>
+        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+        <div className="space-y-2">
+          <input
+            type="text"
+            placeholder={placeholder || 'https://...'}
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          <MediaPickerButton
+            kind={getMediaKindForField(fieldKey)}
+            title={`Choose ${label}`}
+            onSelect={(url) => onChange(url)}
+          />
+        </div>
+      </FieldWrapper>
+    );
+  }
 
   if (isHtml || (typeof value === 'string' && value.length > 100)) {
     return (
@@ -1337,6 +1392,12 @@ function IconField({ label, value, onChange, fieldKey, componentType }: FieldPro
           className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
           value={customPath}
           onChange={(e) => onChange(e.target.value)}
+        />
+        <MediaPickerButton
+          kind="image"
+          label="Choose Icon from File Manager"
+          title={`Choose ${label}`}
+          onSelect={(url) => onChange(url)}
         />
       </div>
     </FieldWrapper>
@@ -2277,7 +2338,7 @@ function ObjectFields({
   objectKey?: string;
   componentType?: string;
 }) {
-  const editorData = componentType === 'info_contacts' && objectKey === 'contact_items'
+  const editorData: Record<string, any> = componentType === 'info_contacts' && objectKey === 'contact_items'
     ? (() => {
         const { icon, icon_left, icon_right, type, ...rest } = data || {};
 

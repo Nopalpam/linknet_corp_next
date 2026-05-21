@@ -3,6 +3,7 @@
 import React from "react";
 import { usePageBuilder, type ComponentSchema } from "./EnhancedPageBuilderContext";
 import { normalizeComponentType, getDisplayName } from "./componentRegistry";
+import MediaPickerButton from "@/components/media/MediaPickerButton";
 
 export default function ComponentSettings() {
   const { selectedComponent, updateComponent } = usePageBuilder();
@@ -691,6 +692,8 @@ function SettingField({
   placeholder,
   options,
 }: SettingFieldProps) {
+  const isMediaTextField = type === "text" && /image|thumbnail|photo|logo|poster|background/i.test(label);
+
   return (
     <div>
       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -717,13 +720,22 @@ function SettingField({
           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500"
         />
       ) : (
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500"
-        />
+        <div className="space-y-2">
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-brand-500"
+          />
+          {isMediaTextField && (
+            <MediaPickerButton
+              kind="image"
+              title={`Choose ${label}`}
+              onSelect={(url) => onChange(url)}
+            />
+          )}
+        </div>
       )}
     </div>
   );

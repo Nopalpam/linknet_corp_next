@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import CKEditorWrapper from "@/components/ui/ckeditor/CKEditorWrapper";
 import MultiSelect from "@/components/form/MultiSelect";
+import MediaPickerButton from "@/components/media/MediaPickerButton";
 import { fileManagerService } from "@/services/filemanager.service";
 import { News, newsService } from "@/services/news.service";
 import {
@@ -589,6 +590,14 @@ export default function EventFormModal({
                       >
                         {uploadingField === "organizer_logo" ? "Uploading..." : "Choose Logo"}
                       </label>
+                      <div className="mt-2">
+                        <MediaPickerButton
+                          kind="image"
+                          label="Choose Logo from File Manager"
+                          title="Choose Organizer Logo"
+                          onSelect={(url) => setField("organizer_logo", url)}
+                        />
+                      </div>
                       <input
                         type="text"
                         value={formData.organizer_logo || ""}
@@ -675,6 +684,13 @@ export default function EventFormModal({
                       >
                         {uploadingField === "cover_image" ? "Uploading..." : "Choose Image"}
                       </label>
+                      <div className="mt-2">
+                        <MediaPickerButton
+                          kind="image"
+                          title="Choose Event Cover"
+                          onSelect={(url) => setField("cover_image", url)}
+                        />
+                      </div>
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Upload to the existing file manager bucket or paste a URL below.
                       </p>

@@ -21,6 +21,11 @@ import { logInfo } from '../utils/logger';
 // Cache analytics data for 10 minutes to reduce API calls
 const analyticsCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
+type ServiceAccountCredentials = {
+  client_email: string;
+  private_key: string;
+};
+
 // ============ TYPES ============
 
 export interface GAOverviewData {
@@ -65,6 +70,73 @@ function isGA4Configured(): boolean {
   return false;
 }
 
+function getGA4PropertyName(): string {
+  const propertyId = (process.env.GA4_PROPERTY_ID || '').trim();
+  if (!propertyId) {
+    throw new Error('GA4_PROPERTY_ID is not configured.');
+  }
+
+  return propertyId.startsWith('properties/')
+    ? propertyId
+    : `properties/${propertyId}`;
+}
+
+function normalizePrivateKey(privateKey: string): string {
+  return privateKey.replace(/\\n/g, '\n');
+}
+
+function parseServiceAccountJson(rawValue: string): ServiceAccountCredentials {
+  const trimmedValue = rawValue.trim();
+  const unwrappedValue =
+    (trimmedValue.startsWith("'") && trimmedValue.endsWith("'")) ||
+    (trimmedValue.startsWith('"') && trimmedValue.endsWith('"'))
+      ? trimmedValue.slice(1, -1)
+      : trimmedValue;
+
+  const candidates = [
+    unwrappedValue,
+    unwrappedValue.replace(/\\"/g, '"'),
+  ];
+
+  try {
+    candidates.push(Buffer.from(unwrappedValue, 'base64').toString('utf8'));
+  } catch {
+    // Ignore invalid base64 candidates and fall through to JSON parse attempts.
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as Partial<ServiceAccountCredentials>;
+      if (parsed.client_email && parsed.private_key) {
+        return {
+          client_email: parsed.client_email,
+          private_key: normalizePrivateKey(parsed.private_key),
+        };
+      }
+    } catch {
+      // Try the next common env representation.
+    }
+  }
+
+  throw new Error(
+    'GOOGLE_SERVICE_ACCOUNT_JSON is not valid service account JSON. Check client_email and private_key.'
+  );
+}
+
+function getReadableGA4ErrorMessage(error: Error): string {
+  const message = error.message || 'Unknown error';
+
+  if (message.includes('PERMISSION_DENIED')) {
+    return 'Google Analytics tidak dapat diakses: service account belum memiliki akses ke GA4 property. Tambahkan client_email dari GOOGLE_SERVICE_ACCOUNT_JSON sebagai Viewer di GA4 Property Access Management.';
+  }
+
+  if (message.includes('INVALID_ARGUMENT') || message.includes('Property ID')) {
+    return 'Google Analytics tidak dapat diakses: GA4_PROPERTY_ID tidak valid. Gunakan numeric property ID atau format properties/PROPERTY_ID.';
+  }
+
+  return `Google Analytics tidak tersedia: ${message}`;
+}
+
 // ============ HELPER: Get GA4 Client ============
 
 async function getGA4Client() {
@@ -74,12 +146,7 @@ async function getGA4Client() {
   // Option A: full service account JSON (preferred — Key Vault / single-secret approach)
   const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson) {
-    let parsed: { client_email: string; private_key: string };
-    try {
-      parsed = JSON.parse(serviceAccountJson);
-    } catch {
-      throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON. Check the env var value.');
-    }
+    const parsed = parseServiceAccountJson(serviceAccountJson);
     return new BetaAnalyticsDataClient({
       credentials: {
         client_email: parsed.client_email,
@@ -95,7 +162,7 @@ async function getGA4Client() {
     return new BetaAnalyticsDataClient({
       credentials: {
         client_email: clientEmail,
-        private_key: privateKey.replace(/\\n/g, '\n'),
+        private_key: normalizePrivateKey(privateKey),
       },
     });
   }
@@ -138,11 +205,11 @@ export class GoogleAnalyticsService {
 
     try {
       const client = await getGA4Client();
-      const propertyId = process.env.GA4_PROPERTY_ID;
+      const propertyName = getGA4PropertyName();
 
       // Fetch overview metrics
       const [overviewResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: propertyName,
         dateRanges: [{ startDate, endDate }],
         metrics: [
           { name: 'totalUsers' },
@@ -179,7 +246,7 @@ export class GoogleAnalyticsService {
 
       // Fetch top pages
       const [topPagesResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: propertyName,
         dateRanges: [{ startDate, endDate }],
         dimensions: [
           { name: 'pagePath' },
@@ -227,11 +294,12 @@ export class GoogleAnalyticsService {
     } catch (error: any) {
       // Log warning instead of error - GA4 not working should not break the app
       logInfo(`GA4 analytics unavailable: ${error.message}`);
+      const message = getReadableGA4ErrorMessage(error);
 
       // Return graceful fallback instead of throwing
       return {
         connected: false,
-        message: `Google Analytics tidak tersedia: ${error.message}`,
+        message,
         overview: null,
         topPages: [],
         period: { startDate, endDate },

@@ -19,6 +19,15 @@ export interface BulkDeleteResult {
   failed: Array<{ key: string; reason: string }>;
 }
 
+export interface StoredObjectMetadata {
+  key: string;
+  url: string;
+  size: number;
+  mimeType: string | null;
+  lastModified: string | null;
+  eTag: string | null;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;

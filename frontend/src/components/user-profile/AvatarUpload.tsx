@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { UserProfile } from "@/services/profile.service";
 import { profileService } from "@/services/profile.service";
@@ -15,7 +15,12 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { refreshUser } = useAuth();
+
+  useEffect(() => {
+    setImageError(false);
+  }, [profile.avatar]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -29,6 +34,7 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
       if (onShowToast) {
         onShowToast(errorMsg, "error");
       }
+      event.target.value = '';
       return;
     }
 
@@ -40,6 +46,7 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
       if (onShowToast) {
         onShowToast(errorMsg, "error");
       }
+      event.target.value = '';
       return;
     }
 
@@ -79,13 +86,15 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
   };
 
   const triggerFileSelect = () => {
-    document.getElementById('avatar-upload-input')?.click();
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
   // Get avatar URL with fallback
   const getAvatarUrl = () => {
     if (imageError || !profile.avatar) {
-      return "/images/user/owner.jpg";
+      return "/images/user/owner1.jpg";
     }
     return profile.avatar;
   };
@@ -98,8 +107,7 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
             <Image
               width={96}
               height={96}
-              // src={getAvatarUrl()}
-              src="/images/user/ownerzz.jpg"
+              src={getAvatarUrl()}
               alt={profile.fullName}
               className="object-cover w-full h-full"
               onError={() => setImageError(true)}
@@ -109,8 +117,7 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
             <Image
               width={96}
               height={96}
-              // src="/images/user/owner.jpg"
-              src="/images/user/ownerzz.jpg"
+              src="/images/user/owner1.jpg"
               alt={profile.fullName}
               className="object-cover w-full h-full"
             />
@@ -141,6 +148,7 @@ export default function AvatarUpload({ profile, onAvatarUpdated, onShowToast }: 
       {/* Hidden File Input */}
       <input
         id="avatar-upload-input"
+        ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
         className="hidden"

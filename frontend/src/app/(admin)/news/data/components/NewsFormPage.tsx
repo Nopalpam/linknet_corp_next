@@ -6,6 +6,7 @@ import CKEditorWrapper from "@/components/ui/ckeditor/CKEditorWrapper";
 import { newsCategoryService, newsService, CreateNewsData, News, NewsCategory, UpdateNewsData } from "@/services/news.service";
 import { settingsService } from "@/services/settings.service";
 import { useToast } from "@/context/ToastContext";
+import MediaPathInput from "@/components/media/MediaPathInput";
 
 type Mode = "create" | "edit";
 
@@ -343,7 +344,12 @@ export default function NewsFormPage({ mode, newsId }: NewsFormPageProps) {
                 <TextArea label="Excerpt (ID)" value={formData.excerpt_id || ""} onChange={(value) => updateField("excerpt_id", value)} />
               </div>
 
-              <TextInput label="Thumbnail URL" value={formData.news_thumbnail || ""} onChange={(value) => updateField("news_thumbnail", value)} />
+              <MediaUrlInput
+                label="Thumbnail URL"
+                value={formData.news_thumbnail || ""}
+                onChange={(value) => updateField("news_thumbnail", value)}
+                pickerTitle="Choose News Thumbnail"
+              />
 
               <div className="flex border-b border-gray-200 dark:border-gray-700">
                 {(["en", "id"] as const).map((locale) => (
@@ -469,6 +475,22 @@ function TextInput({ label, value, onChange, placeholder, required }: { label: s
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      />
+    </div>
+  );
+}
+
+function MediaUrlInput({ label, value, onChange, placeholder, pickerTitle }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; pickerTitle?: string }) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+      <MediaPathInput
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder || "https://..."}
+        pickerTitle={pickerTitle}
+        inputClassName="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        buttonLabel="Choose from File Manager"
       />
     </div>
   );
