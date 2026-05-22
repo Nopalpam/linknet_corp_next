@@ -2,6 +2,23 @@
 
 /app_docs
 /web_reference_only
+/env local pc/
+
+# local data dumps and exported production-like data
+/*.sql
+*.dump
+*.bak
+settings_export.*
+*_export.csv
+*_export.xlsx
+crawldata*.txt
+
+# security scan outputs
+trivy-results.*
+gitleaks-report.*
+dependency-check-report.*
+sbom.*
+*.sarif
 
 # dependencies
 /node_modules

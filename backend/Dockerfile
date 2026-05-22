@@ -6,7 +6,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # OpenSSL required by Prisma
-RUN apk add --no-cache openssl
+RUN apk upgrade --no-cache && apk add --no-cache openssl
 
 # Install ALL dependencies (dev + prod) so Prisma CLI is available
 COPY package*.json ./
@@ -26,7 +26,7 @@ RUN npm run build
 # ================================
 FROM node:22-alpine AS production
 
-RUN apk add --no-cache openssl
+RUN apk upgrade --no-cache && apk add --no-cache openssl
 
 # Non-root user for runtime
 RUN addgroup -g 1001 -S nodejs && \
@@ -52,6 +52,7 @@ USER nodejs
 EXPOSE 5000
 
 ENV NODE_ENV=production \
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
     PORT=5000
 
 # wget is built into Alpine — no extra package needed

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as s3Service from '../services/s3.service';
 import { sendSuccess, sendError } from '../utils/response.util';
+import { normalizeStorageFolder, normalizeStorageKey } from '../utils/pathSecurity.util';
 
 // ── Upload ────────────────────────────────────────────────────────
 export const uploadFile = async (
@@ -14,9 +15,13 @@ export const uploadFile = async (
       return;
     }
 
-    const rawFolder = (req.query.folder as string) || 'uploads';
-    // Sanitize: only alphanumeric, dash, underscore, forward-slash
-    const folder = rawFolder.replace(/[^a-zA-Z0-9_/-]/g, '').replace(/\.{2,}/g, '') || 'uploads';
+    let folder: string;
+    try {
+      folder = normalizeStorageFolder(req.query.folder as string, 'uploads');
+    } catch {
+      sendError(res, 'Invalid folder', 400);
+      return;
+    }
 
     const result = await s3Service.uploadFile(req.file, folder);
     sendSuccess(res, result, 'File uploaded successfully', 201);
@@ -32,7 +37,15 @@ export const listFiles = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const prefix = (req.query.prefix as string) || '';
+    let prefix = '';
+    if (typeof req.query.prefix === 'string' && req.query.prefix.trim()) {
+      try {
+        prefix = normalizeStorageFolder(req.query.prefix, 'uploads');
+      } catch {
+        sendError(res, 'Invalid prefix', 400);
+        return;
+      }
+    }
     const limit = Math.min(parseInt((req.query.limit as string) || '100', 10), 1000);
 
     const files = await s3Service.listFiles(prefix, limit);
@@ -56,10 +69,10 @@ export const deleteFile = async (
       return;
     }
 
-    const key = decodeURIComponent(rawKey.trim());
-
-    // Prevent path traversal
-    if (key.includes('..')) {
+    let key: string;
+    try {
+      key = normalizeStorageKey(decodeURIComponent(rawKey.trim()));
+    } catch {
       sendError(res, 'Invalid file key', 400);
       return;
     }
@@ -96,13 +109,17 @@ export const bulkDeleteFiles = async (
         sendError(res, 'Each key must be a non-empty string', 400);
         return;
       }
-      if ((k as string).includes('..')) {
+      try {
+        normalizeStorageKey(decodeURIComponent(k.trim()));
+      } catch {
         sendError(res, `Invalid key: "${k}"`, 400);
         return;
       }
     }
 
-    const sanitizedKeys = (keys as string[]).map((k) => decodeURIComponent(k.trim()));
+    const sanitizedKeys = (keys as string[]).map((k) =>
+      normalizeStorageKey(decodeURIComponent(k.trim()))
+    );
     const result = await s3Service.bulkDeleteFiles(sanitizedKeys);
 
     const statusCode = result.failed.length > 0 ? 207 : 200;
@@ -124,9 +141,10 @@ export const getSignedUrl = async (
       return;
     }
 
-    const key = decodeURIComponent(rawKey.trim());
-
-    if (key.includes('..')) {
+    let key: string;
+    try {
+      key = normalizeStorageKey(decodeURIComponent(rawKey.trim()));
+    } catch {
       sendError(res, 'Invalid file key', 400);
       return;
     }

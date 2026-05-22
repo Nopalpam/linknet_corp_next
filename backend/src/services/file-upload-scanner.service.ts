@@ -6,13 +6,13 @@
  * before they are stored in the cloud storage or database.
  */
 
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs/promises';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 interface ScanResult {
   safe: boolean;
@@ -34,7 +34,6 @@ export class FileUploadScanner {
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml',
     // Documents
     'application/pdf',
     'application/msword',
@@ -43,9 +42,6 @@ export class FileUploadScanner {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    // Archives
-    'application/zip',
-    'application/x-rar-compressed',
     // Video
     'video/mp4',
     'video/webm',
@@ -64,6 +60,19 @@ export class FileUploadScanner {
     '.msi',
     '.jar',
     '.com',
+    '.asp',
+    '.aspx',
+    '.cgi',
+    '.htm',
+    '.html',
+    '.jsp',
+    '.jspx',
+    '.php',
+    '.phtml',
+    '.pl',
+    '.py',
+    '.rb',
+    '.svg',
   ];
 
   /**
@@ -250,13 +259,19 @@ export class FileUploadScanner {
    * Check for dangerous file extensions
    */
   private checkFileExtension(fileName: string): void {
-    const ext = path.extname(fileName).toLowerCase();
+    const normalized = fileName.replace(/\\/g, '/');
+    const basename = path.posix.basename(normalized);
+    if (!basename || basename !== normalized || /[\x00-\x1F\x7F]/.test(fileName)) {
+      throw new Error('Invalid file name');
+    }
+
+    const ext = path.extname(basename).toLowerCase();
     if (this.dangerousExtensions.includes(ext)) {
       throw new Error(`Dangerous file extension detected: ${ext}`);
     }
 
     // Check for double extensions (e.g., file.pdf.exe)
-    const parts = fileName.split('.');
+    const parts = basename.split('.');
     if (parts.length > 2) {
       const secondExt = '.' + parts[parts.length - 2]!.toLowerCase();
       if (this.dangerousExtensions.includes(secondExt)) {
@@ -287,11 +302,12 @@ export class FileUploadScanner {
    */
   private async scanWithClamAV(filePath: string): Promise<{ safe: boolean; threats?: string[] }> {
     try {
-      // Check if ClamAV is installed
-      await execAsync('which clamscan');
+      await execFileAsync('clamscan', ['--version'], { timeout: 5000 });
 
-      // Run ClamAV scan
-      const { stdout, stderr: _stderr } = await execAsync(`clamscan --no-summary "${filePath}"`);
+      const { stdout } = await execFileAsync('clamscan', ['--no-summary', filePath], {
+        timeout: 120000,
+        maxBuffer: 1024 * 1024,
+      });
 
       // Parse results
       if (stdout.includes('FOUND')) {
@@ -305,8 +321,8 @@ export class FileUploadScanner {
       return { safe: true };
     } catch (error: any) {
       // ClamAV not installed or scan failed
-      if (error.message.includes('which')) {
-        console.warn('⚠️  ClamAV not installed. Skipping virus scan. Install: apt-get install clamav');
+      if (error.code === 'ENOENT') {
+        console.warn('ClamAV not installed. Skipping virus scan. Install clamav in the runtime image to enable antivirus scanning.');
         return { safe: true }; // Don't block if ClamAV not available
       }
 

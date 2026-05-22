@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { s3Client, AWS_BUCKET_NAME, CDN_URL } from '../config/aws.config';
 import { UploadedFile, FileListItem, BulkDeleteResult, StoredObjectMetadata } from '../types';
+import { normalizeStorageFolder, normalizeStorageKey } from '../utils/pathSecurity.util';
 
 /**
  * Build the public URL for a given S3 object key.
@@ -25,18 +26,12 @@ const buildPublicUrl = (key: string): string => {
   return `https://${AWS_BUCKET_NAME}.s3.${region}.amazonaws.com/${key}`;
 };
 
-/**
- * Sanitize a folder name to only allow safe path characters.
- * Prevents path traversal and injection.
- */
-const sanitizeFolder = (folder: string): string =>
-  folder.replace(/[^a-zA-Z0-9_/-]/g, '').replace(/\.{2,}/g, '').replace(/^\/|\/$/g, '');
-
 const sanitizeBaseName = (filename: string): string => {
   const parsedName = path.parse(filename).name;
-  const normalized = parsedName
-    .normalize('NFKD')
-    .replace(/[^\x00-\x7F]/g, '')
+  const asciiName = Array.from(parsedName.normalize('NFKD'))
+    .filter((char) => char.charCodeAt(0) <= 127)
+    .join('');
+  const normalized = asciiName
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^[-_.]+|[-_.]+$/g, '')
@@ -51,7 +46,7 @@ const sanitizeExtension = (filename: string): string => {
 };
 
 const buildObjectKey = (folder: string, originalName: string): string => {
-  const safeFolder = sanitizeFolder(folder) || 'uploads';
+  const safeFolder = normalizeStorageFolder(folder, 'uploads');
   const safeBaseName = sanitizeBaseName(originalName);
   const extension = sanitizeExtension(originalName);
   return `${safeFolder}/${uuidv4()}-${safeBaseName}${extension}`;
@@ -91,9 +86,10 @@ export const uploadFile = async (
  * Delete a file from S3 by its key.
  */
 export const deleteFile = async (key: string): Promise<void> => {
+  const safeKey = normalizeStorageKey(key);
   const command = new DeleteObjectCommand({
     Bucket: AWS_BUCKET_NAME,
-    Key: key,
+    Key: safeKey,
   });
 
   await s3Client.send(command);
@@ -106,9 +102,10 @@ export const listFiles = async (
   prefix = '',
   maxKeys = 100
 ): Promise<FileListItem[]> => {
+  const safePrefix = prefix ? normalizeStorageFolder(prefix, 'uploads') : '';
   const command = new ListObjectsV2Command({
     Bucket: AWS_BUCKET_NAME,
-    Prefix: prefix,
+    Prefix: safePrefix,
     MaxKeys: Math.min(maxKeys, 1000),
   });
 
@@ -130,25 +127,27 @@ export const generateSignedUrl = async (
   key: string,
   expiresIn = 3600
 ): Promise<string> => {
+  const safeKey = normalizeStorageKey(key);
   const command = new GetObjectCommand({
     Bucket: AWS_BUCKET_NAME,
-    Key: key,
+    Key: safeKey,
   });
 
   return getSignedUrl(s3Client, command, { expiresIn });
 };
 
 export const getObjectMetadata = async (key: string): Promise<StoredObjectMetadata> => {
+  const safeKey = normalizeStorageKey(key);
   const command = new HeadObjectCommand({
     Bucket: AWS_BUCKET_NAME,
-    Key: key,
+    Key: safeKey,
   });
 
   const response = await s3Client.send(command);
 
   return {
-    key,
-    url: buildPublicUrl(key),
+    key: safeKey,
+    url: buildPublicUrl(safeKey),
     size: response.ContentLength ?? 0,
     mimeType: response.ContentType ?? null,
     lastModified: response.LastModified?.toISOString() ?? null,
@@ -164,7 +163,7 @@ export const bulkDeleteFiles = async (keys: string[]): Promise<BulkDeleteResult>
   if (keys.length === 0) return { deleted: [], failed: [] };
 
   // S3 DeleteObjects supports max 1000 keys per request
-  const batch = keys.slice(0, 1000);
+  const batch = keys.slice(0, 1000).map((key) => normalizeStorageKey(key));
 
   const command = new DeleteObjectsCommand({
     Bucket: AWS_BUCKET_NAME,

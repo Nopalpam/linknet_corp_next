@@ -47,6 +47,33 @@ const PUBLIC_FORM_FILE_TYPES = {
   },
 };
 
+const DANGEROUS_EXTENSIONS = new Set([
+  '.asp',
+  '.aspx',
+  '.bat',
+  '.cgi',
+  '.cmd',
+  '.com',
+  '.dll',
+  '.exe',
+  '.htm',
+  '.html',
+  '.jar',
+  '.jsp',
+  '.jspx',
+  '.msi',
+  '.phtml',
+  '.php',
+  '.pl',
+  '.ps1',
+  '.py',
+  '.rb',
+  '.scr',
+  '.sh',
+  '.svg',
+  '.vbs',
+]);
+
 const getPublicFormUploadMaxBytes = (): number => {
   const configured = parseInt(process.env.PUBLIC_FORM_UPLOAD_MAX_BYTES || '', 10);
   return Number.isFinite(configured) && configured > 0
@@ -73,25 +100,38 @@ export const getAllowedExtensions = (): string[] => {
 };
 
 export const isAllowedFileMetadata = (filename: string, mimeType: string): boolean => {
-  const allowedMimeTypes = getAllowedMimeTypes();
-  const allowedExtensions = getAllowedExtensions();
   const ext = path.extname(filename).toLowerCase();
 
-  return allowedMimeTypes.includes(mimeType) && allowedExtensions.includes(ext);
+  return Object.values(FILE_TYPES).some(
+    (fileType) => fileType.mimeTypes.includes(mimeType) && fileType.extensions.includes(ext)
+  );
 };
 
 export const isAllowedPublicFormFileMetadata = (filename: string, mimeType: string): boolean => {
-  const allowedMimeTypes = [
-    ...PUBLIC_FORM_FILE_TYPES.images.mimeTypes,
-    ...PUBLIC_FORM_FILE_TYPES.documents.mimeTypes,
-  ];
-  const allowedExtensions = [
-    ...PUBLIC_FORM_FILE_TYPES.images.extensions,
-    ...PUBLIC_FORM_FILE_TYPES.documents.extensions,
-  ];
   const ext = path.extname(filename).toLowerCase();
 
-  return allowedMimeTypes.includes(mimeType) && allowedExtensions.includes(ext);
+  return Object.values(PUBLIC_FORM_FILE_TYPES).some(
+    (fileType) => fileType.mimeTypes.includes(mimeType) && fileType.extensions.includes(ext)
+  );
+};
+
+const isSafeOriginalFilename = (filename: string): boolean => {
+  if (!filename || /[\x00-\x1F\x7F]/.test(filename)) {
+    return false;
+  }
+
+  const normalized = filename.replace(/\\/g, '/');
+  const basename = path.posix.basename(normalized);
+  if (!basename || basename !== normalized) {
+    return false;
+  }
+
+  const parts = basename.toLowerCase().split('.').filter(Boolean);
+  if (parts.length < 2) {
+    return false;
+  }
+
+  return !parts.some((part, index) => index > 0 && DANGEROUS_EXTENSIONS.has(`.${part}`));
 };
 
 // Determine file category based on mime type
@@ -125,6 +165,11 @@ export const getMaxFileSize = (category: string): number => {
 
 // File filter function
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (!isSafeOriginalFilename(file.originalname)) {
+    cb(new Error('Invalid file name'));
+    return;
+  }
+
   // Check mime type and extension
   if (isAllowedFileMetadata(file.originalname, file.mimetype)) {
     cb(null, true);
@@ -134,6 +179,11 @@ const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFil
 };
 
 const publicFormFileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (!isSafeOriginalFilename(file.originalname)) {
+    cb(new Error('Invalid file name'));
+    return;
+  }
+
   if (isAllowedPublicFormFileMetadata(file.originalname, file.mimetype)) {
     cb(null, true);
   } else {

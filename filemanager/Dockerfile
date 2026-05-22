@@ -5,6 +5,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+RUN apk upgrade --no-cache
+
 # Install dependencies first (layer cache)
 COPY package*.json ./
 RUN npm ci
@@ -22,7 +24,8 @@ FROM node:22-alpine AS production
 # Update base image packages (security: patch OS-level CVEs)
 RUN apk upgrade --no-cache
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # Create non-root user/group (Trivy + CIS compliance)
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

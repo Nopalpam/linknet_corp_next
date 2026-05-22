@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as s3Service from '../services/s3.service';
 import { sendSuccess, sendError } from '../utils/response.util';
+import { normalizeStorageFolder, normalizeStorageKey } from '../utils/pathSecurity.util';
 
 const getUploadedFiles = (req: Request): Express.Multer.File[] => {
   if (req.file) return [req.file];
@@ -10,11 +11,7 @@ const getUploadedFiles = (req: Request): Express.Multer.File[] => {
 };
 
 const normalizeFolder = (value: unknown): string => {
-  if (typeof value !== 'string' || !value.trim()) {
-    return 'cms/shared';
-  }
-
-  return value;
+  return normalizeStorageFolder(typeof value === 'string' ? value : undefined, 'cms/shared');
 };
 
 const extractKey = (req: Request): string | null => {
@@ -44,7 +41,13 @@ export const uploadMediaFiles = async (
       return;
     }
 
-    const folder = normalizeFolder(req.body?.folder);
+    let folder: string;
+    try {
+      folder = normalizeFolder(req.body?.folder);
+    } catch {
+      sendError(res, 'Invalid folder', 400);
+      return;
+    }
     const uploadedFiles = await Promise.all(
       files.map((file) => s3Service.uploadFile(file, folder))
     );
@@ -70,7 +73,15 @@ export const listMediaObjects = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const prefix = typeof req.query.prefix === 'string' ? req.query.prefix : '';
+    let prefix = '';
+    if (typeof req.query.prefix === 'string' && req.query.prefix.trim()) {
+      try {
+        prefix = normalizeStorageFolder(req.query.prefix, 'cms/shared');
+      } catch {
+        sendError(res, 'Invalid prefix', 400);
+        return;
+      }
+    }
     const limit = Math.min(parseInt((req.query.limit as string) || '100', 10), 1000);
 
     const files = await s3Service.listFiles(prefix, limit);
@@ -93,12 +104,15 @@ export const getMediaObjectMetadata = async (
       return;
     }
 
-    if (key.includes('..')) {
+    let normalizedKey: string;
+    try {
+      normalizedKey = normalizeStorageKey(key);
+    } catch {
       sendError(res, 'Invalid file key', 400);
       return;
     }
 
-    const metadata = await s3Service.getObjectMetadata(key);
+    const metadata = await s3Service.getObjectMetadata(normalizedKey);
     sendSuccess(res, metadata);
   } catch (err) {
     next(err);
@@ -118,13 +132,16 @@ export const deleteMediaObject = async (
       return;
     }
 
-    if (key.includes('..')) {
+    let normalizedKey: string;
+    try {
+      normalizedKey = normalizeStorageKey(key);
+    } catch {
       sendError(res, 'Invalid file key', 400);
       return;
     }
 
-    await s3Service.deleteFile(key);
-    sendSuccess(res, { key }, 'Media object deleted successfully');
+    await s3Service.deleteFile(normalizedKey);
+    sendSuccess(res, { key: normalizedKey }, 'Media object deleted successfully');
   } catch (err) {
     next(err);
   }
@@ -153,7 +170,7 @@ export const bulkDeleteMediaObjects = async (
         throw new Error('Each key must be a non-empty safe string');
       }
 
-      return decodeURIComponent(key.trim());
+      return normalizeStorageKey(decodeURIComponent(key.trim()));
     });
 
     const result = await s3Service.bulkDeleteFiles(sanitizedKeys);

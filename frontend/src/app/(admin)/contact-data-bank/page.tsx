@@ -52,6 +52,24 @@ const mapSubmissionToContactData = (submission: ContactSubmissionListItem): Cont
 
 const CONTACT_FETCH_LIMIT = 100;
 
+type ExportRow = Record<string, string>;
+
+const escapeCsvCell = (value: unknown): string => {
+  const normalized = String(value ?? "");
+  const escaped = normalized.replace(/"/g, '""');
+  return /[",\r\n]/.test(escaped) ? `"${escaped}"` : escaped;
+};
+
+const buildCsv = (rows: ExportRow[]): string => {
+  const headers = Object.keys(rows[0] ?? {});
+  const lines = [
+    headers.map(escapeCsvCell).join(","),
+    ...rows.map((row) => headers.map((header) => escapeCsvCell(row[header])).join(",")),
+  ];
+
+  return `\uFEFF${lines.join("\r\n")}`;
+};
+
 interface DatePickerFieldProps {
   label: string;
   value: string;
@@ -243,7 +261,7 @@ export default function ContactDataBankPage() {
     URL.revokeObjectURL(objectUrl);
   }, []);
 
-  const buildExportRows = useCallback((rows: ContactData[]) => {
+  const buildExportRows = useCallback((rows: ContactData[]): ExportRow[] => {
     return rows.map((contact) => ({
       Name: contact.name,
       Email: contact.email,
@@ -292,21 +310,32 @@ export default function ContactDataBankPage() {
       setExporting(true);
       setExportMenuOpen(false);
 
-      const XLSX = await import("xlsx");
       const exportRows = buildExportRows(sourceRows);
-      const worksheet = XLSX.utils.json_to_sheet(exportRows);
       const timestamp = new Date().toISOString().slice(0, 10);
       const scopeLabel = scope === "all" ? "all" : "filtered";
 
       if (format === "csv") {
-        const csv = `\uFEFF${XLSX.utils.sheet_to_csv(worksheet)}`;
+        const csv = buildCsv(exportRows);
         downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `contact-us-${scopeLabel}-${timestamp}.csv`);
         return;
       }
 
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Contact Us");
-      const fileBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Contact Us");
+      const headers = Object.keys(exportRows[0] ?? {});
+
+      workbook.creator = "LinkNet CMS";
+      workbook.created = new Date();
+      worksheet.columns = headers.map((header) => ({
+        header,
+        key: header,
+        width: Math.min(Math.max(header.length + 8, 16), 48),
+      }));
+      worksheet.addRows(exportRows);
+      worksheet.getRow(1).font = { bold: true };
+
+      const fileBuffer = await workbook.xlsx.writeBuffer();
       downloadBlob(
         new Blob([fileBuffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

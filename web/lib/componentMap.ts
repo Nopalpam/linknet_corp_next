@@ -1686,17 +1686,17 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       const introData = extractIntro(data, t, locale);
       const mainData = data.mainData && typeof data.mainData === 'object' ? data.mainData : null;
       const source = mainData || data;
-      const tabs = Array.isArray(source.tabs)
+      const tabs: Record<string, any>[] = Array.isArray(source.tabs)
         ? source.tabs.map((tab: Record<string, any>, index: number) => ({
             ...tab,
             label: t(tab.label) || tab.label || tab.value || `Tab ${index + 1}`,
             value: typeof tab.value === 'string' ? tab.value : `tab-${index + 1}`,
           }))
         : [];
-      const rawItems = source.items && typeof source.items === 'object' && !Array.isArray(source.items)
+      const rawItems: Record<string, any[]> = source.items && typeof source.items === 'object' && !Array.isArray(source.items)
         ? source.items
         : {};
-      const items = tabs.reduce<Record<string, any[]>>((acc, tab: Record<string, any>) => {
+      const items = tabs.reduce((acc: Record<string, any[]>, tab: Record<string, any>) => {
         const tabValue = tab.value || '';
         if (!tabValue) return acc;
         const tabItems = Array.isArray(rawItems[tabValue]) ? rawItems[tabValue] : [];

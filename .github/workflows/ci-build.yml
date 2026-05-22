@@ -1,102 +1,98 @@
-name: CI Build
+name: General CI
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - 'backend/**'
+      - 'frontend/**'
+      - 'web/**'
+      - 'filemanager/**'
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-backend:
-    name: Build Backend
+  node-ci:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Backend API
+            app: backend
+            lockfile: backend/package-lock.json
+            prisma: true
+          - name: CMS Frontend
+            app: frontend
+            lockfile: frontend/package-lock.json
+            prisma: false
+          - name: Public Web
+            app: web
+            lockfile: web/package-lock.json
+            prisma: false
+          - name: Filemanager
+            app: filemanager
+            lockfile: filemanager/package-lock.json
+            prisma: false
 
-      - uses: actions/setup-node@v4
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+
+    env:
+      CI: true
+      NODE_ENV: test
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_AUTH_ENABLED: 'true'
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:5000/api/v1
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3001
+      DATABASE_URL: postgresql://ci_user@127.0.0.1:5432/linknet_ci?schema=public
+      JWT_ACCESS_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      JWT_REFRESH_SECRET: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      FILEMANAGER_INTERNAL_URL: http://127.0.0.1:3000
+      FILEMANAGER_API_KEY: cccccccccccccccccccccccccccccccc
+      LINKNET_MEDIA_TOKEN_SALT: dddddddddddddddddddddddddddddddd
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'backend/package-lock.json'
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.lockfile }}
 
       - name: Install dependencies
-        working-directory: ./backend
         run: npm ci
 
-      - name: Generate Prisma Client
-        working-directory: ./backend
+      - name: Generate Prisma client
+        if: matrix.prisma == true
         run: npx prisma generate
 
-      - name: Build
-        working-directory: ./backend
-        run: npm run build
+      - name: Lint
+        continue-on-error: true
+        run: npm run lint --if-present
 
-  build-frontend:
-    name: Build Frontend (CMS)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
+      - name: Test
+        continue-on-error: true
+        run: npm test --if-present -- --runInBand
 
       - name: Build
-        working-directory: ./frontend
         env:
-          NEXT_PUBLIC_AUTH_ENABLED: 'true'
-          NEXT_PUBLIC_API_URL: http://localhost:5000
-          NEXT_PUBLIC_SITE_URL: http://localhost:5000
-        run: npm run build
-
-  build-web:
-    name: Build Web (Public)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'web/package-lock.json'
-
-      - name: Install dependencies
-        working-directory: ./web
-        run: npm ci
-
-      - name: Build
-        working-directory: ./web
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
-        run: npm run build
-
-  build-filemanager:
-    name: Build Filemanager
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'filemanager/package-lock.json'
-
-      - name: Install dependencies
-        working-directory: ./filemanager
-        run: npm ci
-
-      - name: Build
-        working-directory: ./filemanager
-        run: npm run build
+          NODE_ENV: production
+        run: npm run build --if-present
