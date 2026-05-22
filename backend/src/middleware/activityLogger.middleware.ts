@@ -7,6 +7,7 @@ declare global {
   namespace Express {
     interface Request {
       originalBody?: any;
+      originalRecord?: unknown;
       logData?: Partial<LogActivityData>;
     }
   }
@@ -235,7 +236,7 @@ export function autoLogActivity(options: {
 
     // Prepare log data
     const logData: Partial<LogActivityData> = {
-      userId: (req as any).user?.id,
+      userId: req.user?.id,
       action,
       module,
       recordId: getRecordId(req),
@@ -252,7 +253,7 @@ export function autoLogActivity(options: {
     // For UPDATE/DELETE operations, capture old data
     if (action === 'update' || action === 'delete') {
       // Store original data if available (should be fetched by controller)
-      logData.oldData = redactSensitiveData((req as any).originalRecord);
+      logData.oldData = redactSensitiveData(req.originalRecord);
     }
 
     // For CREATE/UPDATE operations, capture new data
@@ -271,7 +272,7 @@ export function autoLogActivity(options: {
         logData.recordId = data.data.id;
       }
 
-      logData.userId = logData.userId || (req as any).user?.id;
+      logData.userId = logData.userId || req.user?.id;
 
       // For UPDATE operations, capture new data from response
       if (action === 'update' && data?.data) {
@@ -314,7 +315,7 @@ export async function manualLog(
   const userAgent = req.headers['user-agent'] || 'unknown';
 
   await logActivity({
-    userId: (req as any).user?.id,
+    userId: req.user?.id,
     action,
     module,
     recordId,

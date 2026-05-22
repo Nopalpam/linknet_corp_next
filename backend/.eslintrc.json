@@ -14,7 +14,7 @@
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.eslint.json"
   },
   "plugins": [
     "@typescript-eslint"
@@ -43,6 +43,9 @@
   "ignorePatterns": [
     "dist",
     "node_modules",
+    "prisma",
+    "scripts",
+    "test-db-connection.ts",
     "*.config.js"
   ]
 }

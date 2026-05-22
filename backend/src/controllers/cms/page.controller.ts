@@ -80,7 +80,7 @@ export const checkSlugAvailability = async (req: Request, res: Response, next: N
 
 export const createPage = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user?.id || 'system';
+    const userId = req.user?.id || 'system';
     const page = await pageService.createPage(userId, req.body);
     res.status(201).json({ success: true, data: page });
   } catch (error) {
@@ -99,7 +99,7 @@ export const updatePage = async (req: Request, res: Response, next: NextFunction
     if (req.logData) {
       req.logData.oldData = oldPage;
     }
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     const page = await pageService.updatePage(id, req.body, userId);
     res.json({ success: true, data: page });
   } catch (error) {
@@ -144,7 +144,7 @@ export const saveComponents = async (req: Request, res: Response, next: NextFunc
         req.logData.oldData = oldPage;
       }
       
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       const result = await pageService.savePageComponents(id, components, userId);
       res.json({ success: true, message: 'Components saved successfully', data: result });
   } catch (error) {
@@ -163,7 +163,7 @@ export const dryRunComponentSchemaSync = async (_req: Request, res: Response, ne
 
 export const syncAllComponentSchemas = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     const result = await ComponentSchemaSyncService.syncAll(userId);
     res.json({ success: true, message: 'Component schemas synced successfully', data: result });
   } catch (error) {

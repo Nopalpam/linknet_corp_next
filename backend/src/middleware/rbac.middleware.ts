@@ -3,6 +3,14 @@ import { AppError } from '../types/error.types';
 import { hasAnyPermission, hasAllPermissions, hasAnyRole } from '../utils/rbac';
 import { PermissionSlug, RoleSlug } from '../constants/permissions';
 
+declare global {
+  namespace Express {
+    interface Request {
+      hasPermission?: boolean;
+    }
+  }
+}
+
 /**
  * Extended Request with user information
  */
@@ -148,13 +156,13 @@ export const optionalPermission = (...permissions: (PermissionSlug | string)[]) 
     try {
       if (req.user) {
         const hasAccess = await hasAnyPermission(req.user.id, permissions);
-        (req as any).hasPermission = hasAccess;
+        req.hasPermission = hasAccess;
       } else {
-        (req as any).hasPermission = false;
+        req.hasPermission = false;
       }
       next();
     } catch (error) {
-      (req as any).hasPermission = false;
+      req.hasPermission = false;
       next();
     }
   };

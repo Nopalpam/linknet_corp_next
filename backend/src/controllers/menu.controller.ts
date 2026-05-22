@@ -131,7 +131,7 @@ export class MenuController {
   // Create menu
   async createMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const userEmail = (req as any).user?.email;
+      const userEmail = req.user?.email;
       
       const { 
         parentId,
@@ -202,7 +202,7 @@ export class MenuController {
       const { id } = req.params;
       if (!id) throw new AppError('Menu ID is required', 400);
       
-      const userEmail = (req as any).user?.email;
+      const userEmail = req.user?.email;
       const menuId = BigInt(id);
       
       const { 

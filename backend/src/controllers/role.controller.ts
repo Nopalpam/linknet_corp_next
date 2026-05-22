@@ -223,7 +223,7 @@ export const createRole = async (req: Request, res: Response) => {
   });
 
   // Log activity
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (userId) {
     await prisma.logActivity.create({
       data: {
@@ -271,7 +271,7 @@ export const updateRole = async (req: Request, res: Response) => {
   }
 
   // Block if system role — unless the requesting user is a super-admin
-  const userRoles: string[] = (req as any).user?.roles || [];
+  const userRoles = req.user?.roles ?? [];
   const isSuperAdmin = userRoles.includes('super-admin');
   if (role.isSystem && !isSuperAdmin) {
     throw new AppError('System roles cannot be edited', 403, 'FORBIDDEN');
@@ -320,7 +320,7 @@ export const updateRole = async (req: Request, res: Response) => {
   });
 
   // Log activity
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (userId) {
     await prisma.logActivity.create({
       data: {
@@ -396,7 +396,7 @@ export const deleteRole = async (req: Request, res: Response) => {
   await invalidateRoleCache(id);
 
   // Log activity
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (userId) {
     await prisma.logActivity.create({
       data: {

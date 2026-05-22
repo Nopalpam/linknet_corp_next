@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import dataBankSolutionService from '../services/dataBankSolution.service';
 
 function getUserId(req: Request): string | undefined {
-  return (req as any).user?.id || (req as any).user?.userId;
+  return req.user?.id || req.user?.userId;
 }
 
 function parseBusinessNeedIds(value: any): string[] {

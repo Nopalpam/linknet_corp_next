@@ -10,6 +10,11 @@ import {
   validateNoDuplicates,
   DataIntegrityError
 } from '../utils/dataIntegrity.util';
+import type { UpdateUserDto } from '../types/user.types';
+
+type ValidateUserUpdateData = UpdateUserDto & {
+  password?: string;
+};
 
 /**
  * User status transition rules
@@ -272,7 +277,7 @@ export function validatePasswordStrength(password: string, email?: string, usern
  */
 export async function validateUserUpdate(
   userId: string,
-  updateData: any,
+  updateData: ValidateUserUpdateData,
   _currentUserId: string,
   prisma: any
 ): Promise<void> {

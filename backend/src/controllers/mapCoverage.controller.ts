@@ -27,7 +27,7 @@ export class MapCoverageController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       const item = await MapCoverageService.create(req.body, userId);
       res.status(201).json({ success: true, data: item });
     } catch (error) {
@@ -37,7 +37,7 @@ export class MapCoverageController {
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       const item = await MapCoverageService.update(req.params.id as string, req.body, userId);
       res.json({ success: true, data: item });
     } catch (error) {
@@ -47,7 +47,7 @@ export class MapCoverageController {
 
   static async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       const result = await MapCoverageService.delete(req.params.id as string, userId);
       res.json({ success: true, ...result });
     } catch (error) {

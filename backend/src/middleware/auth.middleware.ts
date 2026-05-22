@@ -4,6 +4,23 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+export interface AuthenticatedUser {
+  id: string;
+  userId: string;
+  email: string;
+  username?: string;
+  roles?: string[];
+  permissions?: string[];
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthenticatedUser;
+    }
+  }
+}
+
 const getRequestAccessToken = (req: Request): string | undefined => {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith('Bearer ')) {
@@ -17,14 +34,7 @@ const getRequestAccessToken = (req: Request): string | undefined => {
  * Extend Express Request to include user with roles and permissions
  */
 export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    userId: string; // Keep for backward compatibility
-    email: string;
-    username?: string;
-    roles?: string[];
-    permissions?: string[];
-  };
+  user?: AuthenticatedUser;
 }
 
 /**

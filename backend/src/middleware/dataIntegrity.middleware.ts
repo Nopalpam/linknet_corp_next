@@ -192,7 +192,7 @@ export const logDataProcessing = (
     req.body._operationMetadata = {
       operationType,
       timestamp: new Date().toISOString(),
-      userId: (req as any).user?.id,
+      userId: req.user?.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     };
@@ -205,7 +205,7 @@ export const logDataProcessing = (
       if (body.success !== false) {
         logger.info('Data processing operation completed', {
           operationType,
-          userId: (req as any).user?.id,
+          userId: req.user?.id,
           method: req.method,
           path: req.path,
           statusCode: res.statusCode
