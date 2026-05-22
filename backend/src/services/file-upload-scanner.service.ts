@@ -9,6 +9,7 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
+import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -27,6 +28,9 @@ interface ScanResult {
 
 export class FileUploadScanner {
   private readonly maxFileSize = 100 * 1024 * 1024; // 100MB
+  private readonly antivirusRequired =
+    process.env.ANTIVIRUS_REQUIRED === 'true' ||
+    (process.env.NODE_ENV === 'production' && process.env.ANTIVIRUS_REQUIRED !== 'false');
   private readonly allowedMimeTypes = [
     // Images
     'image/jpeg',
@@ -142,8 +146,12 @@ export class FileUploadScanner {
     this.validateMimeType(file.mimetype);
 
     const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const virusScanResult = await this.scanBufferWithClamAV(file);
     const contentAnalysisResult = this.analyzeBufferContent(file.buffer, file.mimetype);
-    const threats = contentAnalysisResult.threats || [];
+    const threats = [
+      ...(virusScanResult.threats || []),
+      ...(contentAnalysisResult.threats || []),
+    ];
 
     const result: ScanResult = {
       safe: threats.length === 0,
@@ -161,6 +169,33 @@ export class FileUploadScanner {
     }
 
     return result;
+  }
+
+  private async scanBufferWithClamAV(
+    file: Express.Multer.File
+  ): Promise<{ safe: boolean; threats?: string[] }> {
+    const tempDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'linknet-upload-scan-'));
+    const tempFilename = path.basename(file.originalname.replace(/\\/g, '/')) || 'upload.bin';
+    const tempFilePath = path.join(tempDirectory, tempFilename);
+
+    try {
+      await fs.writeFile(tempFilePath, file.buffer);
+      return await this.scanWithClamAV(tempFilePath);
+    } finally {
+      await fs.rm(tempDirectory, { recursive: true, force: true }).catch(() => undefined);
+    }
+  }
+
+  private handleAntivirusUnavailable(message: string): { safe: boolean; threats?: string[] } {
+    if (this.antivirusRequired) {
+      return {
+        safe: false,
+        threats: [message],
+      };
+    }
+
+    console.warn(message);
+    return { safe: true };
   }
 
   private validateMemoryFile(file: Express.Multer.File): void {
@@ -322,8 +357,9 @@ export class FileUploadScanner {
     } catch (error: any) {
       // ClamAV not installed or scan failed
       if (error.code === 'ENOENT') {
-        console.warn('ClamAV not installed. Skipping virus scan. Install clamav in the runtime image to enable antivirus scanning.');
-        return { safe: true }; // Don't block if ClamAV not available
+        return this.handleAntivirusUnavailable(
+          'ClamAV is not installed. Install clamav in the runtime image or set ANTIVIRUS_REQUIRED=false only for trusted non-production environments.'
+        );
       }
 
       // Scan found threats
@@ -335,7 +371,9 @@ export class FileUploadScanner {
         return { safe: false, threats };
       }
 
-      throw error;
+      return this.handleAntivirusUnavailable(
+        `ClamAV scan could not be completed: ${error instanceof Error ? error.message : 'unknown error'}`
+      );
     }
   }
 

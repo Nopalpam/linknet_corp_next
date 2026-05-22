@@ -66,6 +66,16 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .map((o) => o.trim())
   .filter(Boolean);
 
+const developmentLoopbackOrigins = new Set(
+  [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    ...allowedOrigins.filter((origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)),
+  ].map((origin) => origin.toLowerCase())
+);
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -74,8 +84,8 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      // In development, allow any localhost origin
-      if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
+      // In development, allow only explicit loopback origins used by local apps.
+      if (NODE_ENV !== 'production' && developmentLoopbackOrigins.has(origin.toLowerCase())) {
         return callback(null, true);
       }
       callback(new Error(`CORS policy: origin ${origin} not allowed`));

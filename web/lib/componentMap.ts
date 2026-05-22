@@ -510,6 +510,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
               config: {
                 ...(slide.config && typeof slide.config === 'object' ? slide.config : {}),
                 tabTitle: t(slide.config?.tabTitle) || t(slide.indicator_label) || t(slide.title),
+                bgImage: slide.image || slide.config?.bgImage || '',
+                bgImageMobile: slide.image_mobile || slide.config?.bgImageMobile || '',
               },
               theme: slide.theme || data.theme || 'dark',
             };

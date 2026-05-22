@@ -17,14 +17,16 @@
 
 import NodeCache from 'node-cache';
 import { logInfo } from '../utils/logger';
+import {
+  readGoogleServiceAccountFromEnv,
+  type ServiceAccountCredentials,
+} from '../utils/gcloud-credentials.util';
 
 // Cache analytics data for 10 minutes to reduce API calls
 const analyticsCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-type ServiceAccountCredentials = {
-  client_email: string;
-  private_key: string;
-};
+// ServiceAccountCredentials is re-exported from gcloud-credentials.util
+export type { ServiceAccountCredentials };
 
 // ============ TYPES ============
 
@@ -81,47 +83,7 @@ function getGA4PropertyName(): string {
     : `properties/${propertyId}`;
 }
 
-function normalizePrivateKey(privateKey: string): string {
-  return privateKey.replace(/\\n/g, '\n');
-}
-
-function parseServiceAccountJson(rawValue: string): ServiceAccountCredentials {
-  const trimmedValue = rawValue.trim();
-  const unwrappedValue =
-    (trimmedValue.startsWith("'") && trimmedValue.endsWith("'")) ||
-    (trimmedValue.startsWith('"') && trimmedValue.endsWith('"'))
-      ? trimmedValue.slice(1, -1)
-      : trimmedValue;
-
-  const candidates = [
-    unwrappedValue,
-    unwrappedValue.replace(/\\"/g, '"'),
-  ];
-
-  try {
-    candidates.push(Buffer.from(unwrappedValue, 'base64').toString('utf8'));
-  } catch {
-    // Ignore invalid base64 candidates and fall through to JSON parse attempts.
-  }
-
-  for (const candidate of candidates) {
-    try {
-      const parsed = JSON.parse(candidate) as Partial<ServiceAccountCredentials>;
-      if (parsed.client_email && parsed.private_key) {
-        return {
-          client_email: parsed.client_email,
-          private_key: normalizePrivateKey(parsed.private_key),
-        };
-      }
-    } catch {
-      // Try the next common env representation.
-    }
-  }
-
-  throw new Error(
-    'GOOGLE_SERVICE_ACCOUNT_JSON is not valid service account JSON. Check client_email and private_key.'
-  );
-}
+// Credential parsing is handled by gcloud-credentials.util.ts
 
 function getReadableGA4ErrorMessage(error: Error): string {
   const message = error.message || 'Unknown error';
@@ -144,25 +106,27 @@ async function getGA4Client() {
   const { BetaAnalyticsDataClient } = await import('@google-analytics/data');
 
   // Option A: full service account JSON (preferred — Key Vault / single-secret approach)
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  if (serviceAccountJson) {
-    const parsed = parseServiceAccountJson(serviceAccountJson);
+  // Parsing is delegated to gcloud-credentials.util which handles quote-wrapping,
+  // escaped/literal newlines in the PEM block, and base64-encoded secrets.
+  const serviceAccount = readGoogleServiceAccountFromEnv();
+  if (serviceAccount) {
     return new BetaAnalyticsDataClient({
       credentials: {
-        client_email: parsed.client_email,
-        private_key: parsed.private_key,
+        client_email: serviceAccount.client_email,
+        private_key: serviceAccount.private_key,
       },
     });
   }
 
   // Option B: individual inline credentials
   const clientEmail = process.env.GA4_CLIENT_EMAIL;
-  const privateKey = process.env.GA4_PRIVATE_KEY;
-  if (clientEmail && privateKey) {
+  const privateKeyRaw = process.env.GA4_PRIVATE_KEY;
+  if (clientEmail && privateKeyRaw) {
     return new BetaAnalyticsDataClient({
       credentials: {
         client_email: clientEmail,
-        private_key: normalizePrivateKey(privateKey),
+        // Normalize \\n → \n for private keys supplied as separate env vars
+        private_key: privateKeyRaw.replace(/\\n/g, '\n'),
       },
     });
   }

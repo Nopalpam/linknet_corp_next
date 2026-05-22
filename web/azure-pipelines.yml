@@ -23,7 +23,8 @@ pool:
 
 # Variabel yang digunakan dalam pipeline
 variables:
-  nodeVersion: '20.x'  # Node.js LTS - bisa diubah ke 18.x jika diperlukan
+  nodeVersion: '22.x'
+  appDirectory: 'web'
   npmCacheFolder: $(Pipeline.Workspace)/.npm
   artifactName: 'nextjs-build'
 
@@ -48,7 +49,7 @@ stages:
           - task: Cache@2
             displayName: 'Cache npm dependencies'
             inputs:
-              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              key: 'npm | "$(Agent.OS)" | $(appDirectory)/package-lock.json'
               restoreKeys: |
                 npm | "$(Agent.OS)"
               path: $(npmCacheFolder)
@@ -58,15 +59,23 @@ stages:
               npm config set cache $(npmCacheFolder) --global
               npm ci
             displayName: 'Install dependencies (npm ci)'
+            workingDirectory: '$(Build.SourcesDirectory)/$(appDirectory)'
             # Gunakan npm ci (bukan npm install) untuk instalasi yang lebih cepat dan konsisten
+
+          - script: |
+              npm run lint
+            displayName: 'Lint web app'
+            workingDirectory: '$(Build.SourcesDirectory)/$(appDirectory)'
 
           # Step 4: Build Next.js app (SSR/Hybrid mode)
           # Output akan berada di folder .next/
           - script: |
               npm run build
             displayName: 'Build Next.js app'
+            workingDirectory: '$(Build.SourcesDirectory)/$(appDirectory)'
             env:
               NODE_ENV: production
+              NEXT_TELEMETRY_DISABLED: '1'
               # Tambahkan environment variables lain jika diperlukan, contoh:
               # NEXT_PUBLIC_API_URL: $(API_URL)
 
@@ -80,13 +89,14 @@ stages:
               echo "Contents of .next folder:"
               ls -la .next/
             displayName: 'Verify output folder'
+            workingDirectory: '$(Build.SourcesDirectory)/$(appDirectory)'
 
           # Step 7: Publish artifact
           # Folder .next dan file yang diperlukan akan di-publish sebagai artifact
           - task: PublishBuildArtifacts@1
             displayName: 'Publish build artifact'
             inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)'
+              PathtoPublish: '$(Build.SourcesDirectory)/$(appDirectory)'
               ArtifactName: '$(artifactName)'
               publishLocation: 'Container'
             # Gunakan .artifactignore untuk memfilter file yang dipublish

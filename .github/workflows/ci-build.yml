@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '.github/workflows/**'
       - 'backend/**'
       - 'frontend/**'
       - 'web/**'
@@ -13,6 +15,12 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '.github/workflows/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'web/**'
+      - 'filemanager/**'
   workflow_dispatch:
 
 permissions:
@@ -48,10 +56,6 @@ jobs:
             lockfile: filemanager/package-lock.json
             prisma: false
 
-    defaults:
-      run:
-        working-directory: ${{ matrix.app }}
-
     env:
       CI: true
       NODE_ENV: test
@@ -78,21 +82,24 @@ jobs:
           cache-dependency-path: ${{ matrix.lockfile }}
 
       - name: Install dependencies
+        working-directory: ${{ matrix.app }}
         run: npm ci
 
       - name: Generate Prisma client
         if: matrix.prisma == true
+        working-directory: ${{ matrix.app }}
         run: npx prisma generate
 
       - name: Lint
-        continue-on-error: true
+        working-directory: ${{ matrix.app }}
         run: npm run lint --if-present
 
       - name: Test
-        continue-on-error: true
+        working-directory: ${{ matrix.app }}
         run: npm test --if-present -- --runInBand
 
       - name: Build
+        working-directory: ${{ matrix.app }}
         env:
           NODE_ENV: production
         run: npm run build --if-present

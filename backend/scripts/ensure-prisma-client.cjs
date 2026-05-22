@@ -45,11 +45,11 @@ if (!shouldGenerateClient()) {
   process.exit(0);
 }
 
-const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const result = spawnSync(command, ['prisma', 'generate'], {
+const result = spawnSync('npx', ['prisma', 'generate'], {
   cwd: projectRoot,
   stdio: 'inherit',
   env: process.env,
+  shell: true,
 });
 
 if (result.error) {
