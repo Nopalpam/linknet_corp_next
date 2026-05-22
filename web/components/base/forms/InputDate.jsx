@@ -1,6 +1,5 @@
 import React, {
   forwardRef,
-  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -23,37 +22,21 @@ const InputDate = forwardRef(({
   ...props
 }, ref) => {
   const inputRef = useRef(null);
-  const [internalError, setInternalError] = useState('');
-  const [internalValue, setInternalValue] = useState(value ?? defaultValue ?? '');
+  const [internalValue, setInternalValue] = useState(defaultValue ?? '');
+  const [hasBlurred, setHasBlurred] = useState(false);
 
   const isControlled = value !== undefined;
-  const fieldValue = isControlled ? value : internalValue;
+  const fieldValue = isControlled ? (value ?? '') : internalValue;
 
   useImperativeHandle(ref, () => inputRef.current);
 
-  const validateField = (val) => {
+  const getValidationMessage = (val) => {
     if (required && !String(val || '').trim()) {
-      setInternalError(props['data-error'] || `${label} is required.`);
-      return false;
+      return props['data-error'] || `${label} is required.`;
     }
 
-    setInternalError('');
-    return true;
+    return '';
   };
-
-  useEffect(() => {
-    if (!isControlled) return;
-    setInternalValue(value ?? '');
-  }, [isControlled, value]);
-
-  // Keep validation flow aligned with Input.jsx so submit-triggered forms behave consistently.
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (submitAttempted) {
-      validateField(fieldValue);
-    }
-  }, [submitAttempted, fieldValue]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleChange = (e) => {
     const nextValue = e.target.value;
@@ -62,15 +45,11 @@ const InputDate = forwardRef(({
       setInternalValue(nextValue);
     }
 
-    if (!submitAttempted && internalError) {
-      setInternalError('');
-    }
-
     if (onChange) onChange(e);
   };
 
   const handleBlur = (e) => {
-    validateField(e.target.value);
+    setHasBlurred(true);
     if (onBlur) onBlur(e);
   };
 
@@ -88,8 +67,9 @@ const InputDate = forwardRef(({
     input.focus();
   };
 
-  const isInvalid = !!error || !!internalError;
-  const displayError = error || internalError;
+  const derivedError = submitAttempted || hasBlurred ? getValidationMessage(fieldValue) : '';
+  const displayError = error || derivedError;
+  const isInvalid = !!displayError;
 
   return (
     <div className={`w-full ${className}`}>

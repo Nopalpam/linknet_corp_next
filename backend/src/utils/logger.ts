@@ -11,6 +11,22 @@ const LOG_DIR = process.env.LOG_DIR || 'logs';
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+const toLogString = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value instanceof Error) {
+    return value.message;
+  }
+
+  if (value === undefined) {
+    return '';
+  }
+
+  return JSON.stringify(value);
+};
+
 // Define log format
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -24,9 +40,14 @@ const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ timestamp, level, message, requestId, ...meta }) => {
-    let log = `${timestamp} [${level}]`;
-    if (requestId) log += ` [${requestId}]`;
-    log += `: ${message}`;
+    const resolvedTimestamp = toLogString(timestamp);
+    const resolvedLevel = toLogString(level);
+    const resolvedRequestId = toLogString(requestId);
+    const resolvedMessage = toLogString(message);
+
+    let log = `${resolvedTimestamp} [${resolvedLevel}]`;
+    if (resolvedRequestId) log += ` [${resolvedRequestId}]`;
+    log += `: ${resolvedMessage}`;
     
     // Add metadata if present
     const metaKeys = Object.keys(meta);

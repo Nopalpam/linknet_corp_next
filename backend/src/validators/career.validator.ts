@@ -5,6 +5,10 @@
 
 import { body, param, query } from 'express-validator';
 
+const isDateInput = (value: unknown): value is string | number | Date => (
+  typeof value === 'string' || typeof value === 'number' || value instanceof Date
+);
+
 /**
  * Validation for creating a career position
  */
@@ -63,6 +67,9 @@ export const createCareerValidation = [
     .optional({ nullable: true })
     .custom((value) => {
       if (value === null || value === '' || value === undefined) return true;
+      if (!isDateInput(value)) {
+        throw new Error('Expiry date must be a valid date');
+      }
       const date = new Date(value);
       if (isNaN(date.getTime())) {
         throw new Error('Expiry date must be a valid date');
@@ -133,6 +140,9 @@ export const updateCareerValidation = [
     .optional({ nullable: true })
     .custom((value) => {
       if (value === null || value === '' || value === undefined) return true;
+      if (!isDateInput(value)) {
+        throw new Error('Expiry date must be a valid date');
+      }
       const date = new Date(value);
       if (isNaN(date.getTime())) {
         throw new Error('Expiry date must be a valid date');
@@ -147,7 +157,7 @@ export const updateCareerValidation = [
 export const bulkDeleteCareerValidation = [
   body('ids')
     .isArray({ min: 1 }).withMessage('IDs must be a non-empty array')
-    .custom((ids: any[]) => {
+    .custom((ids: unknown[]) => {
       for (const id of ids) {
         if (isNaN(Number(id))) {
           throw new Error('Each ID must be a valid number');

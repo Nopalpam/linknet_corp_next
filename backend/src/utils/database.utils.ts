@@ -1,6 +1,31 @@
 import { PrismaClient } from '@prisma/client';
 import prisma from '@config/database';
 
+type UpdateModel<TResult> = {
+  update(args: {
+    where: Record<string, unknown>;
+    data: {
+      deletedAt: Date | null;
+    };
+  }): Promise<TResult>;
+};
+
+type FindManyArgs = {
+  where?: Record<string, unknown>;
+} & Record<string, unknown>;
+
+type FindManyModel<TResult> = {
+  findMany(args: FindManyArgs & { where: Record<string, unknown> }): Promise<TResult[]>;
+};
+
+type FindFirstModel<TResult> = {
+  findFirst(args: { where: Record<string, unknown> }): Promise<TResult | null>;
+};
+
+type CountModel = {
+  count(args: { where: Record<string, unknown> }): Promise<number>;
+};
+
 /**
  * Database Connection Utilities
  */
@@ -66,9 +91,9 @@ export class DatabaseService {
    * Updates deletedAt timestamp instead of hard deleting
    */
   public async softDelete(
-    model: any,
-    where: any
-  ): Promise<any> {
+    model: UpdateModel<unknown>,
+    where: Record<string, unknown>
+  ): Promise<unknown> {
     return await model.update({
       where,
       data: {
@@ -81,9 +106,9 @@ export class DatabaseService {
    * Restore soft deleted record
    */
   public async restore(
-    model: any,
-    where: any
-  ): Promise<any> {
+    model: UpdateModel<unknown>,
+    where: Record<string, unknown>
+  ): Promise<unknown> {
     return await model.update({
       where,
       data: {
@@ -96,9 +121,9 @@ export class DatabaseService {
    * Find with soft delete filter
    */
   public async findManyActive(
-    model: any,
-    args?: any
-  ): Promise<any[]> {
+    model: FindManyModel<unknown>,
+    args?: FindManyArgs
+  ): Promise<unknown[]> {
     return await model.findMany({
       ...args,
       where: {
@@ -112,9 +137,9 @@ export class DatabaseService {
    * Find one with soft delete filter
    */
   public async findUniqueActive(
-    model: any,
-    args: any
-  ): Promise<any> {
+    model: FindFirstModel<unknown>,
+    args: { where: Record<string, unknown> }
+  ): Promise<unknown> {
     return await model.findFirst({
       where: {
         ...args.where,
@@ -127,8 +152,8 @@ export class DatabaseService {
    * Count with soft delete filter
    */
   public async countActive(
-    model: any,
-    where?: any
+    model: CountModel,
+    where?: Record<string, unknown>
   ): Promise<number> {
     return await model.count({
       where: {

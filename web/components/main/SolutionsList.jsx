@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CardSolutions from '../base/cards/CardSolutions';
 import Intro from '../base/section/Intro';
 import { hasIntroContent } from '../../../shared/presentation/intro';
@@ -121,46 +121,65 @@ export default function SolutionsList({
   const maxPerCategory = Number(cmsData?.max_data_per_category || cmsData?.maxDataPerCategory || 6);
   const sortBy = cmsData?.order_by || cmsData?.orderBy || cmsData?.sort_by || 'sort_order';
   const sortDirection = cmsData?.sort_direction || cmsData?.sortDirection || 'asc';
+  const shouldFetch = !mainData;
+  const serverItems = useMemo(() => normalizeList(mainData?.items || mainData?.solutions), [mainData]);
+  const serverTaxonomies = useMemo(() => normalizeList(mainData?.taxonomies), [mainData]);
+  const fetchKey = shouldFetch ? JSON.stringify({ sortBy, sortDirection }) : '';
 
-  const [items, setItems] = useState(() => normalizeList(mainData?.items || mainData?.solutions));
-  const [taxonomies, setTaxonomies] = useState(() => normalizeList(mainData?.taxonomies));
-  const [isLoading, setIsLoading] = useState(!mainData);
+  const [clientState, setClientState] = useState({
+    fetchKey: '',
+    items: [],
+    taxonomies: [],
+  });
   const [industryId, setIndustryId] = useState(ALL_VALUE);
   const [businessScaleId, setBusinessScaleId] = useState(ALL_VALUE);
   const [businessNeedIds, setBusinessNeedIds] = useState([]);
 
-  const fetchSolutions = useCallback(async () => {
-    if (mainData) return;
-    setIsLoading(true);
-
-    try {
-      const query = new URLSearchParams({
-        limit: '200',
-        sortBy,
-        sortOrder: String(sortDirection).toLowerCase() === 'desc' ? 'desc' : 'asc',
-      });
-      const res = await fetch(`${API_BASE_URL}/solutions?${query.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch solutions');
-      const json = await res.json();
-      setItems(normalizeList(json.data || json.items || json.solutions));
-      setTaxonomies(normalizeList(json.taxonomies));
-    } catch (error) {
-      console.error('SolutionsList fetch failed:', error);
-      setItems([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [mainData, sortBy, sortDirection]);
-
   useEffect(() => {
+    if (!shouldFetch) return undefined;
+
+    let cancelled = false;
+
+    const fetchSolutions = async () => {
+      try {
+        const query = new URLSearchParams({
+          limit: '200',
+          sortBy,
+          sortOrder: String(sortDirection).toLowerCase() === 'desc' ? 'desc' : 'asc',
+        });
+        const res = await fetch(`${API_BASE_URL}/solutions?${query.toString()}`);
+        if (!res.ok) throw new Error('Failed to fetch solutions');
+        const json = await res.json();
+
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            items: normalizeList(json.data || json.items || json.solutions),
+            taxonomies: normalizeList(json.taxonomies),
+          });
+        }
+      } catch (error) {
+        console.error('SolutionsList fetch failed:', error);
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            items: [],
+            taxonomies: [],
+          });
+        }
+      }
+    };
+
     fetchSolutions();
-  }, [fetchSolutions]);
 
-  useEffect(() => {
-    if (!mainData) return;
-    setItems(normalizeList(mainData.items || mainData.solutions));
-    setTaxonomies(normalizeList(mainData.taxonomies));
-  }, [mainData]);
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchKey, shouldFetch, sortBy, sortDirection]);
+
+  const isLoading = shouldFetch && clientState.fetchKey !== fetchKey;
+  const items = shouldFetch ? (isLoading ? [] : clientState.items) : serverItems;
+  const taxonomies = shouldFetch ? (isLoading ? [] : clientState.taxonomies) : serverTaxonomies;
 
   const industryOptions = useMemo(() => getFilterOptions(taxonomies, 'INDUSTRY', locale), [taxonomies, locale]);
   const scaleOptions = useMemo(() => getFilterOptions(taxonomies, 'BUSINESS_SCALE', locale), [taxonomies, locale]);

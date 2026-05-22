@@ -23,28 +23,30 @@ const maskSensitiveString = (value: string): string =>
 const isSensitiveField = (key: string): boolean =>
   SENSITIVE_FIELD_PATTERNS.some((pattern) => pattern.test(key));
 
-export const redactSensitiveData = <T>(value: T): T => {
+const redactSensitiveValue = (value: unknown): unknown => {
   if (value === null || value === undefined) {
     return value;
   }
 
   if (typeof value === 'string') {
-    return maskSensitiveString(value) as T;
+    return maskSensitiveString(value);
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => redactSensitiveData(item)) as T;
+    return value.map((item) => redactSensitiveValue(item));
   }
 
   if (typeof value === 'object') {
     const redacted: Record<string, unknown> = {};
 
     for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
-      redacted[key] = isSensitiveField(key) ? '[REDACTED]' : redactSensitiveData(entry);
+      redacted[key] = isSensitiveField(key) ? '[REDACTED]' : redactSensitiveValue(entry);
     }
 
-    return redacted as T;
+    return redacted;
   }
 
   return value;
 };
+
+export const redactSensitiveData = <T>(value: T): T => redactSensitiveValue(value) as T;

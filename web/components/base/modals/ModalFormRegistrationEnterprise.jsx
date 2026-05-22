@@ -470,7 +470,7 @@ function useRegistrationFormState(initialPayload = INITIAL_MODAL_PAYLOAD, onSubm
   const onSubmitAsyncRef = useRef(onSubmitAsync);
   useEffect(() => {
     onSubmitAsyncRef.current = onSubmitAsync;
-  });
+  }, [onSubmitAsync]);
 
   const clearError = useCallback((field) => {
     setStepErrors((prev) => {

@@ -81,7 +81,7 @@ export enum SettingType {
 export interface ISetting {
   id: string;
   key: string;
-  value?: any | null;
+  value?: unknown;
   type: SettingType;
   group: string;
   label: string;
@@ -152,7 +152,7 @@ export interface IPageComponent {
   id: string;
   pageId: string;
   type: string;
-  data: any;
+  data: Record<string, unknown>;
   position: number;
   isActive: boolean;
   createdAt: Date;
@@ -458,7 +458,7 @@ export interface ILogActivity {
   action: string;
   module: string;
   description?: string | null;
-  metadata?: any | null;
+  metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
   userAgent?: string | null;
   createdAt: Date;
@@ -509,7 +509,7 @@ export interface IFile {
   width?: number | null;
   height?: number | null;
   duration?: number | null;
-  metadata?: any | null;
+  metadata?: Record<string, unknown> | null;
   downloads: number;
   isPublic: boolean;
   createdAt: Date;
@@ -542,11 +542,11 @@ export interface PaginatedResponse<T> {
   meta: PaginationMeta;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
-  errors?: any;
+  errors?: unknown;
 }
 
 // ============================================

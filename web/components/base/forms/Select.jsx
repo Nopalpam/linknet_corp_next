@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState } from 'react';
 
 const Select = forwardRef(({ 
   id, label, options = [], error, helpText, required, className = '', 
@@ -6,39 +6,36 @@ const Select = forwardRef(({
   submitAttempted, // <-- Prop trigger
   value, defaultValue, onChange, onBlur, ...props 
 }, ref) => {
-  const [internalError, setInternalError] = useState('');
+  const [internalValue, setInternalValue] = useState(defaultValue || '');
+  const [hasBlurred, setHasBlurred] = useState(false);
   
   const isControlled = value !== undefined;
-  const actualValue = isControlled ? value : (defaultValue || "");
+  const actualValue = isControlled ? (value || '') : internalValue;
 
-  const validateField = (val) => {
+  const getValidationMessage = (val) => {
     if (required && !val) {
-      setInternalError(props['data-error'] || 'Please select one.');
-      return false;
+      return props['data-error'] || 'Please select one.';
     }
-    setInternalError('');
-    return true;
+
+    return '';
   };
 
-  // TRIGGER Submit Parent
-  useEffect(() => {
-    if (submitAttempted) {
-      validateField(actualValue);
-    }
-  }, [submitAttempted, actualValue]);
-
   const handleChange = (e) => {
-    if (!submitAttempted && internalError) setInternalError('');
+    if (!isControlled) {
+      setInternalValue(e.target.value);
+    }
+
     if (onChange) onChange(e);
   };
 
   const handleBlur = (e) => {
-    validateField(e.target.value);
+    setHasBlurred(true);
     if (onBlur) onBlur(e);
   };
 
-  const isInvalid = !!error || !!internalError;
-  const displayError = error || internalError;
+  const derivedError = submitAttempted || hasBlurred ? getValidationMessage(actualValue) : '';
+  const displayError = error || derivedError;
+  const isInvalid = !!displayError;
 
   return (
     <div className={`w-full ${className}`}>

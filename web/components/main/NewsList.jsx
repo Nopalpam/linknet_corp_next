@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Intro from '../base/section/Intro';
 import Button from '../base/Button';
@@ -48,42 +48,67 @@ export default function NewsList({
   const [selectedCategory, setSelectedCategory] = useState(cmsData?.category || cmsData?.category_id || '');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch news from API
-  const fetchNews = useCallback(async (page, categoryId, search) => {
-    setIsLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      queryParams.set('page', String(page));
-      queryParams.set('limit', String(itemsPerPage));
-      queryParams.set('sortBy', String(sortBy));
-      queryParams.set('sortOrder', String(sortDirection).toLowerCase() === 'asc' ? 'asc' : 'desc');
-      if (categoryId) queryParams.set('category_id', categoryId);
-      if (search) queryParams.set('search', search);
-
-      const res = await fetch(`${API_BASE_URL}/public/news?${queryParams.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch news');
-      const json = await res.json();
-
-      if (json.success) {
-        setNews(json.data || []);
-        setPagination(json.pagination || null);
-      }
-    } catch (err) {
-      console.error('Error fetching news:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [itemsPerPage, sortBy, sortDirection]);
+  const [clientState, setClientState] = useState({
+    fetchKey: '',
+    news: [],
+    pagination: null,
+  });
+  const shouldUseInitialData = currentPage === 1 && !selectedCategory && !searchKeyword && initialNews.length > 0;
+  const fetchKey = shouldUseInitialData
+    ? ''
+    : JSON.stringify({ currentPage, selectedCategory, searchKeyword, itemsPerPage, sortBy, sortDirection });
 
   // Re-fetch when filters change (but NOT on initial load since we have mainData)
   useEffect(() => {
-    if (currentPage === 1 && !selectedCategory && !searchKeyword && initialNews.length > 0) {
+    if (shouldUseInitialData) {
       return; // Use initial server data
     }
-    fetchNews(currentPage, selectedCategory, searchKeyword);
-  }, [currentPage, selectedCategory, searchKeyword, fetchNews, initialNews.length]);
+
+    let cancelled = false;
+
+    const fetchNews = async () => {
+      try {
+        const queryParams = new URLSearchParams();
+        queryParams.set('page', String(currentPage));
+        queryParams.set('limit', String(itemsPerPage));
+        queryParams.set('sortBy', String(sortBy));
+        queryParams.set('sortOrder', String(sortDirection).toLowerCase() === 'asc' ? 'asc' : 'desc');
+        if (selectedCategory) queryParams.set('category_id', selectedCategory);
+        if (searchKeyword) queryParams.set('search', searchKeyword);
+
+        const res = await fetch(`${API_BASE_URL}/public/news?${queryParams.toString()}`);
+        if (!res.ok) throw new Error('Failed to fetch news');
+        const json = await res.json();
+
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            news: json.success ? (json.data || []) : [],
+            pagination: json.success ? (json.pagination || null) : null,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching news:', err);
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            news: [],
+            pagination: null,
+          });
+        }
+      }
+    };
+
+    fetchNews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, fetchKey, itemsPerPage, searchKeyword, selectedCategory, shouldUseInitialData, sortBy, sortDirection]);
+
+  const isLoading = !shouldUseInitialData && clientState.fetchKey !== fetchKey;
+  const news = shouldUseInitialData ? initialNews : (isLoading ? [] : clientState.news);
+  const pagination = shouldUseInitialData ? initialPagination : (isLoading ? null : clientState.pagination);
 
   // Handle search submit
   const handleSearch = (e) => {

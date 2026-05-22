@@ -63,20 +63,24 @@ export const cleanupExpiredPasswordResetTokens = async (): Promise<void> => {
  */
 export const initializeTokenCleanupJobs = (): void => {
   // Run every day at 2:00 AM
-  cron.schedule('0 2 * * *', async () => {
-    console.log('[Token Cleanup] Starting scheduled token cleanup...');
-    await cleanupExpiredTokens();
-    await cleanupExpiredPasswordResetTokens();
-    console.log('[Token Cleanup] Scheduled token cleanup completed');
+  cron.schedule('0 2 * * *', () => {
+    void (async () => {
+      console.log('[Token Cleanup] Starting scheduled token cleanup...');
+      await cleanupExpiredTokens();
+      await cleanupExpiredPasswordResetTokens();
+      console.log('[Token Cleanup] Scheduled token cleanup completed');
+    })();
   });
 
   console.log('[Token Cleanup] Cron jobs initialized - will run daily at 2:00 AM');
 
   // Run cleanup immediately on startup
-  setTimeout(async () => {
-    console.log('[Token Cleanup] Running initial cleanup on startup...');
-    await cleanupExpiredTokens();
-    await cleanupExpiredPasswordResetTokens();
-    console.log('[Token Cleanup] Initial cleanup completed');
+  setTimeout(() => {
+    void (async () => {
+      console.log('[Token Cleanup] Running initial cleanup on startup...');
+      await cleanupExpiredTokens();
+      await cleanupExpiredPasswordResetTokens();
+      console.log('[Token Cleanup] Initial cleanup completed');
+    })();
   }, 5000); // Wait 5 seconds after server starts
 };

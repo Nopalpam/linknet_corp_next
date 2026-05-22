@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 
 /**
  * SegmentPicker
@@ -12,16 +12,16 @@ import { useState, useRef, useEffect } from 'react';
  */
 export default function SegmentPicker({ options = [], value, onChange, className = '' }) {
   const activeIndex = Math.max(options.findIndex(o => o.value === value), 0);
-  const [thumbStyle, setThumbStyle] = useState({ width: 0, transform: 'translateX(0px)' });
+  const thumbRef = useRef(null);
   const buttonRefs = useRef([]);
 
   const updateThumb = () => {
     const btn = buttonRefs.current[activeIndex];
-    if (btn) {
-      setThumbStyle({
-        width: `${btn.offsetWidth}px`,
-        transform: `translateX(${btn.offsetLeft}px)`,
-      });
+    const thumb = thumbRef.current;
+
+    if (btn && thumb) {
+      thumb.style.width = `${btn.offsetWidth}px`;
+      thumb.style.transform = `translateX(${btn.offsetLeft}px)`;
     }
   };
 
@@ -36,8 +36,9 @@ export default function SegmentPicker({ options = [], value, onChange, className
     <div className={`relative inline-flex w-full px-1.5 py-1.5 bg-light-1 rounded-full overflow-hidden ${className}`}>
       {/* Sliding thumb */}
       <div
+        ref={thumbRef}
         className="absolute top-1 bottom-1 left-0 bg-white rounded-full shadow-md transition-all duration-300 ease-out"
-        style={thumbStyle}
+        style={{ width: 0, transform: 'translateX(0px)' }}
       />
 
       {options.map((opt, i) => {

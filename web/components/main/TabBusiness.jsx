@@ -31,19 +31,13 @@ export default function TabBusiness({
   const [swiperInstance, setSwiperInstance] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const [isMounted, setIsMounted] = useState(false);
-
   const sectionData = cmsData || TAB_BUSINESS_DATA[name];
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // =========================================
   // SETUP ANIMASI GSAP
   // =========================================
   useEffect(() => {
-    if (!sectionData || !isMounted) return;
+    if (!sectionData) return;
 
     let ctx = gsap.context(() => {
       const elements = gsap.utils.toArray('.lnGsapBusinessItem');
@@ -63,9 +57,9 @@ export default function TabBusiness({
     }, containerRef);
 
     return () => ctx.revert();
-  }, [sectionData, isMounted]);
+  }, [sectionData]);
 
-  if (!isMounted || !sectionData || !sectionData.items || sectionData.items.length === 0) return null;
+  if (!sectionData || !sectionData.items || sectionData.items.length === 0) return null;
 
   const { config = {}, id, introData, items = [] } = sectionData;
   const {

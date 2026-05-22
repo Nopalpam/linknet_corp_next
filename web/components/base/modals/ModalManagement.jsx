@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import Icon from '../Icon';
 
@@ -11,21 +11,12 @@ export default function ModalManagement({
   hasPrev,
   hasNext,
 }) {
-  const [isMounted, setIsMounted] = useState(false);
-  
   const overlayRef = useRef(null);
   const modalBoxRef = useRef(null);
 
-  // 1. Mount Modal ketika disuruh buka
-  useEffect(() => {
-    if (isOpen) {
-      setIsMounted(true);
-    }
-  }, [isOpen]);
-
   // 2. Logika Animasi GSAP (Masuk & Keluar)
   useEffect(() => {
-    if (!isMounted) return;
+    if (!overlayRef.current || !modalBoxRef.current) return;
 
     if (isOpen) {
       // --- ANIMASI MASUK (Enter) ---
@@ -59,17 +50,13 @@ export default function ModalManagement({
         opacity: 0, 
         y: 80, 
         duration: 0.3, 
-        ease: 'power3.in',
-        onComplete: () => {
-          // --- SETELAH ANIMASI SELESAI ---
-          setIsMounted(false); // Unmount komponen dari DOM
-        }
+        ease: 'power3.in'
       });
     }
-  }, [isOpen, isMounted]);
+  }, [isOpen]);
 
   // Jika belum di-mount atau data tidak ada, jangan render HTML-nya
-  if (!isMounted || !selectedManager) return null;
+  if (!selectedManager) return null;
 
   // Mencari data Prev dan Next
   const currentIndex = filteredData.findIndex((m) => m.id === selectedManager.id);
@@ -81,7 +68,8 @@ export default function ModalManagement({
     // overscroll-none membantu mencegah 'scroll chaining' (scroll bocor ke body) di perangkat mobile
     <div 
       ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overscroll-none lnManagementModal"
+      aria-hidden={!isOpen}
+      className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overscroll-none lnManagementModal ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
       onClick={onClose} 
     >
       {/* Modal Content */}

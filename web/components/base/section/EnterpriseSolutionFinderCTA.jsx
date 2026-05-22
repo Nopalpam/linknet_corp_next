@@ -46,8 +46,8 @@ function EnterpriseSolutionFinderCTAButton({
   const { openModal } = useModalFormSuggestEnterprise();
   const [activeIndex, setActiveIndex] = useState(0);
   const [previousIndex, setPreviousIndex] = useState(null);
-  const [activeTextWidth, setActiveTextWidth] = useState(0);
   const measureRef = useRef(null);
+  const widthRef = useRef(null);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -62,8 +62,8 @@ function EnterpriseSolutionFinderCTAButton({
 
   useLayoutEffect(() => {
     const updateWidth = () => {
-      if (!measureRef.current) return;
-      setActiveTextWidth(measureRef.current.scrollWidth);
+      if (!measureRef.current || !widthRef.current) return;
+      widthRef.current.style.width = `${measureRef.current.scrollWidth}px`;
     };
 
     updateWidth();
@@ -102,8 +102,9 @@ function EnterpriseSolutionFinderCTAButton({
               </span>
 
               <span
+                ref={widthRef}
                 className="relative inline-block h-[1.4em] overflow-hidden transition-[width] duration-500 ease-out"
-                style={{ width: activeTextWidth ? `${activeTextWidth}px` : 'auto' }}
+                style={{ width: 'auto' }}
               >
                 {previousIndex !== null && previousIndex !== activeIndex ? (
                   <FlipWord

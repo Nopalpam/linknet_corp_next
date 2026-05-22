@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import Button from './Button';
 import Icon from './Icon';
@@ -16,21 +16,12 @@ export default function Modal({
   className = "",
   maxWidth = "max-w-3xl"
 }) {
-  // 1. State untuk menahan komponen di DOM selama animasi exit berjalan
-  const [isMounted, setIsMounted] = useState(false);
-  
   const overlayRef = useRef(null);
   const modalBoxRef = useRef(null);
 
-  // 2. Sinkronisasi state lokal saat props isOpen menjadi true
-  useEffect(() => {
-    if (isOpen) setIsMounted(true);
-  }, [isOpen]);
-
   // 3. Efek Animasi GSAP (Masuk & Keluar)
   useEffect(() => {
-    // Jangan jalankan apa-apa jika belum di-mount
-    if (!isMounted) return;
+    if (!overlayRef.current || !modalBoxRef.current) return;
 
     if (isOpen) {
       // --- KUNCI SCROLL BODY ---
@@ -72,15 +63,12 @@ export default function Modal({
         opacity: 0, 
         y: 80, // Bergerak balik ke atas
         duration: 0.3, 
-        ease: 'power3.in',
-        onComplete: () => {
-          // --- SETELAH ANIMASI SELESAI ---
-          setIsMounted(false); // Unmount komponen dari DOM
-          document.body.style.paddingRight = '';
-        }
+        ease: 'power3.in'
       });
+
+      document.body.style.paddingRight = '';
     }
-  }, [isOpen, isMounted]);
+  }, [isOpen]);
 
   // Cleanup untuk berjaga-jaga jika komponen dihancurkan paksa (unmount)
   useEffect(() => {
@@ -88,9 +76,6 @@ export default function Modal({
       document.body.style.paddingRight = '';
     };
   }, []);
-
-  // 4. Render null hanya jika isMounted false
-  if (!isMounted) return null;
 
   const mobileAlignMap = {
     'center': 'items-center',
@@ -114,7 +99,8 @@ export default function Modal({
   return (
     <div 
       ref={overlayRef} 
-      className={`modal fixed inset-0 z-[100] flex justify-center bg-black/50 backdrop-blur-sm overflow-hidden p-0 md:p-6 opacity-0 ${className} ${mobileAlignMap[mobilePosition]} ${desktopAlignMap[desktopPosition]}`}
+      aria-hidden={!isOpen}
+      className={`modal fixed inset-0 z-[100] flex justify-center bg-black/50 backdrop-blur-sm overflow-hidden p-0 md:p-6 opacity-0 ${className} ${mobileAlignMap[mobilePosition]} ${desktopAlignMap[desktopPosition]} ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
     >
       
       {/* Overlay Background Click to Close */}

@@ -20,6 +20,9 @@ export default function NewsFeed({
 }) {
   const params = useParams();
   const locale = params.locale || 'en';
+  const initialNews = cmsNews || mainData?.news || [];
+  const shouldFetch = initialNews.length === 0;
+  const fetchKey = shouldFetch ? String(categorySlug || 'latest') : '';
 
   const categoryData = cmsCategory
     ? {
@@ -46,20 +49,19 @@ export default function NewsFeed({
   }
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [databaseNews, setDatabaseNews] = useState(cmsNews || mainData?.news || []);
-  const [isLoading, setIsLoading] = useState(false);
+  const [clientState, setClientState] = useState({
+    fetchKey: '',
+    news: [],
+  });
   const itemsPerPage = 12; // Batas maksimum data per halaman
 
   React.useEffect(() => {
-    const initialNews = cmsNews || mainData?.news || [];
-    if (initialNews.length > 0) {
-      setDatabaseNews(initialNews);
+    if (!shouldFetch) {
       return;
     }
 
     let cancelled = false;
     const fetchNews = async () => {
-      setIsLoading(true);
       try {
         const endpoint = categorySlug && categorySlug !== 'latest'
           ? `${API_BASE_URL}/public/news/category/${encodeURIComponent(categorySlug)}?limit=100`
@@ -67,11 +69,20 @@ export default function NewsFeed({
         const res = await fetch(endpoint);
         if (!res.ok) return;
         const json = await res.json();
-        if (!cancelled) setDatabaseNews(json.data || []);
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            news: json.data || [],
+          });
+        }
       } catch (error) {
         console.error('Error fetching news feed:', error);
-      } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            news: [],
+          });
+        }
       }
     };
 
@@ -79,7 +90,10 @@ export default function NewsFeed({
     return () => {
       cancelled = true;
     };
-  }, [categorySlug, cmsNews, mainData]);
+  }, [categorySlug, fetchKey, shouldFetch]);
+
+  const isLoading = shouldFetch && clientState.fetchKey !== fetchKey;
+  const databaseNews = shouldFetch ? (isLoading ? [] : clientState.news) : initialNews;
 
   // 2. Filter dan Urutkan SEMUA Data
   // 2. Filter dan Urutkan SEMUA Data

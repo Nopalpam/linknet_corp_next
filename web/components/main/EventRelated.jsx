@@ -90,8 +90,17 @@ export default function EventRelated({
   const locale = params?.locale || 'en';
   const needsFetch = events === null || events === undefined;
   const normalizedState = normalizeState(state);
-  const [clientEvents, setClientEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(needsFetch);
+  const [clientState, setClientState] = useState({
+    fetchKey: '',
+    events: [],
+  });
+  const fetchKey = useMemo(() => {
+    if (!needsFetch) {
+      return '';
+    }
+
+    return JSON.stringify({ locale, limit, normalizedState, type });
+  }, [limit, locale, needsFetch, normalizedState, type]);
 
   useEffect(() => {
     if (!needsFetch) return undefined;
@@ -106,26 +115,36 @@ export default function EventRelated({
     const apiState = toApiState(normalizedState);
     if (apiState) qp.set('state', apiState);
 
-    setIsLoading(true);
     fetch(`${API_BASE_URL}/events?${qp.toString()}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
-        if (!cancelled) setClientEvents(json?.data || []);
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            events: json?.data || [],
+          });
+        }
       })
       .catch(() => {
-        if (!cancelled) setClientEvents([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setClientState({
+            fetchKey,
+            events: [],
+          });
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [locale, limit, needsFetch, normalizedState, type]);
+  }, [fetchKey, limit, locale, needsFetch, normalizedState, type]);
+
+  const isLoading = needsFetch && clientState.fetchKey !== fetchKey;
 
   const relatedEvents = useMemo(() => {
-    const sourceEvents = needsFetch ? clientEvents : (Array.isArray(events) ? events : []);
+    const sourceEvents = needsFetch
+      ? (isLoading ? [] : clientState.events)
+      : (Array.isArray(events) ? events : []);
 
     // Exclude current event by id and slug
     const filtered = sourceEvents.filter(
@@ -141,7 +160,7 @@ export default function EventRelated({
     const sorted = sortEventsByType(filtered, type);
     // Show as many as available up to limit
     return sorted.slice(0, limit);
-  }, [clientEvents, currentEvent?.id, currentEvent?.slug, events, limit, needsFetch, normalizedState, type]);
+  }, [clientState.events, currentEvent?.id, currentEvent?.slug, events, isLoading, limit, needsFetch, normalizedState, type]);
 
   const resolvedIntro = introData || DEFAULT_INTRO;
   const shouldRenderIntro = hasIntroContent(resolvedIntro);

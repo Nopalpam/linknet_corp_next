@@ -7,10 +7,10 @@ const SelectMultiple = forwardRef(({
   submitAttempted, 
   value, defaultValue, onChange, onBlur, ...props 
 }, ref) => {
-  const [internalError, setInternalError] = useState('');
   const [internalValue, setInternalValue] = useState(defaultValue || []);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [hasBlurred, setHasBlurred] = useState(false);
   
   const containerRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -19,25 +19,21 @@ const SelectMultiple = forwardRef(({
   const actualValue = isControlled ? value : internalValue;
 
   // --- LOGIKA VALIDASI ---
-  const validateField = (valArr) => {
+  const getValidationMessage = (valArr) => {
     if (required && (!valArr || valArr.length === 0)) {
-      setInternalError(props['data-error'] || 'Please select at least one.');
-      return false;
+      return props['data-error'] || 'Please select at least one.';
     }
-    setInternalError('');
-    return true;
-  };
 
-  useEffect(() => {
-    if (submitAttempted) validateField(actualValue);
-  }, [submitAttempted, actualValue]);
+    return '';
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         if (isOpen) {
           setIsOpen(false);
-          validateField(actualValue); 
+          setSearchQuery('');
+          setHasBlurred(true);
           if (onBlur) onBlur({ target: { name: props.name, value: actualValue } });
         }
       }
@@ -49,15 +45,12 @@ const SelectMultiple = forwardRef(({
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       searchInputRef.current.focus();
-    } else {
-      setSearchQuery('');
     }
   }, [isOpen]);
 
   // --- LOGIKA HANDLE DATA ---
   const handleChange = (newValues) => {
     if (!isControlled) setInternalValue(newValues);
-    if (!submitAttempted && internalError) setInternalError('');
     if (onChange) {
       onChange({ target: { id, name: props.name, value: newValues } });
     }
@@ -82,6 +75,9 @@ const SelectMultiple = forwardRef(({
   const isInvalid = !!error || !!internalError;
   const displayError = error || internalError;
   const hasValue = actualValue.length > 0;
+  const derivedError = submitAttempted || hasBlurred ? getValidationMessage(actualValue) : '';
+  const displayError = error || derivedError;
+  const isInvalid = !!displayError;
 
   return (
     <div className={`w-full relative ${className}`} ref={containerRef}>
@@ -90,7 +86,21 @@ const SelectMultiple = forwardRef(({
         {/* CONTROL WRAPPER (Pengganti tag <select>) */}
         <div 
           className={`lnFormInput__control !h-auto min-h-[80px] flex flex-wrap items-center gap-1.5 !pt-[36px] !pb-[12px] px-4 cursor-${props.disabled ? 'not-allowed' : 'pointer'}`}
-          onClick={() => !props.disabled && setIsOpen(!isOpen)}
+          onClick={() => {
+            if (props.disabled) {
+              return;
+            }
+
+            if (isOpen) {
+              setIsOpen(false);
+              setSearchQuery('');
+              setHasBlurred(true);
+              if (onBlur) onBlur({ target: { name: props.name, value: actualValue } });
+              return;
+            }
+
+            setIsOpen(true);
+          }}
         >
           {/* CHIPS */}
           {actualValue.map(val => {

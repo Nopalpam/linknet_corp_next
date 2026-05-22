@@ -76,6 +76,9 @@ export default function Management({ cmsData = null, data = null, mainData = nul
   }, [locale, sourceMainData.managements, source.items, source.managements]);
   const [activeTab, setActiveTab] = useState(normalizeTabId(categories[0]?.id));
   const [selectedManager, setSelectedManager] = useState(null);
+  const resolvedActiveTab = categories.some((category) => normalizeTabId(category.id) === activeTab)
+    ? activeTab
+    : normalizeTabId(categories[0]?.id);
 
   const { openModal, closeModal, isModalOpen } = useModalRegistry();
   const modalId = 'management-detail';
@@ -95,14 +98,8 @@ export default function Management({ cmsData = null, data = null, mainData = nul
   const gridRef = useRef(null);
 
   const filteredData = useMemo(() => {
-    return items.filter((item) => normalizeTabId(item.categoryId) === activeTab);
-  }, [activeTab, items]);
-
-  useEffect(() => {
-    if (!categories.some((category) => normalizeTabId(category.id) === activeTab)) {
-      setActiveTab(normalizeTabId(categories[0]?.id));
-    }
-  }, [activeTab, categories]);
+    return items.filter((item) => normalizeTabId(item.categoryId) === resolvedActiveTab);
+  }, [items, resolvedActiveTab]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -160,7 +157,7 @@ export default function Management({ cmsData = null, data = null, mainData = nul
         <Swiper slidesPerView="auto" spaceBetween={12} className="!pb-4">
           {categories.map((cat) => {
             const tabId = normalizeTabId(cat.id);
-            const isActive = activeTab === tabId;
+            const isActive = resolvedActiveTab === tabId;
 
             return (
             <SwiperSlide key={cat.id} className="!w-auto !h-auto">

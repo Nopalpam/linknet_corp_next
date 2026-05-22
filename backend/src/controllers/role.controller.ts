@@ -6,6 +6,49 @@ import { PermissionsByModule, Role as RoleSlug } from '../constants/permissions'
 
 const prisma = new PrismaClient();
 
+type RoleIdRecord = {
+  id: string;
+};
+
+type PermissionRecord = {
+  id: string;
+  module: string;
+  slug: string;
+  name: string;
+  description: string;
+};
+
+type RolePermissionRecord = {
+  permission: {
+    id: string;
+    name: string;
+    slug: string;
+    module: string;
+  };
+};
+
+type RoleListRecord = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  isSystem: boolean;
+  rolePermissions: RolePermissionRecord[];
+  createdAt: Date;
+  updatedAt: Date;
+  _count: {
+    userRoles: number;
+  };
+};
+
+type PermissionGroupRecord = {
+  id: string;
+  name: string;
+  slug: string;
+  module: string;
+  description: string | null;
+};
+
 const titleCase = (value: string) =>
   value
     .split(/[_\s]+/)
@@ -55,8 +98,8 @@ async function syncPermissionsFromCatalog() {
 
   if (privilegedRoles.length > 0 && permissions.length > 0) {
     await prisma.rolePermission.createMany({
-      data: privilegedRoles.flatMap((role) => (
-        permissions.map((permission) => ({
+      data: privilegedRoles.flatMap((role: RoleIdRecord) => (
+        permissions.map((permission: PermissionRecord) => ({
           roleId: role.id,
           permissionId: permission.id,
         }))
@@ -91,7 +134,7 @@ export const getRoles = async (_req: Request, res: Response) => {
     orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
   });
 
-  const formattedRoles = roles.map((role) => ({
+  const formattedRoles = roles.map((role: RoleListRecord) => ({
     id: role.id,
     name: role.name,
     slug: role.slug,
@@ -99,7 +142,7 @@ export const getRoles = async (_req: Request, res: Response) => {
     isSystem: role.isSystem,
     userCount: role._count.userRoles,
     permissionCount: role.rolePermissions.length,
-    permissions: role.rolePermissions.map((rp) => ({
+    permissions: role.rolePermissions.map((rp: RolePermissionRecord) => ({
       id: rp.permission.id,
       name: rp.permission.name,
       slug: rp.permission.slug,
@@ -151,7 +194,7 @@ export const getRoleById = async (req: Request, res: Response) => {
     description: role.description,
     isSystem: role.isSystem,
     userCount,
-    permissions: role.rolePermissions.map((rp) => ({
+    permissions: role.rolePermissions.map((rp: RolePermissionRecord) => ({
       id: rp.permission.id,
       name: rp.permission.name,
       slug: rp.permission.slug,
@@ -431,7 +474,7 @@ export const getPermissions = async (_req: Request, res: Response) => {
 
   // Group permissions by module
   const groupedPermissions: Record<string, any[]> = {};
-  permissions.forEach((permission) => {
+  permissions.forEach((permission: PermissionGroupRecord) => {
     if (!groupedPermissions[permission.module]) {
       groupedPermissions[permission.module] = [];
     }

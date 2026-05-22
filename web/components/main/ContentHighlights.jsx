@@ -119,6 +119,9 @@ export default function ContentHighlights({
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
   const [fetchedItems, setFetchedItems] = useState({});
+  const resolvedActiveTab = categories.some((category) => category.value === activeTab)
+    ? activeTab
+    : (categories[0]?.value || '');
 
   const { config, introData } = sectionData;
   const {
@@ -133,12 +136,6 @@ export default function ContentHighlights({
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
     '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
   };
-
-  useEffect(() => {
-    if (categories.length > 0 && !categories.some((category) => category.value === activeTab)) {
-      setActiveTab(categories[0].value);
-    }
-  }, [activeTab, categories]);
 
   useEffect(() => {
     if (mainData?.items) return;
@@ -197,13 +194,13 @@ export default function ContentHighlights({
     }, {});
   }, [categories, fetchedItems, locale, mainData, sectionData.limit, sectionData.max_data]);
 
-  const activeItems = contentByTab[activeTab] || [];
-  const activeCategory = categories.find((category) => category.value === activeTab);
+  const activeItems = contentByTab[resolvedActiveTab] || [];
+  const activeCategory = categories.find((category) => category.value === resolvedActiveTab);
   const activeViewAll = {
-    ...(VIEW_ALL_CONFIG[activeTab] || VIEW_ALL_CONFIG['business-insight']),
+    ...(VIEW_ALL_CONFIG[resolvedActiveTab] || VIEW_ALL_CONFIG['business-insight']),
     ...(activeCategory?.href ? { href: activeCategory.href } : {}),
   };
-  const swiperBreakpoints = activeTab === 'event'
+  const swiperBreakpoints = resolvedActiveTab === 'event'
     ? {
         0: {
           slidesPerView: 1.8,
@@ -272,7 +269,7 @@ export default function ContentHighlights({
           <div className="flex justify-start lg:justify-end shrink-0">
             <SegmentPicker
               options={categories.map((category) => ({ label: category.label, value: category.value }))}
-              value={activeTab}
+              value={resolvedActiveTab}
               onChange={setActiveTab}
             />
           </div>
@@ -282,9 +279,9 @@ export default function ContentHighlights({
           {activeItems.length > 0 ? (
             <div className="relative">
               <Swiper
-                key={activeTab}
+                key={resolvedActiveTab}
                 spaceBetween={12}
-                slidesPerView={activeTab === 'event' ? 1.8 : 1.4}
+                slidesPerView={resolvedActiveTab === 'event' ? 1.8 : 1.4}
                 breakpoints={swiperBreakpoints}
                 onSwiper={syncSwiperState}
                 onSlideChange={syncSwiperState}
@@ -295,7 +292,7 @@ export default function ContentHighlights({
                 className="w-full overflow-hidden"
               >
                 {activeItems.map((item) => (
-                  <SwiperSlide key={`${activeTab}-${item.id}`} className="!h-auto">
+                  <SwiperSlide key={`${resolvedActiveTab}-${item.id}`} className="!h-auto">
                     <div className="h-full">
                       {activeCategory?.source === 'event' || activeCategory?.source === 'events' ? (
                         <CardEvent

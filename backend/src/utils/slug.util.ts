@@ -29,9 +29,9 @@ export const ensureUniquePageSlug = async (
   excludePageId?: string
 ): Promise<string> => {
   let uniqueSlug = slug;
-  let counter = 1;
+  let counter = 2;
 
-  while (true) {
+  for (;;) {
     const existing = await prisma.page.findFirst({
       where: {
         slug: uniqueSlug,
@@ -45,8 +45,8 @@ export const ensureUniquePageSlug = async (
       return uniqueSlug;
     }
 
-    counter++;
     uniqueSlug = `${slug}-${counter}`;
+    counter++;
   }
 };
 

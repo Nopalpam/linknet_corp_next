@@ -50,7 +50,7 @@ export class S3StorageProvider implements IStorageProvider {
     logger.info(`[S3Storage] Initialized with bucket: ${this.bucket}, region: ${this.region}`);
   }
 
-  async upload(_params: UploadParams): Promise<StorageFile> {
+  upload(_params: UploadParams): Promise<StorageFile> {
     // TODO: Implement S3 upload
     // const { buffer, originalName, mimeType, folder, isPublic, metadata } = params;
     // const key = folder ? `${folder}/${uuidv4()}-${originalName}` : `${uuidv4()}-${originalName}`;
@@ -75,37 +75,37 @@ export class S3StorageProvider implements IStorageProvider {
     //   metadata,
     // };
 
-    throw new Error('S3 storage is not yet implemented. Please use STORAGE_TYPE=local');
+    return Promise.reject(new Error('S3 storage is not yet implemented. Please use STORAGE_TYPE=local'));
   }
 
-  async getFileInfo(_key: string): Promise<StorageFile | null> {
+  getFileInfo(_key: string): Promise<StorageFile | null> {
     // TODO: Implement with HeadObjectCommand
-    throw new Error('S3 storage is not yet implemented');
+    return Promise.reject(new Error('S3 storage is not yet implemented'));
   }
 
-  async download(_key: string): Promise<Buffer> {
+  download(_key: string): Promise<Buffer> {
     // TODO: Implement with GetObjectCommand
-    throw new Error('S3 storage is not yet implemented');
+    return Promise.reject(new Error('S3 storage is not yet implemented'));
   }
 
-  async getDownloadUrl(_key: string, _expiresInSeconds: number = 3600): Promise<string> {
+  getDownloadUrl(_key: string, _expiresInSeconds: number = 3600): Promise<string> {
     // TODO: Implement with getSignedUrl
-    throw new Error('S3 storage is not yet implemented');
+    return Promise.reject(new Error('S3 storage is not yet implemented'));
   }
 
-  async delete(_key: string): Promise<boolean> {
+  delete(_key: string): Promise<boolean> {
     // TODO: Implement with DeleteObjectCommand
-    throw new Error('S3 storage is not yet implemented');
+    return Promise.reject(new Error('S3 storage is not yet implemented'));
   }
 
-  async list(_params?: ListParams): Promise<ListResult> {
+  list(_params?: ListParams): Promise<ListResult> {
     // TODO: Implement with ListObjectsV2Command
-    throw new Error('S3 storage is not yet implemented');
+    return Promise.reject(new Error('S3 storage is not yet implemented'));
   }
 
-  async exists(_key: string): Promise<boolean> {
+  exists(_key: string): Promise<boolean> {
     // TODO: Implement with HeadObjectCommand
-    throw new Error('S3 storage is not yet implemented');
+    return Promise.reject(new Error('S3 storage is not yet implemented'));
   }
 
   getProviderName(): string {

@@ -37,7 +37,7 @@ export const submitContactValidation = [
   body('phone')
     .optional()
     .trim()
-    .matches(/^[\d\s\-\+\(\)]+$/)
+    .matches(/^[\d\s+()-]+$/)
     .withMessage('Invalid phone number format')
     .isLength({ max: 20 })
     .withMessage('Phone number must not exceed 20 characters'),

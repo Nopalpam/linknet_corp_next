@@ -1,5 +1,14 @@
 import { body } from 'express-validator';
 
+const readBodyString = (bodyValue: unknown, key: string): string | undefined => {
+  if (!bodyValue || typeof bodyValue !== 'object') {
+    return undefined;
+  }
+
+  const value = (bodyValue as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
 /**
  * Validation rules for user registration
  */
@@ -21,9 +30,13 @@ export const registerValidation = [
     .matches(/[!@#$%^&*(),.?":{}|<>]/)
     .withMessage('Password must contain at least 1 special character')
     .custom((value, { req }) => {
-      if (value && req.body.email) {
-        const emailLocal = req.body.email.split('@')[0].toLowerCase();
-        if (value.toLowerCase() === emailLocal || value.toLowerCase() === req.body.email.toLowerCase()) {
+      const email = readBodyString(req.body, 'email');
+
+      if (typeof value === 'string' && email) {
+        const emailLocal = email.split('@')[0]?.toLowerCase();
+        const normalizedValue = value.toLowerCase();
+
+        if (emailLocal && (normalizedValue === emailLocal || normalizedValue === email.toLowerCase())) {
           throw new Error('Password cannot be identical to email or username');
         }
       }
@@ -95,7 +108,7 @@ export const resetPasswordValidation = [
     .withMessage('Password must contain at least 1 special character'),
   
   body('confirmPassword')
-    .custom((value, { req }) => value === req.body.password)
+    .custom((value, { req }) => value === readBodyString(req.body, 'password'))
     .withMessage('Passwords do not match')
 ];
 

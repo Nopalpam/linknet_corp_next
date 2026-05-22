@@ -65,7 +65,7 @@ export const validateImage = async (imageBuffer: Buffer): Promise<boolean> => {
     }
 
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };

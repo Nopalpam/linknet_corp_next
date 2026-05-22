@@ -176,11 +176,29 @@ export default function EventsList({
   const normalizedState = normalizeState(state);
   const pageFromUrl = Number(searchParams?.get('page')) || 1;
   const needsFetch = eventsProp === null || eventsProp === undefined;
+  const resolvedPage = paginationProp?.currentPage || pageFromUrl || 1;
 
-  const [currentPage, setCurrentPage] = useState(paginationProp?.currentPage || pageFromUrl || 1);
-  const [clientEvents, setClientEvents] = useState([]);
-  const [clientPagination, setClientPagination] = useState(null);
-  const [isLoading, setIsLoading] = useState(needsFetch);
+  const [requestedPage, setRequestedPage] = useState(resolvedPage);
+  const [clientState, setClientState] = useState({
+    fetchKey: '',
+    events: [],
+    pagination: null,
+  });
+  const currentPage = needsFetch ? requestedPage : resolvedPage;
+  const fetchKey = useMemo(() => {
+    if (!needsFetch) {
+      return '';
+    }
+
+    return JSON.stringify({
+      currentPage,
+      limit,
+      locale,
+      normalizedState,
+      sortBy,
+      sortDirection,
+    });
+  }, [currentPage, limit, locale, needsFetch, normalizedState, sortBy, sortDirection]);
 
   useEffect(() => {
     if (!needsFetch) return undefined;
@@ -196,39 +214,44 @@ export default function EventsList({
     const apiState = toApiState(normalizedState);
     if (apiState) qp.set('state', apiState);
 
-    setIsLoading(true);
     fetch(`${API_BASE_URL}/events?${qp.toString()}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (cancelled) return;
-        setClientEvents(json?.data || []);
-        setClientPagination(json?.pagination || null);
+        setClientState({
+          fetchKey,
+          events: json?.data || [],
+          pagination: json?.pagination || null,
+        });
       })
       .catch(() => {
         if (!cancelled) {
-          setClientEvents([]);
-          setClientPagination(null);
+          setClientState({
+            fetchKey,
+            events: [],
+            pagination: null,
+          });
         }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [currentPage, limit, locale, needsFetch, normalizedState, sortBy, sortDirection]);
+  }, [currentPage, fetchKey, limit, locale, needsFetch, normalizedState, sortBy, sortDirection]);
 
-  useEffect(() => {
-    setCurrentPage(paginationProp?.currentPage || pageFromUrl || 1);
-  }, [pageFromUrl, paginationProp?.currentPage]);
+  const isLoading = needsFetch && clientState.fetchKey !== fetchKey;
 
   const events = useMemo(() => {
-    if (needsFetch) return clientEvents;
-    return filterByState(eventsProp || [], normalizedState).slice(0, limit);
-  }, [clientEvents, eventsProp, limit, needsFetch, normalizedState]);
+    if (needsFetch) {
+      return isLoading ? [] : clientState.events;
+    }
 
-  const pagination = needsFetch ? clientPagination : paginationProp;
+    return filterByState(eventsProp || [], normalizedState).slice(0, limit);
+  }, [clientState.events, eventsProp, isLoading, limit, needsFetch, normalizedState]);
+
+  const pagination = needsFetch
+    ? (isLoading ? null : clientState.pagination)
+    : paginationProp;
   const totalPages = pagination?.totalPages || 1;
   const activePage = pagination?.currentPage || currentPage;
   const resolvedIntro = introData || {
@@ -244,7 +267,7 @@ export default function EventsList({
     if (page === activePage) return;
 
     if (needsFetch) {
-      setCurrentPage(page);
+      setRequestedPage(page);
       return;
     }
 

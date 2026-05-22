@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import gsap from 'gsap';
@@ -11,6 +11,41 @@ import { useModalFormEventRegister } from '@/components/base/modals/ModalFormEve
 import { formatEventDateLabel, formatEventTimeLabel, formatEventTimestamp } from '@/lib/eventFormatters';
 
 const COLLAPSED_HEIGHT = 500;
+
+function createContentMeasurementStore() {
+  let snapshot = { fullHeight: 0, isExpandable: false };
+  const listeners = new Set();
+
+  return {
+    getSnapshot() {
+      return snapshot;
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    update(fullHeight) {
+      const nextSnapshot = {
+        fullHeight,
+        isExpandable: fullHeight > COLLAPSED_HEIGHT + 8,
+      };
+
+      if (
+        snapshot.fullHeight === nextSnapshot.fullHeight
+        && snapshot.isExpandable === nextSnapshot.isExpandable
+      ) {
+        return;
+      }
+
+      snapshot = nextSnapshot;
+      listeners.forEach((listener) => listener());
+    },
+    reset() {
+      snapshot = { fullHeight: 0, isExpandable: false };
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
 
 function formatArticleDate(value) {
   if (!value) return '';
@@ -55,12 +90,16 @@ export default function EventContent({ event }) {
   const locale = params?.locale || 'en';
   const { openModal } = useModalFormEventRegister();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isExpandable, setIsExpandable] = useState(false);
   const detailHeaderRef = useRef(null);
   const contentWrapRef = useRef(null);
   const contentInnerRef = useRef(null);
-  const contentHeightRef = useRef(0);
   const isExpandedRef = useRef(false);
+  const measurementStore = useMemo(() => createContentMeasurementStore(), []);
+  const { fullHeight, isExpandable } = useSyncExternalStore(
+    measurementStore.subscribe,
+    measurementStore.getSnapshot,
+    measurementStore.getSnapshot,
+  );
 
   useEffect(() => {
     isExpandedRef.current = isExpanded;
@@ -71,37 +110,38 @@ export default function EventContent({ event }) {
 
     const wrap = contentWrapRef.current;
     const inner = contentInnerRef.current;
+    let frameId = 0;
 
     const updateCollapsedState = () => {
-      const fullHeight = inner.scrollHeight;
-      contentHeightRef.current = fullHeight;
-      const nextExpandable = fullHeight > COLLAPSED_HEIGHT + 8;
+      const nextFullHeight = inner.scrollHeight;
 
-      setIsExpandable(nextExpandable);
+      measurementStore.update(nextFullHeight);
 
       gsap.killTweensOf(wrap);
       gsap.set(wrap, {
-        height: nextExpandable && !isExpandedRef.current ? COLLAPSED_HEIGHT : 'auto',
+        height: nextFullHeight > COLLAPSED_HEIGHT + 8 && !isExpandedRef.current ? COLLAPSED_HEIGHT : 'auto',
       });
     };
 
-    updateCollapsedState();
+    frameId = window.requestAnimationFrame(updateCollapsedState);
     const resizeObserver = new ResizeObserver(updateCollapsedState);
     resizeObserver.observe(inner);
     window.addEventListener('resize', updateCollapsedState);
 
     return () => {
+      window.cancelAnimationFrame(frameId);
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateCollapsedState);
       gsap.killTweensOf(wrap);
+      measurementStore.reset();
     };
-  }, [event?.content]);
+  }, [event?.content, measurementStore]);
 
   useEffect(() => {
     if (!contentWrapRef.current || !contentInnerRef.current || !isExpandable) return;
 
     const wrap = contentWrapRef.current;
-    const fullHeight = contentHeightRef.current || contentInnerRef.current.scrollHeight;
+    const resolvedHeight = fullHeight || contentInnerRef.current.scrollHeight;
 
     gsap.killTweensOf(wrap);
 
@@ -110,7 +150,7 @@ export default function EventContent({ event }) {
         wrap,
         { height: wrap.offsetHeight || COLLAPSED_HEIGHT },
         {
-          height: fullHeight,
+          height: resolvedHeight,
           duration: 0.45,
           ease: 'power2.inOut',
           onComplete: () => gsap.set(wrap, { height: 'auto' }),
@@ -121,14 +161,14 @@ export default function EventContent({ event }) {
 
     gsap.fromTo(
       wrap,
-      { height: wrap.offsetHeight || fullHeight },
+      { height: wrap.offsetHeight || resolvedHeight },
       {
         height: COLLAPSED_HEIGHT,
         duration: 0.4,
         ease: 'power2.inOut',
       }
     );
-  }, [isExpanded, isExpandable, event?.content]);
+  }, [fullHeight, isExpanded, isExpandable, event?.content]);
 
   if (!event) return null;
 

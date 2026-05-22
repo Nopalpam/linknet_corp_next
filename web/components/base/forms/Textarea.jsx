@@ -1,45 +1,43 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState } from 'react';
 
 const Textarea = forwardRef(({ 
   id, label, error, helpText, required, maxLength, className = '', 
   submitAttempted, // <-- Prop trigger
   onChange, onBlur, ...props 
 }, ref) => {
-  const [internalError, setInternalError] = useState('');
-  const [internalValue, setInternalValue] = useState(props.value || props.defaultValue || '');
-  const [charCount, setCharCount] = useState(internalValue.length);
+  const [internalValue, setInternalValue] = useState(props.defaultValue || '');
+  const [hasBlurred, setHasBlurred] = useState(false);
 
-  const validateField = (val) => {
-    if (required && !val.trim()) {
-      setInternalError(props['data-error'] || 'Message is required.');
-      return false;
+  const isControlled = props.value !== undefined;
+  const inputValue = isControlled ? (props.value || '') : internalValue;
+  const charCount = inputValue.length;
+
+  const getValidationMessage = (val) => {
+    if (required && !String(val || '').trim()) {
+      return props['data-error'] || 'Message is required.';
     }
-    setInternalError('');
-    return true;
+
+    return '';
   };
-
-  // TRIGGER Submit Parent
-  useEffect(() => {
-    if (submitAttempted) {
-      validateField(internalValue);
-    }
-  }, [submitAttempted, internalValue]);
 
   const handleChange = (e) => {
     const val = e.target.value;
-    setInternalValue(val);
-    setCharCount(val.length);
-    if (!submitAttempted && internalError) setInternalError('');
+
+    if (!isControlled) {
+      setInternalValue(val);
+    }
+
     if (onChange) onChange(e);
   };
 
   const handleBlur = (e) => {
-    validateField(e.target.value);
+    setHasBlurred(true);
     if (onBlur) onBlur(e);
   };
 
-  const isInvalid = !!error || !!internalError;
-  const displayError = error || internalError;
+  const derivedError = submitAttempted || hasBlurred ? getValidationMessage(inputValue) : '';
+  const displayError = error || derivedError;
+  const isInvalid = !!displayError;
 
   return (
     <div className={`w-full ${className}`}>
@@ -47,7 +45,7 @@ const Textarea = forwardRef(({
         <textarea
           id={id} ref={ref} className="lnFormInput__control" rows={props.rows || 4} placeholder=" "
           required={required} maxLength={maxLength}
-          value={internalValue} onChange={handleChange} onBlur={handleBlur} {...props}
+          value={inputValue} onChange={handleChange} onBlur={handleBlur} {...props}
         />
         <label htmlFor={id} className="lnFormInput__label">
           {label}{required && <span className="req">*</span>}

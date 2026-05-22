@@ -24,10 +24,13 @@ const TABS = [
 
 export default function StockInformation({ config, cmsData = null, className = "" }) {
   const [activeTab, setActiveTab] = useState('information');
-  const [stockData, setStockData] = useState({ quote: null, history: [] });
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [stockState, setStockState] = useState({
+    fetchKey: '',
+    data: { quote: null, history: [] },
+    errorMessage: '',
+  });
   const symbol = normalizeStockSymbol(cmsData?.symbol || DEFAULT_STOCK_SYMBOL);
+  const fetchKey = symbol;
   const tradingViewSymbol = toTradingViewSymbol(symbol);
   const title = cmsData?.title || 'Dapatkan informasi terkini mengenai harga saham LINK hari ini';
   const {
@@ -50,21 +53,24 @@ export default function StockInformation({ config, cmsData = null, className = "
     let mounted = true;
 
     const fetchStockData = async () => {
-      setIsLoading(true);
-      setErrorMessage('');
       try {
         const snapshot = await fetchStockSnapshot(symbol);
         if (!mounted) return;
 
-        setStockData(snapshot);
+        setStockState({
+          fetchKey,
+          data: snapshot,
+          errorMessage: '',
+        });
       } catch (error) {
         console.error("Gagal mengambil data saham:", error);
         if (!mounted) return;
 
-        setStockData({ quote: null, history: [] });
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to fetch stock data');
-      } finally {
-        if (mounted) setIsLoading(false);
+        setStockState({
+          fetchKey,
+          data: { quote: null, history: [] },
+          errorMessage: error instanceof Error ? error.message : 'Failed to fetch stock data',
+        });
       }
     };
 
@@ -73,7 +79,11 @@ export default function StockInformation({ config, cmsData = null, className = "
     return () => {
       mounted = false;
     };
-  }, [symbol]);
+  }, [fetchKey, symbol]);
+
+  const isLoading = stockState.fetchKey !== fetchKey;
+  const stockData = isLoading ? { quote: null, history: [] } : stockState.data;
+  const errorMessage = isLoading ? '' : stockState.errorMessage;
 
   return (
     <section

@@ -1,46 +1,40 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState } from 'react';
 
 const Input = forwardRef(({ 
   id, label, type = 'text', error, helpText, required, className = '', 
   submitAttempted, // <-- Prop baru untuk trigger dari luar
   onChange, onBlur, ...props 
 }, ref) => {
-  const [internalError, setInternalError] = useState('');
-  const [internalValue, setInternalValue] = useState(props.value || props.defaultValue || '');
+  const [internalValue, setInternalValue] = useState(props.defaultValue || '');
+  const [hasBlurred, setHasBlurred] = useState(false);
+
+  const isControlled = props.value !== undefined;
+  const inputValue = isControlled ? (props.value || '') : internalValue;
 
   const onlyDigits = (s) => (s || '').replace(/\D+/g, '');
   const isPhoneValid = (raw) => /^0\d{9,}$/.test(onlyDigits(raw));
   const isEmailValid = (raw) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test((raw || '').trim());
   const autoFormatPhone = (raw) => onlyDigits(raw).replace(/(.{4})/g, '$1 ').trim();
 
-  useEffect(() => {
-    setInternalValue(props.value || props.defaultValue || '');
-  }, [props.value, props.defaultValue]);
+  const getValidationMessage = (val) => {
+    const stringValue = String(val || '').trim();
 
-  // Fungsi sentral untuk mengecek validasi
-  const validateField = (val) => {
-    if (required && !val.trim()) {
-      setInternalError(props['data-error'] || `${label} is required.`);
-      return false;
-    } else if (val) {
-      if ((type === 'tel' || props['data-validate'] === 'phone') && !isPhoneValid(val)) {
-        setInternalError(props['data-error-phone'] || 'Phone is required.');
-        return false;
-      } else if ((type === 'email' || props['data-validate'] === 'email') && !isEmailValid(val)) {
-        setInternalError(props['data-error-email'] || 'Email is required.');
-        return false;
+    if (required && !stringValue) {
+      return props['data-error'] || `${label} is required.`;
+    }
+
+    if (stringValue) {
+      if ((type === 'tel' || props['data-validate'] === 'phone') && !isPhoneValid(stringValue)) {
+        return props['data-error-phone'] || 'Phone is required.';
+      }
+
+      if ((type === 'email' || props['data-validate'] === 'email') && !isEmailValid(stringValue)) {
+        return props['data-error-email'] || 'Email is required.';
       }
     }
-    setInternalError('');
-    return true;
-  };
 
-  // TRIGGER: Jika tombol submit diklik dari parent, jalankan validasi
-  useEffect(() => {
-    if (submitAttempted) {
-      validateField(internalValue);
-    }
-  }, [submitAttempted, internalValue]); // Re-validasi otomatis jika user ngetik setelah gagal submit
+    return '';
+  };
 
   const handleChange = (e) => {
     let val = e.target.value;
@@ -48,20 +42,22 @@ const Input = forwardRef(({
       val = autoFormatPhone(val);
       e.target.value = val;
     }
-    setInternalValue(val);
-    
-    // Hapus pesan error saat mulai ngetik (jika belum pernah submit)
-    if (!submitAttempted && internalError) setInternalError('');
+
+    if (!isControlled) {
+      setInternalValue(val);
+    }
+
     if (onChange) onChange(e);
   };
 
   const handleBlur = (e) => {
-    validateField(e.target.value);
+    setHasBlurred(true);
     if (onBlur) onBlur(e);
   };
 
-  const isInvalid = !!error || !!internalError;
-  const displayError = error || internalError;
+  const derivedError = submitAttempted || hasBlurred ? getValidationMessage(inputValue) : '';
+  const displayError = error || derivedError;
+  const isInvalid = !!displayError;
 
   return (
     <div className={`w-full ${className}`}>
@@ -69,7 +65,7 @@ const Input = forwardRef(({
       <div className={`lnFormInput ${isInvalid ? 'is-invalid' : ''} ${props.disabled ? 'is-disabled' : ''}`}>
         <input
           id={id} ref={ref} type={type} className="lnFormInput__control" placeholder=" "
-          required={required} value={internalValue} onChange={handleChange} onBlur={handleBlur}
+          required={required} value={inputValue} onChange={handleChange} onBlur={handleBlur}
           {...props}
         />
         <label htmlFor={id} className="lnFormInput__label">

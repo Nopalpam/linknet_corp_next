@@ -6,20 +6,53 @@
  *          processing errors, or deliberate data manipulation
  */
 
-import { AppError } from '../types/error.types';
+import { AppError, ErrorDetails } from '../types/error.types';
 import crypto from 'crypto';
+
+type ReferenceLookupModel = {
+  findUnique(args: { where: { id: string } }): Promise<unknown>;
+};
+
+type DependentCountModel = {
+  count(args: { where: Record<string, string | null> }): Promise<number>;
+};
+
+type VersionLookupModel = {
+  findUnique(args: { where: { id: string }; select: { version: true } }): Promise<{ version: number } | null>;
+};
+
+type HierarchyLookupModel = {
+  findUnique(args: { where: { id: string | bigint }; select: { parentId: true } }): Promise<{ parentId: string | bigint | null } | null>;
+};
+
+function normalizeChecksumValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeChecksumValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+
+    return Object.keys(record)
+      .sort()
+      .reduce<Record<string, unknown>>((accumulator, key) => {
+        accumulator[key] = normalizeChecksumValue(record[key]);
+        return accumulator;
+      }, {});
+  }
+
+  return value;
+}
 
 /**
  * Data Integrity Error
  */
 export class DataIntegrityError extends AppError {
-  public readonly integrityDetails?: any;
+  public readonly integrityDetails?: unknown;
   
-  constructor(message: string, details?: any) {
-    super(message, 422, 'DATA_INTEGRITY_ERROR', true);
+  constructor(message: string, details?: unknown) {
+    super(message, 422, 'DATA_INTEGRITY_ERROR', true, details as ErrorDetails | undefined);
     this.integrityDetails = details;
-    // Also set the details property from parent class
-    (this as any).details = details;
   }
 }
 
@@ -110,7 +143,7 @@ export function validateStateTransition(
  * Validate referenced entities exist (referential integrity)
  */
 export async function validateReferencesExist(
-  references: Array<{ id: string; type: string; model: any }>
+  references: Array<{ id: string; type: string; model: ReferenceLookupModel }>
 ): Promise<void> {
   const checks = references.map(async ({ id, type, model }) => {
     const exists = await model.findUnique({ where: { id } });
@@ -132,7 +165,7 @@ export async function validateNoDependents(
   entityId: string,
   entityType: string,
   dependentChecks: Array<{
-    model: any;
+    model: DependentCountModel;
     field: string;
     description: string;
   }>
@@ -162,8 +195,8 @@ export async function validateNoDependents(
 /**
  * Generate data checksum for integrity verification
  */
-export function generateDataChecksum(data: any): string {
-  const normalized = JSON.stringify(data, Object.keys(data).sort());
+export function generateDataChecksum(data: unknown): string {
+  const normalized = JSON.stringify(normalizeChecksumValue(data));
   return crypto.createHash('sha256').update(normalized).digest('hex');
 }
 
@@ -171,7 +204,7 @@ export function generateDataChecksum(data: any): string {
  * Verify data checksum matches expected
  */
 export function verifyDataChecksum(
-  data: any,
+  data: unknown,
   expectedChecksum: string,
   entityType: string
 ): void {
@@ -212,7 +245,7 @@ export function validateDateRange(
  * Validate collection size limits
  */
 export function validateCollectionSize(
-  collection: any[],
+  collection: unknown[],
   fieldName: string,
   minSize: number = 0,
   maxSize: number = 1000
@@ -238,7 +271,7 @@ export function validateCollectionSize(
 export function validateNoDuplicates<T>(
   collection: T[],
   fieldName: string,
-  keyExtractor?: (item: T) => any
+  keyExtractor?: (item: T) => unknown
 ): void {
   const keys = keyExtractor 
     ? collection.map(keyExtractor)
@@ -259,7 +292,7 @@ export function validateNoDuplicates<T>(
  * Validate required fields are present for state
  */
 export function validateRequiredFieldsForState(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   state: string,
   requiredFields: Record<string, string[]>
 ): void {
@@ -283,11 +316,11 @@ export function validateRequiredFieldsForState(
 /**
  * Validate business rule constraints
  */
-export async function validateBusinessRule(
+export function validateBusinessRule(
   condition: boolean,
   message: string,
-  details?: any
-): Promise<void> {
+  details?: unknown
+): void {
   if (!condition) {
     throw new DataIntegrityError(message, details);
   }
@@ -322,7 +355,7 @@ export function validateBatchConsistency<T>(
  * Validate concurrent modification (optimistic locking)
  */
 export async function validateVersionMatch(
-  model: any,
+  model: VersionLookupModel,
   id: string,
   expectedVersion: number,
   entityType: string
@@ -356,18 +389,20 @@ export async function validateVersionMatch(
  * Validate JSON data structure
  */
 export function validateJsonStructure(
-  data: any,
+  data: unknown,
   requiredKeys: string[],
   fieldName: string
 ): void {
-  if (typeof data !== 'object' || data === null) {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     throw new DataIntegrityError(
       `${fieldName} must be a valid object`,
       { fieldName, receivedType: typeof data }
     );
   }
 
-  const missingKeys = requiredKeys.filter(key => !(key in data));
+  const record = data as Record<string, unknown>;
+
+  const missingKeys = requiredKeys.filter((key) => !(key in record));
   
   if (missingKeys.length > 0) {
     throw new DataIntegrityError(
@@ -383,7 +418,7 @@ export function validateJsonStructure(
 export async function validateHierarchyIntegrity(
   nodeId: string | bigint,
   parentId: string | bigint | null,
-  model: any,
+  model: HierarchyLookupModel,
   maxDepth: number = 10
 ): Promise<void> {
   // Check for self-reference
@@ -419,7 +454,7 @@ export async function validateHierarchyIntegrity(
 
       visited.add(currentIdStr);
 
-      const parent: any = await model.findUnique({
+      const parent = await model.findUnique({
         where: { id: currentId },
         select: { parentId: true }
       });

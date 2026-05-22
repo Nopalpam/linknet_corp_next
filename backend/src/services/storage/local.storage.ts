@@ -115,9 +115,9 @@ export class LocalStorageProvider implements IStorageProvider {
     return fs.promises.readFile(filePath);
   }
 
-  async getDownloadUrl(key: string, _expiresInSeconds?: number): Promise<string> {
+  getDownloadUrl(key: string, _expiresInSeconds?: number): Promise<string> {
     // Local storage returns direct URL (no signing needed)
-    return this.keyToUrl(key);
+    return Promise.resolve(this.keyToUrl(key));
   }
 
   async delete(key: string): Promise<boolean> {
@@ -191,8 +191,8 @@ export class LocalStorageProvider implements IStorageProvider {
     }
   }
 
-  async exists(key: string): Promise<boolean> {
-    return fs.existsSync(this.getAbsolutePath(key));
+  exists(key: string): Promise<boolean> {
+    return Promise.resolve(fs.existsSync(this.getAbsolutePath(key)));
   }
 
   getProviderName(): string {

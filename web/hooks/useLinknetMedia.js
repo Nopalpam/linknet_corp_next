@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { fetchLinknetMedia, normalizeMediaData } from '@/lib/mediaService';
 
 const DISABLED_STATE = {
@@ -9,54 +9,117 @@ const DISABLED_STATE = {
   error: null,
 };
 
+function createLinknetMediaStore(enabledInitially) {
+  let snapshot = {
+    ...DISABLED_STATE,
+    isLoading: Boolean(enabledInitially),
+    needsRequest: Boolean(enabledInitially),
+    requestId: 0,
+  };
+
+  const listeners = new Set();
+
+  const emitChange = () => {
+    listeners.forEach((listener) => listener());
+  };
+
+  return {
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    getSnapshot() {
+      return snapshot;
+    },
+    markDisabled() {
+      snapshot = {
+        ...DISABLED_STATE,
+        needsRequest: true,
+        requestId: snapshot.requestId,
+      };
+      emitChange();
+    },
+    startRequest() {
+      const requestId = snapshot.requestId + 1;
+      snapshot = {
+        ...DISABLED_STATE,
+        isLoading: true,
+        needsRequest: false,
+        requestId,
+      };
+      emitChange();
+      return requestId;
+    },
+    resolveRequest(requestId, data) {
+      if (snapshot.requestId !== requestId) {
+        return;
+      }
+
+      snapshot = {
+        data,
+        error: null,
+        isLoading: false,
+        needsRequest: false,
+        requestId,
+      };
+      emitChange();
+    },
+    rejectRequest(requestId, error) {
+      if (snapshot.requestId !== requestId) {
+        return;
+      }
+
+      snapshot = {
+        data: null,
+        error,
+        isLoading: false,
+        needsRequest: false,
+        requestId,
+      };
+      emitChange();
+    },
+  };
+}
+
 export function useLinknetMedia(enabled = true) {
-  const previousEnabledRef = useRef(enabled);
-  const requestCycleRef = useRef(0);
-
-  if (enabled && !previousEnabledRef.current) {
-    requestCycleRef.current += 1;
-  }
-
-  previousEnabledRef.current = enabled;
-
-  const activeRequestCycle = requestCycleRef.current;
-  const [state, setState] = useState({
-    cycle: -1,
-    data: null,
-    error: null,
-  });
+  const [store] = useState(() => createLinknetMediaStore(enabled));
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
   useEffect(() => {
     if (!enabled) {
+      store.markDisabled();
       return undefined;
     }
 
-    let mounted = true;
+    let cancelled = false;
+    const requestId = store.startRequest();
 
     fetchLinknetMedia()
       .then((payload) => {
-        if (!mounted) return;
-        setState({ cycle: activeRequestCycle, data: normalizeMediaData(payload), error: null });
+        if (cancelled) return;
+        store.resolveRequest(requestId, normalizeMediaData(payload));
       })
       .catch((error) => {
-        if (!mounted) return;
-        setState({ cycle: activeRequestCycle, data: null, error });
+        if (cancelled) return;
+        store.rejectRequest(requestId, error);
       });
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, [activeRequestCycle, enabled]);
+  }, [enabled, store]);
 
   if (!enabled) {
     return DISABLED_STATE;
   }
 
-  const isCurrentRequest = state.cycle === activeRequestCycle;
+  const isLoading = state.isLoading || state.needsRequest;
 
   return {
-    data: isCurrentRequest ? state.data : null,
-    isLoading: !isCurrentRequest,
-    error: isCurrentRequest ? state.error : null,
+    data: isLoading ? null : state.data,
+    isLoading,
+    error: isLoading ? null : state.error,
   };
 }

@@ -82,12 +82,21 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
   const parsedPage = parseInt(pageParam, 10);
   const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
-  const [careers, setCareers] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchValue, setSearchValue] = useState('');
   const [filterValues, setFilterValues] = useState({ location: '', type: '', division: '' });
   const [filterOptions, setFilterOptions] = useState({ locations: [], types: [], divisions: [] });
+  const normalizedSearchValue = searchValue.trim();
+  const [clientState, setClientState] = useState({
+    fetchKey: '',
+    careers: [],
+    totalPages: 1,
+  });
+  const fetchKey = JSON.stringify({
+    currentPage,
+    itemsPerPage,
+    searchValue: normalizedSearchValue,
+    filterValues,
+  });
 
   const fetchFilterOptions = useCallback(async () => {
     try {
@@ -106,48 +115,59 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
     }
   }, []);
 
-  const fetchCareers = useCallback(async (page, search, filters) => {
-    setIsLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      queryParams.set('page', String(page));
-      queryParams.set('limit', String(itemsPerPage));
-
-      if (search.trim()) queryParams.set('search', search.trim());
-      if (filters.location) queryParams.set('location', filters.location);
-      if (filters.type) queryParams.set('type', filters.type);
-      if (filters.division) queryParams.set('division', filters.division);
-
-      const res = await fetch(`${API_BASE_URL}/careers?${queryParams.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch careers');
-      const json = await res.json();
-
-      if (json?.success) {
-        setCareers(json.data || []);
-        setTotalPages(json.pagination?.totalPages || 1);
-      } else {
-        setCareers([]);
-        setTotalPages(1);
-      }
-    } catch {
-      setCareers([]);
-      setTotalPages(1);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [itemsPerPage]);
-
   useEffect(() => {
     fetchFilterOptions();
   }, [fetchFilterOptions]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const debounce = setTimeout(() => {
-      fetchCareers(currentPage, searchValue, filterValues);
+      const fetchCareers = async () => {
+        try {
+          const queryParams = new URLSearchParams();
+          queryParams.set('page', String(currentPage));
+          queryParams.set('limit', String(itemsPerPage));
+
+          if (normalizedSearchValue) queryParams.set('search', normalizedSearchValue);
+          if (filterValues.location) queryParams.set('location', filterValues.location);
+          if (filterValues.type) queryParams.set('type', filterValues.type);
+          if (filterValues.division) queryParams.set('division', filterValues.division);
+
+          const res = await fetch(`${API_BASE_URL}/careers?${queryParams.toString()}`);
+          if (!res.ok) throw new Error('Failed to fetch careers');
+          const json = await res.json();
+
+          if (!cancelled) {
+            setClientState({
+              fetchKey,
+              careers: json?.success ? (json.data || []) : [],
+              totalPages: json?.success ? (json.pagination?.totalPages || 1) : 1,
+            });
+          }
+        } catch {
+          if (!cancelled) {
+            setClientState({
+              fetchKey,
+              careers: [],
+              totalPages: 1,
+            });
+          }
+        }
+      };
+
+      fetchCareers();
     }, 250);
 
-    return () => clearTimeout(debounce);
-  }, [currentPage, searchValue, filterValues, fetchCareers]);
+    return () => {
+      cancelled = true;
+      clearTimeout(debounce);
+    };
+  }, [currentPage, fetchKey, filterValues, itemsPerPage, normalizedSearchValue]);
+
+  const isLoading = clientState.fetchKey !== fetchKey;
+  const careers = isLoading ? [] : clientState.careers;
+  const totalPages = isLoading ? 1 : clientState.totalPages;
 
   const generatedFilters = useMemo(() => {
     const filters = [];

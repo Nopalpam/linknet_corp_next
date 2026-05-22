@@ -1,6 +1,5 @@
 import React, {
   forwardRef,
-  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -34,11 +33,12 @@ const InputFile = forwardRef(({
   ...props
 }, ref) => {
   const inputRef = useRef(null);
-  const [internalError, setInternalError] = useState('');
+  const [customError, setCustomError] = useState('');
   const [internalFile, setInternalFile] = useState(defaultValue);
+  const [hasBlurred, setHasBlurred] = useState(false);
 
   const isControlled = value !== undefined;
-  const selectedFile = isControlled ? value : internalFile;
+  const selectedFile = isControlled ? (value ?? null) : internalFile;
 
   useImperativeHandle(ref, () => inputRef.current);
 
@@ -67,42 +67,25 @@ const InputFile = forwardRef(({
     }
   };
 
-  const validateField = (file) => {
+  const getValidationMessage = (file) => {
     if (required && !file) {
-      setInternalError(props['data-error'] || `${label} is required.`);
-      return false;
+      return props['data-error'] || `${label} is required.`;
     }
 
     if (file) {
       const extension = getFileExtension(file.name);
 
       if (!ACCEPTED_EXTENSIONS.includes(extension)) {
-        setInternalError(
-          props['data-error-format'] || 'Only PDF, PNG, JPG, and JPEG files are allowed.'
-        );
-        return false;
+        return props['data-error-format'] || 'Only PDF, PNG, JPG, and JPEG files are allowed.';
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        setInternalError(
-          props['data-error-size'] || 'Maximum file size is 2 MB.'
-        );
-        return false;
+        return props['data-error-size'] || 'Maximum file size is 2 MB.';
       }
     }
 
-    setInternalError('');
-    return true;
+    return '';
   };
-
-  // Keep the same submit-trigger validation flow used by the other form inputs in this codebase.
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-  useEffect(() => {
-    if (submitAttempted) {
-      validateField(selectedFile);
-    }
-  }, [submitAttempted, selectedFile]);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const handleOpenPicker = () => {
     if (props.disabled) return;
@@ -111,42 +94,46 @@ const InputFile = forwardRef(({
 
   const handleChange = (e) => {
     const nextFile = e.target.files?.[0] || null;
+    setCustomError('');
 
     if (!nextFile) {
       setSelectedFile(null);
-      if (!submitAttempted && internalError) setInternalError('');
       if (onChange) onChange(e);
       return;
     }
 
-    const isValid = validateField(nextFile);
+    const validationMessage = getValidationMessage(nextFile);
 
-    if (!isValid) {
+    if (validationMessage) {
+      setHasBlurred(true);
+      setCustomError(validationMessage);
       clearNativeInput();
       setSelectedFile(null);
       return;
     }
 
+    setHasBlurred(true);
     setSelectedFile(nextFile);
-    if (internalError) setInternalError('');
     if (onChange) onChange(e);
   };
 
   const handleBlur = (e) => {
-    validateField(selectedFile);
+    setHasBlurred(true);
     if (onBlur) onBlur(e);
   };
 
   const handleRemove = () => {
     clearNativeInput();
     setSelectedFile(null);
-    setInternalError('');
+    setCustomError('');
+    setHasBlurred(true);
     if (onRemove) onRemove();
     emitEmptyChange();
   };
 
-  const isInvalid = !!error || !!internalError;
-  const displayError = error || internalError;
+  const derivedError = customError || (submitAttempted || hasBlurred ? getValidationMessage(selectedFile) : '');
+  const displayError = error || derivedError;
+  const isInvalid = !!displayError;
 
   return (
     <div className={`w-full ${className}`}>
