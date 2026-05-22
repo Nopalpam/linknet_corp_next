@@ -1,38 +1,62 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchLinknetMedia, normalizeMediaData } from '@/lib/mediaService';
 
+const DISABLED_STATE = {
+  data: null,
+  isLoading: false,
+  error: null,
+};
+
 export function useLinknetMedia(enabled = true) {
+  const previousEnabledRef = useRef(enabled);
+  const requestCycleRef = useRef(0);
+
+  if (enabled && !previousEnabledRef.current) {
+    requestCycleRef.current += 1;
+  }
+
+  previousEnabledRef.current = enabled;
+
+  const activeRequestCycle = requestCycleRef.current;
   const [state, setState] = useState({
+    cycle: -1,
     data: null,
-    isLoading: Boolean(enabled),
     error: null,
   });
 
   useEffect(() => {
     if (!enabled) {
-      setState({ data: null, isLoading: false, error: null });
       return undefined;
     }
 
     let mounted = true;
 
-    setState((previous) => ({ ...previous, isLoading: true, error: null }));
     fetchLinknetMedia()
       .then((payload) => {
         if (!mounted) return;
-        setState({ data: normalizeMediaData(payload), isLoading: false, error: null });
+        setState({ cycle: activeRequestCycle, data: normalizeMediaData(payload), error: null });
       })
       .catch((error) => {
         if (!mounted) return;
-        setState({ data: null, isLoading: false, error });
+        setState({ cycle: activeRequestCycle, data: null, error });
       });
 
     return () => {
       mounted = false;
     };
-  }, [enabled]);
+  }, [activeRequestCycle, enabled]);
 
-  return state;
+  if (!enabled) {
+    return DISABLED_STATE;
+  }
+
+  const isCurrentRequest = state.cycle === activeRequestCycle;
+
+  return {
+    data: isCurrentRequest ? state.data : null,
+    isLoading: !isCurrentRequest,
+    error: isCurrentRequest ? state.error : null,
+  };
 }

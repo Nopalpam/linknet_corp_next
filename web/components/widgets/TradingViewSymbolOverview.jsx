@@ -13,7 +13,9 @@ export default function TradingViewSymbolOverview({
   className = '',
 }) {
   const containerRef = useRef(null);
-  const [failed, setFailed] = useState(false);
+  const [failedMountKey, setFailedMountKey] = useState(null);
+  const widgetMountKey = symbol ? `${symbol}-${interval}-${locale}-${theme}` : null;
+  const failed = widgetMountKey !== null && failedMountKey === widgetMountKey;
   const widgetConfig = useMemo(() => ({
     lineWidth: 2,
     lineType: 0,
@@ -55,15 +57,14 @@ export default function TradingViewSymbolOverview({
   useEffect(() => {
     if (!containerRef.current || !symbol) return undefined;
 
-    setFailed(false);
     return mountJsonConfiguredScript({
       container: containerRef.current,
       src: TRADINGVIEW_SYMBOL_OVERVIEW_SRC,
       config: widgetConfig,
-      scriptId: `tradingview-symbol-overview-${symbol}-${interval}`,
-      onError: () => setFailed(true),
+      scriptId: `tradingview-symbol-overview-${widgetMountKey}`,
+      onError: () => setFailedMountKey(widgetMountKey),
     });
-  }, [interval, symbol, widgetConfig]);
+  }, [symbol, widgetConfig, widgetMountKey]);
 
   return (
     <div className={`tradingview-widget-container h-full w-full ${className}`}>

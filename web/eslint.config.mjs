@@ -10,6 +10,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated/vendor playground assets that are not part of the app source lint surface.
+    "app/dev/script/**",
+    "components/base/SegmentPicker - Copy.jsx",
   ]),
 ]);
 
