@@ -13,6 +13,7 @@ Stabilize repository CI/CD and security scanning so that GitHub Actions, Azure p
 3. GitHub Actions CI used path-like values in `branches` filters and relied on matrix expressions in `defaults.run`, which made workflow behavior fragile and misleading.
 4. CodeQL attempted an unnecessary root-level autobuild in a multi-app JavaScript/TypeScript repository that has no root package manifest.
 5. Trivy scheduled scans were blocking the same way as PR and push scans, making backlog cleanup noisy and slowing remediation.
+6. Trivy filesystem jobs were also scanning `misconfig` even though the workflow already had a dedicated `config` job, so backend Kubernetes template findings surfaced as a misleading `Filesystem Backend` failure.
 6. Backend dependencies had avoidable drift: Prisma CLI/client mismatch, vulnerable `@azure/identity` range, and an alpha `json2csv` dependency.
 7. Filemanager still had a direct vulnerable `uuid` line.
 8. Local DevSecOps enforcement in `.pre-commit-config.yaml` depended on `bash -c`, which is not portable for Windows contributors.
@@ -47,6 +48,8 @@ Stabilize repository CI/CD and security scanning so that GitHub Actions, Azure p
 - Updated `.github/workflows/trivy-scan.yml` to:
   - use path filters for relevant applications and workflows
   - make scheduled scans report-oriented while keeping PR/push scans blocking
+  - print a human-readable filesystem summary before the SARIF gate so failures are visible in job logs
+  - stop duplicating `misconfig` findings in filesystem jobs because the workflow already has a dedicated config scan job
   - skip generated build output directories during config scan
 
 ### Dependency Stabilization
@@ -63,6 +66,7 @@ Stabilize repository CI/CD and security scanning so that GitHub Actions, Azure p
 - Tightened backend development CORS fallback in `backend/src/server.ts` to explicit loopback origins.
 - Updated backend upload scanning in `backend/src/services/file-upload-scanner.service.ts` so antivirus policy applies to the active `scanBuffer` path and defaults to fail closed in production unless explicitly overridden.
 - Documented the antivirus control in `backend/.env.example` with `ANTIVIRUS_REQUIRED`.
+- Hardened tracked backend Kubernetes templates so they no longer rely on `:latest` image tags or writable root filesystems, and added writable ephemeral mounts where runtime writes are expected.
 
 ### Local DevSecOps Enforcement
 

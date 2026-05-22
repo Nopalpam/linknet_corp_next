@@ -39,7 +39,7 @@ function checkEnvironment() {
     console.log('❌ DATABASE_URL not configured properly!');
     console.log('Please update DATABASE_URL in .env file.\n');
     console.log('Example:');
-    console.log('DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/linknetcorp?schema=public"\n');
+    console.log('DATABASE_URL="postgresql://<DB_USER>:<DB_PASSWORD>@localhost:5432/linknetcorp?schema=public"\n');
     process.exit(1);
   }
 

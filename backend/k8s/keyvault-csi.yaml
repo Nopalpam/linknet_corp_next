@@ -102,14 +102,14 @@ spec:
       
       containers:
       - name: backend
-        image: <YOUR_ACR_NAME>.azurecr.io/linknetcorp-backend:latest
-        imagePullPolicy: Always
+        image: <YOUR_ACR_NAME>.azurecr.io/linknetcorp-backend:<IMAGE_TAG>
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
           name: http
         securityContext:
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
             - ALL
@@ -143,6 +143,12 @@ spec:
         
         # Volume mounts for CSI driver
         volumeMounts:
+        - name: tmp
+          mountPath: "/tmp"
+        - name: app-logs
+          mountPath: "/app/logs"
+        - name: app-uploads
+          mountPath: "/app/uploads"
         - name: secrets-store
           mountPath: "/mnt/secrets-store"
           readOnly: true
@@ -186,6 +192,12 @@ spec:
       
       # CSI Driver volume
       volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: app-logs
+        emptyDir: {}
+      - name: app-uploads
+        emptyDir: {}
       - name: secrets-store
         csi:
           driver: secrets-store.csi.k8s.io
