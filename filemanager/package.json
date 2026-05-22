@@ -36,7 +36,7 @@
     "eslint": "^9.0.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.59.4"
   },
   "overrides": {
     "minimatch@10.2.5": {
