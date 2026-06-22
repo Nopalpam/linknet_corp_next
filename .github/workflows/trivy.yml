@@ -1,0 +1,84 @@
+name: Trivy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  filesystem:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - name: Backend
+            directory: corporate-be
+            sarif: trivy-corporate-be.sarif
+          - name: CMS
+            directory: corporate-cms
+            sarif: trivy-corporate-cms.sarif
+          - name: Web
+            directory: corporate-web
+            sarif: trivy-corporate-web.sarif
+          - name: File Manager
+            directory: corporate-fm
+            sarif: trivy-corporate-fm.sarif
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Show Trivy report in job log
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ matrix.directory }}
+          scanners: vuln,secret,misconfig
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          format: table
+          exit-code: '0'
+          ignore-unfixed: 'false'
+          skip-dirs: ${{ matrix.directory }}/node_modules,${{ matrix.directory }}/dist,${{ matrix.directory }}/build,${{ matrix.directory }}/.next,${{ matrix.directory }}/out,${{ matrix.directory }}/coverage,${{ matrix.directory }}/.turbo
+          timeout: 10m
+
+      - name: Create SARIF and enforce high-severity gate
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ matrix.directory }}
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: 'true'
+          format: sarif
+          output: ${{ matrix.sarif }}
+          exit-code: '1'
+          ignore-unfixed: 'false'
+          skip-dirs: ${{ matrix.directory }}/node_modules,${{ matrix.directory }}/dist,${{ matrix.directory }}/build,${{ matrix.directory }}/.next,${{ matrix.directory }}/out,${{ matrix.directory }}/coverage,${{ matrix.directory }}/.turbo
+          timeout: 10m
+          skip-setup-trivy: 'true'
+          cache: 'false'
+
+      - name: Upload Trivy SARIF to code scanning
+        if: ${{ always() && hashFiles(matrix.sarif) != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@1a818fd5f97ed0ee9a823421bd5b171add01227f # v4.36.2
+        with:
+          sarif_file: ${{ matrix.sarif }}
+          category: trivy-${{ matrix.directory }}

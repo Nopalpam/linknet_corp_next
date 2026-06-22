@@ -68,3 +68,7 @@ linknetcorp2026-*.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Keep GitHub-only CI metadata out of a separate Azure repository after copy.
+# Files already tracked by this GitHub repository remain tracked here.
+.github/

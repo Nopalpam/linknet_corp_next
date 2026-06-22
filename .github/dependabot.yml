@@ -1,31 +1,63 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /backend
+  - package-ecosystem: "npm"
+    directory: "/corporate-be"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Bangkok"
+    target-branch: "main"
+    open-pull-requests-limit: 3
+    groups:
+      non-major-updates:
+        update-types: ["minor", "patch"]
 
-  - package-ecosystem: npm
-    directory: /frontend
+  - package-ecosystem: "npm"
+    directory: "/corporate-cms"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "monday"
+      time: "02:15"
+      timezone: "Asia/Bangkok"
+    target-branch: "main"
+    open-pull-requests-limit: 3
+    groups:
+      non-major-updates:
+        update-types: ["minor", "patch"]
 
-  - package-ecosystem: npm
-    directory: /web
+  - package-ecosystem: "npm"
+    directory: "/corporate-web"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "monday"
+      time: "02:30"
+      timezone: "Asia/Bangkok"
+    target-branch: "main"
+    open-pull-requests-limit: 3
+    groups:
+      non-major-updates:
+        update-types: ["minor", "patch"]
 
-  - package-ecosystem: npm
-    directory: /filemanager
+  - package-ecosystem: "npm"
+    directory: "/corporate-fm"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "monday"
+      time: "02:45"
+      timezone: "Asia/Bangkok"
+    target-branch: "main"
+    open-pull-requests-limit: 3
+    groups:
+      non-major-updates:
+        update-types: ["minor", "patch"]
 
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Asia/Bangkok"
+    target-branch: "main"
+    open-pull-requests-limit: 3
