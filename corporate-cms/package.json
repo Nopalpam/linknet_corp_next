@@ -90,8 +90,11 @@
     "picomatch": "^4.0.4",
     "minimatch": "^9.0.7",
     "follow-redirects": "^1.15.12",
+<<<<<<< HEAD:corporate-cms/package.json
     "form-data": "^4.0.6",
     "markdown-it": "^14.2.0",
+=======
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:frontend/package.json
     "uuid": "^11.1.1",
     "postcss": "^8.5.14",
     "tmp": "^0.2.7",

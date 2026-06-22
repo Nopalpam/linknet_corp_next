@@ -5,10 +5,22 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '.github/workflows/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'web/**'
+      - 'filemanager/**'
   pull_request:
     branches:
       - main
       - develop
+    paths:
+      - '.github/workflows/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'web/**'
+      - 'filemanager/**'
   schedule:
     - cron: '30 7 * * 1'
   workflow_dispatch:
@@ -37,10 +49,6 @@ jobs:
           - web
           - filemanager
 
-    defaults:
-      run:
-        working-directory: ${{ matrix.app }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,9 +61,11 @@ jobs:
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
       - name: Install dependency graph
+        working-directory: ${{ matrix.app }}
         run: npm ci --ignore-scripts
 
       - name: Audit high and critical vulnerabilities
+        working-directory: ${{ matrix.app }}
         run: npm audit --audit-level=high
 
   secrets:
@@ -101,9 +111,6 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended,security-and-quality
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3

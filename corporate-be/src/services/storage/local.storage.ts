@@ -202,6 +202,7 @@ export class LocalStorageProvider implements IStorageProvider {
     }
   }
 
+<<<<<<< HEAD:corporate-be/src/services/storage/local.storage.ts
   async exists(key: string): Promise<boolean> {
     try {
       await fs.promises.access(this.getAbsolutePath(normalizeStorageKey(key)));
@@ -209,6 +210,10 @@ export class LocalStorageProvider implements IStorageProvider {
     } catch {
       return false;
     }
+=======
+  exists(key: string): Promise<boolean> {
+    return Promise.resolve(fs.existsSync(this.getAbsolutePath(key)));
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/storage/local.storage.ts
   }
 
   getProviderName(): string {

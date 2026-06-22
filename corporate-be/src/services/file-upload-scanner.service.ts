@@ -39,11 +39,17 @@ const parseBooleanEnv = (value: string | undefined): boolean | null => {
 
 export class FileUploadScanner {
   private readonly maxFileSize = 100 * 1024 * 1024; // 100MB
+<<<<<<< HEAD:corporate-be/src/services/file-upload-scanner.service.ts
   private readonly antivirusRequired = (() => {
     const explicitValue = parseBooleanEnv(process.env.ANTIVIRUS_REQUIRED);
     if (explicitValue !== null) return explicitValue;
     return false;
   })();
+=======
+  private readonly antivirusRequired =
+    process.env.ANTIVIRUS_REQUIRED === 'true' ||
+    (process.env.NODE_ENV === 'production' && process.env.ANTIVIRUS_REQUIRED !== 'false');
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/file-upload-scanner.service.ts
   private readonly allowedMimeTypes = [
     // Images
     'image/jpeg',
@@ -189,6 +195,7 @@ export class FileUploadScanner {
     file: Express.Multer.File
   ): Promise<{ safe: boolean; threats?: string[] }> {
     const tempDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'linknet-upload-scan-'));
+<<<<<<< HEAD:corporate-be/src/services/file-upload-scanner.service.ts
     const originalBaseName = path.basename(file.originalname.split('\\').join('/'));
     const extension = path.extname(originalBaseName).toLowerCase() || '.bin';
     const tempFilePath = path.join(tempDirectory, `${crypto.randomUUID()}${extension}`);
@@ -200,6 +207,13 @@ export class FileUploadScanner {
       } finally {
         await handle.close();
       }
+=======
+    const tempFilename = path.basename(file.originalname.replace(/\\/g, '/')) || 'upload.bin';
+    const tempFilePath = path.join(tempDirectory, tempFilename);
+
+    try {
+      await fs.writeFile(tempFilePath, file.buffer);
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/file-upload-scanner.service.ts
       return await this.scanWithClamAV(tempFilePath);
     } finally {
       await fs.rm(tempDirectory, { recursive: true, force: true }).catch(() => undefined);
@@ -208,18 +222,22 @@ export class FileUploadScanner {
 
   private handleAntivirusUnavailable(message: string): { safe: boolean; threats?: string[] } {
     if (this.antivirusRequired) {
+<<<<<<< HEAD:corporate-be/src/services/file-upload-scanner.service.ts
       console.error('[FileUploadScanner] Antivirus unavailable while required', {
         message,
         antivirusRequired: this.antivirusRequired,
         nodeEnv: process.env.NODE_ENV || 'development',
         appEnv: process.env.APP_ENV || process.env.ENVIRONMENT || null,
       });
+=======
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/file-upload-scanner.service.ts
       return {
         safe: false,
         threats: [message],
       };
     }
 
+<<<<<<< HEAD:corporate-be/src/services/file-upload-scanner.service.ts
     console.warn('[FileUploadScanner] Antivirus unavailable; upload allowed by configuration', {
       message,
       antivirusRequired: this.antivirusRequired,
@@ -240,6 +258,12 @@ export class FileUploadScanner {
     };
   }
 
+=======
+    console.warn(message);
+    return { safe: true };
+  }
+
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/file-upload-scanner.service.ts
   private validateMemoryFile(file: Express.Multer.File): void {
     if (!file.buffer || file.buffer.length === 0) {
       throw new Error('File is empty');
@@ -402,7 +426,13 @@ export class FileUploadScanner {
     } catch (error: any) {
       // ClamAV not installed or scan failed
       if (error.code === 'ENOENT') {
+<<<<<<< HEAD:corporate-be/src/services/file-upload-scanner.service.ts
         return this.handleAntivirusUnavailable(CLAMAV_NOT_INSTALLED_MESSAGE);
+=======
+        return this.handleAntivirusUnavailable(
+          'ClamAV is not installed. Install clamav in the runtime image or set ANTIVIRUS_REQUIRED=false only for trusted non-production environments.'
+        );
+>>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/file-upload-scanner.service.ts
       }
 
       // Scan found threats

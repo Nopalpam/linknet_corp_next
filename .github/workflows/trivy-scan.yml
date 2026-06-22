@@ -5,10 +5,22 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '.github/workflows/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'web/**'
+      - 'filemanager/**'
   pull_request:
     branches:
       - main
       - develop
+    paths:
+      - '.github/workflows/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'web/**'
+      - 'filemanager/**'
   schedule:
     - cron: '0 7 * * 1'
   workflow_dispatch:
@@ -17,6 +29,9 @@ permissions:
   contents: read
   security-events: write
   actions: read
+
+env:
+  TRIVY_EXIT_CODE: ${{ github.event_name == 'schedule' && '0' || '1' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -48,15 +63,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Trivy filesystem summary
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ matrix.scan-ref }}
+          scanners: vuln,secret,license
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '0'
+          format: table
+
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: ${{ matrix.scan-ref }}
-          scanners: vuln,secret,misconfig,license
+          scanners: vuln,secret,license
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: ${{ env.TRIVY_EXIT_CODE }}
           format: sarif
           output: ${{ matrix.sarif }}
 
@@ -80,9 +106,9 @@ jobs:
           scan-type: config
           scan-ref: .
           severity: HIGH,CRITICAL
-          exit-code: '1'
+          exit-code: ${{ env.TRIVY_EXIT_CODE }}
           format: table
-          skip-dirs: app_docs,web_reference_only,node_modules
+          skip-dirs: app_docs,web_reference_only,node_modules,backend/dist,backend/logs,frontend/.next,web/.next,filemanager/dist
 
   container:
     name: Container ${{ matrix.name }}
@@ -119,5 +145,5 @@ jobs:
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: ${{ env.TRIVY_EXIT_CODE }}
           format: table

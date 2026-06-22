@@ -36,6 +36,7 @@
     
     /* Type Checking */
     "strict": true,
+    "ignoreDeprecations": "6.0",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,

@@ -15,6 +15,16 @@ const parseCachedStringArray = (cached: string): string[] => {
   return [];
 };
 
+const parseCachedStringArray = (cached: string): string[] => {
+  const parsed: unknown = JSON.parse(cached);
+
+  if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+    return parsed;
+  }
+
+  return [];
+};
+
 // Cache expiration time (1 hour)
 const CACHE_EXPIRATION = 3600;
 
@@ -195,7 +205,7 @@ export const getUserRoles = async (userId: string): Promise<string[]> => {
  */
 export const hasPermission = async (
   user: User | string,
-  permission: PermissionSlug | string
+  permission: PermissionSlug
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const roles = await getUserRoles(userId);
@@ -212,7 +222,7 @@ export const hasPermission = async (
  */
 export const hasAnyPermission = async (
   user: User | string,
-  permissions: (PermissionSlug | string)[]
+  permissions: PermissionSlug[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const roles = await getUserRoles(userId);
@@ -229,7 +239,7 @@ export const hasAnyPermission = async (
  */
 export const hasAllPermissions = async (
   user: User | string,
-  permissions: (PermissionSlug | string)[]
+  permissions: PermissionSlug[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const roles = await getUserRoles(userId);
@@ -244,7 +254,7 @@ export const hasAllPermissions = async (
  * @param role - Role slug to check
  * @returns True if user has the role
  */
-export const hasRole = async (user: User | string, role: RoleSlug | string): Promise<boolean> => {
+export const hasRole = async (user: User | string, role: RoleSlug): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const roles = await getUserRoles(userId);
   return roles.includes(role);
@@ -258,7 +268,7 @@ export const hasRole = async (user: User | string, role: RoleSlug | string): Pro
  */
 export const hasAnyRole = async (
   user: User | string,
-  roles: (RoleSlug | string)[]
+  roles: RoleSlug[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const userRoles = await getUserRoles(userId);
@@ -273,7 +283,7 @@ export const hasAnyRole = async (
  */
 export const hasAllRoles = async (
   user: User | string,
-  roles: (RoleSlug | string)[]
+  roles: RoleSlug[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const userRoles = await getUserRoles(userId);
