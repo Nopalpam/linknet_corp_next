@@ -1,0 +1,81 @@
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+yarn.lock
+# NOTE: package-lock.json must NOT be excluded — npm ci requires it
+
+# Development files
+*.dev.ts
+*.test.ts
+*.spec.ts
+coverage
+.nyc_output
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output (will be generated in Docker)
+dist
+build
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+__tests__
+__mocks__
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Development config & scripts (not needed in image)
+tsconfig.dev.json
+nodemon.json
+*.ps1
+k8s/
+check-*.js
+seed-*.js
+migrate-*.js
+run-*.ps1
+start-*.ps1
+jest.config.js
+linknetcorp2026-*.json
+
+# Google Cloud / Service Account credentials
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!jest.config.json
+!nodemon.json
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Prisma migrations (optional - include if needed)
+# prisma/migrations
+
+# Misc
+.eslintcache
+.prettierignore

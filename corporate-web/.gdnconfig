@@ -1,0 +1,15 @@
+{
+  "tools": [
+    {
+      "tool": {
+        "name": "ESLint",
+        "version": "Latest"
+      },
+      "arguments": {
+        "Targets": "app/**/*.{js,jsx,ts,tsx} components/**/*.{js,jsx,ts,tsx} lib/**/*.{js,jsx,ts,tsx} data/**/*.{js,jsx,ts,tsx} messages/**/*.{js,jsx,ts,tsx}",
+        "Extensions": [".js", ".jsx", ".ts", ".tsx"],
+        "ExclusionPatterns": ".next/** node_modules/** out/** build/** dist/** app/dev/script/**"
+      }
+    }
+  ]
+}

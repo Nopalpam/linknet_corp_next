@@ -1,0 +1,15 @@
+{
+  "tools": [
+    {
+      "tool": {
+        "name": "ESLint",
+        "version": "Latest"
+      },
+      "arguments": {
+        "Targets": "src/**/*.ts src/**/*.tsx",
+        "Extensions": [".ts", ".tsx"],
+        "ExclusionPatterns": ".next/** node_modules/** out/** build/** dist/**"
+      }
+    }
+  ]
+}

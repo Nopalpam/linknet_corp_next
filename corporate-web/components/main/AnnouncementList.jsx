@@ -1,0 +1,503 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import SearchFilterBar from '@/components/base/SearchFilterBar';
+import CardReport from '@/components/base/cards/CardReport';
+import Intro from '@/components/base/section/Intro';
+import Modal from '@/components/base/Modal';
+import Button from '@/components/base/Button';
+import { useModalRegistry } from '@/components/hooks/useModalRegistry';
+import { hasIntroContent } from '@/shared/presentation/intro';
+
+const SECTIONS_PER_PAGE = 5;
+const MAX_VISIBLE_ITEMS = 6;
+
+function getAnnouncementSection(item) {
+  return item?.announcement_sections || item?.announcementSection || {};
+}
+
+function getAnnouncementType(item, section = getAnnouncementSection(item)) {
+  return section?.announcement_types || section?.announcementType || item?.announcement_types || item?.announcementType || {};
+}
+
+function firstValue(source, keys, fallback = '') {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return fallback;
+}
+
+function getSortPosition(value, fallback = Number.MAX_SAFE_INTEGER) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+}
+
+function normalizeAnnouncementItem(item = {}) {
+  const section = getAnnouncementSection(item);
+  const type = getAnnouncementType(item, section);
+
+  return {
+    ...item,
+    title: firstValue(item, ['lnCardReport__title', 'title', 'name', 'subDescription', 'sub_description', 'description']),
+    image: firstValue(item, ['image', 'coverImage', 'cover_image', 'thumbnail']),
+    year: firstValue(item, ['year']) || section?.announcement_year || section?.announcementYear || '',
+    fileSize: firstValue(item, ['fileSize', 'file_size']),
+    dataType: firstValue(item, ['dataType', 'data_type']),
+    auditStatus: firstValue(item, ['auditStatus', 'audit_status']),
+    category: type.name || section.name || section.title || '',
+    downloadUrl: firstValue(item, ['pdfFile', 'pdf_file', 'downloadUrl', 'download_url', 'fileUrl', 'file_url'], '#'),
+  };
+}
+
+/**
+ * AnnouncementList — Renders announcements from CMS mainData.
+ *
+ * Props:
+ *   title       – section title
+ *   mainData    – { announcements: [...], types: [...] } from the backend
+ *   className   – optional custom class
+ */
+export default function AnnouncementList({
+  title,
+  cmsData = null,
+  mainData,
+  layout,
+  className = '',
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { openModal, closeModal, isModalOpen } = useModalRegistry();
+
+  const announcements = useMemo(
+    () => (mainData?.announcements || mainData?.items || []).map(normalizeAnnouncementItem),
+    [mainData]
+  );
+  const types = useMemo(() => mainData?.types || [], [mainData]);
+  const sections = useMemo(() => mainData?.sections || [], [mainData]);
+  const showSearch = cmsData?.show_search !== false && cmsData?.showSearch !== false;
+  const showTypeFilter = cmsData?.show_type_filter !== false && cmsData?.showTypeFilter !== false;
+  const showSectionFilter = cmsData?.show_section_filter !== false && cmsData?.showSectionFilter !== false;
+  const showStatusFilter = cmsData?.show_status_filter !== false && cmsData?.showStatusFilter !== false;
+  const showYearFilter = cmsData?.show_year_filter !== false && cmsData?.showYearFilter !== false;
+  const showPagination = cmsData?.show_pagination !== false && cmsData?.showPagination !== false;
+  const showPublishDate = cmsData?.show_publish_date !== false && cmsData?.showPublishDate !== false;
+  const showCta = cmsData?.show_cta !== false && cmsData?.showCta !== false;
+  const layoutType = (layout || cmsData?.layout || 'list').toLowerCase();
+  const isGridLayout = layoutType === 'grid' || layoutType === 'compact';
+  const cardVariant = isGridLayout ? 'cover' : 'list';
+  const introData = cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || (title ? {
+    as: 'h2',
+    title,
+    align: 'left',
+  } : null);
+
+  // Pagination from URL
+  const pageParam = searchParams.get('page');
+  const parsedPage = parseInt(pageParam, 10);
+  const currentPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+
+  // Local state
+  const [searchValue, setSearchValue] = useState('');
+  const [filterValues, setFilterValues] = useState({});
+
+  // ─── Build filter options from data ──────────────────────────
+  const generatedFilters = useMemo(() => {
+    const typeOptions = types.map((t) => ({ label: t.name, value: t.id }));
+    const years = new Set();
+    const statuses = new Set();
+
+    announcements.forEach((a) => {
+      if (a.auditStatus) statuses.add(a.auditStatus);
+      const section = getAnnouncementSection(a);
+      const year = section?.announcement_year || section?.announcementYear;
+      if (year) {
+        years.add(year);
+      }
+    });
+
+    const filters = [];
+
+    if (showTypeFilter && typeOptions.length > 0) {
+      filters.push({
+        key: 'type',
+        placeholder: 'Announcement Type',
+        options: typeOptions,
+      });
+    }
+
+    if (showSectionFilter && sections.length > 0) {
+      filters.push({
+        key: 'section',
+        placeholder: 'Announcement Section',
+        options: sections.map((section) => ({ label: section.name || section.title, value: section.id })),
+      });
+    }
+
+    if (showYearFilter && years.size > 0) {
+      const sortedYears = Array.from(years).sort((a, b) => String(b).localeCompare(String(a)));
+      filters.push({
+        key: 'year',
+        placeholder: 'Year',
+        options: sortedYears.map((y) => ({ label: y, value: y })),
+      });
+    }
+
+    if (showStatusFilter && statuses.size > 0) {
+      filters.push({
+        key: 'auditStatus',
+        placeholder: 'Audit Status',
+        options: Array.from(statuses).map((status) => ({ label: status, value: status })),
+      });
+    }
+
+    return filters;
+  }, [announcements, types, sections, showTypeFilter, showSectionFilter, showStatusFilter, showYearFilter]);
+
+  // ─── Filter + search ─────────────────────────────────────────
+  const filteredAnnouncements = useMemo(() => {
+    const keyword = searchValue.trim().toLowerCase();
+
+    return announcements.filter((a) => {
+      const titleStr = (a.title || '').toLowerCase();
+      const matchSearch = !keyword || titleStr.includes(keyword);
+
+      let matchFilters = true;
+      const section = getAnnouncementSection(a);
+      const type = getAnnouncementType(a, section);
+
+      if (filterValues.type) {
+        const typeId = type?.id || a.type_id || a.announcementTypeId;
+        if (typeId !== filterValues.type) matchFilters = false;
+      }
+
+      if (filterValues.year) {
+        const year = section?.announcement_year || section?.announcementYear;
+        if (year !== filterValues.year) matchFilters = false;
+      }
+      if (filterValues.section) {
+        const sectionId = section?.id || a.section_id || a.announcementSectionId;
+        if (sectionId !== filterValues.section) matchFilters = false;
+      }
+      if (filterValues.auditStatus && a.auditStatus !== filterValues.auditStatus) {
+        matchFilters = false;
+      }
+
+      return matchSearch && matchFilters;
+    });
+  }, [announcements, searchValue, filterValues]);
+
+  // ─── Group by section (year) ─────────────────────────────────
+  const groupedBySection = useMemo(() => {
+    const map = new Map();
+    const sectionOrderMap = new Map(
+      sections.map((section, index) => [
+        String(section.id),
+        getSortPosition(section.position ?? section.sort_order ?? section.sortOrder, index),
+      ])
+    );
+
+    filteredAnnouncements.forEach((a) => {
+      const section = getAnnouncementSection(a);
+      const type = getAnnouncementType(a, section);
+      const sectionId = section?.id || 'uncategorized';
+      if (!map.has(sectionId)) {
+        map.set(sectionId, {
+          id: sectionId,
+          name: section?.name || section?.title || 'Other',
+          year: section?.announcement_year || section?.announcementYear || '',
+          typeName: type?.name || '',
+          ctaText: (section?.cta_enabled ?? section?.ctaEnabled) ? (section?.cta_text || section?.ctaText || '') : '',
+          ctaUrl: (section?.cta_enabled ?? section?.ctaEnabled) ? (section?.cta_url || section?.ctaUrl || '') : '',
+          position: sectionOrderMap.get(String(sectionId)) ?? getSortPosition(section?.position ?? section?.sort_order ?? section?.sortOrder, map.size),
+          items: [],
+        });
+      }
+      map.get(sectionId).items.push(a);
+    });
+
+    // Follow the CMS Announcement Section order first.
+    return Array.from(map.values()).sort((a, b) => {
+      const positionDiff = getSortPosition(a.position) - getSortPosition(b.position);
+      if (positionDiff !== 0) return positionDiff;
+      const yearDiff = String(b.year).localeCompare(String(a.year));
+      if (yearDiff !== 0) return yearDiff;
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredAnnouncements, sections]);
+
+  // ─── Pagination ──────────────────────────────────────────────
+  const totalPages = showPagination ? (Math.ceil(groupedBySection.length / SECTIONS_PER_PAGE) || 1) : 1;
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * SECTIONS_PER_PAGE;
+  const paginatedGroups = showPagination ? groupedBySection.slice(startIndex, startIndex + SECTIONS_PER_PAGE) : groupedBySection;
+
+  // ─── Handlers ────────────────────────────────────────────────
+  const updatePage = (page) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', page.toString());
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const resetPageToFirst = () => updatePage(1);
+
+  const handleFilterChange = (key, value) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+    resetPageToFirst();
+  };
+
+  const handleSearchChange = (val) => {
+    setSearchValue(val);
+    resetPageToFirst();
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      updatePage(page);
+      window.scrollTo({
+        top: document.getElementById('announcement-list-section')?.offsetTop - 50,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (activePage <= 3) {
+      pages.push(1, 2, 3, 4, '...', totalPages);
+    } else if (activePage > totalPages - 3) {
+      pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, '...', activePage - 1, activePage, activePage + 1, '...', totalPages);
+    }
+    return pages;
+  };
+
+  // ─── Empty state ─────────────────────────────────────────────
+  if (announcements.length === 0) {
+    return (
+      <section className={`lnSection ${className}`}>
+        <div className="container">
+          {hasIntroContent(introData) && (
+            <div className="mb-6">
+              <Intro
+                as={introData.as || 'h2'}
+                label={introData.label}
+                title={introData.title}
+                description={introData.description}
+                align={introData.align || 'left'}
+              />
+            </div>
+          )}
+          <p className="text-body-b4 text-secondary">No announcements available.</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="announcement-list-section" className={`bg-light-2 pt-10 pb-24 ${className}`}>
+      <div className="container">
+        {hasIntroContent(introData) && (
+          <div className="mb-8 md:mb-10">
+            <Intro
+              as={introData.as || 'h2'}
+              label={introData.label}
+              title={introData.title}
+              description={introData.description}
+              align={introData.align || 'left'}
+            />
+          </div>
+        )}
+
+        {/* Search & Filters */}
+        {(showSearch || generatedFilters.length > 0) && (
+        <div className="mb-4">
+          <SearchFilterBar
+            searchPlaceholder="Search announcements..."
+            searchValue={searchValue}
+            onSearchChange={handleSearchChange}
+            showSearch={showSearch}
+            filters={generatedFilters}
+            filterValues={filterValues}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+        )}
+
+        {/* Grouped List */}
+        {paginatedGroups.length > 0 ? (
+          <div className="flex flex-col gap-4 min-h-[400px]">
+            {paginatedGroups.map((group) => {
+              const modalId = `announcement-list-${group.id}`;
+              const visibleItems = group.items.slice(0, MAX_VISIBLE_ITEMS);
+              const hasMoreItems = group.items.length > MAX_VISIBLE_ITEMS;
+
+              return (
+                <div key={group.id} className="bg-white p-6 md:p-8 rounded-[20px] shadow-md animate-in fade-in duration-500">
+                  {/* Group Header */}
+                  <div className="mb-4">
+                    <h3 className="text-headline-h4 font-bold text-black mb-1">
+                      {group.name}
+                    </h3>
+                    {group.typeName && (
+                      <span className="text-caption-c1 text-secondary">{group.typeName}</span>
+                    )}
+                    {showCta && group.ctaUrl && (
+                      <a
+                        href={group.ctaUrl}
+                        className="mt-3 inline-flex text-sm font-medium text-brand-600 hover:text-brand-700"
+                      >
+                        {group.ctaText || 'View more'}
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Items */}
+                  <div
+                    className={
+                      isGridLayout
+                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'
+                        : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                    }
+                  >
+                    {visibleItems.map((item, itemIndex) => (
+                      <AnnouncementItem
+                        key={`${group.id}-${item.id || 'item'}-${itemIndex}`}
+                        item={item}
+                        showPublishDate={showPublishDate}
+                        variant={cardVariant}
+                      />
+                    ))}
+                  </div>
+
+                  {hasMoreItems && (
+                    <div className="mt-10 flex justify-center">
+                      <Button
+                        variant="secondary-outline"
+                        size="md"
+                        onClick={() => openModal(modalId)}
+                        className="hover:!bg-neutral-50 transition-all bg-white"
+                      >
+                        View More
+                      </Button>
+                    </div>
+                  )}
+
+                  <Modal
+                    isOpen={isModalOpen(modalId)}
+                    onClose={closeModal}
+                    mobilePosition="bottom"
+                    desktopPosition="center"
+                    maxWidth="max-w-3xl"
+                    title={
+                      <div className="flex flex-col">
+                        <span className="text-headline-h5 font-bold text-neutral-900 mb-1">{group.name}</span>
+                        {group.typeName && <span className="text-body-b5 text-secondary font-normal">{group.typeName}</span>}
+                      </div>
+                    }
+                  >
+                    <div className={isGridLayout ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'flex flex-col gap-2'}>
+                      {group.items.map((item, itemIndex) => (
+                        <AnnouncementItem
+                          key={`${group.id}-modal-${item.id || 'item'}-${itemIndex}`}
+                          item={item}
+                          showPublishDate={showPublishDate}
+                          variant={cardVariant}
+                        />
+                      ))}
+                    </div>
+                  </Modal>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-body-b3 text-secondary">
+              No announcements match your search criteria.
+            </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {showPagination && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-4 pt-4">
+            <button
+              onClick={() => handlePageChange(activePage - 1)}
+              disabled={activePage === 1}
+              className="px-4 py-2 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+
+            <div className="hidden sm:flex items-center gap-2 mx-2">
+              {getPageNumbers().map((page, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => typeof page === 'number' ? handlePageChange(page) : null}
+                  disabled={page === '...'}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full font-medium transition-colors ${
+                    page === activePage
+                      ? 'bg-warning text-black'
+                      : page === '...'
+                        ? 'bg-transparent text-neutral-400 cursor-default'
+                        : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <span className="sm:hidden text-sm font-medium text-neutral-500 mx-2">
+              Page {activePage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => handlePageChange(activePage + 1)}
+              disabled={activePage === totalPages}
+              className="px-6 py-2 text-sm font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ─── Single Announcement Item ──────────────────────────────────
+function AnnouncementItem({ item, showPublishDate = true, variant = 'list' }) {
+  const section = getAnnouncementSection(item);
+  const type = getAnnouncementType(item, section);
+  const createdAt = item.created_at || item.createdAt || '';
+  const dateLabel = showPublishDate && createdAt
+    ? new Date(createdAt).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
+
+  return (
+    <CardReport
+      variant={variant}
+      icon="/assets/icons/pdf-circle.svg"
+      image={item.image}
+      year={item.year}
+      title={item.title || ''}
+      subDescription={item.subDescription || item.sub_description || item.description || ''}
+      fileSize={item.fileSize}
+      badges={item.auditStatus ? [item.auditStatus] : []}
+      category={type.name || section.name || section.title || ''}
+      date={dateLabel}
+      downloadUrl={item.downloadUrl || item.pdf_file || item.pdfFile || item.file_url || '#'}
+    />
+  );
+}

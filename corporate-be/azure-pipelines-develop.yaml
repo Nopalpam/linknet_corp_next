@@ -1,0 +1,145 @@
+trigger:
+- develop
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  tag: 'be-$(Build.BuildId)'
+  Uri: '329599622292.dkr.ecr.ap-southeast-3.amazonaws.com'
+  RepositoryName: 'linknet/corporate-be'
+  awsCredentials: 'aws-iam-system-azure-devops-holdco-dev-corporate'
+  imageName: '$(Uri)/$(RepositoryName):$(tag)'
+
+steps:
+- checkout: self
+
+# 1. Setup Node.js (LTS)
+- task: NodeTool@0
+  inputs:
+    versionSpec: '22.13.0'
+  displayName: 'Install Node.js'
+
+# 2. CodeQL Init
+- task: AdvancedSecurity-CodeQL-Init@1
+  displayName: 'CodeQL Init (Node.js)'
+  inputs:
+    languages: 'javascript'
+    codeqlpathstoignore: 'dist,node_modules,coverage'
+
+# 3. Install dependencies
+- script: |
+    node -v
+    npm -v
+    npm ci
+  displayName: 'Install Dependencies'
+
+# 4. GHAS Dependency Scanning
+- task: AdvancedSecurity-Dependency-Scanning@1
+  displayName: 'GHAS Dependency Scanning'
+
+# 5. Dependency Scan tambahan (SCA runtime)
+- script: |
+    npm audit --audit-level=high || true
+    npm audit --json > audit-report.json || true
+  displayName: 'npm Audit (SCA)'
+
+# 6. Lint (Non-blocking)
+- script: npm run lint || true
+  displayName: 'ESLint (Non-blocking)'
+
+# 7. Build
+- script: npm run build
+  displayName: 'Build'
+
+# 8. CodeQL Analyze
+- task: AdvancedSecurity-CodeQL-Analyze@1
+  displayName: 'CodeQL Analyze'
+
+# 9. SBOM (Node.js CycloneDX)
+- script: |
+    npx @cyclonedx/cyclonedx-npm --output-file sbom-be.json
+  displayName: 'Generate SBOM'
+
+# 10. Install Trivy
+- script: |
+    sudo apt-get update
+    sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+    wget -qO - https://aquasecurity.github.io/trivy-repo/dabest.gpg | sudo apt-key add -
+    echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+    sudo apt-get update
+    sudo apt-get install trivy -y
+  displayName: 'Install Trivy'
+
+# 11. Trivy FS Scan (Dependency + Secret)
+- script: |
+    trivy fs \
+      --skip-version-check \
+      --skip-dirs dist \
+      --skip-dirs node_modules \
+      --skip-dirs coverage \
+      --format json \
+      --output trivy-fs.json \
+      --scanners vuln,secret \
+      --severity LOW,MEDIUM,HIGH,CRITICAL \
+      .
+  displayName: 'Trivy FS Scan'
+
+# 12. Build Docker Image
+- task: Docker@2
+  displayName: 'Build Docker Image'
+  inputs:
+    command: build
+    Dockerfile: $(System.DefaultWorkingDirectory)/Dockerfile
+    buildContext: $(System.DefaultWorkingDirectory)
+    repository: $(Uri)/$(RepositoryName)
+    tags: |
+      $(tag)
+
+# 13. Trivy Image Scan
+- script: |
+    trivy image \
+      --skip-version-check \
+      --format json \
+      --output trivy-image.json \
+      --severity LOW,MEDIUM,HIGH,CRITICAL \
+      $(Uri)/$(RepositoryName):$(tag)
+  displayName: 'Trivy Image Scan'
+
+# 14. Push Docker Image
+- task: ECRPushImage@1
+  displayName: 'Push Docker Image to AWS ECR'
+  inputs:
+    awsCredentials: $(awsCredentials)
+    regionName: ap-southeast-3
+    imageSource: 'imagename'
+    sourceImageName: $(Uri)/$(RepositoryName)
+    sourceImageTag: $(tag)
+    pushTag: $(tag)
+    repositoryName: $(RepositoryName)
+    autoCreateRepository: true
+
+# 15. Stage Security Artifacts
+- script: |
+    mkdir -p $(Build.ArtifactStagingDirectory)
+    mv *.json $(Build.ArtifactStagingDirectory)/
+  displayName: 'Stage Security Reports'
+
+# 16. Microsoft Security DevOps
+- task: MicrosoftSecurityDevOps@1
+  displayName: 'Microsoft Security DevOps Scan'
+  condition: always()
+  inputs:
+    command: 'run'
+    policy: 'azuredevops'
+    categories: 'all'
+    languages: 'javascript'
+    publish: true
+    artifactName: 'CodeAnalysisLogs'
+
+# 17. Publish Artifacts
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Security Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'security-reports'

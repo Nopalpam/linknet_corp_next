@@ -1,0 +1,140 @@
+// Rich text rendered from the CMS. Keep these rules scoped so global resets
+// cannot remove semantic heading sizes, spacing, or list markers.
+.rich-text-content.rich-text-content
+    color: var(--color-neutral-900)
+    font-size: 16px
+    line-height: 1.625
+    overflow-wrap: anywhere
+
+    p
+        margin: 0 0 1rem
+        font-size: inherit
+        line-height: inherit
+
+    h1, h2, h3, h4, h5, h6
+        display: block
+        margin: 1.75rem 0 .75rem
+        color: var(--color-neutral-900)
+        font-weight: var(--font-weight-bold)
+        line-height: 1.25
+        letter-spacing: -.02em
+
+    h1
+        font-size: clamp(2rem, 4vw, 2.75rem)
+
+    h2
+        font-size: clamp(1.75rem, 3vw, 2.25rem)
+
+    h3
+        font-size: clamp(1.5rem, 2.5vw, 1.875rem)
+
+    h4
+        font-size: clamp(1.25rem, 2vw, 1.5rem)
+
+    h5
+        font-size: 1.125rem
+
+    h6
+        font-size: 1rem
+
+    ul, ol
+        display: block
+        margin: 1rem 0
+        padding-left: 1.75rem
+        list-style-position: outside
+
+    ul
+        list-style-type: disc
+
+    ol
+        list-style-type: decimal
+
+    ul ul
+        list-style-type: circle
+
+    ul ul ul
+        list-style-type: square
+
+    ol ol
+        list-style-type: lower-alpha
+
+    li
+        display: list-item
+        margin: .375rem 0
+        padding-left: .25rem
+
+    li > p
+        margin: 0
+
+    li > ul, li > ol
+        margin: .375rem 0
+
+    a
+        color: #2563eb
+        font-weight: 500
+        text-decoration: underline
+        text-decoration-thickness: 1px
+        text-underline-offset: 3px
+
+        &:hover
+            color: #1d4ed8
+
+    blockquote
+        margin: 1.25rem 0
+        padding: .75rem 1rem
+        border-left: 4px solid var(--color-neutral-300)
+        background: var(--color-neutral-50)
+        font-style: italic
+
+    hr
+        margin: 2rem 0
+        border: 0
+        border-top: 1px solid var(--color-neutral-200)
+
+    img
+        display: block
+        max-width: 100%
+        height: auto
+        margin: 1.25rem auto
+
+    figure
+        margin: 1.5rem 0
+
+    figcaption
+        margin-top: .5rem
+        color: var(--color-neutral-500)
+        font-size: .875rem
+        text-align: center
+
+    table
+        width: 100%
+        margin: 1.5rem 0
+        border-collapse: collapse
+
+    th, td
+        padding: .75rem
+        border: 1px solid var(--color-neutral-200)
+        text-align: left
+        vertical-align: top
+
+    th
+        background: var(--color-neutral-50)
+        font-weight: var(--font-weight-bold)
+
+    pre
+        margin: 1.25rem 0
+        padding: 1rem
+        overflow-x: auto
+        border-radius: .5rem
+        background: #111827
+        color: #f9fafb
+        white-space: pre
+
+    code
+        font-family: monospace
+
+    > :first-child
+        margin-top: 0
+
+    > :last-child
+        margin-bottom: 0
