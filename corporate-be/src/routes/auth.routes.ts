@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   register,
   login,
@@ -25,10 +26,13 @@ import {
 } from '../validators/auth.validator';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { businessHoursLoginMiddleware } from '../middleware/businessHours.middleware';
-import { loginRateLimiter, strictRateLimiter } from '../middleware/rateLimiter.middleware';
+import { generalRateLimiter, loginRateLimiter, strictRateLimiter } from '../middleware/rateLimiter.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 /**
  * Public routes

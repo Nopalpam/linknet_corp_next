@@ -171,7 +171,7 @@ export const generatePasswordResetToken = (): string => {
  */
 export const hashPasswordResetToken = (token: string): string => {
   const pepper = process.env.PASSWORD_RESET_TOKEN_PEPPER || JWT_REFRESH_SECRET;
-  return crypto.createHmac('sha256', pepper).update(token).digest('hex');
+  return crypto.scryptSync(token, pepper, 64).toString('hex');
 };
 
 /**

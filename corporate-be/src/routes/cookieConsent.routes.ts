@@ -4,12 +4,15 @@
  */
 
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import cookieConsentController from '../controllers/cookieConsent.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // ============================================
 // PUBLIC ROUTES (No auth required)

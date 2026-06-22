@@ -169,8 +169,8 @@ export const uploadMultipleFiles = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (files.length === 0) {
       res.status(400).json({
         success: false,
         message: 'No files provided',

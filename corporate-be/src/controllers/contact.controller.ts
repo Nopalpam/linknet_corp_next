@@ -207,7 +207,7 @@ export const deleteContactSubmission = async (req: Request, res: Response) => {
       where: { id },
     });
 
-    logInfo(`Contact submission deleted: ${id}`);
+    logInfo('Contact submission deleted');
 
     return res.status(200).json({
       success: true,

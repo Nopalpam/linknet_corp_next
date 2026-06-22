@@ -15,16 +15,6 @@ const parseCachedStringArray = (cached: string): string[] => {
   return [];
 };
 
-const parseCachedStringArray = (cached: string): string[] => {
-  const parsed: unknown = JSON.parse(cached);
-
-  if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
-    return parsed;
-  }
-
-  return [];
-};
-
 // Cache expiration time (1 hour)
 const CACHE_EXPIRATION = 3600;
 
@@ -222,7 +212,7 @@ export const hasPermission = async (
  */
 export const hasAnyPermission = async (
   user: User | string,
-  permissions: PermissionSlug[]
+  permissions: readonly string[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const roles = await getUserRoles(userId);
@@ -239,7 +229,7 @@ export const hasAnyPermission = async (
  */
 export const hasAllPermissions = async (
   user: User | string,
-  permissions: PermissionSlug[]
+  permissions: readonly string[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const roles = await getUserRoles(userId);
@@ -268,7 +258,7 @@ export const hasRole = async (user: User | string, role: RoleSlug): Promise<bool
  */
 export const hasAnyRole = async (
   user: User | string,
-  roles: RoleSlug[]
+  roles: readonly string[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const userRoles = await getUserRoles(userId);
@@ -283,7 +273,7 @@ export const hasAnyRole = async (
  */
 export const hasAllRoles = async (
   user: User | string,
-  roles: RoleSlug[]
+  roles: readonly string[]
 ): Promise<boolean> => {
   const userId = typeof user === 'string' ? user : user.id;
   const userRoles = await getUserRoles(userId);

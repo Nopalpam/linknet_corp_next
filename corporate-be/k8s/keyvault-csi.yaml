@@ -13,7 +13,7 @@ apiVersion: secrets-store.csi.x-k8s.io/v1
 kind: SecretProviderClass
 metadata:
   name: linknetcorp-backend-keyvault
-  namespace: default
+  namespace: linknet-corp
 spec:
   provider: azure
   secretObjects:
@@ -68,7 +68,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: linknetcorp-backend-sa
-  namespace: default
+  namespace: linknet-corp
   annotations:
     azure.workload.identity/client-id: "<YOUR_MANAGED_IDENTITY_CLIENT_ID>"
     azure.workload.identity/tenant-id: "<YOUR_AZURE_TENANT_ID>"
@@ -79,6 +79,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: linknetcorp-backend-keyvault
+  namespace: linknet-corp
   labels:
     app: linknetcorp-backend-keyvault
     tier: backend
@@ -97,6 +98,9 @@ spec:
       serviceAccountName: linknetcorp-backend-sa
       securityContext:
         runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       
@@ -121,6 +125,12 @@ spec:
         
         # Secrets mounted as environment variables
         env:
+        - name: PORT
+          value: "5000"
+        - name: RATE_LIMIT_WINDOW_MS
+          value: "900000"
+        - name: RATE_LIMIT_MAX_REQUESTS
+          value: "100"
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:

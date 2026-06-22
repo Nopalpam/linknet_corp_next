@@ -15,7 +15,7 @@ import { ComponentVisibilityService } from './componentVisibility.service';
 import { isSafeObjectKey } from '../utils/securityInput.util';
 
 // Initialize Ajv
-const ajv = new Ajv({ allErrors: true, verbose: true });
+const ajv = new Ajv({ allErrors: false, verbose: false });
 addFormats(ajv);
 
 // Compile all schemas
@@ -25,6 +25,63 @@ Object.keys(COMPONENT_SCHEMAS).forEach((key) => {
     compiledSchemas.set(key, ajv.compile(COMPONENT_SCHEMAS[key]));
   }
 });
+
+const getCompiledSchema = (componentType: string): ValidateFunction | undefined => {
+  switch (componentType) {
+    case 'hero-section': return compiledSchemas.get('hero-section');
+    case 'text-block': return compiledSchemas.get('text-block');
+    case 'image-gallery': return compiledSchemas.get('image-gallery');
+    case 'call-to-action': return compiledSchemas.get('call-to-action');
+    case 'video-embed': return compiledSchemas.get('video-embed');
+    case 'accordion': return compiledSchemas.get('accordion');
+    case 'tabs': return compiledSchemas.get('tabs');
+    case 'testimonials': return compiledSchemas.get('testimonials');
+    case 'team-grid': return compiledSchemas.get('team-grid');
+    case 'stats-counter': return compiledSchemas.get('stats-counter');
+    case 'pricing-table': return compiledSchemas.get('pricing-table');
+    case 'contact-form': return compiledSchemas.get('contact-form');
+    case 'latest-news': return compiledSchemas.get('latest-news');
+    case 'custom-html': return compiledSchemas.get('custom-html');
+    default: return undefined;
+  }
+};
+
+const assertComponentDataBounds = (root: unknown): void => {
+  const stack: Array<{ value: unknown; depth: number }> = [{ value: root, depth: 0 }];
+  const visited = new WeakSet<object>();
+  let nodeCount = 0;
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    nodeCount += 1;
+
+    if (nodeCount > 5000 || current.depth > 20) {
+      throw new AppError('Component data is too large or deeply nested', 400);
+    }
+
+    if (typeof current.value === 'string' && current.value.length > 1_000_000) {
+      throw new AppError('Component text value is too large', 400);
+    }
+
+    if (current.value === null || typeof current.value !== 'object') continue;
+    if (visited.has(current.value)) {
+      throw new AppError('Component data must not contain circular references', 400);
+    }
+    visited.add(current.value);
+
+    const values = Array.isArray(current.value)
+      ? current.value
+      : Object.values(current.value as Record<string, unknown>);
+
+    if (values.length > 500) {
+      throw new AppError('Component data contains too many items', 400);
+    }
+
+    for (const value of values) {
+      stack.push({ value, depth: current.depth + 1 });
+    }
+  }
+};
 
 export interface GetComponentsQuery {
   pageId: string;
@@ -60,7 +117,8 @@ export class ComponentService {
       throw new AppError(`Unknown component type: ${componentType}`, 400);
     }
 
-    const validate = compiledSchemas.get(componentType);
+    assertComponentDataBounds(data);
+    const validate = getCompiledSchema(componentType);
     
     if (!validate) {
       // For new page builder component types, do basic validation
@@ -175,6 +233,8 @@ export class ComponentService {
       }
     }
 
+    assertComponentDataBounds(componentData);
+
     // Sanitize component data before validation (only for old schema types)
     const sanitizedData = hasSchema
       ? sanitizeComponentByType(data.componentType, componentData)
@@ -239,6 +299,7 @@ export class ComponentService {
 
     // Sanitize component data if being updated
     if (data.componentData) {
+      assertComponentDataBounds(data.componentData);
       componentData = sanitizeComponentByType(componentType, data.componentData);
     }
 

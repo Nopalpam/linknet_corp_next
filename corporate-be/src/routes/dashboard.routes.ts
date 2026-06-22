@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
-import { publicRateLimiter } from '../middleware/rateLimiter.middleware';
+import { generalRateLimiter, publicRateLimiter } from '../middleware/rateLimiter.middleware';
 import {
   getVisitorStats,
   getVisitorChartData,
@@ -12,6 +12,8 @@ import {
 } from '../controllers/dashboard.controller';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // Public route - track visit from public website (no auth required)
 router.post('/public/track-visit', publicRateLimiter, trackVisit);

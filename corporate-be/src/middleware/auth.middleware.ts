@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, AccessTokenPayload } from '../utils/jwt.util';
 import { PrismaClient } from '@prisma/client';
-import { normalizeOptionalString } from '../utils/securityInput.util';
 
 const prisma = new PrismaClient();
+
+const normalizeAuthToken = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 && normalized.length <= 4096 ? normalized : undefined;
+};
 
 export interface AuthenticatedUser {
   id: string;
@@ -23,7 +28,7 @@ declare global {
 }
 
 const getRequestAccessToken = (req: Request): string | undefined => {
-  const authHeader = normalizeOptionalString(req.headers.authorization, { maxLength: 4096 });
+  const authHeader = normalizeAuthToken(req.headers.authorization);
   const bearerPrefix = 'bearer ';
 
   if (authHeader && authHeader.toLowerCase().startsWith(bearerPrefix)) {
@@ -31,7 +36,7 @@ const getRequestAccessToken = (req: Request): string | undefined => {
     return token || undefined;
   }
 
-  return normalizeOptionalString(req.cookies?.auth_token, { maxLength: 4096 });
+  return normalizeAuthToken(req.cookies?.auth_token);
 };
 
 /**
@@ -54,19 +59,10 @@ export const authMiddleware = async (
     // Get token from Authorization header or HttpOnly cookie
     const token = getRequestAccessToken(req);
 
-    if (!token) {
-      res.status(401).json({
-        success: false,
-        message: 'Unauthorized - No token provided',
-        code: 'NO_TOKEN'
-      });
-      return;
-    }
-
     // Verify token
     let decoded: AccessTokenPayload;
     try {
-      decoded = verifyAccessToken(token);
+      decoded = verifyAccessToken(token ?? '');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Invalid token';
       const code = message.includes('expired') ? 'TOKEN_EXPIRED' 
@@ -182,15 +178,9 @@ export const guestMiddleware = async (
     // Get token from Authorization header or HttpOnly cookie
     const token = getRequestAccessToken(req);
 
-    if (!token) {
-      // No token, user is guest - allow access
-      next();
-      return;
-    }
-
     try {
       // Verify token
-      const decoded = verifyAccessToken(token);
+      const decoded = verifyAccessToken(token ?? '');
 
       // Check if user exists and is active
       const user = await prisma.user.findUnique({
@@ -250,9 +240,8 @@ export const optionalAuthMiddleware = async (
   try {
     const token = getRequestAccessToken(req);
 
-    if (token) {
-      try {
-        const decoded = verifyAccessToken(token);
+    try {
+      const decoded = verifyAccessToken(token ?? '');
 
         const user = await prisma.user.findUnique({
           where: { id: decoded.userId },
@@ -286,9 +275,8 @@ export const optionalAuthMiddleware = async (
             permissions: decoded.permissions || []
           };
         }
-      } catch (error) {
-        // Invalid token - continue without user
-      }
+    } catch (error) {
+      // Invalid or absent token - continue without user
     }
 
     next();

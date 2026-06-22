@@ -1,10 +1,13 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import { ComponentVisibilityController } from '../controllers/componentVisibility.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 router.use(authMiddleware);
 

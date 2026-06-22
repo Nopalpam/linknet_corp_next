@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import {
   getActivityLogs,
   getActivityLogById,
@@ -12,6 +13,8 @@ import { authMiddleware as authenticate } from '@middleware/auth.middleware';
 import { requirePermission as authorize } from '@middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // All routes require authentication
 router.use(authenticate);

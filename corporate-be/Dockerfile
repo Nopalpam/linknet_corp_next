@@ -29,8 +29,8 @@ FROM node:22-alpine AS production
 RUN apk upgrade --no-cache && apk add --no-cache openssl postgresql-client
 
 # Non-root user for runtime
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN addgroup -g 10001 -S nodejs && \
+    adduser -S nodejs -u 10001 -G nodejs
 
 WORKDIR /app
 

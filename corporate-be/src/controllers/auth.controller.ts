@@ -19,7 +19,6 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { clearAuthCookies, setAuthCookies } from '../utils/authCookie.util';
 import { buildAuthTokenResponse } from '../utils/authResponse.util';
 import mfaService from '../services/mfa.service';
-import { normalizeOptionalString } from '../utils/securityInput.util';
 
 const prisma = new PrismaClient();
 
@@ -33,11 +32,11 @@ const REFRESH_ROTATION_GRACE_MS = 30_000;
 const refreshRotationCache = new Map<string, RefreshRotationCacheEntry>();
 
 const getRefreshTokenFromRequest = (req: Request): string | undefined => {
-  const cookieToken = typeof req.cookies?.refresh_token === 'string'
-    ? req.cookies.refresh_token
-    : undefined;
+  const cookieToken: unknown = req.cookies?.refresh_token;
+  if (typeof cookieToken !== 'string') return undefined;
 
-  return cookieToken ? normalizeOptionalString(cookieToken, { maxLength: 4096 }) : undefined;
+  const normalized = cookieToken.trim();
+  return normalized.length > 0 && normalized.length <= 4096 ? normalized : undefined;
 };
 
 const rememberRefreshRotation = (
@@ -435,16 +434,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
  */
 export const logout = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const refreshToken = getRefreshTokenFromRequest(req);
-
-    if (!refreshToken) {
-      clearAuthCookies(res, req);
-      res.status(400).json({
-        success: false,
-        message: 'Refresh token is required'
-      });
-      return;
-    }
+    const refreshToken = getRefreshTokenFromRequest(req) ?? '';
 
     // Hash the token to find it in database
     const tokenHash = hashRefreshToken(refreshToken);
@@ -515,23 +505,14 @@ export const logoutAll = async (req: AuthRequest, res: Response): Promise<void> 
  */
 export const refreshAccessToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const refreshToken = getRefreshTokenFromRequest(req);
-
-    if (!refreshToken) {
-      clearAuthCookies(res, req);
-      res.status(401).json({
-        success: false,
-        message: 'Refresh token is required',
-        code: 'TOKEN_REQUIRED'
-      });
-      return;
-    }
+    const refreshToken = getRefreshTokenFromRequest(req) ?? '';
 
     // Verify refresh token
     let decoded;
     try {
       decoded = verifyRefreshToken(refreshToken);
     } catch (error) {
+      clearAuthCookies(res, req);
       res.status(401).json({
         success: false,
         message: error instanceof Error ? error.message : 'Invalid refresh token',

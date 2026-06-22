@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../../../middleware/rateLimiter.middleware';
 import {
   getPages,
   getPageById,
@@ -9,6 +10,8 @@ import {
 import { authMiddleware as authenticate } from '../../../middleware/auth.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // All routes require authentication
 router.use(authenticate);

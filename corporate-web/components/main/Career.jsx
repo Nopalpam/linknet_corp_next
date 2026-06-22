@@ -89,10 +89,7 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
     fetchKey: '',
     careers: [],
     totalPages: 1,
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
     error: null,
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
   });
   const fetchKey = JSON.stringify({
     currentPage,
@@ -122,23 +119,14 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
         }
       });
 
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
     return () => {
       cancelled = true;
     };
   }, []);
 
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
   useEffect(() => {
     let cancelled = false;
 
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
-=======
-  useEffect(() => {
-    let cancelled = false;
-
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
     const debounce = setTimeout(() => {
       const fetchCareers = async () => {
         try {
@@ -151,12 +139,7 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
           if (filterValues.type) queryParams.set('type', filterValues.type);
           if (filterValues.division) queryParams.set('division', filterValues.division);
 
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
           const res = await fetchPublicContent(`/careers?${queryParams.toString()}`);
-=======
-          const res = await fetch(`${API_BASE_URL}/careers?${queryParams.toString()}`);
-          if (!res.ok) throw new Error('Failed to fetch careers');
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
           const json = await res.json();
 
           if (!cancelled) {
@@ -164,26 +147,17 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
               fetchKey,
               careers: json?.success ? (json.data || []) : [],
               totalPages: json?.success ? (json.pagination?.totalPages || 1) : 1,
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
               error: json?.success ? null : 'invalid-response',
             });
           }
         } catch (error) {
           console.error('Error fetching careers:', error);
-=======
-            });
-          }
-        } catch {
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
           if (!cancelled) {
             setClientState({
               fetchKey,
               careers: [],
               totalPages: 1,
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
               error: error?.requestId || 'request-failed',
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
             });
           }
         }
@@ -201,10 +175,7 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
   const isLoading = clientState.fetchKey !== fetchKey;
   const careers = isLoading ? [] : clientState.careers;
   const totalPages = isLoading ? 1 : clientState.totalPages;
-<<<<<<< HEAD:corporate-web/components/main/Career.jsx
   const loadError = !isLoading && clientState.error;
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/Career.jsx
 
   const generatedFilters = useMemo(() => {
     const filters = [];

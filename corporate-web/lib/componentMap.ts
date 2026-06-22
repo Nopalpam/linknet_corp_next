@@ -599,6 +599,10 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         : null,
       autoplay: data.autoplay !== false,
       autoplaySpeed: data.autoplay_speed || null,
+      showEnterpriseSolutionFinderCTA:
+        data.showEnterpriseSolutionFinderCTA
+        ?? data.show_enterprise_solution_finder_cta
+        ?? data.config?.showEnterpriseSolutionFinderCTA,
       theme: data.theme || 'dark',
       ...styleProps,
     }),

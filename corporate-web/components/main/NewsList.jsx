@@ -73,12 +73,7 @@ export default function NewsList({
         if (selectedCategory) queryParams.set('category_id', selectedCategory);
         if (searchKeyword) queryParams.set('search', searchKeyword);
 
-<<<<<<< HEAD:corporate-web/components/main/NewsList.jsx
         const res = await fetchPublicContent(`/public/news?${queryParams.toString()}`);
-=======
-        const res = await fetch(`${API_BASE_URL}/public/news?${queryParams.toString()}`);
-        if (!res.ok) throw new Error('Failed to fetch news');
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/NewsList.jsx
         const json = await res.json();
 
         if (!cancelled) {

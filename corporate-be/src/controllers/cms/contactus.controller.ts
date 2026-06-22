@@ -11,6 +11,17 @@ import {
 const prisma = new PrismaClient();
 const CONTACT_SORT_FIELDS = new Set(['submittedAt', 'firstName', 'lastName', 'email', 'company', 'status']);
 
+const getContactOrderBy = (sortBy: string, sortOrder: 'asc' | 'desc') => {
+  switch (sortBy) {
+    case 'firstName': return { firstName: sortOrder };
+    case 'lastName': return { lastName: sortOrder };
+    case 'email': return { email: sortOrder };
+    case 'company': return { company: sortOrder };
+    case 'status': return { status: sortOrder };
+    default: return { submittedAt: sortOrder };
+  }
+};
+
 /**
  * Get all contact submissions with pagination and filters
  */
@@ -85,9 +96,7 @@ export const getContactSubmissions = async (req: Request, res: Response) => {
         where,
         skip,
         take: limitNum,
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
+        orderBy: getContactOrderBy(sortBy, sortOrder),
         select: {
           id: true,
           firstName: true,

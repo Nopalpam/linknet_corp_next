@@ -1,4 +1,6 @@
 import { NextFunction, Request, Response, Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   getProfile,
   updateProfile,
@@ -18,6 +20,9 @@ import {
 } from '../validators/profile.validator';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 const handleAvatarUpload = (req: Request, res: Response, next: NextFunction): void => {
   avatarUpload.single('avatar')(req, res, (error: unknown) => {

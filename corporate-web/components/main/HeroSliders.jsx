@@ -34,9 +34,17 @@ function getSlideKey(slide, index, prefix = 'slide') {
   return `${prefix}-${index}`;
 }
 
+function resolveBoolean(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return fallback;
+}
+
 export default function HeroSliders({
   name = 'home',
   cmsSlides = null,
+  showEnterpriseSolutionFinderCTA: showEnterpriseSolutionFinderCTAProp,
   autoplay = true,
   autoplaySpeed = AUTOPLAY_DELAY,
   className = "",
@@ -68,9 +76,13 @@ export default function HeroSliders({
   } = sectionConfig;
   const {
     slides = [],
-    showEnterpriseSolutionFinderCTA = defaultShowEnterpriseSolutionFinderCTA,
+    showEnterpriseSolutionFinderCTA: sectionShowEnterpriseSolutionFinderCTA,
     enterpriseSolutionFinderCTAClassName = defaultEnterpriseSolutionFinderCTAClassName,
   } = sectionData || {};
+  const showEnterpriseSolutionFinderCTA = resolveBoolean(
+    showEnterpriseSolutionFinderCTAProp,
+    resolveBoolean(sectionShowEnterpriseSolutionFinderCTA, defaultShowEnterpriseSolutionFinderCTA),
+  );
 
   const sectionStyle = {
     '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',

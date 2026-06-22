@@ -10,6 +10,7 @@
  */
 
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
@@ -21,6 +22,8 @@ import {
 } from '../controllers/analytics.controller';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 const requireAnalyticsAccess = requirePermission(
   Permission.ANALYTICS_READ,
 );

@@ -115,7 +115,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     path: safePathForLog(req),
     origin: req.headers.origin ? sanitizeLogString(req.headers.origin, 200) : null,
     contentLength: req.headers['content-length'] ? sanitizeLogString(req.headers['content-length'], 20) : null,
-    hasApiKeyHeader: Boolean(req.headers['x-api-key']),
   });
 
   res.on('finish', () => {

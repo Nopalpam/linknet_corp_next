@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../../middleware/csrf.middleware';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import {
   createFormModule,
@@ -14,6 +16,9 @@ import {
 } from './formModuleCms.controller';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 router.use(authMiddleware);
 

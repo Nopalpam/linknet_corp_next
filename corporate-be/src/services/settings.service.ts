@@ -1,7 +1,6 @@
 import { PrismaClient, Setting, SettingType } from '@prisma/client';
 import { redisClient, isRedisAvailable } from '../config/redis';
 import crypto from 'crypto';
-import { sanitizeLogString } from '../utils/securityInput.util';
 
 const prisma = new PrismaClient();
 
@@ -513,7 +512,7 @@ export class SettingsService {
         value: this.processValueAfterRetrieval(setting.key, setting.value),
       }));
     } catch (error) {
-      console.error('Error getting settings for group:', sanitizeLogString(group), error);
+      console.error('Error getting settings for group:', error);
       throw error;
     }
   }
@@ -542,7 +541,7 @@ export class SettingsService {
         value: this.processValueAfterRetrieval(setting.key, setting.value),
       };
     } catch (error) {
-      console.error('Error getting setting:', sanitizeLogString(key), error);
+      console.error('Error getting setting:', error);
       throw error;
     }
   }

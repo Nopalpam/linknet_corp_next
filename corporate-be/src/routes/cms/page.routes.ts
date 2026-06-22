@@ -1,10 +1,15 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../../middleware/csrf.middleware';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { requirePermission } from '../../middleware/rbac.middleware';
 import { Permission } from '../../constants/permissions';
 import * as PageController from '../../controllers/cms/page.controller';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 router.use(authMiddleware);
 

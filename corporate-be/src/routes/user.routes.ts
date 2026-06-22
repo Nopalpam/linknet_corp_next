@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   getUsers,
   getUserById,
@@ -26,6 +28,9 @@ import {
 } from '../validators/user.validator';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 /**
  * @route   GET /api/cms/users

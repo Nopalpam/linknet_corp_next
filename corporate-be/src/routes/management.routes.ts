@@ -1,9 +1,12 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import managementController from '../controllers/management.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // ============================================
 // CATEGORY ROUTES (Protected) - MUST BE BEFORE /:id ROUTES

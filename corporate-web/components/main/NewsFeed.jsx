@@ -43,10 +43,7 @@ export default function NewsFeed({
   const [clientState, setClientState] = useState({
     fetchKey: '',
     news: [],
-<<<<<<< HEAD:corporate-web/components/main/NewsFeed.jsx
     error: null,
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/NewsFeed.jsx
   });
   const itemsPerPage = 12; // Batas maksimum data per halaman
 
@@ -67,10 +64,7 @@ export default function NewsFeed({
           setClientState({
             fetchKey,
             news: json.data || [],
-<<<<<<< HEAD:corporate-web/components/main/NewsFeed.jsx
             error: json.success === false ? 'invalid-response' : null,
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/NewsFeed.jsx
           });
         }
       } catch (error) {
@@ -79,10 +73,7 @@ export default function NewsFeed({
           setClientState({
             fetchKey,
             news: [],
-<<<<<<< HEAD:corporate-web/components/main/NewsFeed.jsx
             error: error?.requestId || 'request-failed',
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/NewsFeed.jsx
           });
         }
       }
@@ -96,10 +87,7 @@ export default function NewsFeed({
 
   const isLoading = shouldFetch && clientState.fetchKey !== fetchKey;
   const databaseNews = shouldFetch ? (isLoading ? [] : clientState.news) : initialNews;
-<<<<<<< HEAD:corporate-web/components/main/NewsFeed.jsx
   const loadError = shouldFetch && !isLoading ? clientState.error : null;
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:web/components/main/NewsFeed.jsx
 
   // 2. Filter dan Urutkan SEMUA Data
   // 2. Filter dan Urutkan SEMUA Data

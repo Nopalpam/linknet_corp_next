@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import menuController from '../controllers/menu.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
@@ -17,6 +19,9 @@ import {
 } from '../validators/menu.validator';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 // Public routes
 router.get('/menu', menuController.getPublicMenus);

@@ -1,10 +1,15 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import { LabelDataBankController } from '../controllers/labelDataBank.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 router.get('/public/labels', LabelDataBankController.getPublicLabels);
 

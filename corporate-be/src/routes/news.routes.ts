@@ -1,10 +1,15 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import newsController from '../controllers/news.controller';
 import newsCategoryController from '../controllers/news-category.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 // ================== PUBLIC NEWS ROUTES ==================
 

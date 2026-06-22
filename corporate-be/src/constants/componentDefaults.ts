@@ -218,6 +218,7 @@ const SLIDERS_HERO: ComponentTypeDefinition = {
     ],
     autoplay: true,
     autoplay_speed: 5000,
+    showEnterpriseSolutionFinderCTA: false,
     theme: 'dark',
   }),
 };

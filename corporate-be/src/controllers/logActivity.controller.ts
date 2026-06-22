@@ -25,6 +25,16 @@ const ApiResponse = {
 const prisma = new PrismaClient();
 const ACTIVITY_LOG_SORT_FIELDS = new Set(['createdAt', 'updatedAt', 'action', 'module', 'recordId']);
 
+const getActivityLogOrderBy = (sortBy: string, sortOrder: 'asc' | 'desc') => {
+  switch (sortBy) {
+    case 'updatedAt': return { updatedAt: sortOrder };
+    case 'action': return { action: sortOrder };
+    case 'module': return { module: sortOrder };
+    case 'recordId': return { recordId: sortOrder };
+    default: return { createdAt: sortOrder };
+  }
+};
+
 const isAuditLogDeletionAllowed = () => process.env.ALLOW_AUDIT_LOG_DELETION !== 'false';
 
 const parsePositiveInteger = (value: unknown, fallback: number) => {
@@ -114,9 +124,7 @@ export async function getActivityLogs(req: Request, res: Response, next: NextFun
             },
           },
         },
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
+        orderBy: getActivityLogOrderBy(sortBy, sortOrder),
         skip,
         take: limitNum,
       }),

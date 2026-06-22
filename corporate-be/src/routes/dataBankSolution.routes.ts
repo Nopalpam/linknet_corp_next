@@ -1,9 +1,14 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import dataBankSolutionController from '../controllers/dataBankSolution.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 router.get('/solutions', dataBankSolutionController.getPublicSolutions.bind(dataBankSolutionController));
 

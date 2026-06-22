@@ -19,6 +19,8 @@
  */
 
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import careerController from '../controllers/career.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
@@ -32,6 +34,9 @@ import {
 } from '../validators/career.validator';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 // ============================================
 // PUBLIC ROUTES (no auth required)

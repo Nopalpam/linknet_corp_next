@@ -1,0 +1,15 @@
+name: LinkNet monorepo CodeQL config
+
+paths:
+  - corporate-be
+  - corporate-cms
+  - corporate-web
+  - corporate-fm
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.next/**"
+  - "**/out/**"
+  - "**/coverage/**"

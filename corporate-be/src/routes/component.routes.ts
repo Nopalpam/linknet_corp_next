@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import { ComponentController } from '@controllers/component.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/rbac.middleware';
@@ -13,6 +14,8 @@ import {
 } from '../validators/component.validator';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 /**
  * All routes require authentication

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import {
   getPublicPageBySlug,
   getPagePreview,
@@ -11,6 +12,8 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // Available component types (no auth required)
 router.get('/available-components', getAvailableComponents);

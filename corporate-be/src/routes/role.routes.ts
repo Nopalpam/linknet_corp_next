@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   getRoles,
   getRoleById,
@@ -13,6 +15,9 @@ import { Permission } from '../constants/permissions';
 import { asyncHandler } from '../middleware/errorHandler.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 /**
  * @route   GET /api/roles

@@ -1,9 +1,12 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import announcementController from '../controllers/announcement.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // ============================================
 // PUBLIC ROUTES (No auth required)

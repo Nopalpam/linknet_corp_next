@@ -12,6 +12,8 @@
  */
 
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   listFiles,
   getFileInfo,
@@ -23,6 +25,9 @@ import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 /**
  * @route   GET /api/v1/files

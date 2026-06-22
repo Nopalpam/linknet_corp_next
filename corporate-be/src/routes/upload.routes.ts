@@ -11,6 +11,7 @@
  */
 
 import { Router } from 'express';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   uploadSingleFile,
   uploadMultipleFiles,
@@ -21,10 +22,13 @@ import {
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../constants/permissions';
-import { uploadRateLimiter } from '../middleware/rateLimiter.middleware';
+import { generalRateLimiter, uploadRateLimiter } from '../middleware/rateLimiter.middleware';
 import { scanUploadedFiles, upload, validateFileSize } from '../middleware/upload.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 /**
  * @route   POST /api/v1/upload

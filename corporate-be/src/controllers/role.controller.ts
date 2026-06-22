@@ -15,11 +15,7 @@ type PermissionRecord = {
   module: string;
   slug: string;
   name: string;
-<<<<<<< HEAD:corporate-be/src/controllers/role.controller.ts
   description: string | null;
-=======
-  description: string;
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/controllers/role.controller.ts
 };
 
 type RolePermissionRecord = {

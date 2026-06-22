@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   uploadFiles,
   getFiles,
@@ -19,6 +21,9 @@ import {
 } from '../middleware/upload.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
+router.use(csrfProtectionMiddleware);
 
 /**
  * @route   POST /api/filemanager/upload

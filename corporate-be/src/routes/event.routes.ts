@@ -1,9 +1,12 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
 import eventController from '../controllers/event.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 router.get('/events', eventController.getPublishedEvents);
 router.post('/events/:slug/registrations', eventController.createEventRegistration);

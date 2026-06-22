@@ -15,37 +15,23 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 const toLogString = (value: unknown): string => {
   if (typeof value === 'string') {
-<<<<<<< HEAD:corporate-be/src/utils/logger.ts
     return sanitizeLogString(value);
   }
 
   if (value instanceof Error) {
     return sanitizeLogString(value.message);
-=======
-    return value;
-  }
-
-  if (value instanceof Error) {
-    return value.message;
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/utils/logger.ts
   }
 
   if (value === undefined) {
     return '';
   }
 
-<<<<<<< HEAD:corporate-be/src/utils/logger.ts
   return JSON.stringify(sanitizeForLog(value));
 };
 
 const safeLogMeta = (value: Record<string, unknown> = {}): Record<string, unknown> =>
   sanitizeForLog(redactSensitiveData(value)) as Record<string, unknown>;
 
-=======
-  return JSON.stringify(value);
-};
-
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/utils/logger.ts
 // Define log format
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),

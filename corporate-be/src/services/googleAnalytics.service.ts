@@ -18,25 +18,17 @@
 import NodeCache from 'node-cache';
 import { logInfo } from '../utils/logger';
 import {
-<<<<<<< HEAD:corporate-be/src/services/googleAnalytics.service.ts
   parseGoogleServiceAccountJson,
   type ServiceAccountCredentials,
 } from '../utils/gcloud-credentials.util';
-import { GA4_BUNDLED_FALLBACK_ENV } from './googleAnalytics.fallback';
-=======
-  readGoogleServiceAccountFromEnv,
-  type ServiceAccountCredentials,
-} from '../utils/gcloud-credentials.util';
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/googleAnalytics.service.ts
 
 // Cache analytics data for 10 minutes to reduce API calls
 const analyticsCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
 // ServiceAccountCredentials is re-exported from gcloud-credentials.util
 export type { ServiceAccountCredentials };
-<<<<<<< HEAD:corporate-be/src/services/googleAnalytics.service.ts
 
-type GA4CredentialSource = 'environment' | 'bundled-fallback';
+type GA4CredentialSource = 'environment';
 
 type GA4EnvKey =
   | 'GA4_PROPERTY_ID'
@@ -106,32 +98,13 @@ const resolveGA4Config = (): GA4ResolvedConfig | null => {
   const environmentValues = pickGA4EnvValues(process.env);
 
   try {
-    const environmentConfig = buildGA4Config('environment', environmentValues);
-    if (environmentConfig) return environmentConfig;
+    return buildGA4Config('environment', environmentValues);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    logInfo(`GA4 environment credentials are invalid, trying bundled fallback: ${message}`);
-  }
-
-  try {
-    const fallbackConfig = buildGA4Config('bundled-fallback', {
-      ...environmentValues,
-      ...pickGA4EnvValues(GA4_BUNDLED_FALLBACK_ENV),
-    });
-
-    if (fallbackConfig) {
-      logInfo('GA4 credentials loaded from bundled fallback.');
-    }
-
-    return fallbackConfig;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    logInfo(`GA4 fallback credentials are invalid: ${message}`);
+    logInfo(`GA4 environment credentials are invalid: ${message}`);
     return null;
   }
 };
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/googleAnalytics.service.ts
 
 // ============ TYPES ============
 
@@ -173,13 +146,10 @@ function getGA4PropertyName(propertyId: string): string {
 }
 
 // Credential parsing is handled by gcloud-credentials.util.ts
-<<<<<<< HEAD:corporate-be/src/services/googleAnalytics.service.ts
 
 function getGA4ClientEmail(config: GA4ResolvedConfig): string | null {
   return config.serviceAccount?.client_email || config.clientEmail || null;
 }
-=======
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/googleAnalytics.service.ts
 
 function getReadableGA4ErrorMessage(
   error: Error,
@@ -209,42 +179,22 @@ async function getGA4Client(config: GA4ResolvedConfig) {
   // Option A: full service account JSON (preferred — Key Vault / single-secret approach)
   // Parsing is delegated to gcloud-credentials.util which handles quote-wrapping,
   // escaped/literal newlines in the PEM block, and base64-encoded secrets.
-<<<<<<< HEAD:corporate-be/src/services/googleAnalytics.service.ts
   if (config.serviceAccount) {
     return new BetaAnalyticsDataClient({
       credentials: {
         client_email: config.serviceAccount.client_email,
         private_key: config.serviceAccount.private_key,
-=======
-  const serviceAccount = readGoogleServiceAccountFromEnv();
-  if (serviceAccount) {
-    return new BetaAnalyticsDataClient({
-      credentials: {
-        client_email: serviceAccount.client_email,
-        private_key: serviceAccount.private_key,
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/googleAnalytics.service.ts
       },
     });
   }
 
   // Option B: individual inline credentials
-<<<<<<< HEAD:corporate-be/src/services/googleAnalytics.service.ts
   if (config.clientEmail && config.privateKey) {
     return new BetaAnalyticsDataClient({
       credentials: {
         client_email: config.clientEmail,
         // Normalize \\n → \n for private keys supplied as separate env vars
         private_key: config.privateKey,
-=======
-  const clientEmail = process.env.GA4_CLIENT_EMAIL;
-  const privateKeyRaw = process.env.GA4_PRIVATE_KEY;
-  if (clientEmail && privateKeyRaw) {
-    return new BetaAnalyticsDataClient({
-      credentials: {
-        client_email: clientEmail,
-        // Normalize \\n → \n for private keys supplied as separate env vars
-        private_key: privateKeyRaw.replace(/\\n/g, '\n'),
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/services/googleAnalytics.service.ts
       },
     });
   }

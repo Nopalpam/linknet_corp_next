@@ -467,7 +467,7 @@ export default function ItemFormModal({
                   value={formData.coverImage || ""}
                   onChange={(e) => {
                     setFormData((prev) => ({ ...prev, coverImage: e.target.value }));
-                    setImagePreview(sanitizeImagePreviewUrl(e.target.value));
+                    setImagePreview("");
                   }}
                   className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Or enter image URL directly"

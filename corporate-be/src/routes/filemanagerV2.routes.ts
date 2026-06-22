@@ -10,6 +10,7 @@
  */
 
 import { Router } from 'express';
+import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import {
   uploadFileV2,
   listFilesV2,
@@ -23,6 +24,8 @@ import { scanUploadedFiles, upload, validateFileSize } from '../middleware/uploa
 import { authRateLimiter, strictRateLimiter, uploadRateLimiter } from '../middleware/rateLimiter.middleware';
 
 const router = Router();
+
+router.use(csrfProtectionMiddleware);
 
 /**
  * @route   POST /api/v1/fm/upload

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { generalRateLimiter } from '../../middleware/rateLimiter.middleware';
 import {
   getContactSubmissions,
   getContactSubmissionById,
@@ -20,6 +21,8 @@ import {
 } from '../../validators/contact.validator';
 
 const router = Router();
+
+router.use(generalRateLimiter);
 
 // All routes require authentication
 router.use(authMiddleware);

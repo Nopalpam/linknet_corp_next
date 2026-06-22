@@ -83,17 +83,10 @@ const allowedOrigins = (process.env.CORS_ORIGIN || [fallbackWebOrigin, fallbackC
 
 const developmentLoopbackOrigins = new Set(
   [
-<<<<<<< HEAD:corporate-be/src/server.ts
     localDevOrigin,
     `${LOCAL_HTTP_PROTOCOL}://localhost:3001`,
     `${LOCAL_HTTP_PROTOCOL}://127.0.0.1:3000`,
     `${LOCAL_HTTP_PROTOCOL}://127.0.0.1:3001`,
-=======
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/server.ts
     ...allowedOrigins.filter((origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)),
   ].map((origin) => origin.toLowerCase())
 );

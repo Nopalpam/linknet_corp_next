@@ -39,7 +39,6 @@ const redactSensitiveValue = (value: unknown): unknown => {
   }
 
   if (typeof value === 'object') {
-<<<<<<< HEAD:corporate-be/src/utils/dataRedaction.util.ts
     const redactedEntries = Object.entries(value as Record<string, unknown>)
       .filter(([key]) => isSafeObjectKey(key))
       .map(([key, entry]) => [
@@ -48,15 +47,6 @@ const redactSensitiveValue = (value: unknown): unknown => {
       ]);
 
     return Object.assign(Object.create(null), Object.fromEntries(redactedEntries));
-=======
-    const redacted: Record<string, unknown> = {};
-
-    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
-      redacted[key] = isSensitiveField(key) ? '[REDACTED]' : redactSensitiveValue(entry);
-    }
-
-    return redacted;
->>>>>>> f1a6f58a3c0c4e02945907a97e04de3aa22b5221:backend/src/utils/dataRedaction.util.ts
   }
 
   return value;
