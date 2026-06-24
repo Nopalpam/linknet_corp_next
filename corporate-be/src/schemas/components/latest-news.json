@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Latest News",
+  "description": "Display latest news or blog posts",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Section Title",
+      "description": "Heading for news section"
+    },
+    "category_id": {
+      "type": "string",
+      "title": "Category ID",
+      "description": "Filter by specific category (leave empty for all)"
+    },
+    "limit": {
+      "type": "integer",
+      "title": "Number of Posts",
+      "description": "Maximum number of posts to display",
+      "minimum": 1,
+      "maximum": 12,
+      "default": 6
+    },
+    "layout": {
+      "type": "string",
+      "title": "Layout Style",
+      "description": "How to display the posts",
+      "enum": ["grid", "list", "carousel"],
+      "default": "grid"
+    },
+    "columns": {
+      "type": "integer",
+      "title": "Grid Columns",
+      "description": "Number of columns (for grid layout)",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 3
+    },
+    "show_excerpt": {
+      "type": "boolean",
+      "title": "Show Excerpt",
+      "description": "Display post excerpt/summary",
+      "default": true
+    },
+    "show_date": {
+      "type": "boolean",
+      "title": "Show Date",
+      "description": "Display publish date",
+      "default": true
+    },
+    "show_author": {
+      "type": "boolean",
+      "title": "Show Author",
+      "description": "Display post author",
+      "default": false
+    }
+  }
+}

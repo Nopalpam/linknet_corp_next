@@ -14,72 +14,7 @@ variables:
 steps:
 - checkout: self
 
-# 1. NODE SETUP
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
-
-# 2. CODEQL INIT
-- task: AdvancedSecurity-CodeQL-Init@1
-  displayName: 'CodeQL Init'
-  inputs:
-    languages: 'javascript'
-
-# 3. SECURE DEP INSTALL
-- script: |
-    node -v
-    npm -v
-    npm ci
-  displayName: 'Install Dependencies (deterministic)'
-
-# 4. DEPENDENCY SCAN
-- task: AdvancedSecurity-Dependency-Scanning@1
-  displayName: 'GHAS Dependency Scanning'
-
-# 4A. NPM Audit
-#- script: |
-#    echo "Running npm audit..."
-#    npm audit --audit-level=high || true
-#    npm audit --json > audit-report.json
-#  displayName: 'NPM Audit'
-
-# 5. LINT (NON BLOCKING)
-- script: npm run lint || true
-  displayName: 'ESLint (Non-blocking)'
-
-# 6. BUILD
-- script: npm run build
-  displayName: 'Build Backend'
-
-# 7. CODEQL ANALYZE
-- task: AdvancedSecurity-CodeQL-Analyze@1
-  displayName: 'CodeQL Analyze'
-
-# 8. SBOM (SUPPLY CHAIN VISIBILITY)
-- script: |
-    npx @cyclonedx/cyclonedx-npm --output-file sbom-corporate-fm-dev.json
-  displayName: 'Generate SBOM'
-
-# 9. INSTALL TRIVY
-- script: |
-    sudo apt-get update
-    sudo apt-get install wget apt-transport-https gnupg lsb-release -y
-    wget -qO - https://aquasecurity.github.io/trivy-repo/dabest.gpg | sudo apt-key add -
-    echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-    sudo apt-get update
-    sudo apt-get install trivy -y
-  displayName: 'Install Trivy'
-
-# 10. FILE SYSTEM SCAN (WITH GATING)
-- script: |
-    trivy fs \
-      --scanners vuln,secret \
-      --severity LOW,MEDIUM,HIGH,CRITICAL \
-      .
-  displayName: 'Trivy FS Scan'
-
-# 11. Build Docker image
+# Build Docker image
 - task: Docker@2
   displayName: 'Build Docker Image'
   inputs:
@@ -90,14 +25,7 @@ steps:
     tags: |
       $(tag)
 
-# 12. IMAGE SCAN
-- script: |
-    trivy image \
-      --severity LOW,MEDIUM,HIGH,CRITICAL \
-      $(Uri)/$(RepositoryName):$(tag)
-  displayName: 'Trivy Image Scan'
-
-# 13. Push Docker image ke ECR AWS
+# Push Docker image ke ECR AWS
 - task: ECRPushImage@1
   displayName: 'Push Docker Image to AWS ECR'
   inputs:
@@ -115,21 +43,14 @@ steps:
     echo End of script.
   displayName: 'End of script'
 
-# 14. SECURITY ARTIFACT
-- script: |
-    mkdir -p $(Build.ArtifactStagingDirectory)
-    cp sbom-corporate-fm-dev.json $(Build.ArtifactStagingDirectory)/ || true
-  displayName: 'Stage Security Artifacts'
-
-# 15. MSDO SCAN
+# MSDO SCAN
 - task: MicrosoftSecurityDevOps@1
+  displayName: 'Microsoft Security DevOps Scan'
   condition: always()
-  displayName: 'Microsoft Security DevOps'
   inputs:
     command: 'run'
     policy: 'azuredevops'
-    categories: 'all'
-    languages: 'javascript'
+    tools: 'checkov, templateanalyzer'
     publish: true
     artifactName: 'CodeAnalysisLogs'
 

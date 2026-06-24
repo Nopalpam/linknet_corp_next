@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Call to Action",
+  "description": "Prominent call-to-action section with button",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 500
+    },
+    "buttonText": {
+      "type": "string",
+      "title": "Button Text",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "buttonLink": {
+      "type": "string",
+      "title": "Button Link",
+      "description": "Button URL (can be relative path like /contact or full URL)"
+    },
+    "backgroundColor": {
+      "type": "string",
+      "title": "Background Color",
+      "description": "Hex color code",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "default": "#0d6efd"
+    }
+  },
+  "required": ["title", "buttonText", "buttonLink"],
+  "additionalProperties": false
+}

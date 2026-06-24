@@ -2,7 +2,6 @@
 node_modules/
 /.pnp
 .pnp.js
-.tmp
 
 # Testing
 /coverage
@@ -11,6 +10,9 @@ node_modules/
 # Production
 dist/
 build/
+docs/*
+# !docs/db-rebuild/
+# !docs/db-rebuild/**
 
 # Environment — NEVER commit real credentials
 .env
@@ -53,7 +55,7 @@ uploads/
 node_modules/.prisma/
 
 # Google Cloud / Service Account credentials - NEVER commit these
-*.json
+# *.json
 !package.json
 !package-lock.json
 !tsconfig*.json

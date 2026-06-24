@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Tabs",
+  "description": "Tabbed content sections",
+  "required": ["tabs"],
+  "properties": {
+    "tabs": {
+      "type": "array",
+      "title": "Tab Items",
+      "description": "List of tab panels",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Tab Title",
+            "description": "Tab navigation label"
+          },
+          "content": {
+            "type": "string",
+            "title": "Tab Content",
+            "description": "Tab panel content",
+            "contentMediaType": "text/html"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon Class",
+            "description": "Optional icon class (e.g., 'fa fa-home')"
+          }
+        }
+      }
+    },
+    "style": {
+      "type": "string",
+      "title": "Tab Style",
+      "description": "Visual style of tabs",
+      "enum": ["pills", "tabs", "underline"],
+      "default": "tabs"
+    }
+  }
+}

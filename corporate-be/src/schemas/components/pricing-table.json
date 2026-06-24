@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Pricing Table",
+  "description": "Product or service pricing plans",
+  "required": ["plans"],
+  "properties": {
+    "plans": {
+      "type": "array",
+      "title": "Pricing Plans",
+      "description": "List of pricing options",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "price"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Plan Name",
+            "description": "Name of pricing plan"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price",
+            "description": "Plan price"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "description": "Price currency symbol",
+            "default": "Rp"
+          },
+          "period": {
+            "type": "string",
+            "title": "Billing Period",
+            "description": "Billing period label",
+            "default": "/month"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Short plan description"
+          },
+          "features": {
+            "type": "array",
+            "title": "Features",
+            "description": "List of plan features",
+            "items": {
+              "type": "string"
+            }
+          },
+          "is_featured": {
+            "type": "boolean",
+            "title": "Featured Plan",
+            "description": "Highlight this plan",
+            "default": false
+          },
+          "cta_text": {
+            "type": "string",
+            "title": "CTA Button Text",
+            "description": "Call-to-action button label",
+            "default": "Get Started"
+          },
+          "cta_url": {
+            "type": "string",
+            "title": "CTA URL",
+            "description": "Call-to-action button link",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "columns": {
+      "type": "integer",
+      "title": "Columns",
+      "description": "Number of columns in grid",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 3
+    }
+  }
+}

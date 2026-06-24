@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Stats Counter",
+  "description": "Animated statistics counters",
+  "required": ["stats"],
+  "properties": {
+    "stats": {
+      "type": "array",
+      "title": "Statistics",
+      "description": "List of statistics to display",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["number", "label"],
+        "properties": {
+          "number": {
+            "type": "number",
+            "title": "Number",
+            "description": "Statistic value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Statistic description"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon Class",
+            "description": "Icon class (e.g., 'fa fa-users')"
+          },
+          "suffix": {
+            "type": "string",
+            "title": "Suffix",
+            "description": "Text after number (e.g., '+', '%', 'K')"
+          },
+          "prefix": {
+            "type": "string",
+            "title": "Prefix",
+            "description": "Text before number (e.g., '$', '#')"
+          }
+        }
+      }
+    },
+    "animate": {
+      "type": "boolean",
+      "title": "Animate Counters",
+      "description": "Animate numbers on scroll into view",
+      "default": true
+    },
+    "columns": {
+      "type": "integer",
+      "title": "Columns",
+      "description": "Number of columns in grid",
+      "minimum": 2,
+      "maximum": 6,
+      "default": 4
+    }
+  }
+}
