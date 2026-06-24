@@ -5,6 +5,7 @@ import CardReport from '../base/cards/CardReport';
 import Modal from '../base/Modal';
 import Button from '../base/Button';
 import { useModalRegistry } from '../hooks/useModalRegistry';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // UBAH: Terima prop 'data' secara langsung
 export default function ReportListPart({ data, config, className = "", cardVariant = "list" }) {
@@ -21,10 +22,7 @@ export default function ReportListPart({ data, config, className = "", cardVaria
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // Buat ID Modal yang unik untuk list ini
   const modalId = `report-list-${groupId}`;
@@ -48,9 +46,9 @@ export default function ReportListPart({ data, config, className = "", cardVaria
       id={sectionId}
       className={`lnSection__reportListPart bg-white p-6 md:p-8 rounded-[20px] shadow-md
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       {/* HEADER SECTION (Tanpa Dropdown) */}

@@ -11,6 +11,7 @@ import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import { LOGO_RUNNING_BORDER_DATA } from '@/data/components/logoRunningWithBorder'; 
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -114,10 +115,7 @@ export default function LogoRunningWithBorder({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const duplicatedLogos = logos.length > 0 ? [...logos, ...logos, ...logos] : [];
 
@@ -127,9 +125,9 @@ export default function LogoRunningWithBorder({
       ref={containerRef}
       className={`lnSection__logoRunningWithBorder
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       
       {/* Efek Marquee CSS */}

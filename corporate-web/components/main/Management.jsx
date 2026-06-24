@@ -17,6 +17,7 @@ import { hasIntroContent } from '@/shared/presentation/intro';
 
 // Import Hooks
 import { useModalRegistry } from '../hooks/useModalRegistry';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function normalizeTabId(value) {
   if (value === null || value === undefined) return '';
@@ -90,10 +91,7 @@ export default function Management({ cmsData = null, data = null, mainData = nul
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = { ...(source.config || {}), ...(config || {}) };
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const gridRef = useRef(null);
 
@@ -135,9 +133,9 @@ export default function Management({ cmsData = null, data = null, mainData = nul
       id={sectionId}
       className={`lnSection__management container mx-auto py-12 px-4
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       {hasIntroContent(introData) && (

@@ -14,6 +14,7 @@ import Intro from '../base/section/Intro';
 import { MILESTONE_DATA } from '@/data/components/milestone';
 import Icon from '../base/Icon';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -82,10 +83,7 @@ export default function Milestone({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     <section
@@ -93,9 +91,9 @@ export default function Milestone({
       ref={containerRef}
       className={`lnSection__milestone px-2 md:px-3 py-16 bg-white rounded-[36px] overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="py-16 md:py-20 bg-light-2 rounded-[36px] overflow-hidden">
 

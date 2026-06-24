@@ -456,6 +456,10 @@ const Testimonials = dynamic(() => import('@/components/main/Testimonials'));
 
 const AnnouncementListCMS = dynamic(() => import('@/components/main/AnnouncementList'));
 const FormRegistrationEnterprise = dynamic(() => import('@/components/main/FormRegistrationEnterprise'));
+const EnterpriseConsultationForm = dynamic(() => import('@/components/main/EnterpriseConsultationForm'));
+const SMBEnterpriseForm = dynamic(() => import('@/components/main/SMBEnterpriseForm'));
+const EnterprisePartnershipForm = dynamic(() => import('@/components/main/EnterprisePartnershipForm'));
+const EnterpriseSolutionFinderForm = dynamic(() => import('@/components/main/EnterpriseSolutionFinderForm'));
 const FormRegistrationFiber = dynamic(() => import('@/components/main/FormRegistrationFiber'));
 const FormRegistrationMedia = dynamic(() => import('@/components/main/FormRegistrationMedia'));
 const CoverageCheckFiber = dynamic(() => import('@/components/main/CoverageCheckFiber'));
@@ -529,6 +533,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
   hero_section: {
     component: HeroStatic,
     mapProps: ({ data, t, locale }) => {
+      const config = data.config && typeof data.config === 'object' ? data.config : {};
       const introSource = data.introData || data.sectionIntro || data.intro;
       const hasExplicitIntro = Boolean(introSource && typeof introSource === 'object' && !Array.isArray(introSource));
       const hasIntroField = (field: string) => (
@@ -539,22 +544,29 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
       const resolveIntroField = (field: 'label' | 'title' | 'description', fallback: string) => (
         hasIntroField(field) ? (introData?.[field] ?? '') : (introData?.[field] || fallback)
       );
+      const bgOverlayValue = config.bgOverlay ?? data.bgOverlay ?? data.bg_overlay ?? data.gradient_visible;
 
       return {
-        config: data.config || {},
+        config: {
+          ...config,
+          bgImage: config.bgImage || data.bg_image || data.background_image || '',
+          bgImageMobile: config.bgImageMobile || data.bg_image_mobile || data.background_image_mobile || '',
+          bgPositionClasses: config.bgPositionClasses || data.bg_position_classes || backgroundPositionToClasses(data.bg_position),
+          bgSizeClass: config.bgSizeClass || data.bg_size_class || 'bg-cover',
+        },
         as: introData?.as || 'h1',
         title: resolveIntroField('title', localizeField(data, 'title', t, locale)),
         description: resolveIntroField('description', localizeField(data, 'description', t, locale)),
         labelText: resolveIntroField('label', t(data.pill_text)),
         labelWithBg: false,
         logoSquare: data.minilogo_visible === 'true' || data.minilogo_visible === true,
-        logoSrc: data.minilogo_image || undefined,
+        logoSrc: data.minilogo_image || data.logo_image || data.logoSrc || data.logo_src || undefined,
         ctaList,
-        bgImageDesktop: data.config?.bgImage || data.background_image || undefined,
-        bgImageMobile: data.config?.bgImageMobile || data.background_image_mobile || undefined,
+        bgImageDesktop: config.bgImage || data.bg_image || data.background_image || undefined,
+        bgImageMobile: config.bgImageMobile || data.bg_image_mobile || data.background_image_mobile || undefined,
         heroSize: data.size_hero === 'lnHero__small' ? 'sm' : 'md',
-        theme: data.theme || 'dark',
-        bgOverlay: data.gradient_visible === 'true' || data.gradient_visible === true,
+        theme: config.theme || data.theme || 'dark',
+        bgOverlay: bgOverlayValue === true || bgOverlayValue === 'true',
         className: data.custom_class || '',
         note: null,
       };
@@ -597,7 +609,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
             };
           })
         : null,
-      autoplay: data.autoplay !== false,
+      autoplay: data.autoplay ?? data.autoplay_enabled ?? data.autoplayEnabled ?? true,
       autoplaySpeed: data.autoplay_speed || null,
       showEnterpriseSolutionFinderCTA:
         data.showEnterpriseSolutionFinderCTA
@@ -754,36 +766,71 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
 
   key_highlight: {
     component: KeyHighlightWithImage,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        introData: extractIntro(data, t, locale),
-        items: Array.isArray(data.slides)
-          ? data.slides.map((slide: any, idx: number) => ({
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const config = data.config && typeof data.config === 'object' ? data.config : {};
+      const rawItems = Array.isArray(data.slides)
+        ? data.slides
+        : Array.isArray(data.items)
+          ? data.items
+          : [];
+
+      return {
+        cmsData: {
+          config: {
+            ...config,
+            sectionId: config.sectionId || data.custom_id || '',
+            className: config.className || data.custom_class || '',
+            bgImage: config.bgImage || data.bg_image || data.background_image || '',
+            bgImageMobile: config.bgImageMobile || data.bg_image_mobile || data.background_image_mobile || '',
+            bgPositionClasses: config.bgPositionClasses || data.bg_position_classes || backgroundPositionToClasses(data.bg_position),
+            bgSizeClass: config.bgSizeClass || data.bg_size_class || 'bg-cover',
+          },
+          introData: extractIntro(data, t, locale),
+          items: rawItems
+          .map((slide: any, idx: number) => ({
               id: `highlight-${idx}`,
               image: slide.image || undefined,
               value: t(slide.value),
               delta: t(slide.delta),
               caption: t(slide.caption),
             }))
-          : [],
-      },
-      ...styleProps,
-    }),
+            .filter((item: any) => item.image || item.value || item.caption),
+        },
+        ...styleProps,
+      };
+    },
   },
 
   highlighting_real_initiatives: {
     component: HighlightingRealInitiatives,
-    mapProps: ({ data, t, styleProps, locale }) => ({
-      cmsData: {
-        introData: extractIntro(data, t, locale) || {
+    mapProps: ({ data, t, styleProps, locale }) => {
+      const config = data.config && typeof data.config === 'object' ? data.config : {};
+      const rawItems = Array.isArray(data.initiatives)
+        ? data.initiatives
+        : Array.isArray(data.items)
+          ? data.items
+          : [];
+
+      return {
+        cmsData: {
+          config: {
+            ...config,
+            sectionId: config.sectionId || data.custom_id || '',
+            className: config.className || data.custom_class || '',
+            bgImage: config.bgImage || data.bg_image || data.background_image || '',
+            bgImageMobile: config.bgImageMobile || data.bg_image_mobile || data.background_image_mobile || '',
+            bgPositionClasses: config.bgPositionClasses || data.bg_position_classes || backgroundPositionToClasses(data.bg_position),
+            bgSizeClass: config.bgSizeClass || data.bg_size_class || 'bg-cover',
+          },
+          introData: extractIntro(data, t, locale) || {
           as: 'h2',
           label: '',
           title: t(data.title),
           description: t(data.description),
           align: 'left',
         },
-        items: Array.isArray(data.initiatives)
-          ? data.initiatives.map((ini: any, idx: number) => ({
+          items: rawItems
+          .map((ini: any, idx: number) => ({
               id: `initiative-${idx}`,
               topLogo: resolveMediaUrl(ini.topLogo || ini.top_logo || ini.logo || ini.logo_image || ini.logoImage || ini.partner_logo || ini.partnerLogo),
               image: resolveMediaUrl(ini.image || ini.thumbnail || ini.thumbnail_image || ini.thumbnailImage || ini.cover_image || ini.coverImage) || undefined,
@@ -792,7 +839,7 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
               date: ini.date || ini.published_at || ini.publishedAt || '',
               url: firstNonEmpty(ini.url, ini.href, ini.link, ini.cta_url, ini.ctaUrl, ini.cta_link, ini.ctaLink) || '#',
             }))
-          : [],
+            .filter((item: any) => item.image || item.title || item.desc),
         partnerText: t(data.partnerText || data.partner_text || data.community_text || data.communityText),
         partnerLogos: (Array.isArray(data.partnerLogos)
           ? data.partnerLogos
@@ -807,7 +854,8 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         ctaList: getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index)),
       },
       ...styleProps,
-    }),
+      };
+    },
   },
 
   // ── Contact / Info ──────────────────────────────────────────────
@@ -1505,6 +1553,42 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         event_page: data.event_page || '',
         max_participants: data.max_participants || 5,
       },
+      ...styleProps,
+    }),
+  },
+
+  enterprise_consultation_form: {
+    component: EnterpriseConsultationForm,
+    mapProps: ({ data, styleProps, pageContext }) => ({
+      data,
+      pageContext,
+      ...styleProps,
+    }),
+  },
+
+  smb_enterprise_form: {
+    component: SMBEnterpriseForm,
+    mapProps: ({ data, styleProps, pageContext }) => ({
+      data,
+      pageContext,
+      ...styleProps,
+    }),
+  },
+
+  enterprise_partnership_form: {
+    component: EnterprisePartnershipForm,
+    mapProps: ({ data, styleProps, pageContext }) => ({
+      data,
+      pageContext,
+      ...styleProps,
+    }),
+  },
+
+  enterprise_solution_finder_form: {
+    component: EnterpriseSolutionFinderForm,
+    mapProps: ({ data, styleProps, pageContext }) => ({
+      data,
+      pageContext,
       ...styleProps,
     }),
   },

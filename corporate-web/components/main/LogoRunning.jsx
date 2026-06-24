@@ -11,6 +11,7 @@ import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
 import CTAList from '../base/section/CTAList';
 import { LOGO_RUNNING_DATA } from '@/data/components/logoRunning'; 
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -114,10 +115,7 @@ export default function LogoRunning({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // Duplikasi logo array agar animasi marquee tidak terputus (seamless loop)
   const duplicatedLogos = logos.length > 0 ? [...logos, ...logos, ...logos] : [];
@@ -128,9 +126,9 @@ export default function LogoRunning({
       ref={containerRef}
       className={`lnSection__logoRunning py-16 md:py-24 bg-white overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       
       {/* Efek Marquee CSS */}

@@ -17,6 +17,7 @@ import { hasIntroContent } from '@/shared/presentation/intro';
 import { useLinknetMedia } from '@/hooks/useLinknetMedia';
 import { buildMediaTabs, resolveMediaChannels } from '@/lib/mediaService';
 import MediaEmptyState from './MediaEmptyState';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function withLocale(href, locale) {
   if (!href || !locale) return href;
@@ -74,10 +75,7 @@ export default function TVChannelSneakPeek({
   const requestedTab = tabState.scope === name ? tabState.value : initialTab;
   const activeTab = tabValues.includes(requestedTab) ? requestedTab : (tabValues[0] || 'all');
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const activeChannels = channels
     .filter((item) => activeTab === 'all' || item.categories?.includes(activeTab))
@@ -123,9 +121,9 @@ export default function TVChannelSneakPeek({
       id={sectionId}
       className={`lnSection__tvChannelSneakPeek overflow-hidden py-16 md:py-24
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
         <div className="mx-auto max-w-[1440px]">

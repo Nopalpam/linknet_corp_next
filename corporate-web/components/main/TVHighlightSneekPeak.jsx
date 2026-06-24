@@ -13,6 +13,7 @@ import { TV_HIGHLIGHT_SNEEK_PEAK_DATA } from '@/data/components/tvHighlightSneek
 import { useLinknetMedia } from '@/hooks/useLinknetMedia';
 import { buildChannelLogoRows, resolveMediaHighlightGroups } from '@/lib/mediaService';
 import MediaEmptyState from './MediaEmptyState';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function withLocale(href, locale) {
   if (!href || !locale) return href;
@@ -141,10 +142,7 @@ export default function TVHighlightSneekPeak({
     href: withLocale(cta.href, locale)
   }));
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const centerIndex = Math.floor(activeItems.length / 2);
   const scaleMap = { 0: 1.1, 1: 1.075, 2: 1.05, 3: 1 };
   const opacityMap = { 0: .98, 1: 0.96, 2: 0.84, 3: 0.72 };
@@ -178,13 +176,13 @@ export default function TVHighlightSneekPeak({
       id={sectionId}
       className={cx(
         'lnSection__tvHighlightSneekPeak overflow-hidden py-16 md:py-24',
-        'bg-no-repeat bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]',
+        'bg-no-repeat ${backgroundImageClassName}',
         bgPositionClasses,
         bgSizeClass,
         configClassName,
         className
       )}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes tv-highlight-marquee-left {

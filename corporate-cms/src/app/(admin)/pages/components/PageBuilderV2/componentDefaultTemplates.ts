@@ -77,8 +77,8 @@ function withCommon(data: Record<string, any>): Record<string, any> {
 // ─── 1. hero_section (from hero.js) ─────────────────────────────────
 
 export const heroSectionDefaults = withCommon({
-  background_image: '/assets/herosliders/mission-desktop.jpg',
-  background_image_mobile: '',
+  bg_image: '/assets/herosliders/mission-desktop.jpg',
+  bg_image_mobile: '',
   introData: {
     as: 'h1',
     label: { en: 'Our Mission', id: 'Misi Kami' },
@@ -399,7 +399,7 @@ export const businessTabDefaults = withCommon({
 // ─── 7. key_highlight (from keyHighlight.js) ────────────────────────
 
 export const keyHighlightDefaults = withCommon({
-  intro: {
+  introData: {
     label: { en: 'KEY HIGHLIGHT', id: 'SOROTAN UTAMA' },
     title: {
       en: 'Our Impact in Numbers',
@@ -454,13 +454,18 @@ export const keyHighlightDefaults = withCommon({
 // ─── 8. highlighting_real_initiatives (from highlightingInitiatives.js) ──
 
 export const highlightingRealInitiativesDefaults = withCommon({
-  title: {
-    en: 'Highlighting Real Initiatives',
-    id: 'Menyoroti Inisiatif Nyata',
-  },
-  description: {
-    en: 'From digital literacy to environmental stewardship, that bring positive impact to communities.',
-    id: 'Dari literasi digital hingga pelestarian lingkungan, yang membawa dampak positif bagi masyarakat.',
+  introData: {
+    as: 'h2',
+    label: { en: '', id: '' },
+    title: {
+      en: 'Highlighting Real Initiatives',
+      id: 'Menyoroti Inisiatif Nyata',
+    },
+    description: {
+      en: 'From digital literacy to environmental stewardship, that bring positive impact to communities.',
+      id: 'Dari literasi digital hingga pelestarian lingkungan, yang membawa dampak positif bagi masyarakat.',
+    },
+    align: 'center',
   },
   initiatives: [
     {
@@ -473,7 +478,9 @@ export const highlightingRealInitiativesDefaults = withCommon({
         id: 'Melalui penanaman pohon sebagai bagian dari kegiatan CSR, PT Link Net Tbk tidak hanya mengurangi jejak karbon tetapi juga memberikan manfaat jangka panjang dalam melestarikan keanekaragaman hayati.',
       },
       image: '/assets/img/sustainability/20250227_095744.jpg',
-      link: '#',
+      topLogo: '',
+      date: '',
+      url: '#',
     },
     {
       title: {
@@ -485,14 +492,16 @@ export const highlightingRealInitiativesDefaults = withCommon({
         id: 'PT Link Net Tbk dengan brand First Media bersama Dinas Komunikasi dan Informatika Kota Bandung menyelenggarakan vaksinasi Covid-19.',
       },
       image: '/assets/img/sustainability/Link-Net-Dukung-Kesehatan-dan-Pemulihan-Ekonomi-Masyarakat-Jawa-Barat.jpg',
-      link: '#',
+      topLogo: '',
+      date: '',
+      url: '#',
     },
   ],
-  partner_text: {
+  partnerText: {
     en: 'We also work with community organizations,',
     id: 'Kami juga bekerja sama dengan organisasi masyarakat,',
   },
-  community_logos: [
+  partnerLogos: [
     { url: '/assets/logos/sustainability/logo-sustainability-1.png', alt: 'Partner 1' },
     { url: '/assets/logos/sustainability/logo-sustainability-2.png', alt: 'Partner 2' },
     { url: '/assets/logos/sustainability/logo-sustainability-3.png', alt: 'Partner 3' },

@@ -12,6 +12,10 @@ import rateLimit from 'express-rate-limit';
 import { RateLimitError } from '../types/error.types';
 import { Request, Response, NextFunction } from 'express';
 
+type GeneralRateLimitRequest = Request & {
+  generalRateLimitApplied?: boolean;
+};
+
 // Determine if rate limiting should be enabled
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isDevelopment = NODE_ENV === 'development';
@@ -39,20 +43,45 @@ const parsePositiveInt = (value: string | undefined, fallback: number): number =
 
 const normalizeRequestPath = (path: string) => path.replace(/\/+$/, '') || '/';
 
+const getApiRequestPath = (req: Request): string => {
+  const originalPath = normalizeRequestPath((req.originalUrl || req.url).split('?')[0] || '/');
+
+  return normalizeRequestPath(originalPath.replace(/^\/api(?=\/|$)/, '') || originalPath);
+};
+
+const matchesExactOrNested = (path: string, prefix: string): boolean => (
+  path === prefix || path.startsWith(`${prefix}/`)
+);
+
 const isPublicReadRequest = (req: Request): boolean => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
 
-  const path = normalizeRequestPath(req.path);
+  const path = getApiRequestPath(req);
   const withPrefix = (suffix: string) => normalizeRequestPath(`${apiPrefixForRateLimit}${suffix}`);
+
+  const publicReadPrefixes = [
+    '/pages',
+    '/public',
+    '/managements',
+    '/awards',
+    '/news-categories',
+    '/careers',
+    '/reports',
+    '/announcements',
+    '/solutions',
+    '/events',
+    '/linknet-media',
+  ].map(withPrefix);
+
+  if (path.startsWith(`${withPrefix('/cms')}/`) || path === withPrefix('/cms')) {
+    return false;
+  }
 
   return (
     path === withPrefix('/settings/public') ||
-    path === withPrefix('/menu') ||
-    path.startsWith(`${withPrefix('/menu')}/`) ||
-    path === withPrefix('/pages/slugs') ||
-    path.startsWith(`${withPrefix('/pages')}/`) ||
-    path.startsWith(`${withPrefix('/public')}/`) ||
-    path === withPrefix('/available-components')
+    matchesExactOrNested(path, withPrefix('/menu')) ||
+    path === withPrefix('/available-components') ||
+    publicReadPrefixes.some((prefix) => matchesExactOrNested(path, prefix))
   );
 };
 
@@ -77,7 +106,7 @@ const bypassMiddleware = (_req: Request, _res: Response, next: NextFunction) => 
  */
 const generalRateLimitConfig = rateLimit({
   windowMs: parsePositiveInt(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
-  max: parsePositiveInt(process.env.RATE_LIMIT_MAX_REQUESTS, 300),
+  max: parsePositiveInt(process.env.RATE_LIMIT_MAX_REQUESTS, 1200),
   skip: isPublicReadRequest,
   message: 'Too many requests from this IP, please try again after 15 minutes',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
@@ -87,9 +116,21 @@ const generalRateLimitConfig = rateLimit({
   },
 });
 
+const generalRateLimitMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  const markedReq = req as GeneralRateLimitRequest;
+
+  if (markedReq.generalRateLimitApplied) {
+    next();
+    return;
+  }
+
+  markedReq.generalRateLimitApplied = true;
+  generalRateLimitConfig(req, res, next);
+};
+
 export const generalRateLimiter = !isRateLimitEnabled 
   ? bypassMiddleware 
-  : generalRateLimitConfig;
+  : generalRateLimitMiddleware;
 
 /**
  * Authentication rate limiter (stricter)
@@ -216,7 +257,7 @@ export const uploadRateLimiter = !isRateLimitEnabled
 
 // Export all rate limiters
 export default {
-  general: !isRateLimitEnabled ? bypassMiddleware : generalRateLimitConfig,
+  general: !isRateLimitEnabled ? bypassMiddleware : generalRateLimitMiddleware,
   auth: !isRateLimitEnabled ? bypassMiddleware : authRateLimitConfig,
   login: !isRateLimitEnabled ? bypassMiddleware : loginRateLimitConfig,
   strict: !isRateLimitEnabled ? bypassMiddleware : strictRateLimitConfig,

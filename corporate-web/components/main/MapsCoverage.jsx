@@ -14,6 +14,7 @@ import { MAPS_COVERAGE_DATA } from '../../data/components/mapsCoverage';
 import { MAP_REGIONS_DATA } from '../../data/constants/mapRegions';
 import INDO_TOPOLOGY from '../../data/constants/id-all.topo.json';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function MapsCoverage({
   name,
@@ -206,10 +207,7 @@ export default function MapsCoverage({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const buKey = selectedArea ? provinceMap[selectedArea.provinceKey] : null;
   const activeBU = buKey ? businessUnits[buKey] : null;
   const coverageHref = selectedArea
@@ -222,9 +220,9 @@ export default function MapsCoverage({
       ref={sectionRef}
       className={`lnSection__mapsCoverage bg-light-2 rounded-[52px] py-16 md:py-24 overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

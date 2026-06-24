@@ -11,6 +11,7 @@ import { useModalFormRegistrationEnterpriseSMB } from '../base/modals/ModalFormR
 import Intro from '../base/section/Intro';
 
 import { PACKAGE_LIST_DATA } from '@/data/components/packageList';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const INITIAL_MANUAL_DATA = {
   province: '',
@@ -97,19 +98,16 @@ export default function PackageList({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     <section
       id={sectionId}
       className={`lnSection__packageList bg-white py-16 md:py-24 lg:py-[120px] overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container-sm mx-auto px-4 md:px-0">
         <div className="mx-auto max-w-[860px]">

@@ -34,6 +34,7 @@ import {
   SOLUTION_INDUSTRY_MAP,
 } from '@/data/constants/suggestEnterprise';
 import Icon from '../base/Icon';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // ─── Konstanta ────────────────────────────────────────────────────────────────
 
@@ -755,10 +756,7 @@ export default function SolutionsFiltered({ name = 'enterprise', cmsData = null 
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config.config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const activeFilterCount =
     (activeCategory !== ALL_CATEGORY_VALUE ? 1 : 0) +
     (activeIndustry !== ALL_INDUSTRY_VALUE ? 1 : 0) +
@@ -771,9 +769,9 @@ export default function SolutionsFiltered({ name = 'enterprise', cmsData = null 
       id={sectionId}
       className={`lnSection__solutionsFiltered lnSolutionsFiltered w-full py-10 lg:py-16 bg-light
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="lnSolutionsFiltered__container container mx-auto">
 

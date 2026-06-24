@@ -9,6 +9,7 @@ import Intro from '@/components/base/section/Intro';
 import CardCareer from '../base/cards/CardCareer';
 import { hasIntroContent } from '@/shared/presentation/intro';
 import { fetchPublicContent } from '@/lib/publicContentClient';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function localizeField(value, locale = 'en') {
   if (!value) return '';
@@ -71,10 +72,7 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
   const showTypeFilter = source?.show_type_filter !== false;
   const showPagination = source?.show_pagination !== false;
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // Ambil current page dari query string
   const pageParam = searchParams.get('page');
@@ -261,9 +259,9 @@ export default function CareerPage({ cmsData = null, data = null, config = {}, c
       id={sectionId}
       className={`lnSection__career bg-light-2 pt-10 pb-24
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-8 max-w-7xl">
 

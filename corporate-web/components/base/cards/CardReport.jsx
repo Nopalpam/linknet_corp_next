@@ -138,7 +138,7 @@ export default function CardReport({
           )}
 
           {safeSubDescription && (
-            <p className="lnCardReport__title text-body-b4 text-black font-regular mb-4 line-clamp-2">
+            <p className="lnCardReport__title text-body-b5 text-black font-regular mb-4 line-clamp-2">
               {safeSubDescription}
             </p>
           )}

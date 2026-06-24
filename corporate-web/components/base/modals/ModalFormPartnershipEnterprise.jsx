@@ -490,7 +490,12 @@ function HiddenFields({ form }) {
   );
 }
 
-function ModalFormPartnershipEnterprise({ isOpen, onClose, initialPayload = INITIAL_MODAL_PAYLOAD }) {
+export function PartnershipEnterpriseFormContent({
+  isOpen = true,
+  onClose = () => {},
+  initialPayload = INITIAL_MODAL_PAYLOAD,
+  embedded = false,
+}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [form, setForm] = useState(() => createInitialForm(initialPayload));
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -651,6 +656,21 @@ function ModalFormPartnershipEnterprise({ isOpen, onClose, initialPayload = INIT
     </div>
   );
 
+  if (embedded) {
+    return (
+      <div className="lnModalFormPartnershipEnterprise mx-auto w-full max-w-[820px] rounded-[24px] bg-white px-4 py-6 shadow-sm md:px-6">
+        {headerContent}
+        <div className="pb-2 pt-6">
+          <HiddenFields form={form} />
+          {bodyContent}
+        </div>
+        <div className="pt-4">
+          {footerContent}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Modal
       isOpen={isOpen}
@@ -667,6 +687,16 @@ function ModalFormPartnershipEnterprise({ isOpen, onClose, initialPayload = INIT
         {bodyContent}
       </div>
     </Modal>
+  );
+}
+
+function ModalFormPartnershipEnterprise({ isOpen, onClose, initialPayload = INITIAL_MODAL_PAYLOAD }) {
+  return (
+    <PartnershipEnterpriseFormContent
+      isOpen={isOpen}
+      onClose={onClose}
+      initialPayload={initialPayload}
+    />
   );
 }
 

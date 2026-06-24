@@ -4,6 +4,7 @@ import React from 'react';
 import Intro from '../base/section/Intro'; // Sesuaikan path jika berbeda
 import { ABOUT_RUNNING_PHOTOS_DATA } from '@/data/components/aboutRunningPhotos'; // Sesuaikan path
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function AboutWithRunningPhotos({
   name = 'default',
@@ -31,10 +32,7 @@ export default function AboutWithRunningPhotos({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const safeMarqueeSpeed = Number(marqueeSpeed) > 0 ? Number(marqueeSpeed) : 30;
   const marqueeStyle = {
     animationDuration: `${safeMarqueeSpeed}s`,
@@ -53,9 +51,9 @@ export default function AboutWithRunningPhotos({
       id={sectionId}
       className={`lnSection__aboutWithRunningPhotos py-16 md:py-24 bg-white overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       {/* ========================================= */}

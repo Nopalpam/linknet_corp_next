@@ -11,6 +11,7 @@ import LinknetLink from '../base/Link'; // Sesuaikan path
 import Icon from '../base/Icon'; // Sesuaikan path
 import { JOIN_FIRST_SQUAD_DATA } from '@/data/components/joinFirstSquad';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function JoinFirstSquad({
   name = 'default',
@@ -35,10 +36,7 @@ export default function JoinFirstSquad({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // Data dinamis berdasarkan slide yang sedang aktif
   const activeItem = items[activeIndex];
@@ -48,9 +46,9 @@ export default function JoinFirstSquad({
       id={sectionId}
       className={`lnSection__joinFirstSquad py-16 md:py-24 bg-light-2 rounded-[40px] overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

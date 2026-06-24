@@ -12,6 +12,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // Asumsi letak data konfigurasi (Sesuaikan dengan nama file datamu)
 import { AWARDS_FEED_DATA } from '@/data/components/awardsFeed';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -145,10 +146,7 @@ export default function AwardsFeed({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // 2. Kalkulasi Data Pagination
   const totalItems = filteredItems ? filteredItems.length : 0;
@@ -216,9 +214,9 @@ export default function AwardsFeed({
       ref={containerRef}
       className={`lnSection__awardsFeed py-16 md:py-24 bg-light-2
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0 max-w-7xl">
 

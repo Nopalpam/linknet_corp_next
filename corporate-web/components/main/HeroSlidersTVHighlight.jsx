@@ -11,6 +11,7 @@ import { HERO_SLIDERS_TV_HIGHLIGHT_DATA } from '@/data/components/heroSlidersTVH
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const AUTOPLAY_DELAY = 6000;
 
@@ -120,10 +121,7 @@ export default function HeroSlidersTVHighlight({
   } = HERO_SLIDERS_TV_HIGHLIGHT_DATA.config || {};
   const { slides = [] } = sectionData || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   if (!slides.length) return null;
 
@@ -132,9 +130,9 @@ export default function HeroSlidersTVHighlight({
       id={sectionId}
       className={`lnSection__heroSlidersTVHighlight relative w-full bg-white pb-0
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="relative group">
         <Swiper

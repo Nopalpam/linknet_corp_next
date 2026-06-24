@@ -18,6 +18,7 @@ import { hasIntroContent } from '@/shared/presentation/intro';
 // =========================================
 import { AWARDS_SNEAK_PEEK_DATA } from '@/data/components/AwardsSneakPeek';
 import { AWARDS_FEED_DATA } from '@/data/components/awardsFeed';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -80,10 +81,7 @@ export default function AwardSneakPeek({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // 3. Ambil maksimal 10 data teratas dari data Feed
   const displayedAwards = items ? items.slice(0, 10) : [];
@@ -115,9 +113,9 @@ export default function AwardSneakPeek({
       ref={containerRef}
       className={`lnSection__awardSneakPeek py-16 md:py-24 overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       {/* ========================================= */}

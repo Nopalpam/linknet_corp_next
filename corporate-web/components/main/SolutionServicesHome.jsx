@@ -34,6 +34,7 @@ import CardSolutions from '../base/cards/CardSolutions';
 // Data source
 import { SOLUTION_SERVICES_HOME_DATA } from '@/data/components/solutionServicesHome';
 import Icon from '../base/Icon';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // ─── Swiper responsive breakpoints ───────────────────────────────────────────
 
@@ -82,10 +83,7 @@ export default function SolutionServicesHome({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // hideTabs prop (dari parent) bisa override tabsVisible dari data
   const showTabs = !hideTabs && tabsVisible;
@@ -169,9 +167,9 @@ useEffect(() => {
       ref={containerRef}
       className={`lnSection__solutionServicesHome lnSolutionServices bg-light py-16 md:py-24 overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="lnSolutionServices__inner container">
 

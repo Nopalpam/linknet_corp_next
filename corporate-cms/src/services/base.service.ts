@@ -14,8 +14,19 @@ const API_PREFIX = "/api/v1";
 
 const CSRF_TOKEN_KEY = "csrf_token";
 const REFRESH_ENDPOINT = `${API_URL}${API_PREFIX}/auth/refresh`;
+const DEFAULT_API_TIMEOUT_MS = 10_000;
 
 let refreshSessionPromise: Promise<void> | null = null;
+
+const parsePositiveInt = (value: string | undefined, fallback: number): number => {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const getApiTimeoutMs = () => parsePositiveInt(
+  process.env.NEXT_PUBLIC_API_TIMEOUT_MS,
+  DEFAULT_API_TIMEOUT_MS
+);
 
 const getCookie = (name: string): string | null => {
   if (typeof window === "undefined") return null;
@@ -45,16 +56,21 @@ export const refreshAuthSession = async (): Promise<void> => {
   if (!refreshSessionPromise) {
     refreshSessionPromise = (async () => {
       let response: Response;
+      const controller = new AbortController();
+      const timeoutId = globalThis.setTimeout(() => controller.abort(), getApiTimeoutMs());
 
       try {
         response = await fetch(REFRESH_ENDPOINT, {
           method: "POST",
           credentials: "include",
           headers: buildAuthHeaders(),
+          signal: controller.signal,
         });
       } catch (networkError) {
         console.error("Network error while refreshing auth session:", networkError);
         throw new Error("Tidak dapat memperpanjang sesi. Periksa koneksi Anda.");
+      } finally {
+        globalThis.clearTimeout(timeoutId);
       }
 
       const data = await response
@@ -74,12 +90,21 @@ export const refreshAuthSession = async (): Promise<void> => {
 
 export class BaseService {
   protected async fetchWithAuth(url: string, options: RequestInit = {}) {
-    const sendRequest = async () =>
-      fetch(url, {
-        ...options,
-        headers: buildAuthHeaders(options.headers),
-        credentials: "include",
-      });
+    const sendRequest = async () => {
+      const controller = new AbortController();
+      const timeoutId = globalThis.setTimeout(() => controller.abort(), getApiTimeoutMs());
+
+      try {
+        return await fetch(url, {
+          ...options,
+          headers: buildAuthHeaders(options.headers),
+          credentials: "include",
+          signal: options.signal || controller.signal,
+        });
+      } finally {
+        globalThis.clearTimeout(timeoutId);
+      }
+    };
 
     let response: Response;
     try {
@@ -150,7 +175,12 @@ export class BaseService {
           break;
       }
 
-      throw new Error(errorMessage);
+      const error = new Error(errorMessage);
+      (error as Error & { status?: number; code?: string }).status = response.status;
+      if (response.status === 429) {
+        (error as Error & { status?: number; code?: string }).code = "RATE_LIMIT_EXCEEDED";
+      }
+      throw error;
     }
 
     return response.json();

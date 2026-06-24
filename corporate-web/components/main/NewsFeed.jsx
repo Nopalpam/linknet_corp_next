@@ -8,6 +8,7 @@ import Icon from '../base/Icon';
 import CardNews from '../base/cards/CardNews'; // Sesuaikan path
 import { hasIntroContent, resolveIntroTextValue } from '@/shared/presentation/intro';
 import { fetchPublicContent } from '@/lib/publicContentClient';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function NewsFeed({
   categorySlug,
@@ -130,10 +131,7 @@ const filteredNews = useMemo(() => {
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = categoryConfig;
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const explicitIntro = cmsData?.introData || cmsData?.sectionIntro || cmsData?.intro || null;
   const hasExplicitIntro = Boolean(explicitIntro && typeof explicitIntro === 'object' && !Array.isArray(explicitIntro));
   const resolvedIntro = hasExplicitIntro
@@ -159,9 +157,9 @@ const filteredNews = useMemo(() => {
       id={sectionId}
       className={`lnSection__newsFeed lnNewsFeed py-6 md:py-10 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container">
 

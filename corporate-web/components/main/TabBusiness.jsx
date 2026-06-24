@@ -18,6 +18,7 @@ import { TAB_BUSINESS_DATA } from '@/data/components/tabBusiness';
 // Styles
 import 'swiper/css';
 import 'swiper/css/effect-fade';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -70,10 +71,7 @@ export default function TabBusiness({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     <section
@@ -81,9 +79,9 @@ export default function TabBusiness({
       ref={containerRef}
       className={`lnSection__tabBusiness py-16 md:py-20 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       {/* --- PANGGIL COMPONENT INTRO --- */}

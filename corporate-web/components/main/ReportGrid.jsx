@@ -6,6 +6,7 @@ import Intro from '../base/section/Intro';
 import CardReport from '../base/cards/CardReport';
 import { REPORT_GRID_DATA } from '@/data/components/reportGrid';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function firstValue(source, keys, fallback = '') {
   for (const key of keys) {
@@ -67,10 +68,7 @@ export default function ReportGrid({
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // 2. Kalkulasi Data Pagination
   const totalItems = items ? items.length : 0;
@@ -122,9 +120,9 @@ export default function ReportGrid({
       id={sectionId}
       className={`lnSection__reportGrid py-16 md:py-24
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container">
 

@@ -76,6 +76,9 @@ const TYPE_GROUP_ORDER: Record<string, string[]> = {
 };
 const TYPE_HIDDEN_FIELDS: Record<string, string[]> = {
   hero_section: ['title', 'description', 'pill_text', 'labelText'],
+  key_highlight: ['title', 'description', 'intro', 'sectionIntro'],
+  highlighting_real_initiatives: ['title', 'description', 'intro', 'sectionIntro', 'partner_text', 'community_text', 'community_logos', 'partner_logos', 'logos'],
+  usp_grid: ['title', 'description', 'intro', 'sectionIntro'],
   awards_list: ['layout', 'title'],
   awards_marquee: ['title', 'marquee_speed', 'marquee_direction'],
   career_list: ['title'],
@@ -328,6 +331,12 @@ const LEGACY_SINGLE_BUTTON_FIELD_KEYS = new Set([
   'button_icon_right',
 ]);
 
+const INTRO_DATA_ONLY_COMPONENTS = new Set([
+  'key_highlight',
+  'highlighting_real_initiatives',
+  'usp_grid',
+]);
+
 function getFirstDefinedKey(data: Record<string, any>, keys: string[]): string | undefined {
   return keys.find((key) => key in data);
 }
@@ -516,6 +525,91 @@ function normalizeSettingsForEditor(data: Record<string, any> | undefined, compo
     delete normalized.pill_text;
     delete normalized.labelText;
     delete normalized.as;
+  }
+
+  if (componentType && INTRO_DATA_ONLY_COMPONENTS.has(componentType)) {
+    const introData = normalized.introData && typeof normalized.introData === 'object' && !Array.isArray(normalized.introData)
+      ? normalized.introData
+      : {};
+    const hasIntroField = (field: string) => Object.prototype.hasOwnProperty.call(introData, field);
+
+    normalized.introData = {
+      ...introData,
+      as: introData.as || normalized.intro_as || 'h2',
+      label: hasIntroField('label') ? introData.label : (normalized.intro_label ?? normalized.pill_text ?? ''),
+      title: hasIntroField('title') ? introData.title : (normalized.title ?? normalized.intro_title ?? ''),
+      description: hasIntroField('description') ? introData.description : (normalized.description ?? normalized.intro_description ?? ''),
+      align: introData.align || normalized.intro_align || (componentType === 'key_highlight' ? 'left' : 'center'),
+    };
+
+    delete normalized.title;
+    delete normalized.description;
+    delete normalized.intro;
+    delete normalized.sectionIntro;
+    delete normalized.intro_as;
+    delete normalized.intro_label;
+    delete normalized.intro_title;
+    delete normalized.intro_description;
+    delete normalized.intro_align;
+    delete normalized.pill_text;
+  }
+
+  if (componentType === 'highlighting_real_initiatives') {
+    const initiatives = Array.isArray(normalized.initiatives) ? normalized.initiatives : [];
+    normalized.initiatives = initiatives.map((item: Record<string, any>) => {
+      const {
+        ctaUrl,
+        cta_url,
+        cover_image,
+        coverImage,
+        desc,
+        href,
+        link,
+        logo,
+        logo_image,
+        logoImage,
+        name,
+        partner_logo,
+        partnerLogo,
+        published_at,
+        publishedAt,
+        sub_description,
+        subDescription,
+        thumbnail,
+        thumbnail_image,
+        thumbnailImage,
+        top_logo,
+        ...rest
+      } = item || {};
+
+      return {
+        ...rest,
+        topLogo: rest.topLogo ?? top_logo ?? logo ?? logo_image ?? logoImage ?? partner_logo ?? partnerLogo ?? '',
+        image: rest.image ?? thumbnail ?? thumbnail_image ?? thumbnailImage ?? cover_image ?? coverImage ?? '',
+        title: rest.title ?? name ?? { en: '', id: '' },
+        description: rest.description ?? desc ?? sub_description ?? subDescription ?? { en: '', id: '' },
+        date: rest.date ?? published_at ?? publishedAt ?? '',
+        url: rest.url ?? href ?? link ?? ctaUrl ?? cta_url ?? '',
+      };
+    });
+
+    normalized.partnerText = normalized.partnerText ?? normalized.partner_text ?? normalized.community_text ?? normalized.communityText ?? '';
+    normalized.partnerLogos = Array.isArray(normalized.partnerLogos)
+      ? normalized.partnerLogos
+      : Array.isArray(normalized.partner_logos)
+        ? normalized.partner_logos
+        : Array.isArray(normalized.community_logos)
+          ? normalized.community_logos
+          : Array.isArray(normalized.logos)
+            ? normalized.logos
+            : [];
+
+    delete normalized.partner_text;
+    delete normalized.community_text;
+    delete normalized.communityText;
+    delete normalized.partner_logos;
+    delete normalized.community_logos;
+    delete normalized.logos;
   }
 
   const ctaListKey = CTA_LIST_KEYS.find((key) => Array.isArray(normalized[key]));
@@ -2315,6 +2409,17 @@ function renderField(
 }
 
 const CONTEXTUAL_FIELD_ORDER: Record<string, Record<string, string[]>> = {
+  key_highlight: {
+    slides: ['image', 'value', 'delta', 'caption'],
+  },
+  highlighting_real_initiatives: {
+    initiatives: ['topLogo', 'image', 'title', 'description', 'date', 'url'],
+    partnerLogos: ['url', 'alt'],
+  },
+  usp_grid: {
+    items: ['iconURL', 'title', 'description'],
+    uspList: ['iconURL', 'title', 'description'],
+  },
   info_contacts: {
     contact_items: ['iconLeft', 'iconRight', 'label', 'value', 'url', 'target'],
   },

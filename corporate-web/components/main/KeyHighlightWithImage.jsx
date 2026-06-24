@@ -13,6 +13,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Intro from '../base/section/Intro'; // Sesuaikan path
 import { KEY_HIGHLIGHT_IMAGE_DATA } from '@/data/components/keyHighlight'; // Sesuaikan path
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -68,10 +69,7 @@ export default function KeyHighlightWithImage({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     // Tambahkan ref={containerRef} pada bungkus terluar
@@ -80,9 +78,9 @@ export default function KeyHighlightWithImage({
       ref={containerRef}
       className={`lnSection__keyHighlightWithImage py-16 md:py-24 overflow-hidden rounded-[40px]
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

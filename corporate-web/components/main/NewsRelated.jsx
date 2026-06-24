@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Intro from '../base/section/Intro';
 import CardNews from '../base/cards/CardNews';
 import LinknetLink from '../base/Link';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function NewsRelated({
   currentArticle,
@@ -22,10 +23,7 @@ export default function NewsRelated({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // 1. Logika Cerdas untuk Mencari Berita Terkait + Fallback Latest News
   const relatedNews = useMemo(() => {
@@ -70,9 +68,9 @@ export default function NewsRelated({
       id={sectionId}
       className={`lnSection__newsRelated py-16 md:py-20 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto">
 

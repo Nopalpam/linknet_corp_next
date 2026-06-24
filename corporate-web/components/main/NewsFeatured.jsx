@@ -11,6 +11,7 @@ import { useParams } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import { fetchPublicContent } from '@/lib/publicContentClient';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function uniqueNews(items) {
   const seen = new Set();
@@ -108,10 +109,7 @@ export default function NewsFeatured({
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const localizeNewsTitle = (news) => {
     if (locale === 'id' && news.title_id) return news.title_id;
@@ -147,9 +145,9 @@ export default function NewsFeatured({
       id={sectionId}
       className={`lnSection__newsFeatured py-16 md:py-20 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

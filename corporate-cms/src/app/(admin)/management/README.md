@@ -40,7 +40,7 @@ psql -U your_user -d your_database -f backend/scripts/seed-management.sql
 
 ### 2. Access Page
 
-Navigate to: `https://dev-be.lncorp.localmanagement`
+Navigate to: `https://dev-be.lncorp.local/management`
 
 ## API Endpoints
 

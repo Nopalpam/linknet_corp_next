@@ -141,7 +141,11 @@ function useHasMounted() {
   );
 }
 
-function SuggestEnterpriseContent({ onClose, initialPayload = {} }) {
+export function SuggestEnterpriseContent({
+  onClose = () => {},
+  initialPayload = {},
+  embedded = false,
+}) {
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || 'id';
@@ -378,14 +382,16 @@ function SuggestEnterpriseContent({ onClose, initialPayload = {} }) {
               className="h-6 w-6 shrink-0 rounded-full object-cover"
             />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close solution finder modal"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-          >
-            <Icon name="close" style={{ '--icon-size': '24px' }} />
-          </button>
+          {!embedded ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close solution finder modal"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            >
+              <Icon name="close" style={{ '--icon-size': '24px' }} />
+            </button>
+          ) : null}
         </div>
 
         <div className="px-4 pb-2.5 md:hidden">
@@ -416,14 +422,18 @@ function SuggestEnterpriseContent({ onClose, initialPayload = {} }) {
             />
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close solution finder modal"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center justify-self-end rounded-full text-black transition-colors duration-200 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-          >
-            <Icon name="close" style={{ '--icon-size': '24px' }} />
-          </button>
+          {!embedded ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close solution finder modal"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center justify-self-end rounded-full text-black transition-colors duration-200 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            >
+              <Icon name="close" style={{ '--icon-size': '24px' }} />
+            </button>
+          ) : (
+            <div aria-hidden="true" />
+          )}
         </div>
       </header>
 

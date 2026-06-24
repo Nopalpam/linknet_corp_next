@@ -8,6 +8,7 @@ import SafeHtml from '../base/SafeHtml';
 import { hasIntroContent } from '@/shared/presentation/intro';
 
 import { INFO_LIST_DATA } from '@/data/components/informationList';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function resolveCtaLabel(value) {
   if (value && typeof value === 'object') {
@@ -42,10 +43,7 @@ export default function InformationList({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   if (!items || items.length === 0) return null;
 
@@ -54,9 +52,9 @@ export default function InformationList({
       id={sectionId}
       className={`lnSection__informationList py-16 md:py-24 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

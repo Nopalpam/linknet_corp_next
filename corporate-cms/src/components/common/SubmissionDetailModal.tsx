@@ -246,37 +246,37 @@ export default function SubmissionDetailModal({
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Product</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {submission.product ?? "â€”"}
+                  {submission.product ?? "—"}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Page Context Promo</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {submission.promoWebsite ?? "â€”"}
+                  {submission.promoWebsite ?? "—"}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Page Context Source</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {submission.sourceWebsite ?? "â€”"}
+                  {submission.sourceWebsite ?? "—"}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Page URL</p>
                 <p className="truncate text-sm text-gray-700 dark:text-gray-300">
-                  {submission.pageWebsite ?? submission.sourcePath ?? "â€”"}
+                  {submission.pageWebsite ?? submission.sourcePath ?? "—"}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Form Module Name</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {submission.formModuleName ?? moduleName ?? "â€”"}
+                  {submission.formModuleName ?? moduleName ?? "—"}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Form Channel</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {submission.formChannel ?? "â€”"}
+                  {submission.formChannel ?? "—"}
                 </p>
               </div>
               <div>

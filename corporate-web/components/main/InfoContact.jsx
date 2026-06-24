@@ -6,6 +6,7 @@ import Icon from '../base/Icon'; // Sesuaikan path jika berbeda
 import { hasIntroContent } from '@/shared/presentation/intro';
 
 import { INFO_CONTACT_DATA } from '@/data/components/infoContact';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function InfoContact({
   name = 'enterprise', // Default mengambil data enterprise
@@ -26,19 +27,16 @@ export default function InfoContact({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     <section
       id={sectionId}
       className={`lnSection__infoContact py-16 md:py-24 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

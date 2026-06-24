@@ -7,6 +7,7 @@ import { VISION_MISSION_DATA } from '@/data/components/visionMission';
 // Import GSAP dan ScrollTrigger
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register plugin
 gsap.registerPlugin(ScrollTrigger);
@@ -68,10 +69,7 @@ export default function VisionMission({ name = 'about', cmsData = null, classNam
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = data?.config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // Setup Animasi GSAP
   useEffect(() => {
@@ -115,9 +113,9 @@ export default function VisionMission({ name = 'about', cmsData = null, classNam
       ref={containerRef}
       className={`lnSection__visionMission py-16 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container">
 

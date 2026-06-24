@@ -172,9 +172,7 @@ class AuthService extends BaseService {
         error?.message?.includes('401') || 
         error?.code === 'TOKEN_EXPIRED' || 
         error?.code === 'TOKEN_INVALID' ||
-        error?.message?.includes('Session expired') ||
-        error?.message?.includes('Failed to fetch') ||
-        error?.message?.includes('terhubung ke server')
+        error?.message?.includes('Session expired')
       ) {
         const authError = new Error(error?.message || 'Session expired. Please login again.');
         (authError as any).code = 'TOKEN_EXPIRED';

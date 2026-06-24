@@ -9,6 +9,7 @@ import CardReport from '@/components/base/cards/CardReport';
 import Intro from '@/components/base/section/Intro';
 import { REPORT_LIST_DATA } from '@/data/components/reportList';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const SECTIONS_PER_PAGE = 5;
 
@@ -173,10 +174,7 @@ export default function ReportListPage({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = { ...(REPORT_LIST_DATA.config || {}), ...(source.config || {}) };
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const rawData = useMemo(() => {
     const transformed = transformMainData(mainData || source.mainData);
@@ -403,9 +401,9 @@ export default function ReportListPage({
       id={sectionId}
       className={`lnSection__reportList bg-light-2 pt-10 pb-24
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container">
 

@@ -6,6 +6,7 @@ import Intro from '../base/section/Intro';
 import Button from '../base/Button';
 
 import { EXTENDABLE_ARTICLE_DATA } from '@/data/components/extendableArticle';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 export default function ExtendableArticle({ className = "", name = "business-highlights", cmsData = null }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -48,10 +49,7 @@ export default function ExtendableArticle({ className = "", name = "business-hig
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const buttonAlignmentClass = introData.align === 'center' ? 'justify-center' : 'justify-start';
 
   // Fungsi untuk menangani klik tombol
@@ -74,9 +72,9 @@ export default function ExtendableArticle({ className = "", name = "business-hig
       ref={sectionRef}
       className={`lnSection__extendableArticle py-16 md:py-24 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container">
 

@@ -12,6 +12,7 @@ import CardEvent from '../base/cards/CardEvent';
 import CTAList from '../base/section/CTAList';
 import Icon from '../base/Icon';
 import { API_BASE_URL } from '@/lib/apiBaseUrl';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const DEFAULT_CATEGORIES = [
   { label: 'Insight', value: 'business-insight', source: 'news', category_slug: 'press-release', is_visible: true },
@@ -131,10 +132,7 @@ export default function ContentHighlights({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   useEffect(() => {
     if (mainData?.items) return;
@@ -248,9 +246,9 @@ export default function ContentHighlights({
       id={sectionId}
       className={`lnSection__contentHighlights py-16 md:py-20 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">

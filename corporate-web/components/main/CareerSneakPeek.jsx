@@ -16,6 +16,7 @@ import CardCareer from '../base/cards/CardCareer';
 import Intro from '../base/section/Intro';
 import CTAList from '../base/section/CTAList';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -52,10 +53,7 @@ const CareerSneakPeek = ({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const careerItems = Array.isArray(mainData?.careers)
     ? mainData.careers
@@ -95,9 +93,9 @@ const CareerSneakPeek = ({
       ref={containerRef}
       className={`lnSection__careerSneakPeek py-16
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       <div className="container">

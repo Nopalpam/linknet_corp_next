@@ -16,6 +16,7 @@ import {
   normalizeStockSymbol,
   toTradingViewSymbol,
 } from '@/lib/stockService';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const TABS = [
   { label: 'Information', value: 'information' },
@@ -41,10 +42,7 @@ export default function StockInformation({ config, cmsData = null, className = "
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // =========================================
   // 1. FETCH DATA DARI LOCAL API
@@ -90,9 +88,9 @@ export default function StockInformation({ config, cmsData = null, className = "
       id={sectionId}
       className={`lnSection__stockInformation py-16 md:py-24 bg-white
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0 max-w-5xl">
 

@@ -9,6 +9,7 @@ import { MAPS_COVERAGE_DATA } from '../../data/components/mapsCoverage';
 import { MAP_REGIONS_DATA } from '../../data/constants/mapRegions';
 import INDO_TOPOLOGY from '../../data/constants/id-all.topo.json';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const MAP_WIDTH = 1150;
 const MAP_PADDING = 20;
@@ -327,10 +328,7 @@ export default function MapsCoverageV1({
     bgSizeClass = 'bg-cover',
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   const coverageHref = selectedArea
     ? `https://fiber.linknet.co.id/coverage?province=${encodeURIComponent(selectedArea.provinceName)}${selectedCity ? `&city=${encodeURIComponent(selectedCity)}` : ''}`
@@ -369,8 +367,8 @@ export default function MapsCoverageV1({
     <section
       ref={sectionRef}
       id={`${sectionId}`}
-      className={`lnSection__mapsCoverageV1 rounded-[52px] py-16 md:py-24 overflow-hidden bg-no-repeat ${bgPositionClasses} ${bgSizeClass} bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${configClassName} ${className}`}
-      style={sectionStyle}
+      className={`lnSection__mapsCoverageV1 rounded-[52px] py-16 md:py-24 overflow-hidden bg-no-repeat ${bgPositionClasses} ${bgSizeClass} ${backgroundImageClassName} ${configClassName} ${className}`}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
         {hasIntroContent(introData) && (

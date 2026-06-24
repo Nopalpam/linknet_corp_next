@@ -13,6 +13,7 @@ import Intro from '../base/section/Intro';
 import { TESTIMONIALS_DATA } from '@/data/components/testimonials';
 import Icon from '../base/Icon';
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -251,10 +252,7 @@ export default function Testimonials({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config || {};
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   // =========================================
   // HANDLERS
@@ -294,9 +292,9 @@ export default function Testimonials({
         ref={containerRef}
         className={`lnSection__testimonials lnTestimonial py-16 md:py-24 bg-white overflow-hidden
           bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+          ${backgroundImageClassName}
           ${configClassName} ${className}`}
-        style={sectionStyle}
+        style={backgroundStyle}
       >
         <div className="container mx-auto px-4 md:px-0">
 

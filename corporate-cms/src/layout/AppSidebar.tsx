@@ -54,48 +54,48 @@ const menuSections: MenuSection[] = [
   {
     label: "Main Components",
     items: [
-      {
-        icon: <BoxCubeIcon />,
-        name: "Awards",
-        path: "/awards",
-        permissions: ["awards.read"],
-      },
       // {
-      //   icon: <ListIcon />,
-      //   name: "Data Bank Solutions",
-      //   path: "/solutions",
-      //   permissions: ["solutions.read"],
+      //   icon: <BoxCubeIcon />,
+      //   name: "Awards",
+      //   path: "/awards",
+      //   permissions: ["awards.read"],
       // },
-      {
-        icon: <TableIcon />,
-        name: "Management",
-        path: "/management",
-        permissions: ["management.read"],
-      },
+      // // {
+      // //   icon: <ListIcon />,
+      // //   name: "Data Bank Solutions",
+      // //   path: "/solutions",
+      // //   permissions: ["solutions.read"],
+      // // },
+      // {
+      //   icon: <TableIcon />,
+      //   name: "Management",
+      //   path: "/management",
+      //   permissions: ["management.read"],
+      // },
       {
         icon: <GridIcon />,
         name: "Map Coverage Management",
         path: "/map-coverage",
         permissions: ["map_coverage.read"],
       },
-      {
-        icon: <ListIcon />,
-        name: "Reports",
-        subItems: [
-          { name: "Report Types", path: "/reports/report-types", permissions: ["reports.read"] },
-          { name: "Report Sections", path: "/reports/report-sections", permissions: ["reports.read"] },
-          { name: "Report Items", path: "/reports/report-items", permissions: ["reports.read"] },
-        ],
-      },
-      {
-        icon: <ListIcon />,
-        name: "Announcements",
-        subItems: [
-          { name: "Announcements Types", path: "/announcements/announcement-types", permissions: ["announcements.read"] },
-          { name: "Announcements Sections", path: "/announcements/announcement-sections", permissions: ["announcements.read"] },
-          { name: "Announcements Items", path: "/announcements/announcement-items", permissions: ["announcements.read"] },
-        ],
-      },
+      // {
+      //   icon: <ListIcon />,
+      //   name: "Reports",
+      //   subItems: [
+      //     { name: "Report Types", path: "/reports/report-types", permissions: ["reports.read"] },
+      //     { name: "Report Sections", path: "/reports/report-sections", permissions: ["reports.read"] },
+      //     { name: "Report Items", path: "/reports/report-items", permissions: ["reports.read"] },
+      //   ],
+      // },
+      // {
+      //   icon: <ListIcon />,
+      //   name: "Announcements",
+      //   subItems: [
+      //     { name: "Announcements Types", path: "/announcements/announcement-types", permissions: ["announcements.read"] },
+      //     { name: "Announcements Sections", path: "/announcements/announcement-sections", permissions: ["announcements.read"] },
+      //     { name: "Announcements Items", path: "/announcements/announcement-items", permissions: ["announcements.read"] },
+      //   ],
+      // },
       // {
       //   icon: <CalenderIcon />,
       //   name: "Announcement",
@@ -120,12 +120,12 @@ const menuSections: MenuSection[] = [
         path: "/events",
         permissions: ["events.read"],
       },
-      {
-        icon: <BoxCubeIcon />,
-        name: "Career",
-        path: "/careers",
-        permissions: ["careers.read"],
-      },
+      // {
+      //   icon: <BoxCubeIcon />,
+      //   name: "Career",
+      //   path: "/careers",
+      //   permissions: ["careers.read"],
+      // },
       {
         icon: <TableIcon />,
         name: "Contact Us Data Bank",
@@ -138,16 +138,16 @@ const menuSections: MenuSection[] = [
         path: "/cookie-consents",
         permissions: ["cookie_consents.read"],
       },
-      // {
-      //   icon: <ListIcon />,
-      //   name: "Form Registration",
-      //   subItems: [
-      //     { name: "Enterprise Forms", path: "/form-modules/enterprise", permissions: ["form_modules.read"] },
-      //     { name: "Fiber Forms", path: "/form-modules/fiber", permissions: ["form_modules.read"] },
-      //     { name: "Media Forms", path: "/form-modules/media", permissions: ["form_modules.read"] },
-      //     // { name: "All Submissions", path: "/form-modules/submissions" },
-      //   ],
-      // },
+      {
+        icon: <ListIcon />,
+        name: "Form Registration",
+        subItems: [
+          { name: "Enterprise Forms", path: "/form-modules/enterprise", permissions: ["form_modules.read"] },
+          // { name: "Fiber Forms", path: "/form-modules/fiber", permissions: ["form_modules.read"] },
+          // { name: "Media Forms", path: "/form-modules/media", permissions: ["form_modules.read"] },
+          // { name: "All Submissions", path: "/form-modules/submissions" },
+        ],
+      },
     ],
   },
   {

@@ -928,7 +928,10 @@ function Step4Body() {
   );
 }
 
-function RegistrationFormContent({ onClose, initialPayload }) {
+export function SMBEnterpriseFormContent({
+  onClose,
+  initialPayload = INITIAL_MODAL_PAYLOAD,
+}) {
   const params = useParams();
   const router = useRouter();
   const locale = params?.locale || 'id';
@@ -968,7 +971,7 @@ function RegistrationFormContent({ onClose, initialPayload }) {
     const locale = params?.locale || "id";
     const firstName = encodeURIComponent(form.picName.trim());
 
-    onClose();
+    onClose?.();
     router.push(`/${locale}/enterprise/form/success?name=${firstName}`);
   }, [form.picName, onClose, params?.locale, router]);
 
@@ -1087,7 +1090,7 @@ function ModalFormRegistrationEnterpriseSMB({ onAfterClose, initialPayload }) {
         className="lnModalFormRegistration__panel lnModalForm__panel absolute inset-0 overflow-y-auto bg-white will-change-transform"
         suppressHydrationWarning
       >
-        <RegistrationFormContent onClose={animateOut} initialPayload={initialPayload} />
+        <SMBEnterpriseFormContent onClose={animateOut} initialPayload={initialPayload} />
       </div>
     </div>
   );

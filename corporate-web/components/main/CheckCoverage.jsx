@@ -13,6 +13,7 @@ import ModalFormSubscribeInternetFiberProvider, {
 } from '../base/modals/ModalFormSubscribeInternetFiber';
 import Intro from '../base/section/Intro';
 import { CHECK_COVERAGE_DATA } from '@/data/components/checkCoverage';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 const INITIAL_MANUAL_DATA = {
   province: '',
@@ -167,19 +168,16 @@ function CheckCoverageContent({
     bgPositionClasses = 'bg-center md:bg-center',
     bgSizeClass = 'bg-cover',
   } = config;
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     <section
       id={sectionId}
       className={`relative overflow-hidden bg-[#FBFBF8] py-16 md:py-24 lg:py-[120px]
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_left_top,_rgba(255,255,255,0.78),_rgba(251,251,248,0.64)_42%,_rgba(247,247,243,0.52)_100%)]" />

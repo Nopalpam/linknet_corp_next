@@ -8,6 +8,7 @@ import Icon from '../base/Icon';
 import EnterpriseSolutionFinderCTA from '../base/section/EnterpriseSolutionFinderCTA';
 import ModalFormSuggestEnterpriseProvider from '../base/modals/ModalFormSuggestEnterprise';
 import { HERO_SLIDERS_DATA } from '@/data/components/heroSliders';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -68,7 +69,7 @@ export default function HeroSliders({
     className: configClassName = "",
     bgImage = "",
     bgImageMobile = "",
-    thumbsVisible = true,
+    thumbsVisible: thumbsVisibleConfig = true,
     showEnterpriseSolutionFinderCTA: defaultShowEnterpriseSolutionFinderCTA = false,
     enterpriseSolutionFinderCTAClassName: defaultEnterpriseSolutionFinderCTAClassName = "",
     bgPositionClasses = "bg-center md:bg-center",
@@ -83,11 +84,11 @@ export default function HeroSliders({
     showEnterpriseSolutionFinderCTAProp,
     resolveBoolean(sectionShowEnterpriseSolutionFinderCTA, defaultShowEnterpriseSolutionFinderCTA),
   );
+  const thumbsVisible = resolveBoolean(thumbsVisibleConfig, true);
+  const autoplayEnabled = resolveBoolean(autoplay, true);
+  const resolvedAutoplaySpeed = Number(autoplaySpeed) > 0 ? Number(autoplaySpeed) : AUTOPLAY_DELAY;
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
   const showCompactPagination = !thumbsVisible;
   const sectionPaddingClass = showCompactPagination
     ? 'pb-0'
@@ -100,9 +101,9 @@ export default function HeroSliders({
       id={sectionId}
       className={`lnSection__heroSliders relative w-full ${sectionPaddingClass}
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
 
       {/* ======================================= */}
@@ -123,8 +124,8 @@ export default function HeroSliders({
                   ? thumbsSwiper
                   : null
             }}
-            autoplay={autoplay ? {
-              delay: autoplaySpeed || AUTOPLAY_DELAY,
+            autoplay={autoplayEnabled ? {
+              delay: resolvedAutoplaySpeed,
               disableOnInteraction: false,
             } : false}
             navigation={{
@@ -255,7 +256,8 @@ export default function HeroSliders({
                           key={index}
                           className="absolute top-0 left-0 h-full bg-primary"
                           style={{
-                              animation: `progress-loading ${AUTOPLAY_DELAY}ms linear forwards`
+                              animation: autoplayEnabled ? `progress-loading ${resolvedAutoplaySpeed}ms linear forwards` : 'none',
+                              width: autoplayEnabled ? undefined : '100%'
                           }}
                           />
                       ) : (

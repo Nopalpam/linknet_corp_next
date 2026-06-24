@@ -966,7 +966,10 @@ function Step4Body({ form, submitError }) {
 // Main form content (API integration lives here)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RegistrationFormContent({ onClose, initialPayload }) {
+export function EnterpriseConsultationFormContent({
+  onClose,
+  initialPayload = INITIAL_MODAL_PAYLOAD,
+}) {
   const params = useParams();
   const router = useRouter();
   const locale = params?.locale || 'id';
@@ -1052,7 +1055,7 @@ function RegistrationFormContent({ onClose, initialPayload }) {
         (form.FirstName || '').trim() || 'there',
       )}`;
 
-    onClose();
+    onClose?.();
     handleReset();
     router.push(redirectUrl);
   }, [submitted]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1177,7 +1180,7 @@ function ModalFormRegistrationEnterprise({ onAfterClose, initialPayload }) {
         className="lnModalFormRegistration__panel lnModalForm__panel absolute inset-0 overflow-y-auto bg-white will-change-transform"
         suppressHydrationWarning
       >
-        <RegistrationFormContent onClose={animateOut} initialPayload={initialPayload} />
+        <EnterpriseConsultationFormContent onClose={animateOut} initialPayload={initialPayload} />
       </div>
     </div>
   );

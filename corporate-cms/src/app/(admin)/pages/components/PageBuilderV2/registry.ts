@@ -811,6 +811,26 @@ export const STATIC_COMPONENT_TYPES: ComponentRegistryEntry[] = [
     defaultData: withCommon({ title: { en: 'Enterprise Registration', id: 'Registrasi Enterprise' }, description: { en: 'Choose the form that suits your enterprise needs.', id: 'Pilih form sesuai kebutuhan enterprise Anda.' }, event_name: '', event_promo: '', event_page: '', max_participants: 5 }),
   },
   {
+    type: 'enterprise_consultation_form', name: 'Enterprise Consultation Form', description: 'Inline Enterprise Consultation wizard form', icon: 'FaWpforms', category: 'basic',
+    componentPath: '@/components/main/EnterpriseConsultationForm',
+    defaultData: withCommon({ promo: 'Enterprise Consultation Form', source: 'Enterprise Website', product: '' }),
+  },
+  {
+    type: 'smb_enterprise_form', name: 'SMB Enterprise Form', description: 'Inline SMB Enterprise registration wizard form', icon: 'FaWpforms', category: 'basic',
+    componentPath: '@/components/main/SMBEnterpriseForm',
+    defaultData: withCommon({ promo: 'SMB Enterprise Registration', source: 'Enterprise Website', product: '' }),
+  },
+  {
+    type: 'enterprise_partnership_form', name: 'Enterprise Partnership Form', description: 'Inline Enterprise Partnership wizard form', icon: 'FaWpforms', category: 'basic',
+    componentPath: '@/components/main/EnterprisePartnershipForm',
+    defaultData: withCommon({ promo: 'Enterprise Partnership', source: 'Enterprise Website', product: '' }),
+  },
+  {
+    type: 'enterprise_solution_finder_form', name: 'Enterprise Solution Finder Form', description: 'Inline Solution Finder wizard form', icon: 'FaWpforms', category: 'basic',
+    componentPath: '@/components/main/EnterpriseSolutionFinderForm',
+    defaultData: withCommon({ promo: 'Solution Finder', source: 'Enterprise Website', product: '' }),
+  },
+  {
     type: 'form_registration_fiber', name: 'Form Registration Fiber', description: 'Form registration section for Fiber BU', icon: 'FaWpforms', category: 'basic',
     componentPath: '@/components/main/FormRegistrationFiber',
     defaultData: withCommon({ title: { en: 'Fiber Registration', id: 'Registrasi Fiber' }, description: { en: 'Register your Fiber service or submit an inquiry.', id: 'Daftarkan layanan Fiber atau ajukan pertanyaan.' }, event_name: '', event_promo: '', event_page: '', max_participants: 5 }),

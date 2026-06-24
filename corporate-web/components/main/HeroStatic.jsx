@@ -66,10 +66,6 @@ export default function Hero({
   } = config || {};
   const resolvedBgImageDesktop = configBgImageDesktop || bgImageDesktop;
   const resolvedBgImageMobile = configBgImageMobile || bgImageMobile;
-  const sectionStyle = {
-    '--bg-image-desktop': resolvedBgImageDesktop ? `url('${resolvedBgImageDesktop}')` : 'none',
-    '--bg-image-mobile': resolvedBgImageMobile ? `url('${resolvedBgImageMobile}')` : (resolvedBgImageDesktop ? `url('${resolvedBgImageDesktop}')` : 'none')
-  };
 
   const hasBgImage = resolvedBgImageDesktop || resolvedBgImageMobile;
 
@@ -88,11 +84,10 @@ export default function Hero({
         id={sectionId}
         className={`lnSection__heroStatic p-2 pt-0
           ${configClassName} ${className}`}
-        style={sectionStyle}
     >
         {/* Tambahkan heightClass dinamis ke container ini */}
         <div className={`relative w-full ${heightClass} flex items-center overflow-hidden rounded-[20px] md:rounded-[24px] bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-          bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)] ${!hasBgImage ? bgColor : ''}`}>
+          ${!hasBgImage ? bgColor : ''}`}>
 
             {/* ======================================= */}
             {/* 1. BACKGROUND LAYER (Z-INDEX: 0)        */}

@@ -15,6 +15,7 @@ import CardProduct from '../base/cards/CardProduct'; // Sesuaikan path
 import Intro from '../base/section/Intro'; // Sesuaikan path
 import { ABOUT_VALUES_DATA } from '@/data/components/aboutValues'; // Sesuaikan path
 import { hasIntroContent } from '@/shared/presentation/intro';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -71,10 +72,7 @@ export default function AboutValues({
     bgSizeClass = "bg-cover",
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none')
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     // Tambahkan ref={containerRef} pada bungkus terluar section
@@ -83,9 +81,9 @@ export default function AboutValues({
       ref={containerRef}
       className={`lnSection__aboutValues py-16 md:py-24 bg-white overflow-hidden
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-        bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]
+        ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="container mx-auto px-4 md:px-0">
 

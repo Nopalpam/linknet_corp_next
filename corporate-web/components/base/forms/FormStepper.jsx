@@ -526,6 +526,7 @@ export default function FormStepper({
   }, []);
 
   const titleLines = title.split('\n');
+  const isModalLayout = Boolean(onClose);
 
   return (
     <StepperContext.Provider value={ctxValue}>
@@ -543,42 +544,58 @@ export default function FormStepper({
         <header className="lnFormStepper__topbar sticky top-0 z-20 bg-white shadow-sm">
 
           {/* ── Row 1: logo + close (always visible) ─────────────── */}
-          <div className="lnFormStepper__topbarRow1 container px-4 sm:px-8 h-14 flex items-center justify-between gap-4">
+          <div
+            className={[
+              'lnFormStepper__topbarRow1 container px-4 sm:px-8 h-14 flex items-center gap-4',
+              isModalLayout ? 'justify-between' : 'justify-center',
+            ].join(' ')}
+          >
 
             {/* Logo */}
-            <div
-              className="lnFormStepper__logo flex items-end gap-0 flex-shrink-0"
-              aria-label="Linknet Enterprise"
-            >
-              <img src="/assets/logos/logo-fiberco.svg" alt="Linknet Enterprise" />
-            </div>
+            {isModalLayout ? (
+              <div
+                className="lnFormStepper__logo flex items-end gap-0 flex-shrink-0"
+                aria-label="Linknet Enterprise"
+              >
+                <img src="/assets/logos/logo-fiberco.svg" alt="Linknet Enterprise" />
+              </div>
+            ) : null}
 
             {/* Desktop: swiper lives here (between logo and close) */}
-            <div className="lnFormStepper__navDesktop hidden lg:flex flex-1 overflow-hidden">
+            <div
+              className={[
+                'lnFormStepper__navDesktop flex-1 overflow-hidden',
+                isModalLayout ? 'hidden lg:flex' : 'flex justify-center',
+              ].join(' ')}
+            >
               <StepperNavBar steps={steps} currentStep={currentStep} />
             </div>
 
             {/* Close button */}
-            <div className="lnFormStepper__closeBtn flex-shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Tutup form"
-                className={[
-                  'lnFormStepper__closeBtn flex-shrink-0 cursor-pointer text-secondary',
-                  'rounded p-1 transition-opacity duration-200 hover:opacity-80',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400',
-                ].join(' ')}
-              >
-                <Icon name="close" />
-              </button>
-            </div>
+            {onClose ? (
+              <div className="lnFormStepper__closeBtn flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Tutup form"
+                  className={[
+                    'lnFormStepper__closeBtn flex-shrink-0 cursor-pointer text-secondary',
+                    'rounded p-1 transition-opacity duration-200 hover:opacity-80',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400',
+                  ].join(' ')}
+                >
+                  <Icon name="close" />
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {/* ── Row 2: swiper stepper (mobile + tablet only) ─────── */}
-          <div className="lnFormStepper__topbarRow2 lg:hidden px-4 sm:px-8 py-2.5 !overflow-hidden">
-            <StepperNavBar steps={steps} currentStep={currentStep} />
-          </div>
+          {isModalLayout ? (
+            <div className="lnFormStepper__topbarRow2 lg:hidden px-4 sm:px-8 py-2.5 !overflow-hidden">
+              <StepperNavBar steps={steps} currentStep={currentStep} />
+            </div>
+          ) : null}
 
         </header>
 

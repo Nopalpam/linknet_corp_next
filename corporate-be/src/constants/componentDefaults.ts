@@ -167,7 +167,8 @@ const HERO_SECTION: ComponentTypeDefinition = {
   icon: 'FaStar',
   category: 'basic',
   defaultData: withCommon({
-    background_image: '',
+    bg_image: '',
+    bg_image_mobile: '',
     introData: {
       as: 'h1',
       label: { en: 'New', id: 'Baru' },
@@ -381,6 +382,13 @@ const KEY_HIGHLIGHT: ComponentTypeDefinition = {
   icon: 'FaChartBar',
   category: 'basic',
   defaultData: withCommon({
+    introData: {
+      as: 'h2',
+      label: { en: 'Key Highlight', id: 'Sorotan Utama' },
+      title: { en: 'Our Impact in Numbers', id: 'Dampak Kami dalam Angka' },
+      description: { en: '', id: '' },
+      align: 'left',
+    },
     slides: [
       { image: '', value: '1M+', delta: '+15%', caption: { en: 'Subscribers', id: 'Pelanggan' } },
       { image: '', value: '50+', delta: '+5', caption: { en: 'Cities Covered', id: 'Kota Terjangkau' } },
@@ -512,13 +520,19 @@ const HIGHLIGHTING_REAL_INITIATIVES: ComponentTypeDefinition = {
   icon: 'FaHandHoldingHeart',
   category: 'basic',
   defaultData: withCommon({
-    title: { en: 'Our Initiatives', id: 'Inisiatif Kami' },
-    description: { en: 'Making a real difference in communities.', id: 'Memberikan dampak nyata bagi komunitas.' },
+    introData: {
+      as: 'h2',
+      label: { en: '', id: '' },
+      title: { en: 'Our Initiatives', id: 'Inisiatif Kami' },
+      description: { en: 'Making a real difference in communities.', id: 'Memberikan dampak nyata bagi komunitas.' },
+      align: 'center',
+    },
     initiatives: [
-      { title: { en: 'Digital Literacy', id: 'Literasi Digital' }, description: { en: 'Empowering communities through digital education.', id: 'Memberdayakan komunitas melalui pendidikan digital.' }, image: '' },
-      { title: { en: 'Green Network', id: 'Jaringan Hijau' }, description: { en: 'Sustainable network infrastructure.', id: 'Infrastruktur jaringan berkelanjutan.' }, image: '' },
+      { topLogo: '', image: '', title: { en: 'Digital Literacy', id: 'Literasi Digital' }, description: { en: 'Empowering communities through digital education.', id: 'Memberdayakan komunitas melalui pendidikan digital.' }, date: '', url: '' },
+      { topLogo: '', image: '', title: { en: 'Green Network', id: 'Jaringan Hijau' }, description: { en: 'Sustainable network infrastructure.', id: 'Infrastruktur jaringan berkelanjutan.' }, date: '', url: '' },
     ],
-    community_logos: [
+    partnerText: { en: '', id: '' },
+    partnerLogos: [
       { url: '', alt: 'Partner 1' },
       { url: '', alt: 'Partner 2' },
     ],
@@ -1128,6 +1142,62 @@ const FORM_REGISTRATION_ENTERPRISE: ComponentTypeDefinition = {
   }),
 };
 
+const ENTERPRISE_CONSULTATION_FORM: ComponentTypeDefinition = {
+  type: 'enterprise_consultation_form',
+  name: 'Enterprise Consultation Form',
+  componentPath: '@/components/main/EnterpriseConsultationForm',
+  description: 'Inline Enterprise Consultation wizard form',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    promo: 'Enterprise Consultation Form',
+    source: 'Enterprise Website',
+    product: '',
+  }),
+};
+
+const SMB_ENTERPRISE_FORM: ComponentTypeDefinition = {
+  type: 'smb_enterprise_form',
+  name: 'SMB Enterprise Form',
+  componentPath: '@/components/main/SMBEnterpriseForm',
+  description: 'Inline SMB Enterprise registration wizard form',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    promo: 'SMB Enterprise Registration',
+    source: 'Enterprise Website',
+    product: '',
+  }),
+};
+
+const ENTERPRISE_PARTNERSHIP_FORM: ComponentTypeDefinition = {
+  type: 'enterprise_partnership_form',
+  name: 'Enterprise Partnership Form',
+  componentPath: '@/components/main/EnterprisePartnershipForm',
+  description: 'Inline Enterprise Partnership wizard form',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    promo: 'Enterprise Partnership',
+    source: 'Enterprise Website',
+    product: '',
+  }),
+};
+
+const ENTERPRISE_SOLUTION_FINDER_FORM: ComponentTypeDefinition = {
+  type: 'enterprise_solution_finder_form',
+  name: 'Enterprise Solution Finder Form',
+  componentPath: '@/components/main/EnterpriseSolutionFinderForm',
+  description: 'Inline Solution Finder wizard form',
+  icon: 'FaWpforms',
+  category: 'basic',
+  defaultData: withCommon({
+    promo: 'Solution Finder',
+    source: 'Enterprise Website',
+    product: '',
+  }),
+};
+
 const FORM_REGISTRATION_FIBER: ComponentTypeDefinition = {
   type: 'form_registration_fiber',
   name: 'Form Registration Fiber',
@@ -1716,6 +1786,10 @@ export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
   STOCK_INFORMATION,
   TESTIMONIALS,
   FORM_REGISTRATION_ENTERPRISE,
+  ENTERPRISE_CONSULTATION_FORM,
+  SMB_ENTERPRISE_FORM,
+  ENTERPRISE_PARTNERSHIP_FORM,
+  ENTERPRISE_SOLUTION_FINDER_FORM,
   FORM_REGISTRATION_FIBER,
   FORM_REGISTRATION_MEDIA,
   COVERAGE_CHECK_FIBER,

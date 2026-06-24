@@ -83,6 +83,27 @@ const clearLegacyClientTokens = () => {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
+const isTransientAuthValidationError = (error: any) => {
+  const status = error?.status ?? error?.response?.status;
+  const code = String(error?.code || error?.response?.data?.error?.code || '').toUpperCase();
+  const name = String(error?.name || '').toLowerCase();
+  const message = String(error?.message || '').toLowerCase();
+
+  return (
+    status === 429 ||
+    code === 'RATE_LIMIT_EXCEEDED' ||
+    name === 'aborterror' ||
+    message.includes('too many') ||
+    message.includes('terlalu banyak') ||
+    message.includes('failed to fetch') ||
+    message.includes('network') ||
+    message.includes('tidak dapat terhubung') ||
+    message.includes('periksa koneksi') ||
+    message.includes('timeout') ||
+    message.includes('aborted')
+  );
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -258,14 +279,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error?.message?.includes('terhubung ke server') ||
         error?.message?.includes('NetworkError');
 
-      if (isAuthError || isNetworkError) {
-        console.error('Auth/network error detected - showing session warning');
+      if (isAuthError) {
+        console.error('Auth error detected - showing session warning');
         triggerSessionWarning();
+        return;
+      }
+
+      if (isNetworkError || isTransientAuthValidationError(error)) {
+        console.warn('Transient auth validation error - keeping cached session when available');
+        restoreCachedUser();
       }
     } finally {
       isRefreshingRef.current = false;
     }
-  }, [router, clearAuthData, triggerSessionWarning]);
+  }, [router, clearAuthData, restoreCachedUser, triggerSessionWarning]);
 
   // ✅ Listen for force logout events dispatched from base.service.ts
   useEffect(() => {
@@ -345,10 +372,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (error: any) {
             console.error('🔴 Token validation error:', error);
-            // Clear auth data for ALL errors (expired, network, etc.)
-            // If we can't validate the token, user should re-login
-            clearAuthData();
-            setUser(null);
+            if (isSessionExpiredError(error)) {
+              triggerSessionWarning();
+            } else if (isTransientAuthValidationError(error)) {
+              console.warn('Transient auth validation failure - using cached session if available');
+              if (!restoreCachedUser()) {
+                setUser(null);
+              }
+            } else {
+              clearAuthData();
+              setUser(null);
+            }
           }
         } else {
           // Mock mode: restore from localStorage
@@ -364,8 +398,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Failed to initialize auth:", error);
-        clearAuthData();
-        setUser(null);
+        if (isTransientAuthValidationError(error)) {
+          if (!restoreCachedUser()) {
+            setUser(null);
+          }
+        } else {
+          clearAuthData();
+          setUser(null);
+        }
       } finally {
         setIsAuthValidated(true);
         setIsLoading(false);
@@ -379,7 +419,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
-  }, [clearAuthData, triggerSessionWarning]); // ✅ Stable dependency
+  }, [clearAuthData, restoreCachedUser, triggerSessionWarning]); // ✅ Stable dependency
 
   // ✅ CRITICAL: Re-validate auth on route change (TANPA user di dependency untuk cegah loop)
   useEffect(() => {

@@ -11,6 +11,7 @@ import CardServices from '../base/cards/CardServices';
 import Icon from '../base/Icon';
 
 import { SOLUTIONS_SERVICES_WITH_BACKGROUND_DATA } from '@/data/components/solutionsServicesWithBackground';
+import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 
 function cn(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -44,10 +45,7 @@ export default function SolutionsServicesWithBackground({
     bgSizeClass = 'bg-cover',
   } = config || {};
 
-  const sectionStyle = {
-    '--bg-image-desktop': bgImage ? `url('${bgImage}')` : 'none',
-    '--bg-image-mobile': bgImageMobile ? `url('${bgImageMobile}')` : (bgImage ? `url('${bgImage}')` : 'none'),
-  };
+  const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
 
   return (
     <section
@@ -56,11 +54,11 @@ export default function SolutionsServicesWithBackground({
         'lnSection__solutionsServicesWithBackground bg-white py-16 md:py-24 overflow-hidden bg-no-repeat',
         bgPositionClasses,
         bgSizeClass,
-        'bg-[image:var(--bg-image-mobile)] md:bg-[image:var(--bg-image-desktop)]',
+        backgroundImageClassName,
         configClassName,
         className
       )}
-      style={sectionStyle}
+      style={backgroundStyle}
     >
       <div className="lnSolutionsServicesWithBackground__inner container">
         <div className="lnSolutionsServicesWithBackground__header mb-8 flex flex-col gap-6 md:mb-10 md:flex-row md:items-end md:justify-between">
