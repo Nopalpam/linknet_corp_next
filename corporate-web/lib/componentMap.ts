@@ -333,14 +333,19 @@ function isNewsInitiativeSource(value: any): boolean {
 
 function htmlToPlainText(value: any): string {
   if (typeof value !== 'string') return '';
+  const entities: Record<string, string> = {
+    '&nbsp;': ' ',
+    '&amp;': '&',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&rsquo;': "'",
+    '&ldquo;': '"',
+    '&rdquo;': '"',
+  };
+
   return value
     .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/&rsquo;/gi, "'")
-    .replace(/&ldquo;|&rdquo;/gi, '"')
+    .replace(/&(nbsp|amp|quot|#39|rsquo|ldquo|rdquo);/gi, (entity) => entities[entity.toLowerCase()] ?? entity)
     .replace(/\s+/g, ' ')
     .trim();
 }

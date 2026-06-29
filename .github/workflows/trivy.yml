@@ -58,7 +58,7 @@ jobs:
           skip-dirs: ${{ matrix.directory }}/node_modules,${{ matrix.directory }}/dist,${{ matrix.directory }}/build,${{ matrix.directory }}/.next,${{ matrix.directory }}/out,${{ matrix.directory }}/coverage,${{ matrix.directory }}/.turbo
           timeout: 10m
 
-      - name: Create SARIF and enforce high-severity gate
+      - name: Create Trivy SARIF
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           scan-type: fs
@@ -68,7 +68,7 @@ jobs:
           limit-severities-for-sarif: 'true'
           format: sarif
           output: ${{ matrix.sarif }}
-          exit-code: '1'
+          exit-code: '0'
           ignore-unfixed: 'false'
           skip-dirs: ${{ matrix.directory }}/node_modules,${{ matrix.directory }}/dist,${{ matrix.directory }}/build,${{ matrix.directory }}/.next,${{ matrix.directory }}/out,${{ matrix.directory }}/coverage,${{ matrix.directory }}/.turbo
           timeout: 10m
@@ -82,3 +82,18 @@ jobs:
         with:
           sarif_file: ${{ matrix.sarif }}
           category: trivy-${{ matrix.directory }}
+
+      - name: Enforce high-severity gate
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ matrix.directory }}
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: '1'
+          ignore-unfixed: 'false'
+          skip-dirs: ${{ matrix.directory }}/node_modules,${{ matrix.directory }}/dist,${{ matrix.directory }}/build,${{ matrix.directory }}/.next,${{ matrix.directory }}/out,${{ matrix.directory }}/coverage,${{ matrix.directory }}/.turbo
+          timeout: 10m
+          skip-setup-trivy: 'true'
+          cache: 'false'
