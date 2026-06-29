@@ -1,5 +1,6 @@
 import slugify from 'slugify';
 import prisma from '@config/database';
+import { isLowercaseSlug } from './stringValidation.util';
 
 /**
  * Generate slug from title
@@ -16,8 +17,7 @@ export const generateSlug = (title: string): string => {
  * Validate slug format
  */
 export const isValidSlug = (slug: string): boolean => {
-  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  return slugRegex.test(slug);
+  return isLowercaseSlug(slug);
 };
 
 /**

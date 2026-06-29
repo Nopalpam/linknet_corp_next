@@ -12,11 +12,12 @@ import {
   FormRuleType,
   FormSubmissionStatus,
 } from '@prisma/client';
+import { isLowercaseSlug } from '../../utils/stringValidation.util';
 
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const formModuleIdentifierRegex = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const fieldPathRegex = /^[A-Za-z][A-Za-z0-9_.-]*$/;
 const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
+const slugMessage = 'Slug must be lowercase, alphanumeric with dashes only';
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 const formSubmissionDatePresetSchema = z.enum([
@@ -29,7 +30,7 @@ const formSubmissionDatePresetSchema = z.enum([
 
 export const publicFormModuleParamsSchema = z.object({
   businessUnit: z.enum(['enterprise', 'fiber', 'media']),
-  slug: z.string().regex(slugRegex, 'Slug must be lowercase, alphanumeric with dashes only'),
+  slug: z.string().refine(isLowercaseSlug, slugMessage),
 });
 
 const formStepSchema = z.object({
@@ -115,7 +116,7 @@ export const formModuleDefinitionSchema = z.object({
 
 export const createFormModuleSchema = z.object({
   businessUnit: z.nativeEnum(BusinessUnit),
-  slug: z.string().regex(slugRegex, 'Slug must be lowercase, alphanumeric with dashes only'),
+  slug: z.string().refine(isLowercaseSlug, slugMessage),
   name: z.string().min(1).max(255),
   description: z.string().max(2000).optional(),
   category: z.nativeEnum(FormCategory),
@@ -142,7 +143,7 @@ export const createFormModuleSchema = z.object({
 
 export const updateFormModuleSchema = z.object({
   businessUnit: z.nativeEnum(BusinessUnit).optional(),
-  slug: z.string().regex(slugRegex, 'Slug must be lowercase, alphanumeric with dashes only').optional(),
+  slug: z.string().refine(isLowercaseSlug, slugMessage).optional(),
   name: z.string().min(1).max(255).optional(),
   description: z.string().max(2000).optional().nullable(),
   category: z.nativeEnum(FormCategory).optional(),

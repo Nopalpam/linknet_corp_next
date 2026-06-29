@@ -1,7 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 
-const HOST_HEADER_PATTERN = /^[a-z0-9.-]+(?::\d+)?$/i;
 const STAGING_HOST_SUFFIX = '.lncorp.local';
+
+const isValidHostHeader = (host: string): boolean => {
+  if (!host || host.length > 253) return false;
+
+  const parts = host.split(':');
+  if (parts.length > 2) return false;
+
+  const [hostname, port] = parts;
+  if (!hostname || hostname.startsWith('.') || hostname.endsWith('.')) return false;
+  if (port !== undefined && (!port || [...port].some((char) => char < '0' || char > '9'))) return false;
+
+  for (const char of hostname) {
+    const isAllowed =
+      (char >= 'a' && char <= 'z') ||
+      (char >= 'A' && char <= 'Z') ||
+      (char >= '0' && char <= '9') ||
+      char === '.' ||
+      char === '-';
+    if (!isAllowed) return false;
+  }
+
+  return true;
+};
 
 const parseAllowedHosts = (): string[] =>
   (process.env.FORCE_HTTPS_ALLOWED_HOSTS || process.env.ALLOWED_HOSTS || '')
@@ -11,7 +33,7 @@ const parseAllowedHosts = (): string[] =>
 
 const getRedirectHost = (req: Request): string | null => {
   const host = req.get('host') || req.hostname;
-  if (!host || !HOST_HEADER_PATTERN.test(host)) {
+  if (!host || !isValidHostHeader(host)) {
     return null;
   }
 
@@ -27,7 +49,7 @@ const stripPort = (host: string): string => host.split(':')[0]?.toLowerCase() ||
 
 const isLncorpStagingHost = (req: Request): boolean => {
   const host = req.get('host') || req.hostname;
-  if (!host || !HOST_HEADER_PATTERN.test(host)) return false;
+  if (!host || !isValidHostHeader(host)) return false;
 
   const hostname = stripPort(host);
   return hostname === 'lncorp.local' || hostname.endsWith(STAGING_HOST_SUFFIX);

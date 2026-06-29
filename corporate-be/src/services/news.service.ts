@@ -163,10 +163,31 @@ function getTimeZoneOffsetMs(date: Date, timeZone: string) {
 }
 
 function localDateTimeToUtc(value: string, timeZone: string) {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
-  if (!match) return new Date(value);
+  const [datePart, timePart] = value.split('T');
+  const dateSegments = datePart?.split('-') ?? [];
+  const timeSegments = timePart?.split(':') ?? [];
+  if (dateSegments.length !== 3 || (timeSegments.length !== 2 && timeSegments.length !== 3)) {
+    return new Date(value);
+  }
 
-  const [, year, month, day, hour, minute, second = '0'] = match;
+  const year = dateSegments[0] ?? '';
+  const month = dateSegments[1] ?? '';
+  const day = dateSegments[2] ?? '';
+  const hour = timeSegments[0] ?? '';
+  const minute = timeSegments[1] ?? '';
+  const second = timeSegments[2] ?? '0';
+  const isFixedWidth =
+    year.length === 4 &&
+    month.length === 2 &&
+    day.length === 2 &&
+    hour.length === 2 &&
+    minute.length === 2 &&
+    second.length === 2;
+  const isNumeric = [...dateSegments, ...timeSegments].every((segment) =>
+    [...segment].every((char) => char >= '0' && char <= '9')
+  );
+  if (!isFixedWidth || !isNumeric) return new Date(value);
+
   const localAsUtc = Date.UTC(
     Number(year),
     Number(month) - 1,

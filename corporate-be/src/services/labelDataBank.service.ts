@@ -1,5 +1,6 @@
 import prisma from '@config/database';
 import { AppError } from '../types/error.types';
+import { hasWhitespace, isDottedLowercaseIdentifier } from '../utils/stringValidation.util';
 
 const db = prisma as any;
 
@@ -64,12 +65,12 @@ function slugify(value: string): string {
 
 function normalizeLabelId(value: string): string {
   const nextValue = value.trim();
-  if (/\s/.test(nextValue)) {
+  if (hasWhitespace(nextValue)) {
     throw new AppError('label_id must not contain spaces', 400);
   }
 
   const normalized = nextValue.toLowerCase();
-  if (!/^[a-z0-9_]+(?:\.[a-z0-9_]+)*$/.test(normalized)) {
+  if (!isDottedLowercaseIdentifier(normalized)) {
     throw new AppError('label_id must use lowercase dot notation, for example section.subsection.key', 400);
   }
 

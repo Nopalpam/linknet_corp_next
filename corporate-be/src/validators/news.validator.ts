@@ -1,4 +1,5 @@
 import { body, query, param } from 'express-validator';
+import { isLowercaseSlug } from '../utils/stringValidation.util';
 
 // ================== HELPER: Integer ID validator ==================
 const intIdParam = (field: string, label: string) =>
@@ -68,7 +69,7 @@ export const getNewsBySlugValidation = [
     .withMessage('Slug is required')
     .isLength({ min: 1, max: 200 })
     .withMessage('Slug must be between 1 and 200 characters')
-    .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .custom(isLowercaseSlug)
     .withMessage('Slug must contain only lowercase letters, numbers, and hyphens'),
 ];
 
@@ -350,7 +351,7 @@ export const createCategoryValidation = [
     .trim()
     .isLength({ max: 255 })
     .withMessage('Slug must not exceed 255 characters')
-    .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .custom(isLowercaseSlug)
     .withMessage('Slug must contain only lowercase letters, numbers, and hyphens'),
 
   body('dataOrder')

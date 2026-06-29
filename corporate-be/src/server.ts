@@ -56,6 +56,18 @@ const parseTrustProxy = (): number => {
   return NODE_ENV === 'development' ? 0 : 1;
 };
 
+const isDevelopmentLoopbackOrigin = (origin: string): boolean => {
+  try {
+    const parsed = new URL(origin);
+    return (
+      (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+    );
+  } catch {
+    return false;
+  }
+};
+
 // Trust proxy (required for HTTPS detection behind reverse proxies/load balancers)
 // This allows Express to trust X-Forwarded-* headers
 app.set('trust proxy', parseTrustProxy());
@@ -87,7 +99,7 @@ const developmentLoopbackOrigins = new Set(
     `${LOCAL_HTTP_PROTOCOL}://localhost:3001`,
     `${LOCAL_HTTP_PROTOCOL}://127.0.0.1:3000`,
     `${LOCAL_HTTP_PROTOCOL}://127.0.0.1:3001`,
-    ...allowedOrigins.filter((origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)),
+    ...allowedOrigins.filter(isDevelopmentLoopbackOrigin),
   ].map((origin) => origin.toLowerCase())
 );
 

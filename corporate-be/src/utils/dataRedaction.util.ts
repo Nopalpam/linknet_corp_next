@@ -14,13 +14,79 @@ const SENSITIVE_FIELD_PATTERNS = [
   /\bssn\b/i,
 ];
 
-const PAYMENT_NUMBER_PATTERN = /\b(?:\d[ -]*?){13,19}\b/g;
-const SSN_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
+const isDigit = (char: string): boolean => char >= '0' && char <= '9';
+const isPaymentSeparator = (char: string): boolean => char === ' ' || char === '-';
 
-const maskSensitiveString = (value: string): string =>
-  value
-    .replace(PAYMENT_NUMBER_PATTERN, '[REDACTED_CARD_NUMBER]')
-    .replace(SSN_PATTERN, '[REDACTED_SSN]');
+const maskSsn = (value: string): string => {
+  let result = '';
+  let index = 0;
+
+  while (index < value.length) {
+    const candidate = value.slice(index, index + 11);
+    const isSsn =
+      candidate.length === 11 &&
+      isDigit(candidate.charAt(0)) &&
+      isDigit(candidate.charAt(1)) &&
+      isDigit(candidate.charAt(2)) &&
+      candidate.charAt(3) === '-' &&
+      isDigit(candidate.charAt(4)) &&
+      isDigit(candidate.charAt(5)) &&
+      candidate.charAt(6) === '-' &&
+      isDigit(candidate.charAt(7)) &&
+      isDigit(candidate.charAt(8)) &&
+      isDigit(candidate.charAt(9)) &&
+      isDigit(candidate.charAt(10));
+
+    if (isSsn) {
+      result += '[REDACTED_SSN]';
+      index += 11;
+      continue;
+    }
+
+    result += value.charAt(index);
+    index++;
+  }
+
+  return result;
+};
+
+const maskPaymentNumbers = (value: string): string => {
+  let result = '';
+  let index = 0;
+
+  while (index < value.length) {
+    if (!isDigit(value.charAt(index))) {
+      result += value.charAt(index);
+      index++;
+      continue;
+    }
+
+    let cursor = index;
+    let digits = 0;
+    let lastDigitEnd = index;
+
+    while (cursor < value.length && (isDigit(value.charAt(cursor)) || isPaymentSeparator(value.charAt(cursor)))) {
+      if (isDigit(value.charAt(cursor))) {
+        digits++;
+        lastDigitEnd = cursor + 1;
+      }
+      cursor++;
+    }
+
+    if (digits >= 13 && digits <= 19) {
+      result += '[REDACTED_CARD_NUMBER]';
+      index = lastDigitEnd;
+      continue;
+    }
+
+    result += value.charAt(index);
+    index++;
+  }
+
+  return result;
+};
+
+const maskSensitiveString = (value: string): string => maskPaymentNumbers(maskSsn(value));
 
 const isSensitiveField = (key: string): boolean =>
   SENSITIVE_FIELD_PATTERNS.some((pattern) => pattern.test(key));

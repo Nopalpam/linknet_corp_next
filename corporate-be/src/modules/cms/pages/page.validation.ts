@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { PageStatus, PageTemplate } from '@prisma/client';
+import { isLowercaseSlug } from '../../../utils/stringValidation.util';
 
-// Slug validation: lowercase, alphanumeric with dashes only
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const slugMessage = 'Slug must be lowercase, alphanumeric with dashes only';
 
 export const createPageSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title is too long'),
   slug: z
     .string()
-    .regex(slugRegex, 'Slug must be lowercase, alphanumeric with dashes only')
+    .refine(isLowercaseSlug, slugMessage)
     .min(1, 'Slug is required')
     .max(255, 'Slug is too long')
     .optional(),
@@ -24,7 +24,7 @@ export const updatePageSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title is too long').optional(),
   slug: z
     .string()
-    .regex(slugRegex, 'Slug must be lowercase, alphanumeric with dashes only')
+    .refine(isLowercaseSlug, slugMessage)
     .min(1, 'Slug is required')
     .max(255, 'Slug is too long')
     .optional(),

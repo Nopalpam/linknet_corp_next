@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SettingsService } from '../services/settings.service';
 import { sendMail } from '../services/mail.service';
 import { SettingType } from '@prisma/client';
+import { hasWhitespace } from '../utils/stringValidation.util';
 
 /**
  * Settings Controller
@@ -9,7 +10,22 @@ import { SettingType } from '@prisma/client';
  */
 export class SettingsController {
   private static isValidEmail(value: unknown): value is string {
-    return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+    if (typeof value !== 'string') return false;
+
+    const email = value.trim();
+    if (!email || email.length > 254) return false;
+    if (email !== value || hasWhitespace(email)) return false;
+
+    const atIndex = email.indexOf('@');
+    if (atIndex <= 0 || atIndex !== email.lastIndexOf('@')) return false;
+
+    const localPart = email.slice(0, atIndex);
+    const domain = email.slice(atIndex + 1);
+    if (!localPart || localPart.length > 64 || !domain || domain.length > 253) return false;
+    if (!domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) return false;
+
+    const domainLabels = domain.split('.');
+    return domainLabels.every((label) => label.length > 0 && label.length <= 63);
   }
 
   private static setNestedValue(target: Record<string, any>, path: string, value: any): void {

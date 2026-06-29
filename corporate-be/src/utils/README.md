@@ -34,8 +34,10 @@ export class Logger {
 ```typescript
 export class Validator {
   static isEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    const trimmed = email.trim();
+    const atIndex = trimmed.indexOf('@');
+    const domain = trimmed.slice(atIndex + 1);
+    return atIndex > 0 && atIndex === trimmed.lastIndexOf('@') && domain.includes('.');
   }
 
   static isStrongPassword(password: string): boolean {
