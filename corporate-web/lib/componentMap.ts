@@ -320,6 +320,84 @@ function mapAwardItem(award: Record<string, any>, t: (f: any) => string, locale:
   };
 }
 
+function normalizeLinkTarget(value: any): string {
+  const target = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (target === 'blank' || target === '_blank') return '_blank';
+  return '_self';
+}
+
+function isNewsInitiativeSource(value: any): boolean {
+  const source = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return ['news', 'data_news', 'selected_news', 'cms_news'].includes(source);
+}
+
+function htmlToPlainText(value: any): string {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&rsquo;/gi, "'")
+    .replace(/&ldquo;|&rdquo;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function truncateText(value: any, maxLength = 180): string {
+  const text = htmlToPlainText(value);
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trimEnd()}...`;
+}
+
+function getMainDataNewsItems(mainData: any): Record<string, any>[] {
+  if (!mainData || typeof mainData !== 'object') return [];
+  if (Array.isArray(mainData.news)) return mainData.news;
+  if (Array.isArray(mainData.items)) return mainData.items;
+  if (Array.isArray(mainData.data)) return mainData.data;
+  return [];
+}
+
+function getInitiativeContent(item: Record<string, any>): Record<string, any> {
+  const content = item.content && typeof item.content === 'object' && !Array.isArray(item.content)
+    ? item.content
+    : {};
+
+  return {
+    ...content,
+    newsId: content.newsId ?? content.news_id ?? item.newsId ?? item.news_id ?? item.content_id ?? '',
+    image: content.image ?? item.image ?? item.thumbnail ?? item.thumbnail_image ?? item.thumbnailImage ?? item.cover_image ?? item.coverImage ?? '',
+    title: content.title ?? item.title ?? item.name ?? '',
+    description: content.description ?? content.desc ?? item.description ?? item.desc ?? item.sub_description ?? item.subDescription ?? '',
+    date: content.date ?? item.date ?? item.published_at ?? item.publishedAt ?? '',
+    url: content.url ?? item.url ?? item.href ?? item.link ?? item.cta_url ?? item.ctaUrl ?? item.cta_link ?? item.ctaLink ?? '',
+    slug: content.slug ?? item.slug ?? '',
+  };
+}
+
+function resolveInitiativeNews(item: Record<string, any>, newsById: Map<string, Record<string, any>>): Record<string, any> | null {
+  const content = getInitiativeContent(item);
+  const directNews = item.news && typeof item.news === 'object' ? item.news : content.news;
+  if (directNews && typeof directNews === 'object') return directNews;
+
+  const newsId = content.newsId || item.news_id || item.newsId;
+  if (!newsId) return null;
+  return newsById.get(String(newsId)) || null;
+}
+
+function localizeNewsField(news: Record<string, any>, field: 'title' | 'excerpt', locale: string): string {
+  if (field === 'title') {
+    return locale === 'id'
+      ? news.title_id || news.titleId || news.title || news.title_en || news.titleEn || ''
+      : news.title_en || news.titleEn || news.title || news.title_id || news.titleId || '';
+  }
+
+  return locale === 'id'
+    ? news.excerpt_id || news.excerptId || news.excerpt || news.excerpt_en || news.excerptEn || news.content_id || news.contentId || news.content || news.content_en || news.contentEn || ''
+    : news.excerpt_en || news.excerptEn || news.excerpt || news.excerpt_id || news.excerptId || news.content_en || news.contentEn || news.content || news.content_id || news.contentId || '';
+}
+
 function backgroundPositionToClasses(position: string | undefined): string {
   const normalizedPosition = position || 'center';
 
@@ -611,10 +689,26 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
         : null,
       autoplay: data.autoplay ?? data.autoplay_enabled ?? data.autoplayEnabled ?? true,
       autoplaySpeed: data.autoplay_speed || null,
+      thumbsVisible:
+        data.thumbsVisible
+        ?? data.thumbs_visible
+        ?? data.config?.thumbsVisible
+        ?? data.config?.thumbs_visible,
+      showFinderEnterprise:
+        data.showFinderEnterprise
+        ?? data.show_finder_enterprise
+        ?? data.config?.showFinderEnterprise
+        ?? data.config?.show_finder_enterprise,
       showEnterpriseSolutionFinderCTA:
         data.showEnterpriseSolutionFinderCTA
         ?? data.show_enterprise_solution_finder_cta
         ?? data.config?.showEnterpriseSolutionFinderCTA,
+      solutionsFinderEnterpriseClassName:
+        data.solutionsFinderEnterpriseClassName
+        ?? data.solutions_finder_enterprise_class_name
+        ?? data.config?.solutionsFinderEnterpriseClassName
+        ?? data.config?.solutions_finder_enterprise_class_name
+        ?? '',
       theme: data.theme || 'dark',
       ...styleProps,
     }),
@@ -805,6 +899,9 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
     component: HighlightingRealInitiatives,
     mapProps: ({ data, t, styleProps, locale }) => {
       const config = data.config && typeof data.config === 'object' ? data.config : {};
+      const newsById = new Map<string, Record<string, any>>(
+        getMainDataNewsItems(data.mainData).map((news): [string, Record<string, any>] => [String(news.id), news])
+      );
       const rawItems = Array.isArray(data.initiatives)
         ? data.initiatives
         : Array.isArray(data.items)
@@ -830,15 +927,28 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
           align: 'left',
         },
           items: rawItems
-          .map((ini: any, idx: number) => ({
-              id: `initiative-${idx}`,
-              topLogo: resolveMediaUrl(ini.topLogo || ini.top_logo || ini.logo || ini.logo_image || ini.logoImage || ini.partner_logo || ini.partnerLogo),
-              image: resolveMediaUrl(ini.image || ini.thumbnail || ini.thumbnail_image || ini.thumbnailImage || ini.cover_image || ini.coverImage) || undefined,
-              title: t(ini.title || ini.name),
-              desc: t(ini.description || ini.desc || ini.sub_description || ini.subDescription),
-              date: ini.date || ini.published_at || ini.publishedAt || '',
-              url: firstNonEmpty(ini.url, ini.href, ini.link, ini.cta_url, ini.ctaUrl, ini.cta_link, ini.ctaLink) || '#',
-            }))
+          .map((ini: any, idx: number) => {
+              const content = getInitiativeContent(ini);
+              const source = ini.source || ini.data_source || content.source || 'manual';
+              const newsItem = isNewsInitiativeSource(source) ? resolveInitiativeNews(ini, newsById) : null;
+              const slug = newsItem?.slug || content.slug;
+              const newsUrl = slug ? `/${locale}/news/${slug}` : '';
+
+              return {
+                id: ini.id || `initiative-${idx}`,
+                topLogo: resolveMediaUrl(ini.topLogo || ini.top_logo || ini.logo || ini.logo_image || ini.logoImage || ini.partner_logo || ini.partnerLogo),
+                image: newsItem
+                  ? resolveMediaUrl(newsItem.news_thumbnail || newsItem.image || newsItem.thumbnail)
+                  : resolveMediaUrl(content.image) || undefined,
+                title: newsItem ? localizeNewsField(newsItem, 'title', locale) : t(content.title),
+                desc: truncateText(newsItem ? localizeNewsField(newsItem, 'excerpt', locale) : t(content.description)),
+                date: newsItem
+                  ? newsItem.news_date || newsItem.newsDate || newsItem.published_at || newsItem.publishedAt || ''
+                  : content.date,
+                url: newsItem ? firstNonEmpty(newsUrl, content.url) || '#' : firstNonEmpty(content.url) || '#',
+                target: normalizeLinkTarget(ini.target || ini.urlTarget || ini.url_target || content.target),
+              };
+            })
             .filter((item: any) => item.image || item.title || item.desc),
         partnerText: t(data.partnerText || data.partner_text || data.community_text || data.communityText),
         partnerLogos: (Array.isArray(data.partnerLogos)
@@ -852,6 +962,10 @@ export const COMPONENT_MAP: Record<string, ComponentMapEntry> = {
                 : []
         ).map((logo: any) => resolveMediaUrl(logo)).filter(Boolean),
         ctaList: getRawCtaList(data).map((cta, index) => normalizeCtaItem(cta, t, index)),
+        show_intro_section: data.show_intro_section ?? data.showIntroSection ?? true,
+        show_slider_section: data.show_slider_section ?? data.showSliderSection ?? true,
+        show_community_section: data.show_community_section ?? data.showCommunitySection ?? true,
+        show_cta_section: data.show_cta_section ?? data.showCtaSection ?? true,
       },
       ...styleProps,
       };

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { SettingsService } from '../services/settings.service';
+import { sendMail } from '../services/mail.service';
 import { SettingType } from '@prisma/client';
 
 /**
@@ -7,6 +8,10 @@ import { SettingType } from '@prisma/client';
  * Handles all settings-related HTTP requests
  */
 export class SettingsController {
+  private static isValidEmail(value: unknown): value is string {
+    return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  }
+
   private static setNestedValue(target: Record<string, any>, path: string, value: any): void {
     const segments = path.split('.');
     let cursor = target;
@@ -177,6 +182,71 @@ export class SettingsController {
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve groups',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * POST /api/cms/settings/test-email
+   * Send a test email with the active SMTP configuration.
+   */
+  static async sendTestEmail(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+
+      if (!SettingsController.isValidEmail(email)) {
+        res.status(400).json({
+          success: false,
+          message: 'Email tujuan tidak valid',
+        });
+        return;
+      }
+
+      const trimmedEmail = email.trim();
+      const result = await sendMail({
+        to: trimmedEmail,
+        subject: 'SMTP Test Email - LinkNet Corp',
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <title>SMTP Test Email</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;">
+              <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
+                <h2 style="margin: 0 0 12px; color: #111827;">SMTP Test Email</h2>
+                <p>Email ini dikirim dari CMS LinkNet untuk memastikan konfigurasi SMTP aktif.</p>
+                <p style="color: #6b7280; font-size: 14px;">Jika email ini diterima, konfigurasi SMTP berhasil digunakan.</p>
+              </div>
+            </body>
+          </html>
+        `,
+        text: 'Email ini dikirim dari CMS LinkNet untuk memastikan konfigurasi SMTP aktif.',
+      });
+
+      if (!result.sent) {
+        res.status(503).json({
+          success: false,
+          message:
+            result.reason === 'SMTP_NOT_CONFIGURED'
+              ? 'SMTP belum terkonfigurasi lengkap'
+              : 'Gagal mengirim test email menggunakan SMTP aktif',
+          reason: result.reason,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: `Test email berhasil dikirim ke ${trimmedEmail}`,
+      });
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal mengirim test email',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }

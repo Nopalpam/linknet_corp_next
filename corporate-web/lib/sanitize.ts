@@ -37,5 +37,15 @@ export function sanitizeHTML(html: string | null | undefined): string {
     },
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
     allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+    transformTags: {
+      a: (tagName, attribs) => ({
+        tagName,
+        attribs: {
+          ...attribs,
+          target: attribs.target || '_blank',
+          rel: attribs.rel || 'noopener noreferrer',
+        },
+      }),
+    },
   });
 }

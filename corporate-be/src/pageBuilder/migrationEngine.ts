@@ -346,6 +346,111 @@ function normalizeInfoContactsSettings(data: Record<string, any>): void {
   });
 }
 
+function normalizeLocalizedText(value: any): { en: string; id: string } {
+  if (isRecord(value)) {
+    const en = value.en ?? value.label ?? value.title ?? value.name ?? value.id ?? '';
+    const id = value.id ?? value.label ?? value.title ?? value.name ?? value.en ?? '';
+
+    return {
+      en: en == null || typeof en === 'object' ? '' : String(en),
+      id: id == null || typeof id === 'object' ? '' : String(id),
+    };
+  }
+
+  const text = value == null ? '' : String(value);
+  return { en: text, id: text };
+}
+
+function normalizeInitiativeSource(value: any): 'manual' | 'news' {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return ['news', 'data_news', 'selected_news', 'cms_news'].includes(normalized) ? 'news' : 'manual';
+}
+
+function normalizeInitiativeTarget(value: any): '_self' | '_blank' {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return normalized === 'blank' || normalized === '_blank' ? '_blank' : '_self';
+}
+
+function normalizeHighlightingRealInitiativesSettings(data: Record<string, any>): void {
+  const intro = ensureIntro(data);
+  intro.as = intro.as || 'h2';
+  intro.align = intro.align || 'center';
+  if (intro.title === undefined && data.title !== undefined) intro.title = data.title;
+  if (intro.description === undefined && data.description !== undefined) intro.description = data.description;
+  if (intro.label === undefined) intro.label = '';
+
+  for (const key of [
+    'show_intro_section',
+    'show_slider_section',
+    'show_community_section',
+    'show_cta_section',
+  ]) {
+    data[key] = coerceValue(data[key] ?? true, 'boolean');
+  }
+
+  const initiatives = Array.isArray(data.initiatives)
+    ? data.initiatives
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+
+  data.initiatives = initiatives.map((item: Record<string, any>, index: number) => {
+    const content = isRecord(item.content) ? item.content : {};
+    const news = isRecord(item.news) ? item.news : {};
+    const newsId = content.newsId ?? content.news_id ?? item.newsId ?? item.news_id ?? '';
+    const source = normalizeInitiativeSource(item.source ?? item.data_source ?? content.source ?? (newsId ? 'news' : 'manual'));
+
+    return {
+      id: item.id || index + 1,
+      topLogo: item.topLogo ?? item.top_logo ?? item.logo ?? item.logo_image ?? item.logoImage ?? item.partner_logo ?? item.partnerLogo ?? '',
+      source,
+      content: {
+        newsId,
+        image: content.image ?? item.image ?? item.thumbnail ?? item.thumbnail_image ?? item.thumbnailImage ?? item.cover_image ?? item.coverImage ?? news.news_thumbnail ?? '',
+        title: normalizeLocalizedText(content.title ?? item.title ?? item.name ?? (Object.keys(news).length > 0 ? { en: news.title_en || '', id: news.title_id || news.title_en || '' } : { en: '', id: '' })),
+        description: normalizeLocalizedText(content.description ?? content.desc ?? item.description ?? item.desc ?? item.sub_description ?? item.subDescription ?? (Object.keys(news).length > 0 ? { en: news.excerpt_en || '', id: news.excerpt_id || news.excerpt_en || '' } : { en: '', id: '' })),
+        date: content.date ?? item.date ?? item.published_at ?? item.publishedAt ?? news.news_date ?? '',
+        url: content.url ?? item.url ?? item.href ?? item.link ?? item.ctaUrl ?? item.cta_url ?? (news.slug ? `/news/${news.slug}` : ''),
+        slug: content.slug ?? item.slug ?? news.slug ?? '',
+      },
+      target: normalizeInitiativeTarget(item.target ?? item.urlTarget ?? item.url_target ?? content.target),
+    };
+  });
+
+  data.partnerText = normalizeLocalizedText(data.partnerText ?? data.partner_text ?? data.community_text ?? data.communityText ?? '');
+  const partnerLogos = Array.isArray(data.partnerLogos)
+    ? data.partnerLogos
+    : Array.isArray(data.partner_logos)
+      ? data.partner_logos
+      : Array.isArray(data.community_logos)
+        ? data.community_logos
+        : Array.isArray(data.logos)
+          ? data.logos
+          : [];
+
+  data.partnerLogos = partnerLogos.map((logo: any, index: number) => {
+    if (typeof logo === 'string') return { url: logo, alt: `Partner ${index + 1}` };
+    if (isRecord(logo)) return { url: logo.url ?? logo.image ?? '', alt: logo.alt ?? logo.name ?? `Partner ${index + 1}` };
+    return { url: '', alt: `Partner ${index + 1}` };
+  });
+
+  normalizeLegacyCta(data);
+
+  [
+    'title',
+    'description',
+    'items',
+    'partner_text',
+    'community_text',
+    'communityText',
+    'partner_logos',
+    'community_logos',
+    'logos',
+  ].forEach((key) => {
+    if (data[key] !== undefined) delete data[key];
+  });
+}
+
 function normalizeLogoRunningSettings(data: Record<string, any>): void {
   ensureIntro(data);
   const logos = Array.isArray(data.logos)
@@ -627,6 +732,13 @@ const MIGRATIONS: Record<string, Record<number, ComponentMigration>> = {
       toVersion: 3,
       description: 'Normalize the static hero gradient visibility flag.',
       operations: [{ type: 'convertType', path: 'gradient_visible', to: 'boolean' }],
+    },
+  },
+  highlighting_real_initiatives: {
+    2: {
+      toVersion: 2,
+      description: 'Normalize legacy initiative cards, section toggles, community logos, and CTA data.',
+      operations: [{ type: 'transform', description: 'Normalize Highlighting Real Initiatives settings.', run: normalizeHighlightingRealInitiativesSettings }],
     },
   },
   information_list: {

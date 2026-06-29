@@ -28,6 +28,10 @@ const NAVBAR_CTA_SETTING_KEYS = [
   'navbar.cta.consult.url',
 ];
 const COOKIE_ACCEPT_LABEL_KEY = 'cookies.accept_label';
+const MFA_SETTING_KEYS = [
+  'features.two_factor_auth',
+  'features.mfa_provider',
+];
 
 /**
  * Encryption configuration
@@ -87,7 +91,8 @@ export class SettingsService {
     return (
       this.hasDefaultLocaleSetting(settings) &&
       this.hasNavbarCtaSettings(settings) &&
-      settings.some((setting) => setting.key === COOKIE_ACCEPT_LABEL_KEY)
+      settings.some((setting) => setting.key === COOKIE_ACCEPT_LABEL_KEY) &&
+      MFA_SETTING_KEYS.every((key) => settings.some((setting) => setting.key === key))
     );
   }
 
@@ -302,10 +307,112 @@ export class SettingsService {
     await this.clearCache();
   }
 
+  private static getMfaProviderDefault(): 'local' | 'keycloak' {
+    const provider = (process.env.MFA_PROVIDER || process.env.AUTH_MFA_PROVIDER || 'keycloak')
+      .toLowerCase()
+      .trim();
+
+    return provider === 'local' ? 'local' : 'keycloak';
+  }
+
+  private static getMfaEnabledDefault(): boolean {
+    const value = (process.env.MFA_ENABLED || '').toLowerCase().trim();
+    return ['true', 'enable', 'enabled', '1', 'yes'].includes(value);
+  }
+
+  private static getMfaSettingPayloads() {
+    return [
+      {
+        key: 'features.two_factor_auth',
+        value: this.getMfaEnabledDefault(),
+        type: SettingType.BOOLEAN,
+        group: 'features',
+        label: 'Enable MFA',
+        description: 'Require MFA during CMS login. Keycloak configuration is read from environment or Azure Key Vault.',
+        isPublic: false,
+        isSystem: true,
+      },
+      {
+        key: 'features.mfa_provider',
+        value: this.getMfaProviderDefault(),
+        type: SettingType.SELECT,
+        group: 'features',
+        label: 'MFA Provider',
+        description: 'Select local TOTP or Keycloak realm-managed OTP for CMS login MFA.',
+        isPublic: false,
+        isSystem: true,
+        options: { options: ['local', 'keycloak'] },
+      },
+    ];
+  }
+
+  private static isMfaSettingMetadataComplete(setting: Setting, payload: ReturnType<typeof SettingsService.getMfaSettingPayloads>[number]): boolean {
+    return (
+      setting.type === payload.type &&
+      setting.group === payload.group &&
+      setting.label === payload.label &&
+      setting.description === payload.description &&
+      setting.isPublic === payload.isPublic &&
+      setting.isSystem === payload.isSystem &&
+      JSON.stringify(setting.options || null) === JSON.stringify((payload as { options?: any }).options || null)
+    );
+  }
+
+  private static isValidMfaProvider(value: unknown): value is 'local' | 'keycloak' {
+    return value === 'local' || value === 'keycloak';
+  }
+
+  private static async ensureMfaSettings(): Promise<void> {
+    let changed = false;
+
+    for (const payload of this.getMfaSettingPayloads()) {
+      const setting = await prisma.setting.findUnique({
+        where: { key: payload.key },
+      });
+
+      if (!setting) {
+        await prisma.setting.create({ data: payload });
+        changed = true;
+        continue;
+      }
+
+      const data: any = {};
+
+      if (!this.isMfaSettingMetadataComplete(setting, payload)) {
+        Object.assign(data, {
+          type: payload.type,
+          group: payload.group,
+          label: payload.label,
+          description: payload.description,
+          isPublic: payload.isPublic,
+          isSystem: payload.isSystem,
+          options: (payload as { options?: any }).options,
+        });
+      }
+
+      if (payload.key === 'features.mfa_provider' && !this.isValidMfaProvider(setting.value)) {
+        data.value = payload.value;
+      }
+
+      if (Object.keys(data).length > 0) {
+        await prisma.setting.update({
+          where: { key: payload.key },
+          data,
+        });
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await this.clearCache();
+    }
+  }
+
   private static async ensureSystemDefaultSettings(): Promise<void> {
     await this.ensureDefaultLocaleSetting();
     await this.ensureNavbarCtaSettings();
     await this.ensureCookieAcceptLabelSetting();
+    await this.ensureMfaSettings();
   }
 
   /**
@@ -491,7 +598,7 @@ export class SettingsService {
         }
       }
 
-      if (group === 'general' || group === 'navbar') {
+      if (group === 'general' || group === 'navbar' || group === 'features') {
         await this.ensureSystemDefaultSettings();
       }
 
@@ -528,6 +635,10 @@ export class SettingsService {
 
       if (NAVBAR_CTA_SETTING_KEYS.includes(key)) {
         await this.ensureNavbarCtaSettings();
+      }
+
+      if (MFA_SETTING_KEYS.includes(key)) {
+        await this.ensureMfaSettings();
       }
 
       const setting = await prisma.setting.findUnique({

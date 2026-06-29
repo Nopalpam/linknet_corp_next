@@ -385,6 +385,12 @@ const FIELD_ALIASES: Record<string, Record<string, string[]>> = {
 };
 
 export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = {
+  sliders_hero: {
+    thumbsVisible: 'Show Thumbs',
+    showFinderEnterprise: 'Show Solutions Finder Enterprise',
+    showEnterpriseSolutionFinderCTA: 'Show Solutions Finder Enterprise',
+    solutionsFinderEnterpriseClassName: 'Solutions Finder Enterprise Custom Class',
+  },
   report_list: {
     report_type_id: 'Report Type',
     report_section_id: 'Report Section',
@@ -486,6 +492,12 @@ export const DATA_DRIVEN_FIELD_LABELS: Record<string, Record<string, string>> = 
 };
 
 export const DATA_DRIVEN_FIELD_HELPERS: Record<string, Record<string, string>> = {
+  sliders_hero: {
+    thumbsVisible: 'When enabled, the slider shows clickable tab thumbs. If Solutions Finder is enabled, thumbs are hidden.',
+    showFinderEnterprise: 'When enabled, the Solutions Finder CTA is shown and tab thumbs are hidden.',
+    showEnterpriseSolutionFinderCTA: 'When enabled, the Solutions Finder CTA is shown and tab thumbs are hidden.',
+    solutionsFinderEnterpriseClassName: 'Additional classes appended to the fixed Solutions Finder wrapper class.',
+  },
   report_list: {
     report_type_id: 'Uses active Report Types from Report CMS.',
     report_section_id: 'Optional. Narrows reports to one active Report Section.',

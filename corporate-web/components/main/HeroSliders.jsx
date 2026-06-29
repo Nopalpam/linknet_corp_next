@@ -42,10 +42,68 @@ function resolveBoolean(value, fallback = false) {
   return fallback;
 }
 
+function getBackgroundUtilityClassName(className = '') {
+  return className
+    .split(/\s+/)
+    .filter((token) => (
+      token.startsWith('bg-') ||
+      token.startsWith('from-') ||
+      token.startsWith('via-') ||
+      token.startsWith('to-')
+    ))
+    .join(' ');
+}
+
+function resolveGradientColor(token = '') {
+  const color = token.replace(/^(from|via|to)-/, '');
+  const arbitrary = color.match(/^\[(.+)\]$/);
+
+  if (arbitrary) return arbitrary[1];
+
+  const colorMap = {
+    white: '#ffffff',
+    black: '#000000',
+    transparent: 'transparent',
+  };
+
+  return colorMap[color] || null;
+}
+
+function getGradientBackgroundStyle(className = '') {
+  const tokens = className.split(/\s+/).filter(Boolean);
+  const directionToken = tokens.find((token) => token.startsWith('bg-gradient-to-'));
+  if (!directionToken) return {};
+
+  const directionMap = {
+    t: 'top',
+    tr: 'top right',
+    r: 'right',
+    br: 'bottom right',
+    b: 'bottom',
+    bl: 'bottom left',
+    l: 'left',
+    tl: 'top left',
+  };
+  const direction = directionMap[directionToken.replace('bg-gradient-to-', '')] || 'bottom';
+  const fromColor = resolveGradientColor(tokens.find((token) => token.startsWith('from-')) || '');
+  const viaColor = resolveGradientColor(tokens.find((token) => token.startsWith('via-')) || '');
+  const toColor = resolveGradientColor(tokens.find((token) => token.startsWith('to-')) || '');
+
+  if (!fromColor && !toColor) return {};
+
+  const stops = [fromColor, viaColor, toColor].filter(Boolean);
+  return {
+    backgroundImage: `linear-gradient(to ${direction}, ${stops.join(', ')})`,
+  };
+}
+
 export default function HeroSliders({
   name = 'home',
   cmsSlides = null,
+  thumbsVisible: thumbsVisibleProp,
   showEnterpriseSolutionFinderCTA: showEnterpriseSolutionFinderCTAProp,
+  showFinderEnterprise: showFinderEnterpriseProp,
+  solutionsFinderEnterpriseClassName: solutionsFinderEnterpriseClassNameProp = "",
   autoplay = true,
   autoplaySpeed = AUTOPLAY_DELAY,
   className = "",
@@ -70,29 +128,48 @@ export default function HeroSliders({
     bgImage = "",
     bgImageMobile = "",
     thumbsVisible: thumbsVisibleConfig = true,
+    showFinderEnterprise: defaultShowFinderEnterprise,
     showEnterpriseSolutionFinderCTA: defaultShowEnterpriseSolutionFinderCTA = false,
-    enterpriseSolutionFinderCTAClassName: defaultEnterpriseSolutionFinderCTAClassName = "",
+    solutionsFinderEnterpriseClassName: defaultSolutionsFinderEnterpriseClassName = "",
     bgPositionClasses = "bg-center md:bg-center",
     bgSizeClass = "bg-cover",
   } = sectionConfig;
   const {
     slides = [],
+    showFinderEnterprise: sectionShowFinderEnterprise,
     showEnterpriseSolutionFinderCTA: sectionShowEnterpriseSolutionFinderCTA,
-    enterpriseSolutionFinderCTAClassName = defaultEnterpriseSolutionFinderCTAClassName,
+    solutionsFinderEnterpriseClassName: sectionSolutionsFinderEnterpriseClassName = defaultSolutionsFinderEnterpriseClassName,
   } = sectionData || {};
-  const showEnterpriseSolutionFinderCTA = resolveBoolean(
-    showEnterpriseSolutionFinderCTAProp,
-    resolveBoolean(sectionShowEnterpriseSolutionFinderCTA, defaultShowEnterpriseSolutionFinderCTA),
+  const showFinderEnterprise = resolveBoolean(
+    showFinderEnterpriseProp,
+    resolveBoolean(
+      showEnterpriseSolutionFinderCTAProp,
+      resolveBoolean(
+        sectionShowFinderEnterprise,
+        resolveBoolean(
+          sectionShowEnterpriseSolutionFinderCTA,
+          resolveBoolean(defaultShowFinderEnterprise, defaultShowEnterpriseSolutionFinderCTA),
+        ),
+      ),
+    ),
   );
-  const thumbsVisible = resolveBoolean(thumbsVisibleConfig, true);
+  const thumbsVisible = resolveBoolean(thumbsVisibleProp, resolveBoolean(thumbsVisibleConfig, true));
+  const showThumbs = thumbsVisible && !showFinderEnterprise;
+  const showCompactPagination = !showThumbs;
+  const solutionsFinderEnterpriseClassName = [
+    `relative inset-x-0 ${showFinderEnterprise ? 'md:-mt-[36px]' : ''} z-20`,
+    sectionSolutionsFinderEnterpriseClassName,
+    solutionsFinderEnterpriseClassNameProp,
+  ].filter(Boolean).join(' ');
   const autoplayEnabled = resolveBoolean(autoplay, true);
   const resolvedAutoplaySpeed = Number(autoplaySpeed) > 0 ? Number(autoplaySpeed) : AUTOPLAY_DELAY;
 
   const { backgroundStyle, backgroundImageClassName } = getResponsiveBackgroundProps(bgImage, bgImageMobile);
-  const showCompactPagination = !thumbsVisible;
   const sectionPaddingClass = showCompactPagination
     ? 'pb-0'
-    : (showEnterpriseSolutionFinderCTA ? 'pb-10' : 'pb-8');
+    : 'pb-8';
+  const backgroundUtilityClassName = getBackgroundUtilityClassName(`${configClassName} ${className}`);
+  const gradientBackgroundStyle = getGradientBackgroundStyle(`${configClassName} ${className}`);
 
   if (!slides || slides.length === 0) return null;
 
@@ -103,13 +180,13 @@ export default function HeroSliders({
         bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
         ${backgroundImageClassName}
         ${configClassName} ${className}`}
-      style={backgroundStyle}
+      style={{ ...gradientBackgroundStyle, ...backgroundStyle }}
     >
 
       {/* ======================================= */}
       {/* 1. MAIN SLIDER (HERO)                   */}
       {/* ======================================= */}
-      <div className="relative group">
+      <div className={`relative group ${backgroundUtilityClassName}`}>
         <Swiper
             onSwiper={setMainSwiper}
             modules={[Autoplay, EffectFade, Navigation, Thumbs, Controller]}
@@ -120,7 +197,7 @@ export default function HeroSliders({
             loop={true}
             thumbs={{
               swiper:
-                thumbsVisible && thumbsSwiper && !thumbsSwiper.destroyed
+                showThumbs && thumbsSwiper && !thumbsSwiper.destroyed
                   ? thumbsSwiper
                   : null
             }}
@@ -159,15 +236,9 @@ export default function HeroSliders({
         </div>
       </div>
 
-    {showEnterpriseSolutionFinderCTA && thumbsVisible ? (
-      <ModalFormSuggestEnterpriseProvider>
-        <EnterpriseSolutionFinderCTA className={enterpriseSolutionFinderCTAClassName} />
-      </ModalFormSuggestEnterpriseProvider>
-    ) : null}
-
     {showCompactPagination ? (
-      <div className={enterpriseSolutionFinderCTAClassName}>
-        {showEnterpriseSolutionFinderCTA ? (
+      <div className={solutionsFinderEnterpriseClassName}>
+        {showFinderEnterprise ? (
           <ModalFormSuggestEnterpriseProvider>
             <div>
               <EnterpriseSolutionFinderCTA />
@@ -175,7 +246,7 @@ export default function HeroSliders({
           </ModalFormSuggestEnterpriseProvider>
         ) : null}
 
-        <div className={`${showEnterpriseSolutionFinderCTA ? 'mt-5' : ''} flex justify-center`}>
+        <div className={`${showFinderEnterprise ? 'mt-5' : ''} flex justify-center`}>
           <div className="flex items-center gap-3 rounded-full backdrop-blur-sm">
             {slides.map((slide, index) => {
               const isActive = activeIndex === index;
@@ -200,7 +271,7 @@ export default function HeroSliders({
     {/* ======================================= */}
     {/* 2. THUMBS / TAB INDICATOR (CLICKABLE)   */}
     {/* ======================================= */}
-    {thumbsVisible && (
+    {showThumbs && (
       <div className="px-2 w-full mx-auto px-6 md:px-10 mt-2 md:mt-1 overflow-hidden">
           <Swiper
               onSwiper={setThumbsSwiper}

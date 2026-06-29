@@ -243,7 +243,7 @@ export function sanitizeUserContent(html: string): string {
       'blockquote',
     ],
     allowedAttributes: {
-      a: ['href', 'title'],
+      a: ['href', 'title', 'target', 'rel'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
     transformTags: {

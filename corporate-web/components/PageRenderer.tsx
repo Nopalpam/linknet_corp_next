@@ -12,6 +12,7 @@
 import React from 'react';
 import { CMSComponent } from '@/lib/componentRegistry';
 import { COMPONENT_MAP, createLocalizer, normalizeComponentData } from '@/lib/componentMap';
+import { getCmsRuntimeClassStyle } from '@/lib/cmsRuntimeStyles';
 import UnknownComponent from '@/components/UnknownComponent';
 
 interface PageRendererProps {
@@ -94,9 +95,14 @@ export default function PageRenderer({ components, locale = 'id', pageContext }:
 
         // Build style props from CMS config.className
         const styleProps: Record<string, any> = {};
-        if (data.config?.className || data.custom_class) {
-          styleProps.className = data.config?.className || data.custom_class;
+        const cmsClassName = data.config?.className || data.custom_class || '';
+        if (cmsClassName) {
+          styleProps.className = cmsClassName;
         }
+        const runtimeClassStyle = getCmsRuntimeClassStyle(cmsClassName);
+        const wrapperStyle: React.CSSProperties = runtimeClassStyle.hasRuntimeStyle
+          ? { display: 'contents', ...runtimeClassStyle.style }
+          : { display: 'contents' };
 
         // Map props via the registry's mapper. Components without a mapper still
         // receive the CMS payload so one-to-one synced components can render
@@ -121,7 +127,8 @@ export default function PageRenderer({ components, locale = 'id', pageContext }:
           <div
             key={debugAttributes.id}
             {...debugAttributes}
-            style={{ display: 'contents' }}
+            className={runtimeClassStyle.className || undefined}
+            style={wrapperStyle}
             suppressHydrationWarning
           >
             <Component {...props} />

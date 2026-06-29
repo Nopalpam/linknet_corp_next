@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generalRateLimiter } from '../middleware/rateLimiter.middleware';
+import { generalRateLimiter, uploadRateLimiter } from '../middleware/rateLimiter.middleware';
 import { csrfProtectionMiddleware } from '../middleware/csrf.middleware';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
@@ -35,6 +35,7 @@ router.post('/folders/:id/transfer', authMiddleware, requirePermission(Permissio
 
 router.post(
   '/upload',
+  uploadRateLimiter,
   authMiddleware,
   requirePermission(Permission.FILES_CREATE),
   upload.array('files', 10),

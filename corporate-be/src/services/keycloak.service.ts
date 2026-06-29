@@ -1,3 +1,5 @@
+import azureKeyVaultService from './azureKeyVault.service';
+
 type KeycloakTokenResponse = {
   access_token?: string;
   refresh_token?: string;
@@ -19,9 +21,38 @@ type KeycloakCredential = {
   type: string;
 };
 
+type KeycloakConfig = {
+  url: string;
+  realm: string;
+  clientId: string;
+  clientSecret: string;
+  adminUser: string;
+  adminPassword: string;
+};
+
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
-export const getKeycloakConfig = () => {
+const getEnvValue = (name: string): string => process.env[name]?.trim() || '';
+
+const KEYCLOAK_SECRET_NAMES: Record<keyof KeycloakConfig, { env: string; akv: string }> = {
+  url: { env: 'KEYCLOAK_URL', akv: 'keycloak-url' },
+  realm: { env: 'KEYCLOAK_REALM', akv: 'keycloak-realm' },
+  clientId: { env: 'KEYCLOAK_CLIENT_ID', akv: 'keycloak-client-id' },
+  clientSecret: { env: 'KEYCLOAK_CLIENT_SECRET', akv: 'keycloak-client-secret' },
+  adminUser: { env: 'KEYCLOAK_ADMIN_USER', akv: 'keycloak-admin-user' },
+  adminPassword: { env: 'KEYCLOAK_ADMIN_PASSWORD', akv: 'keycloak-admin-password' },
+};
+
+const readKeycloakSecret = async (key: keyof KeycloakConfig): Promise<string> => {
+  const mapping = KEYCLOAK_SECRET_NAMES[key];
+  const envValue = getEnvValue(mapping.env);
+  if (envValue) return envValue;
+
+  const secretValue = await azureKeyVaultService.getSecret(mapping.akv, mapping.env);
+  return secretValue?.trim() || '';
+};
+
+export const getKeycloakConfig = (): KeycloakConfig => {
   const url = process.env.KEYCLOAK_URL?.trim();
   const realm = process.env.KEYCLOAK_REALM?.trim();
   const clientId = process.env.KEYCLOAK_CLIENT_ID?.trim();
@@ -37,13 +68,31 @@ export const getKeycloakConfig = () => {
   };
 };
 
-export const isKeycloakConfigured = (): boolean => {
-  const config = getKeycloakConfig();
-  return Boolean(config.url && config.realm && config.clientId && config.clientSecret);
+export const getKeycloakConfigAsync = async (): Promise<KeycloakConfig> => {
+  const [url, realm, clientId, clientSecret, adminUser, adminPassword] = await Promise.all([
+    readKeycloakSecret('url'),
+    readKeycloakSecret('realm'),
+    readKeycloakSecret('clientId'),
+    readKeycloakSecret('clientSecret'),
+    readKeycloakSecret('adminUser'),
+    readKeycloakSecret('adminPassword'),
+  ]);
+
+  return {
+    url: url ? trimTrailingSlash(url) : '',
+    realm,
+    clientId,
+    clientSecret,
+    adminUser,
+    adminPassword,
+  };
 };
 
-export const getKeycloakRealmUrl = (): string | null => {
-  const config = getKeycloakConfig();
+export const isKeycloakConfigured = (config: KeycloakConfig = getKeycloakConfig()): boolean => {
+  return Boolean(config.url && config.realm && config.clientId);
+};
+
+export const getKeycloakRealmUrl = (config: KeycloakConfig = getKeycloakConfig()): string | null => {
   if (!config.url || !config.realm) return null;
   return `${config.url}/realms/${encodeURIComponent(config.realm)}`;
 };
@@ -56,17 +105,25 @@ const formEncode = (data: Record<string, string>): URLSearchParams => {
   return form;
 };
 
-const requestToken = async (body: Record<string, string>): Promise<KeycloakTokenResponse> => {
-  const realmUrl = getKeycloakRealmUrl();
+const requestToken = async (
+  body: Record<string, string>,
+  config: KeycloakConfig
+): Promise<KeycloakTokenResponse> => {
+  const realmUrl = getKeycloakRealmUrl(config);
   if (!realmUrl) {
     throw new Error('Keycloak realm is not configured');
   }
 
-  const response = await fetch(`${realmUrl}/protocol/openid-connect/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formEncode(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${realmUrl}/protocol/openid-connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formEncode(body),
+    });
+  } catch {
+    throw new Error('Keycloak service is unavailable');
+  }
 
   const data = (await response.json().catch(() => ({}))) as KeycloakTokenResponse;
 
@@ -82,8 +139,8 @@ export const verifyPasswordAndOtp = async (input: {
   password: string;
   otp: string;
 }): Promise<boolean> => {
-  const config = getKeycloakConfig();
-  if (!isKeycloakConfigured()) {
+  const config = await getKeycloakConfigAsync();
+  if (!isKeycloakConfigured(config)) {
     throw new Error('Keycloak is not configured');
   }
 
@@ -94,23 +151,25 @@ export const verifyPasswordAndOtp = async (input: {
     username: input.username,
     password: input.password,
     totp: input.otp,
-  });
+  }, config);
 
   return true;
 };
 
 const getAdminAccessToken = async (): Promise<string> => {
-  const config = getKeycloakConfig();
+  const config = await getKeycloakConfigAsync();
 
-  if (!isKeycloakConfigured()) {
+  if (!isKeycloakConfigured(config)) {
     throw new Error('Keycloak is not configured');
   }
 
-  const clientCredentials = await requestToken({
-    grant_type: 'client_credentials',
-    client_id: config.clientId,
-    client_secret: config.clientSecret,
-  }).catch(() => null);
+  const clientCredentials = config.clientSecret
+    ? await requestToken({
+        grant_type: 'client_credentials',
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+      }, config).catch(() => null)
+    : null;
 
   if (clientCredentials?.access_token) {
     return clientCredentials.access_token;
@@ -125,7 +184,7 @@ const getAdminAccessToken = async (): Promise<string> => {
     client_id: 'admin-cli',
     username: config.adminUser,
     password: config.adminPassword,
-  });
+  }, config);
 
   if (!passwordGrant.access_token) {
     throw new Error('Keycloak admin token was not returned');
@@ -135,7 +194,7 @@ const getAdminAccessToken = async (): Promise<string> => {
 };
 
 const adminFetch = async <T>(path: string): Promise<T> => {
-  const config = getKeycloakConfig();
+  const config = await getKeycloakConfigAsync();
   const token = await getAdminAccessToken();
   const response = await fetch(
     `${config.url}/admin/realms/${encodeURIComponent(config.realm)}${path}`,
@@ -191,6 +250,7 @@ export const isOtpRequiredForUser = async (email: string): Promise<boolean> => {
 
 export default {
   getKeycloakConfig,
+  getKeycloakConfigAsync,
   isKeycloakConfigured,
   getKeycloakRealmUrl,
   verifyPasswordAndOtp,

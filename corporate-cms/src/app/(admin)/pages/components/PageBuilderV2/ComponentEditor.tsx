@@ -467,9 +467,26 @@ function normalizeLocalizedText(value: any): { en: string; id: string } {
   return { en: text, id: text };
 }
 
+function normalizeInitiativeSource(value: any): 'manual' | 'news' {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return ['news', 'data_news', 'selected_news', 'cms_news'].includes(normalized) ? 'news' : 'manual';
+}
+
+function normalizeInitiativeTarget(value: any): '_self' | '_blank' {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return normalized === 'blank' || normalized === '_blank' ? '_blank' : '_self';
+}
+
 function normalizeSettingsForEditor(data: Record<string, any> | undefined, componentType?: string): Record<string, any> {
   const normalized: Record<string, any> = { ...(data || {}) };
   const introSource = normalized.introData || normalized.sectionIntro || normalized.intro;
+
+  if (componentType === 'sliders_hero') {
+    if (!('showFinderEnterprise' in normalized) && 'showEnterpriseSolutionFinderCTA' in normalized) {
+      normalized.showFinderEnterprise = normalized.showEnterpriseSolutionFinderCTA;
+    }
+    delete normalized.showEnterpriseSolutionFinderCTA;
+  }
 
   if (introSource && typeof introSource === 'object' && !Array.isArray(introSource)) {
     normalized.introData = { ...introSource };
@@ -556,40 +573,60 @@ function normalizeSettingsForEditor(data: Record<string, any> | undefined, compo
 
   if (componentType === 'highlighting_real_initiatives') {
     const initiatives = Array.isArray(normalized.initiatives) ? normalized.initiatives : [];
-    normalized.initiatives = initiatives.map((item: Record<string, any>) => {
+    normalized.initiatives = initiatives.map((item: Record<string, any>, index: number) => {
       const {
+        content,
         ctaUrl,
         cta_url,
         cover_image,
         coverImage,
         desc,
+        data_source,
         href,
         link,
         logo,
         logo_image,
         logoImage,
         name,
+        news,
+        news_id,
+        newsId,
         partner_logo,
         partnerLogo,
         published_at,
         publishedAt,
+        slug,
+        source,
         sub_description,
         subDescription,
+        target,
         thumbnail,
         thumbnail_image,
         thumbnailImage,
         top_logo,
+        urlTarget,
+        url_target,
         ...rest
       } = item || {};
+      const contentData = content && typeof content === 'object' && !Array.isArray(content) ? content : {};
+      const resolvedNewsId = contentData.newsId ?? contentData.news_id ?? newsId ?? news_id ?? '';
+      const resolvedSource = normalizeInitiativeSource(source ?? data_source ?? contentData.source ?? (resolvedNewsId ? 'news' : 'manual'));
 
       return {
         ...rest,
+        id: rest.id ?? index + 1,
         topLogo: rest.topLogo ?? top_logo ?? logo ?? logo_image ?? logoImage ?? partner_logo ?? partnerLogo ?? '',
-        image: rest.image ?? thumbnail ?? thumbnail_image ?? thumbnailImage ?? cover_image ?? coverImage ?? '',
-        title: rest.title ?? name ?? { en: '', id: '' },
-        description: rest.description ?? desc ?? sub_description ?? subDescription ?? { en: '', id: '' },
-        date: rest.date ?? published_at ?? publishedAt ?? '',
-        url: rest.url ?? href ?? link ?? ctaUrl ?? cta_url ?? '',
+        source: resolvedSource,
+        content: {
+          newsId: resolvedNewsId,
+          image: contentData.image ?? rest.image ?? thumbnail ?? thumbnail_image ?? thumbnailImage ?? cover_image ?? coverImage ?? news?.news_thumbnail ?? '',
+          title: contentData.title ?? rest.title ?? name ?? (news ? { en: news.title_en || '', id: news.title_id || news.title_en || '' } : { en: '', id: '' }),
+          description: contentData.description ?? contentData.desc ?? rest.description ?? desc ?? sub_description ?? subDescription ?? (news ? { en: news.excerpt_en || '', id: news.excerpt_id || news.excerpt_en || '' } : { en: '', id: '' }),
+          date: contentData.date ?? rest.date ?? published_at ?? publishedAt ?? news?.news_date ?? '',
+          url: contentData.url ?? rest.url ?? href ?? link ?? ctaUrl ?? cta_url ?? (news?.slug ? `/news/${news.slug}` : ''),
+          slug: contentData.slug ?? slug ?? news?.slug ?? '',
+        },
+        target: normalizeInitiativeTarget(target ?? urlTarget ?? url_target ?? contentData.target),
       };
     });
 
@@ -692,11 +729,45 @@ function isWideField(key: string, value: any): boolean {
 function classifyField(key: string): 'content' | 'layout' | 'button' | 'items' | 'advanced' {
   if (key === 'introData' || key === 'sectionIntro' || key === 'intro') return 'content';
   if (COMMON_FIELD_KEYS.includes(key)) return 'advanced';
+  if (isSectionToggleField(key)) return 'layout';
+  if ([
+    'autoplay',
+    'autoplaySpeed',
+    'autoplay_speed',
+    'showFinderEnterprise',
+    'show_finder_enterprise',
+    'showEnterpriseSolutionFinderCTA',
+    'show_enterprise_solution_finder_cta',
+    'solutionsFinderEnterpriseClassName',
+    'solutions_finder_enterprise_class_name',
+  ].includes(key)) return 'layout';
   if (isSliderField(key)) return 'layout';
   if (BUTTON_KEYS.some(bk => key.startsWith(bk) || key === bk)) return 'button';
   if (LAYOUT_KEYS.some(lk => key === lk || key.startsWith(lk))) return 'layout';
   if (CONTENT_KEYS.some(ck => key === ck || key.startsWith(ck))) return 'content';
   return 'content'; // default
+}
+
+function isSectionToggleField(key: string): boolean {
+  return [
+    'show_cta_section',
+    'showCtaSection',
+    'show_intro_section',
+    'showIntroSection',
+    'show_slider_section',
+    'showSliderSection',
+    'show_community_section',
+    'showCommunitySection',
+  ].includes(key);
+}
+
+function normalizeBooleanLike(value: any): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
+  }
+  return Boolean(value);
 }
 
 function getHelperText(key: string, componentType?: string): string | undefined {
@@ -776,7 +847,7 @@ function isSliderSlidesField(key: string): boolean {
 }
 
 function isSliderToggleField(key: string): boolean {
-  return key === 'is_slider' || key === 'isSlider';
+  return key === 'is_slider' || key === 'isSlider' || key === 'thumbsVisible' || key === 'thumbs_visible';
 }
 
 function isSliderField(key: string): boolean {
@@ -1498,6 +1569,82 @@ function NewsIdsField({ label, value, onChange }: FieldProps) {
   );
 }
 
+function NewsSelectField({
+  label,
+  value,
+  onChange,
+  onSelectNews,
+}: FieldProps & { onSelectNews?: (news: News | null) => void }) {
+  const [newsItems, setNewsItems] = useState<News[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const currentValue = typeof value === 'string' ? value : '';
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredNews = normalizedQuery
+    ? newsItems.filter((news) => (
+        news.title_en.toLowerCase().includes(normalizedQuery) ||
+        (news.title_id || '').toLowerCase().includes(normalizedQuery) ||
+        news.slug.toLowerCase().includes(normalizedQuery) ||
+        (news.category?.name_en || '').toLowerCase().includes(normalizedQuery)
+      ))
+    : newsItems;
+
+  useEffect(() => {
+    let mounted = true;
+
+    newsService
+      .getActiveNews({ page: 1, limit: 100, sortBy: 'news_date', sortOrder: 'desc' })
+      .then((response) => {
+        if (mounted) setNewsItems(response.data || []);
+      })
+      .catch(() => {
+        if (mounted) setNewsItems([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleChange = (newsId: string) => {
+    const selectedNews = newsItems.find((news) => news.id === newsId) || null;
+    onChange(newsId);
+    onSelectNews?.(selectedNews);
+  };
+
+  return (
+    <FieldWrapper helper="Pilih satu berita. Image, title, desc, date, dan URL public akan mengikuti data news.">
+      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search news..."
+        className="mb-2 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+      />
+      <select
+        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+        value={currentValue}
+        onChange={(e) => handleChange(e.target.value)}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Loading news...' : 'Select news'}</option>
+        {currentValue && !newsItems.some((news) => news.id === currentValue) && (
+          <option value={currentValue}>{currentValue}</option>
+        )}
+        {filteredNews.map((news) => (
+          <option key={news.id} value={news.id}>
+            {news.title_en || news.title_id || news.slug}{news.news_date ? ` - ${news.news_date}` : ''}
+          </option>
+        ))}
+      </select>
+    </FieldWrapper>
+  );
+}
+
 function IconField({ label, value, onChange, fieldKey, componentType }: FieldProps) {
   const helper = getHelperText(fieldKey, componentType) || 'Select an icon name or enter a file/path value';
   const currentValue = typeof value === 'string' ? value : '';
@@ -1623,6 +1770,12 @@ function AwardIdsField({ label, value, onChange }: FieldProps) {
 function getItemPreview(item: any): string {
   if (typeof item === 'string') return item.slice(0, 40) || '(empty)';
   if (typeof item !== 'object' || item === null) return '';
+  if (item.content && typeof item.content === 'object') {
+    const title = item.content.title;
+    if (typeof title === 'string' && title) return title.slice(0, 40);
+    if (title && typeof title === 'object' && (title.en || title.id)) return (title.en || title.id).slice(0, 40);
+    if (typeof item.content.newsId === 'string' && item.content.newsId) return item.content.newsId.slice(0, 40);
+  }
   // Try common label fields
   for (const key of ['title', 'name', 'label', 'text', 'heading', 'caption', 'alt', 'url', 'value', 'year']) {
     const val = item[key];
@@ -1711,13 +1864,18 @@ const EMPTY_ARRAY_ITEM_TEMPLATES: Record<string, any> = {
     change: '',
   },
   initiatives: {
-    title: { en: '', id: '' },
-    description: { en: '', id: '' },
-    image: '',
-    thumbnail: '',
     topLogo: '',
-    ctaUrl: '',
-    link: '',
+    source: 'manual',
+    content: {
+      newsId: '',
+      image: '',
+      title: { en: '', id: '' },
+      description: { en: '', id: '' },
+      date: '',
+      url: '',
+      slug: '',
+    },
+    target: '_self',
   },
   community_logos: {
     url: '',
@@ -2227,6 +2385,215 @@ function ArrayField({ label, value, onChange, fieldKey, depth = 0, templateValue
   );
 }
 
+function buildNewsContent(news: News | null, currentContent: Record<string, any>) {
+  if (!news) {
+    return {
+      ...currentContent,
+      newsId: '',
+    };
+  }
+
+  return {
+    ...currentContent,
+    newsId: news.id,
+    image: news.news_thumbnail || currentContent.image || '',
+    title: {
+      en: news.title_en || '',
+      id: news.title_id || news.title_en || '',
+    },
+    description: {
+      en: news.excerpt_en || '',
+      id: news.excerpt_id || news.excerpt_en || '',
+    },
+    date: news.news_date || news.published_at || currentContent.date || '',
+    url: news.slug ? `/news/${news.slug}` : currentContent.url || '',
+    slug: news.slug || currentContent.slug || '',
+  };
+}
+
+function normalizeDateInputValue(value: any): string {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const match = trimmed.match(/^\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : trimmed;
+}
+
+function normalizeInitiativeEditorItem(data: Record<string, any>) {
+  const content = data.content && typeof data.content === 'object' && !Array.isArray(data.content)
+    ? data.content
+    : {};
+
+  return {
+    id: data.id ?? '',
+    topLogo: data.topLogo ?? data.top_logo ?? data.logo ?? '',
+    source: normalizeInitiativeSource(data.source),
+    content: {
+      newsId: content.newsId ?? content.news_id ?? data.newsId ?? data.news_id ?? '',
+      image: content.image ?? data.image ?? data.thumbnail ?? '',
+      title: content.title ?? data.title ?? { en: '', id: '' },
+      description: content.description ?? content.desc ?? data.description ?? data.desc ?? { en: '', id: '' },
+      date: content.date ?? data.date ?? data.published_at ?? data.publishedAt ?? '',
+      url: content.url ?? data.url ?? data.href ?? data.link ?? data.ctaUrl ?? data.cta_url ?? '',
+      slug: content.slug ?? data.slug ?? '',
+    },
+    target: normalizeInitiativeTarget(data.target ?? data.urlTarget ?? data.url_target ?? content.target),
+  };
+}
+
+function InitiativeItemFields({
+  data,
+  onChange,
+}: {
+  data: Record<string, any>;
+  onChange: (newData: Record<string, any>) => void;
+}) {
+  const normalized = normalizeInitiativeEditorItem(data || {});
+  const content = normalized.content;
+  const baseItem = {
+    id: normalized.id,
+    topLogo: normalized.topLogo,
+    source: normalized.source,
+    content,
+    target: normalized.target,
+  };
+
+  const updateField = (key: string, value: any) => {
+    onChange({
+      ...baseItem,
+      [key]: value,
+    });
+  };
+
+  const updateContentField = (key: string, value: any) => {
+    onChange({
+      ...baseItem,
+      content: {
+        ...content,
+        [key]: value,
+      },
+    });
+  };
+
+  const updateNewsContent = (news: News | null) => {
+    onChange({
+      ...baseItem,
+      source: 'news',
+      content: buildNewsContent(news, content),
+    });
+  };
+
+  return (
+    <div className="pl-3 border-l-2 border-brand-200 dark:border-brand-800/40">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+        <div className="col-span-2">
+          <StringField
+            label="Top Logo"
+            fieldKey="topLogo"
+            value={normalized.topLogo}
+            onChange={(value) => updateField('topLogo', value)}
+            componentType="highlighting_real_initiatives"
+          />
+        </div>
+
+        <div className="col-span-2 sm:col-span-1">
+          <SelectField
+            label="Source"
+            fieldKey="source"
+            value={normalized.source}
+            onChange={(value) => updateField('source', normalizeInitiativeSource(value))}
+            options={[
+              { value: 'manual', label: 'Manual' },
+              { value: 'news', label: 'Data News' },
+            ]}
+            componentType="highlighting_real_initiatives"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Content</p>
+            {normalized.source === 'news' ? (
+              <NewsSelectField
+                label="News"
+                fieldKey="newsId"
+                value={content.newsId}
+                onChange={(value) => updateContentField('newsId', value)}
+                onSelectNews={updateNewsContent}
+                componentType="highlighting_real_initiatives"
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+                <div className="col-span-2">
+                  <StringField
+                    label="Image"
+                    fieldKey="image"
+                    value={content.image}
+                    onChange={(value) => updateContentField('image', value)}
+                    componentType="highlighting_real_initiatives"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <MultilingualField
+                    label="Title"
+                    fieldKey="title"
+                    value={normalizeLocalizedText(content.title)}
+                    onChange={(value) => updateContentField('title', value)}
+                    componentType="highlighting_real_initiatives"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <MultilingualField
+                    label="Desc"
+                    fieldKey="description"
+                    value={normalizeLocalizedText(content.description)}
+                    onChange={(value) => updateContentField('description', value)}
+                    componentType="highlighting_real_initiatives"
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <FieldWrapper helper={getHelperText('date', 'highlighting_real_initiatives')}>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Date</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                      value={normalizeDateInputValue(content.date)}
+                      onChange={(e) => updateContentField('date', e.target.value)}
+                    />
+                  </FieldWrapper>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <StringField
+                    label="URL"
+                    fieldKey="url"
+                    value={content.url}
+                    onChange={(value) => updateContentField('url', value)}
+                    componentType="highlighting_real_initiatives"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="col-span-2 sm:col-span-1">
+          <SelectField
+            label="Target URL"
+            fieldKey="target"
+            value={normalized.target}
+            onChange={(value) => updateField('target', normalizeInitiativeTarget(value))}
+            options={[
+              { value: '_self', label: 'Self' },
+              { value: '_blank', label: 'Blank' },
+            ]}
+            componentType="highlighting_real_initiatives"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // =============================================================================
 // OBJECT FIELDS (recursive, with 2-column grid for short fields)
 // =============================================================================
@@ -2297,6 +2664,19 @@ function renderField(
   }
   if (key === 'state' && (componentType === 'events_list' || componentType === 'event_related')) {
     return { element: <SelectField key={key} {...fieldProps} options={['all', 'upcoming', 'ongoing', 'ended']} />, wide: false };
+  }
+  if (componentType === 'highlighting_real_initiatives' && isSectionToggleField(key)) {
+    return {
+      element: (
+        <BooleanField
+          key={key}
+          {...fieldProps}
+          value={normalizeBooleanLike(value)}
+          onChange={(v) => handleFieldChange(key, v)}
+        />
+      ),
+      wide: false,
+    };
   }
   if (key === 'source') {
     return { element: <SelectField key={key} {...fieldProps} options={getSourceOptions(componentType)} />, wide: false };
@@ -2413,7 +2793,7 @@ const CONTEXTUAL_FIELD_ORDER: Record<string, Record<string, string[]>> = {
     slides: ['image', 'value', 'delta', 'caption'],
   },
   highlighting_real_initiatives: {
-    initiatives: ['topLogo', 'image', 'title', 'description', 'date', 'url'],
+    initiatives: ['topLogo', 'source', 'content', 'target'],
     partnerLogos: ['url', 'alt'],
   },
   usp_grid: {
@@ -2501,6 +2881,10 @@ function ObjectFields({
     : (data || {});
 
   const isInfoContactItem = componentType === 'info_contacts' && objectKey === 'contact_items';
+
+  if (componentType === 'highlighting_real_initiatives' && objectKey === 'initiatives') {
+    return <InitiativeItemFields data={editorData} onChange={onChange} />;
+  }
 
   if (!isInfoContactItem && isCtaListItem(editorData)) {
     return (
@@ -2697,11 +3081,20 @@ export function ComponentEditor() {
 
   // Categorize fields into groups
   const normalizedSelectedSettings = normalizeSettingsForEditor(selectedComponent.settings || {}, selectedComponent.type);
+  const componentEditorDefaults = selectedComponent.type === 'sliders_hero'
+    ? {
+        thumbsVisible: false,
+        showFinderEnterprise: false,
+        solutionsFinderEnterpriseClassName: '',
+      }
+    : {};
   const settings = isDataDrivenComponent(selectedComponent.type) ? normalizeDataDrivenSettings(selectedComponent.type, {
+    ...componentEditorDefaults,
     ...(selectedComponent.type === 'awards_marquee' ? { award_ids: [] } : {}),
     ...(['news_highlight', 'news_featured'].includes(selectedComponent.type) ? { news_ids: [] } : {}),
     ...normalizedSelectedSettings,
   }) : {
+    ...componentEditorDefaults,
     ...(selectedComponent.type === 'awards_marquee' ? { award_ids: [] } : {}),
     ...(['news_highlight', 'news_featured'].includes(selectedComponent.type) ? { news_ids: [] } : {}),
     ...normalizedSelectedSettings,

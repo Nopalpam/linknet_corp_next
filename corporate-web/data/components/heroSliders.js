@@ -7,7 +7,6 @@ export const HERO_SLIDERS_DATA = {
       bgImageMobile: "",
       thumbsVisible: false,
       showEnterpriseSolutionFinderCTA: true,
-      enterpriseSolutionFinderCTAClassName: "relative inset-x-0 md:-mt-[36px] z-20",
       bgPositionClasses: "",
       bgSizeClass: ""
     },
@@ -88,7 +87,6 @@ export const HERO_SLIDERS_DATA = {
       bgImageMobile: "",
       thumbsVisible: false,
       showEnterpriseSolutionFinderCTA: false,
-      enterpriseSolutionFinderCTAClassName: "relative mt-2 z-20",
       bgPositionClasses: "",
       bgSizeClass: "",
     },
@@ -173,7 +171,6 @@ export const HERO_SLIDERS_DATA = {
       bgImageMobile: "",
       thumbsVisible: false,
       showEnterpriseSolutionFinderCTA: false,
-      enterpriseSolutionFinderCTAClassName: "relative mt-2 z-20",
       bgPositionClasses: "",
       bgSizeClass: "",
     },

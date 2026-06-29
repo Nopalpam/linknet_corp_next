@@ -68,7 +68,11 @@ function EditorToolbar({ editor, inlineOnly = false }: { editor: Editor; inlineO
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    editor.chain().focus().extendMarkRange('link').setLink({
+      href: url,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    }).run();
   }, [editor]);
 
   const addImage = useCallback(() => {
@@ -371,7 +375,15 @@ const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
       }),
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Link.configure({ openOnClick: false, autolink: true, defaultProtocol: 'https' }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https',
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
       Image.configure({ inline: false, allowBase64: true }),
       Table.configure({ resizable: true }),
       TableRow,

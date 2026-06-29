@@ -18,6 +18,16 @@ import { getResponsiveBackgroundProps } from '@/lib/responsiveBackground';
 // Register Plugin GSAP
 gsap.registerPlugin(ScrollTrigger);
 
+const DEFAULT_TOP_LOGO = '/assets/icons/badge.svg';
+
+function isSectionVisible(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    return !['false', '0', 'no', 'off'].includes(value.trim().toLowerCase());
+  }
+  return value !== false;
+}
+
 export default function HighlightingRealInitiatives({
   name = 'csr-programs',
   cmsData = null,
@@ -57,7 +67,27 @@ export default function HighlightingRealInitiatives({
 
   if (!sectionData) return null;
 
-  const { config = {}, id, introData, items = [], partnerText, partnerLogos = [], ctaList = [] } = sectionData;
+  const {
+    config = {},
+    id,
+    introData,
+    items = [],
+    partnerText,
+    partnerLogos = [],
+    ctaList = [],
+    show_intro_section,
+    showIntroSection,
+    show_slider_section,
+    showSliderSection,
+    show_community_section,
+    showCommunitySection,
+    show_cta_section,
+    showCtaSection,
+  } = sectionData;
+  const showIntro = isSectionVisible(show_intro_section ?? showIntroSection ?? true);
+  const showSlider = isSectionVisible(show_slider_section ?? showSliderSection ?? true);
+  const showCommunity = isSectionVisible(show_community_section ?? showCommunitySection ?? true);
+  const showCta = isSectionVisible(show_cta_section ?? showCtaSection ?? true);
   const {
     sectionId = id,
     className: configClassName = "",
@@ -102,7 +132,7 @@ export default function HighlightingRealInitiatives({
       <div className="container mx-auto px-4 md:px-0">
 
         {/* HEADER SECTION */}
-        {hasIntroContent(introData) && (
+        {showIntro && hasIntroContent(introData) && (
           // Tambahkan class gsap-initiative-item
           <div className="mb-10 lnGsapInitiativeItem">
             <Intro
@@ -116,7 +146,7 @@ export default function HighlightingRealInitiatives({
         )}
 
         {/* SWIPER ARTICLE LIST */}
-        {items && items.length > 0 && (
+        {showSlider && items && items.length > 0 && (
           <div className="mb-4 md:mb-10">
             <Swiper
               spaceBetween={24}
@@ -135,12 +165,13 @@ export default function HighlightingRealInitiatives({
                     {/* PENGGUNAAN CARD NEWS VARIANT WITH-LOGO */}
                     <CardNews
                       variant="with-logo"
-                      logo={item.topLogo}
+                      logo={typeof item.topLogo === 'string' && item.topLogo.trim() ? item.topLogo : DEFAULT_TOP_LOGO}
                       image={item.image}
                       title={item.title}
                       desc={item.desc}
                       date={item.date} // Akan tampil jika di data ada properti 'date'
                       href={item.url}
+                      target={item.target}
                     />
                   </div>
                 </SwiperSlide>
@@ -152,14 +183,14 @@ export default function HighlightingRealInitiatives({
         {/* PARTNER MARQUEE & CTA BOTTOM */}
         <div className="flex flex-col items-center justify-center text-center">
 
-          {partnerText && (
+          {showCommunity && partnerText && (
             // Tambahkan class gsap-initiative-item
             <p className="lnGsapInitiativeItem text-body-b4 text-neutral-400 mb-8 w-[80%] mx-auto">
               {partnerText}
             </p>
           )}
 
-          {duplicatedLogos.length > 0 && (
+          {showCommunity && duplicatedLogos.length > 0 && (
             // Tambahkan class gsap-initiative-item
             <div className="lnGsapInitiativeItem w-full overflow-hidden mb-12 relative [mask-image:_linear-gradient(to_right,transparent_0,_black_100px,_black_calc(100%-100px),transparent_100%)]">
               <div className="animate-running-marquee items-center gap-12 md:gap-20">
@@ -175,16 +206,18 @@ export default function HighlightingRealInitiatives({
             </div>
           )}
 
-          <CTAList
-            ctaList={ctaList}
-            align="center"
-            className="mt-4"
-            itemClassName="lnGsapInitiativeItem"
-            ctaClassName="rounded-full px-8 bg-white border-neutral-200"
-            useButton
-            defaultVariant="secondary-outline"
-            defaultSize="lg"
-          />
+          {showCta && (
+            <CTAList
+              ctaList={ctaList}
+              align="center"
+              className="mt-4"
+              itemClassName="lnGsapInitiativeItem"
+              ctaClassName="rounded-full px-8 bg-white border-neutral-200"
+              useButton
+              defaultVariant="secondary-outline"
+              defaultSize="lg"
+            />
+          )}
 
         </div>
 

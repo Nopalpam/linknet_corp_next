@@ -145,6 +145,8 @@ const mapFilemanagerStatusToLikelyCause = (status: number): string => {
       return 'Upload payload exceeds corporate-fm or proxy limits.';
     case 415:
       return 'corporate-fm rejected the file MIME type or extension.';
+    case 429:
+      return 'corporate-fm rate limit was reached. Verify corporate-fm is only reachable internally or raise the hardcoded service-level limits in corporate-fm.';
     case 503:
       return 'corporate-fm or AWS S3 dependency is unavailable. Check S3 credential provider/IAM Role and service logs.';
     default:

@@ -219,7 +219,9 @@ const SLIDERS_HERO: ComponentTypeDefinition = {
     ],
     autoplay: true,
     autoplay_speed: 5000,
-    showEnterpriseSolutionFinderCTA: false,
+    thumbsVisible: false,
+    showFinderEnterprise: false,
+    solutionsFinderEnterpriseClassName: '',
     theme: 'dark',
   }),
 };
@@ -520,6 +522,10 @@ const HIGHLIGHTING_REAL_INITIATIVES: ComponentTypeDefinition = {
   icon: 'FaHandHoldingHeart',
   category: 'basic',
   defaultData: withCommon({
+    show_intro_section: true,
+    show_slider_section: true,
+    show_community_section: true,
+    show_cta_section: true,
     introData: {
       as: 'h2',
       label: { en: '', id: '' },
@@ -528,8 +534,35 @@ const HIGHLIGHTING_REAL_INITIATIVES: ComponentTypeDefinition = {
       align: 'center',
     },
     initiatives: [
-      { topLogo: '', image: '', title: { en: 'Digital Literacy', id: 'Literasi Digital' }, description: { en: 'Empowering communities through digital education.', id: 'Memberdayakan komunitas melalui pendidikan digital.' }, date: '', url: '' },
-      { topLogo: '', image: '', title: { en: 'Green Network', id: 'Jaringan Hijau' }, description: { en: 'Sustainable network infrastructure.', id: 'Infrastruktur jaringan berkelanjutan.' }, date: '', url: '' },
+      {
+        id: 1,
+        topLogo: '/assets/logos/sustainability/logo_lindungihutan.png',
+        source: 'manual',
+        content: {
+          image: '/assets/img/sustainability/20250227_095744.jpg',
+          title: { en: 'Program Lindungi Hutan | Forest Protection Program', id: 'Program Lindungi Hutan | Forest Protection Program' },
+          description: {
+            en: 'Through tree planting as part of its CSR activities, PT Link Net Tbk not only reduces its carbon footprint and generates positive effects on theenvironment but also provides long-term benefits in preserving biodiversity and improving air quality.',
+            id: 'Through tree planting as part of its CSR activities, PT Link Net Tbk not only reduces its carbon footprint and generates positive effects on theenvironment but also provides long-term benefits in preserving biodiversity and improving air quality.',
+          },
+          date: '2025-05-27T00:00:00.000Z',
+          url: '#',
+        },
+        target: '_self',
+      },
+      {
+        id: 2,
+        topLogo: '',
+        source: 'manual',
+        content: {
+          image: '',
+          title: { en: 'Digital Literacy', id: 'Literasi Digital' },
+          description: { en: 'Empowering communities through digital education.', id: 'Memberdayakan komunitas melalui pendidikan digital.' },
+          date: '',
+          url: '',
+        },
+        target: '_self',
+      },
     ],
     partnerText: { en: '', id: '' },
     partnerLogos: [
@@ -953,10 +986,138 @@ const MILESTONE: ComponentTypeDefinition = {
   icon: 'FaStream',
   category: 'basic',
   defaultData: withCommon({
-    title: { en: 'Our Journey', id: 'Perjalanan Kami' },
+    introData: {
+      as: 'h2',
+      label: {
+        en: 'PIONEER IN THE INDUSTRY',
+        id: 'PELOPOR DI INDUSTRI',
+      },
+      title: {
+        en: 'Our track record proves on how we innovate in the past 20 years.',
+        id: 'Rekam jejak kami membuktikan bagaimana kami berinovasi dalam 20 tahun terakhir.',
+      },
+      description: {
+        en: 'As the pioneer in this industry, we are committed to always innovate in every aspects of our services to answer your family needs.',
+        id: 'Sebagai pelopor di industri ini, kami berkomitmen untuk selalu berinovasi dalam setiap aspek layanan kami untuk menjawab kebutuhan keluarga Anda.',
+      },
+      align: 'left',
+    },
+    label: { en: 'PIONEER IN THE INDUSTRY', id: 'PELOPOR DI INDUSTRI' },
+    title: {
+      en: 'Our track record proves on how we innovate in the past 20 years.',
+      id: 'Rekam jejak kami membuktikan bagaimana kami berinovasi dalam 20 tahun terakhir.',
+    },
+    description: {
+      en: 'As the pioneer in this industry, we are committed to always innovate in every aspects of our services to answer your family needs.',
+      id: 'Sebagai pelopor di industri ini, kami berkomitmen untuk selalu berinovasi dalam setiap aspek layanan kami untuk menjawab kebutuhan keluarga Anda.',
+    },
     milestones: [
-      { year: '2000', title: { en: 'Founded', id: 'Didirikan' }, description: { en: 'Company was established.', id: 'Perusahaan didirikan.' }, image: '', list: [] },
-      { year: '2010', title: { en: 'Expansion', id: 'Ekspansi' }, description: { en: 'Nationwide expansion.', id: 'Ekspansi nasional.' }, image: '', list: [] },
+      {
+        id: '1996',
+        year: '1996',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: {
+          en: 'The company was established under the name PT Seruling Indah Permai.',
+          id: 'Perusahaan didirikan dengan nama PT Seruling Indah Permai.',
+        },
+        list: [],
+      },
+      {
+        id: '2000',
+        year: '2000',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: {
+          en: 'The company changed its name to PT Link Net and launched Mynet Broadband Internet Service and Digital1.',
+          id: 'Perusahaan berganti nama menjadi PT Link Net dan meluncurkan layanan internet broadband Mynet serta Digital1.',
+        },
+        list: [],
+      },
+      {
+        id: '2007',
+        year: '2007',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: {
+          en: 'The company launched Fastnet High Speed Broadband Internet Service.',
+          id: 'Perusahaan meluncurkan layanan internet broadband berkecepatan tinggi Fastnet.',
+        },
+        list: [],
+      },
+      {
+        id: '2008',
+        year: '2008',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: {
+          en: 'The company was acquired by PT First Media Tbk.',
+          id: 'Perusahaan diakuisisi oleh PT First Media Tbk.',
+        },
+        list: [],
+      },
+      {
+        id: '2010',
+        year: '2010',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: { en: '', id: '' },
+        list: [
+          { text: { en: 'The company launched HD service.', id: 'Perusahaan meluncurkan layanan HD.' } },
+          { text: { en: 'The company rolled out a new network.', id: 'Perusahaan melakukan peluncuran jaringan baru.' } },
+          { text: { en: 'The company launched Video On Demand services.', id: 'Perusahaan meluncurkan layanan Video On Demand.' } },
+        ],
+      },
+      {
+        id: '2011',
+        year: '2011',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: { en: '', id: '' },
+        list: [
+          { text: { en: 'The company underwent reorganization from PT First Media Tbk to the Company.', id: 'Perusahaan melakukan reorganisasi dari PT First Media Tbk menjadi Perseroan.' } },
+          { text: { en: 'The company commenced new network development.', id: 'Perusahaan memulai pengembangan jaringan baru.' } },
+          { text: { en: 'The company launched Video-on-demand service.', id: 'Perusahaan meluncurkan layanan Video-on-demand.' } },
+        ],
+      },
+      {
+        id: '2012',
+        year: '2012',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: {
+          en: 'The company launched PVR (Personal Video Recorder) and OTT (Over-the-top) services through the First Media Live application.',
+          id: 'Perusahaan meluncurkan layanan PVR (Personal Video Recorder) dan OTT (Over-the-top) melalui aplikasi First Media Live.',
+        },
+        list: [],
+      },
+      {
+        id: '2013',
+        year: '2013',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: { en: '', id: '' },
+        list: [
+          { text: { en: 'The company launched Fastnet with speeds of up to 100 Mbps.', id: 'Perusahaan meluncurkan Fastnet dengan kecepatan hingga 100 Mbps.' } },
+          { text: { en: 'The company launched its services in Bandung and Surabaya.', id: 'Perusahaan meluncurkan layanan di Bandung dan Surabaya.' } },
+          { text: { en: 'The company reached 1 million homes passed.', id: 'Perusahaan mencapai 1 juta homes passed.' } },
+          { text: { en: 'The company launched 50 High Definition TV channels.', id: 'Perusahaan meluncurkan 50 saluran TV High Definition.' } },
+        ],
+      },
+      {
+        id: '2014',
+        year: '2014',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: { en: '', id: '' },
+        list: [
+          { text: { en: 'The company conducted its Initial Public Offering (IPO).', id: 'Perusahaan melakukan Penawaran Umum Perdana Saham (IPO).' } },
+          { text: { en: 'The company rebranded its OTT service from "First Media Live" to "First Media Go".', id: 'Perusahaan mengubah nama layanan OTT dari "First Media Live" menjadi "First Media Go".' } },
+          { text: { en: 'The company conducted a Private Placement.', id: 'Perusahaan melakukan Private Placement.' } },
+        ],
+      },
+      {
+        id: '2015',
+        year: '2015',
+        image: '/assets/bg/bg-yellow-gradient.jpg',
+        description: { en: '', id: '' },
+        list: [
+          { text: { en: 'The company acquired PT First Media Television.', id: 'Perusahaan mengakuisisi PT First Media Television.' } },
+          { text: { en: 'The company launched X1 service.', id: 'Perusahaan meluncurkan layanan X1.' } },
+          { text: { en: 'The company conducted a Private Placement.', id: 'Perusahaan melakukan Private Placement.' } },
+        ],
+      },
     ],
   }),
 };
@@ -1825,6 +1986,7 @@ export function getDefaultComponentData(type: string): Record<string, any> | nul
  * Check if a type is a MAIN component (needs DB fetch)
  */
 export function isMainComponent(type: string): boolean {
+  if (type === 'highlighting_real_initiatives') return true;
   const def = COMPONENT_TYPE_MAP[type];
   return def ? def.category === 'main' : false;
 }

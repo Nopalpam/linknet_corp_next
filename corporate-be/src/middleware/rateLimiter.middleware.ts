@@ -36,11 +36,6 @@ const getRateLimitEnabled = (): boolean => {
 const isRateLimitEnabled = getRateLimitEnabled();
 const apiPrefixForRateLimit = (process.env.API_PREFIX || '/api/v1').replace(/^\/api(?=\/|$)/, '') || '';
 
-const parsePositiveInt = (value: string | undefined, fallback: number): number => {
-  const parsed = Number.parseInt(String(value || ''), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
-
 const normalizeRequestPath = (path: string) => path.replace(/\/+$/, '') || '/';
 
 const getApiRequestPath = (req: Request): string => {
@@ -105,8 +100,8 @@ const bypassMiddleware = (_req: Request, _res: Response, next: NextFunction) => 
  * exhaust the shared server-to-server IP bucket.
  */
 const generalRateLimitConfig = rateLimit({
-  windowMs: parsePositiveInt(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
-  max: parsePositiveInt(process.env.RATE_LIMIT_MAX_REQUESTS, 1200),
+  windowMs: 15 * 60 * 1000,
+  max: 5000,
   skip: isPublicReadRequest,
   message: 'Too many requests from this IP, please try again after 15 minutes',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
@@ -163,7 +158,7 @@ export const loginRateLimiter = !isRateLimitEnabled
  */
 const authRateLimitConfig = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 requests per windowMs
+  max: 200, // Limit each IP to 200 requests per windowMs
   message: 'Too many authentication requests, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
@@ -183,7 +178,7 @@ export const authRateLimiter = !isRateLimitEnabled
  */
 const strictRateLimitConfig = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // Limit each IP to 3 requests per windowMs
+  max: 20, // Limit each IP to 20 requests per windowMs
   message: 'Too many requests for this sensitive operation, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
@@ -198,11 +193,11 @@ export const strictRateLimiter = !isRateLimitEnabled
 
 /**
  * Lenient rate limiter for public endpoints
- * 200 requests per 15 minutes
+ * 5000 requests per 15 minutes
  */
 const publicRateLimitConfig = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs
+  max: 5000, // Limit each IP to 5000 requests per windowMs
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -217,12 +212,12 @@ export const publicRateLimiter = !isRateLimitEnabled
 
 /**
  * Public form submission limiter
- * 20 submissions per IP per hour. Public dynamic forms are intentionally
+ * 100 submissions per IP per hour. Public dynamic forms are intentionally
  * unauthenticated, so they need a tighter control than general API traffic.
  */
 const publicFormSubmissionRateLimitConfig = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: parseInt(process.env.PUBLIC_FORM_RATE_LIMIT_MAX || '20', 10),
+  max: 100,
   message: 'Too many form submissions, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -242,7 +237,7 @@ export const publicFormSubmissionRateLimiter = !isRateLimitEnabled
  */
 const uploadRateLimitConfig = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: parseInt(process.env.UPLOAD_RATE_LIMIT_MAX || '30', 10),
+  max: 300,
   message: 'Too many upload requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

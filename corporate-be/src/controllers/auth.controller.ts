@@ -256,14 +256,25 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // MFA CHECK: If MFA is globally enabled AND user has MFA enabled
     // ==========================================
     const userMfaEnabled = (user as any).mfaEnabled === true;
-    const requiresMfa = await mfaService.shouldRequireMfaForLogin({
-      userId: user.id,
-      email: user.email,
-      localMfaEnabled: userMfaEnabled,
-    });
+    let requiresMfa = false;
+    try {
+      requiresMfa = await mfaService.shouldRequireMfaForLogin({
+        userId: user.id,
+        email: user.email,
+        localMfaEnabled: userMfaEnabled,
+      });
+    } catch (error) {
+      console.error('MFA availability error:', error);
+      res.status(503).json({
+        success: false,
+        message: 'MFA service is temporarily unavailable. Please contact an administrator.',
+        code: 'MFA_UNAVAILABLE',
+      });
+      return;
+    }
 
     if (requiresMfa) {
-      const mfaChallengeId = mfaService.createLoginChallenge({
+      const mfaChallengeId = await mfaService.createLoginChallenge({
         userId: user.id,
         email: user.email,
         password,

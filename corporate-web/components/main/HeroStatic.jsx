@@ -29,6 +29,61 @@ function normalizeTitleLineBreaks(value = '') {
     return normalized;
 }
 
+function getBackgroundUtilityClassName(className = '') {
+  return className
+    .split(/\s+/)
+    .filter((token) => (
+      token.startsWith('bg-') ||
+      token.startsWith('from-') ||
+      token.startsWith('via-') ||
+      token.startsWith('to-')
+    ))
+    .join(' ');
+}
+
+function resolveGradientColor(token = '') {
+  const color = token.replace(/^(from|via|to)-/, '');
+  const arbitrary = color.match(/^\[(.+)\]$/);
+
+  if (arbitrary) return arbitrary[1];
+
+  const colorMap = {
+    white: '#ffffff',
+    black: '#000000',
+    transparent: 'transparent',
+  };
+
+  return colorMap[color] || null;
+}
+
+function getGradientBackgroundStyle(className = '') {
+  const tokens = className.split(/\s+/).filter(Boolean);
+  const directionToken = tokens.find((token) => token.startsWith('bg-gradient-to-'));
+  if (!directionToken) return {};
+
+  const directionMap = {
+    t: 'top',
+    tr: 'top right',
+    r: 'right',
+    br: 'bottom right',
+    b: 'bottom',
+    bl: 'bottom left',
+    l: 'left',
+    tl: 'top left',
+  };
+  const direction = directionMap[directionToken.replace('bg-gradient-to-', '')] || 'bottom';
+  const fromColor = resolveGradientColor(tokens.find((token) => token.startsWith('from-')) || '');
+  const viaColor = resolveGradientColor(tokens.find((token) => token.startsWith('via-')) || '');
+  const toColor = resolveGradientColor(tokens.find((token) => token.startsWith('to-')) || '');
+
+  if (!fromColor && !toColor) return {};
+
+  const stops = [fromColor, viaColor, toColor].filter(Boolean);
+  return {
+    backgroundImage: `linear-gradient(to ${direction}, ${stops.join(', ')})`,
+  };
+}
+
 export default function Hero({
     config,
     as: Tag = "h1",
@@ -76,6 +131,8 @@ export default function Hero({
 
   // Kondisi untuk warna text berdasarkan theme
   const isDark = theme === 'dark';
+  const backgroundUtilityClassName = getBackgroundUtilityClassName(`${configClassName} ${className}`);
+  const gradientBackgroundStyle = getGradientBackgroundStyle(`${configClassName} ${className}`);
 
   if (!title && !hasBgImage && !bgColor) return null;
 
@@ -87,7 +144,9 @@ export default function Hero({
     >
         {/* Tambahkan heightClass dinamis ke container ini */}
         <div className={`relative w-full ${heightClass} flex items-center overflow-hidden rounded-[20px] md:rounded-[24px] bg-no-repeat ${bgPositionClasses} ${bgSizeClass}
-          ${!hasBgImage ? bgColor : ''}`}>
+          ${!hasBgImage ? bgColor : ''} ${backgroundUtilityClassName}`}
+          style={gradientBackgroundStyle}
+        >
 
             {/* ======================================= */}
             {/* 1. BACKGROUND LAYER (Z-INDEX: 0)        */}

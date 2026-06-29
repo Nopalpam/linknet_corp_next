@@ -35,7 +35,7 @@ export const mfaSetup = async (req: AuthRequest, res: Response): Promise<void> =
       return;
     }
 
-    if (!mfaService.isMfaGloballyEnabled()) {
+    if (!(await mfaService.isMfaGloballyEnabled())) {
       res.status(400).json({
         success: false,
         message: 'MFA is not enabled on this system',
@@ -333,9 +333,15 @@ export const mfaVerify = async (req: AuthRequest, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error('MFA verify error:', error);
-    res.status(500).json({
+    const message = error instanceof Error ? error.message : 'MFA verification failed. Please try again.';
+    const isServiceUnavailable = /Keycloak MFA service is unavailable|MFA service is unavailable/i.test(message);
+
+    res.status(isServiceUnavailable ? 503 : 500).json({
       success: false,
-      message: 'MFA verification failed. Please try again.',
+      message: isServiceUnavailable
+        ? 'MFA service is temporarily unavailable. Please contact an administrator.'
+        : 'MFA verification failed. Please try again.',
+      code: isServiceUnavailable ? 'MFA_UNAVAILABLE' : undefined,
     });
   }
 };

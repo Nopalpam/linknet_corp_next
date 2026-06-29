@@ -730,7 +730,7 @@ async function main() {
     // ============================================
     {
       key: 'email.smtp.host',
-      value: 'smtp.gmail.com',
+      value: 'email-smtp.ap-southeast-1.amazonaws.com',
       type: 'STRING',
       group: 'email',
       label: 'SMTP Host',
@@ -750,7 +750,7 @@ async function main() {
     },
     {
       key: 'email.smtp.username',
-      value: '',
+      value: 'AKIA2T7KXCUF72OGVZL5',
       type: 'STRING',
       group: 'email',
       label: 'SMTP Username',
@@ -770,7 +770,7 @@ async function main() {
     },
     {
       key: 'email.from.email',
-      value: 'noreply@linknet.co.id',
+      value: 'noreply@linknet.id',
       type: 'STRING',
       group: 'email',
       label: 'From Email',
@@ -780,7 +780,7 @@ async function main() {
     },
     {
       key: 'email.from.name',
-      value: 'LinkNet Corporation',
+      value: 'LinkNet Corp',
       type: 'STRING',
       group: 'email',
       label: 'From Name',

@@ -80,6 +80,39 @@ spec:
             secretKeyRef:
               name: linknetcorp-backend-secrets
               key: jwt-refresh-secret
+        - name: KEYCLOAK_URL
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-url
+        - name: KEYCLOAK_REALM
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-realm
+        - name: KEYCLOAK_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-client-id
+        - name: KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-client-secret
+              optional: true
+        - name: KEYCLOAK_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-admin-user
+              optional: true
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-admin-password
+              optional: true
         
         # Azure Key Vault integration (using Managed Identity)
         - name: AZURE_KEY_VAULT_URL
@@ -190,6 +223,12 @@ data:
   database-url: <BASE64_ENCODED_DATABASE_URL>
   jwt-secret: <BASE64_ENCODED_JWT_SECRET>
   jwt-refresh-secret: <BASE64_ENCODED_JWT_REFRESH_SECRET>
+  keycloak-url: <BASE64_ENCODED_KEYCLOAK_URL>
+  keycloak-realm: <BASE64_ENCODED_KEYCLOAK_REALM>
+  keycloak-client-id: <BASE64_ENCODED_KEYCLOAK_CLIENT_ID>
+  keycloak-client-secret: <BASE64_ENCODED_KEYCLOAK_CLIENT_SECRET>
+  keycloak-admin-user: <BASE64_ENCODED_KEYCLOAK_ADMIN_USER>
+  keycloak-admin-password: <BASE64_ENCODED_KEYCLOAK_ADMIN_PASSWORD>
 
 ---
 # Horizontal Pod Autoscaler

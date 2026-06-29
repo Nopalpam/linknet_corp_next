@@ -16,6 +16,7 @@ import QRCode from 'qrcode';
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 import keycloakService from './keycloak.service';
+import { SettingsService } from './settings.service';
 import {
   clearMfaLoginChallenge,
   createMfaLoginChallenge,
@@ -27,8 +28,13 @@ const prisma = new PrismaClient();
 
 // App name shown in authenticator apps
 const APP_NAME = process.env.MFA_APP_NAME || 'LinkNet Corp CMS';
+const MFA_ENABLED_SETTING_KEY = 'features.two_factor_auth';
+const MFA_PROVIDER_SETTING_KEY = 'features.mfa_provider';
 
-export const getMfaProvider = (): MfaProvider => {
+const isTruthy = (value?: string): boolean =>
+  ['true', 'enable', 'enabled', '1', 'yes'].includes((value || '').toLowerCase().trim());
+
+export const getMfaProviderFromEnv = (): MfaProvider => {
   const provider = (process.env.MFA_PROVIDER || process.env.AUTH_MFA_PROVIDER || 'local')
     .toLowerCase()
     .trim();
@@ -36,16 +42,33 @@ export const getMfaProvider = (): MfaProvider => {
   return provider === 'keycloak' ? 'keycloak' : 'local';
 };
 
+export const getMfaProvider = async (): Promise<MfaProvider> => {
+  const settingValue = await SettingsService.getSettingValue(MFA_PROVIDER_SETTING_KEY).catch(() => null);
+  const provider = typeof settingValue === 'string' ? settingValue.toLowerCase().trim() : '';
+
+  return provider === 'keycloak' || provider === 'local'
+    ? provider
+    : getMfaProviderFromEnv();
+};
+
+export const isMfaEmergencyDisabled = (): boolean =>
+  isTruthy(process.env.MFA_EMERGENCY_DISABLE || process.env.MFA_FORCE_DISABLED);
+
 /**
  * Check if MFA is enabled globally via environment variable
  * Accepts 'true', 'enable', 'enabled', '1' as truthy values
  */
-export const isMfaGloballyEnabled = (): boolean => {
-  const value = (process.env.MFA_ENABLED || '').toLowerCase().trim();
-  return ['true', 'enable', 'enabled', '1', 'yes'].includes(value);
+export const isMfaGloballyEnabled = async (): Promise<boolean> => {
+  if (isMfaEmergencyDisabled()) return false;
+
+  const settingValue = await SettingsService.getSettingValue(MFA_ENABLED_SETTING_KEY).catch(() => null);
+  if (typeof settingValue === 'boolean') return settingValue;
+  if (typeof settingValue === 'string') return isTruthy(settingValue);
+
+  return isTruthy(process.env.MFA_ENABLED);
 };
 
-export const isMfaManagedByKeycloak = (): boolean => getMfaProvider() === 'keycloak';
+export const isMfaManagedByKeycloak = async (): Promise<boolean> => (await getMfaProvider()) === 'keycloak';
 
 /**
  * Generate a new TOTP secret for a user
@@ -113,7 +136,7 @@ export const setupMfa = async (userId: string): Promise<{
   qrCode: string;
   otpauthUrl: string;
 }> => {
-  if (isMfaManagedByKeycloak()) {
+  if (await isMfaManagedByKeycloak()) {
     throw new Error('MFA setup is managed by the Keycloak realm. Please configure OTP in Keycloak.');
   }
 
@@ -153,7 +176,7 @@ export const setupMfa = async (userId: string): Promise<{
  * Enable MFA for a user after they verify their first OTP
  */
 export const enableMfa = async (userId: string, token: string): Promise<boolean> => {
-  if (isMfaManagedByKeycloak()) {
+  if (await isMfaManagedByKeycloak()) {
     throw new Error('MFA enablement is managed by the Keycloak realm.');
   }
 
@@ -197,7 +220,7 @@ export const enableMfa = async (userId: string, token: string): Promise<boolean>
  * Disable MFA for a user
  */
 export const disableMfa = async (userId: string, token: string): Promise<boolean> => {
-  if (isMfaManagedByKeycloak()) {
+  if (await isMfaManagedByKeycloak()) {
     throw new Error('MFA disablement is managed by the Keycloak realm.');
   }
 
@@ -257,10 +280,11 @@ export const getUserMfaStatus = async (userId: string): Promise<{
     throw new Error('User not found');
   }
 
-  const provider = getMfaProvider();
+  const provider = await getMfaProvider();
+  const globallyEnabled = await isMfaGloballyEnabled();
 
   if (provider === 'keycloak') {
-    if (!isMfaGloballyEnabled()) {
+    if (!globallyEnabled) {
       return {
         mfaEnabled: false,
         mfaGloballyEnabled: false,
@@ -270,7 +294,19 @@ export const getUserMfaStatus = async (userId: string): Promise<{
       };
     }
 
-    const status = await keycloakService.getUserMfaStatus(user.email);
+    const status = await keycloakService.getUserMfaStatus(user.email).catch((error) => {
+      logger.warn('Unable to read Keycloak user MFA status', {
+        userId,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return {
+        mfaEnabled: true,
+        hasMfaSecret: false,
+        managedByRealm: true,
+      };
+    });
+
     return {
       mfaEnabled: status.mfaEnabled,
       mfaGloballyEnabled: true,
@@ -282,7 +318,7 @@ export const getUserMfaStatus = async (userId: string): Promise<{
 
   return {
     mfaEnabled: user.mfaEnabled,
-    mfaGloballyEnabled: isMfaGloballyEnabled(),
+    mfaGloballyEnabled: globallyEnabled,
     hasMfaSecret: !!user.mfaSecret,
     provider,
     managedByRealm: false,
@@ -294,25 +330,32 @@ export const shouldRequireMfaForLogin = async (input: {
   email: string;
   localMfaEnabled: boolean;
 }): Promise<boolean> => {
-  if (!isMfaGloballyEnabled()) return false;
+  if (!(await isMfaGloballyEnabled())) return false;
 
-  if (isMfaManagedByKeycloak()) {
-    return keycloakService.isOtpRequiredForUser(input.email);
+  if ((await getMfaProvider()) === 'keycloak') {
+    if (!keycloakService.isKeycloakConfigured()) {
+      const asyncConfig = await keycloakService.getKeycloakConfigAsync();
+      if (!keycloakService.isKeycloakConfigured(asyncConfig)) {
+        throw new Error('Keycloak MFA is enabled but Keycloak configuration is incomplete.');
+      }
+    }
+
+    return true;
   }
 
   return input.localMfaEnabled;
 };
 
-export const createLoginChallenge = (input: {
+export const createLoginChallenge = async (input: {
   userId: string;
   email: string;
   password?: string;
-}): string => {
+}): Promise<string> => {
   const challenge = createMfaLoginChallenge({
     userId: input.userId,
     email: input.email,
     password: input.password,
-    provider: getMfaProvider(),
+    provider: await getMfaProvider(),
   });
 
   return challenge.id;
@@ -339,10 +382,16 @@ export const verifyLoginChallenge = async (input: {
       password: challenge.password,
       otp: input.otp,
     }).catch((error) => {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       logger.warn('Keycloak MFA verification failed', {
         userId: input.userId,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message,
       });
+
+      if (!/invalid_grant|invalid user credentials|invalid otp|invalid totp/i.test(message)) {
+        throw new Error('Keycloak MFA service is unavailable. Contact administrator or enable MFA_EMERGENCY_DISABLE.');
+      }
+
       return false;
     });
 
@@ -369,6 +418,8 @@ export default {
   isMfaGloballyEnabled,
   isMfaManagedByKeycloak,
   getMfaProvider,
+  getMfaProviderFromEnv,
+  isMfaEmergencyDisabled,
   generateMfaSecret,
   generateQrCode,
   verifyMfaToken,

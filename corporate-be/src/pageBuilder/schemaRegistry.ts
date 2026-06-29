@@ -37,6 +37,7 @@ const LATEST_SCHEMA_VERSIONS: Record<string, number> = {
   announcement_list: 2,
   hero: 2,
   hero_section: 3,
+  highlighting_real_initiatives: 2,
   info_contacts: 2,
   information_list: 2,
   list_report_home: 4,

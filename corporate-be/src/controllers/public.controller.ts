@@ -96,7 +96,7 @@ const toJsonSafeValue = (value: any): any => {
   return value;
 };
 
-const isPlainObject = (value: any): value is Record<string, any> => (
+const isPlainObject = (value: unknown): value is Record<string, unknown> => (
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 );
 
@@ -130,6 +130,36 @@ const getConfiguredNewsIds = (config: any): string[] => {
   return Array.isArray(rawIds)
     ? rawIds.filter((id: any) => typeof id === 'string' && id.trim()).map((id: string) => id.trim())
     : [];
+};
+
+const isNewsInitiativeSource = (value: unknown): boolean => {
+  const source = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return ['news', 'data_news', 'selected_news', 'cms_news'].includes(source);
+};
+
+const getRecordArray = (value: unknown): Record<string, unknown>[] => (
+  Array.isArray(value) ? value.filter(isPlainObject) : []
+);
+
+const getConfiguredInitiativeNewsIds = (config: unknown): string[] => {
+  const componentConfig = isPlainObject(config) ? config : {};
+  const configuredInitiatives = getRecordArray(componentConfig.initiatives);
+  const initiatives = configuredInitiatives.length > 0
+    ? configuredInitiatives
+    : getRecordArray(componentConfig.items);
+
+  return initiatives
+    .flatMap((item) => {
+      const content = isPlainObject(item.content) ? item.content : {};
+      const source = item.source || item.data_source || content.source;
+      const newsId = content.newsId || content.news_id || item.newsId || item.news_id;
+
+      if (!isNewsInitiativeSource(source) || typeof newsId !== 'string' || !newsId.trim()) {
+        return [];
+      }
+
+      return [newsId.trim()];
+    });
 };
 
 const orderNewsByConfiguredIds = (newsItems: any[], ids: string[]) => {
@@ -1007,6 +1037,19 @@ async function fetchMainComponentData(type: string, config: any): Promise<any> {
           news: newsItems,
           category,
         };
+      }
+      case 'highlighting_real_initiatives': {
+        const selectedNewsIds = getConfiguredInitiativeNewsIds(componentConfig);
+        if (selectedNewsIds.length === 0) return { news: [] };
+
+        const selectedNews = await prisma.news.findMany({
+          where: publicNewsWhere(now, {
+            id: { in: selectedNewsIds },
+          }),
+          include: { news_categories: true },
+        });
+
+        return { news: orderNewsByConfiguredIds(selectedNews, selectedNewsIds) };
       }
       case 'content_highlights':
         return fetchContentHighlightsComponentData(componentConfig);

@@ -303,7 +303,7 @@ export const settingsSeed = async () => {
     // ============================================
     {
       key: 'email.smtp.host',
-      value: 'smtp.gmail.com',
+      value: 'email-smtp.ap-southeast-1.amazonaws.com',
       type: SettingType.STRING,
       group: 'email',
       label: 'SMTP Host',
@@ -323,7 +323,7 @@ export const settingsSeed = async () => {
     },
     {
       key: 'email.smtp.username',
-      value: '',
+      value: 'AKIA2T7KXCUF72OGVZL5',
       type: SettingType.STRING,
       group: 'email',
       label: 'SMTP Username',
@@ -343,7 +343,7 @@ export const settingsSeed = async () => {
     },
     {
       key: 'email.from.email',
-      value: 'noreply@linknet.co.id',
+      value: 'noreply@linknet.id',
       type: SettingType.STRING,
       group: 'email',
       label: 'From Email',
@@ -353,7 +353,7 @@ export const settingsSeed = async () => {
     },
     {
       key: 'email.from.name',
-      value: 'LinkNet Corporation',
+      value: 'LinkNet Corp',
       type: SettingType.STRING,
       group: 'email',
       label: 'From Name',
@@ -370,10 +370,23 @@ export const settingsSeed = async () => {
       value: false,
       type: SettingType.BOOLEAN,
       group: 'features',
-      label: 'Enable Two-Factor Authentication',
-      description: 'Allow users to enable 2FA for their accounts',
+      label: 'Enable MFA',
+      description: 'Require MFA during CMS login. Keycloak configuration is read from environment or Azure Key Vault.',
       isPublic: false,
       isSystem: true,
+    },
+    {
+      key: 'features.mfa_provider',
+      value: 'keycloak',
+      type: SettingType.SELECT,
+      group: 'features',
+      label: 'MFA Provider',
+      description: 'Select local TOTP or Keycloak realm-managed OTP for CMS login MFA.',
+      isPublic: false,
+      isSystem: true,
+      options: {
+        options: ['local', 'keycloak'],
+      },
     },
     {
       key: 'features.maintenance_mode',

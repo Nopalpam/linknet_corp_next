@@ -42,7 +42,7 @@ export class FileUploadScanner {
   private readonly antivirusRequired = (() => {
     const explicitValue = parseBooleanEnv(process.env.ANTIVIRUS_REQUIRED);
     if (explicitValue !== null) return explicitValue;
-    return process.env.NODE_ENV === 'production';
+    return false;
   })();
   private readonly allowedMimeTypes = [
     // Images

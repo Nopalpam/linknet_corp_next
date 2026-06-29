@@ -207,7 +207,8 @@ const FIELD_ORDER: Record<string, number> = {
   "seo.meta_keywords": 40,
   "seo.thumbnail": 50,
   "features.two_factor_auth": 10,
-  "features.maintenance_mode": 20,
+  "features.mfa_provider": 20,
+  "features.maintenance_mode": 30,
   "cookies.enabled": 10,
   "cookies.title": 20,
   "cookies.description": 30,
@@ -227,6 +228,20 @@ const FIELD_ORDER: Record<string, number> = {
   "footer.closingSentence_default.description": 120,
   "pages.preview.base_url": 10,
   "pages.preview.path_template": 20,
+};
+
+const EMAIL_SETTING_FALLBACKS: Record<string, string | number> = {
+  "email.smtp.host": "email-smtp.ap-southeast-1.amazonaws.com",
+  "email.smtp.port": 587,
+  "email.smtp.username": "AKIA2T7KXCUF72OGVZL5",
+  "email.from.email": "noreply@linknet.id",
+  "email.from.name": "LinkNet Corp",
+};
+
+const LEGACY_EMAIL_SETTING_DEFAULTS: Record<string, string> = {
+  "email.smtp.host": "smtp.gmail.com",
+  "email.from.email": "noreply@linknet.co.id",
+  "email.from.name": "LinkNet Corporation",
 };
 
 const FIELD_SECTIONS: Record<string, string> = {
@@ -254,6 +269,9 @@ const FIELD_SECTIONS: Record<string, string> = {
   "email.smtp.port": "SMTP",
   "email.smtp.username": "SMTP",
   "email.smtp.password": "SMTP",
+  "features.two_factor_auth": "CMS MFA",
+  "features.mfa_provider": "CMS MFA",
+  "features.maintenance_mode": "Website",
   "footer.copyright": "Footer Content",
   "footer.closingSentence_default.overline": "Closing Sentence",
   "footer.closingSentence_default.title": "Closing Sentence",
@@ -290,6 +308,9 @@ const SettingsPage = () => {
   const [confirmLogCleanupOpen, setConfirmLogCleanupOpen] = useState(false);
   const [logCleanupPending, setLogCleanupPending] = useState(false);
   const [logCleanupSummary, setLogCleanupSummary] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState("");
+  const [testEmailPending, setTestEmailPending] = useState(false);
+  const [testEmailStatus, setTestEmailStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -360,6 +381,36 @@ const SettingsPage = () => {
       setError(error.message || "Gagal menyimpan pengaturan");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    const email = testEmail.trim();
+
+    setError(null);
+    setSuccess(null);
+    setTestEmailStatus(null);
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setTestEmailStatus({ type: "error", message: "Email tujuan tidak valid" });
+      return;
+    }
+
+    setTestEmailPending(true);
+
+    try {
+      const response = await settingsService.sendTestEmail(email);
+      setTestEmailStatus({
+        type: "success",
+        message: response.message || `Test email berhasil dikirim ke ${email}`,
+      });
+    } catch (error: any) {
+      setTestEmailStatus({
+        type: "error",
+        message: error.message || "Gagal mengirim test email",
+      });
+    } finally {
+      setTestEmailPending(false);
     }
   };
 
@@ -453,6 +504,29 @@ const SettingsPage = () => {
     if (setting.label) return setting.label;
     const key = setting.key.split(".").slice(-2).join(" ");
     return getGroupLabel(key);
+  };
+
+  const resolveSettingInputValue = (setting: Setting) => {
+    const editedValue = editedValues[setting.id]?.value;
+    if (editedValue !== undefined) return editedValue;
+
+    if (setting.key === "email.smtp.password") return setting.value ?? "";
+
+    const fallback = EMAIL_SETTING_FALLBACKS[setting.key];
+    const legacyDefault = LEGACY_EMAIL_SETTING_DEFAULTS[setting.key];
+    const currentValue = setting.value;
+
+    if (
+      fallback !== undefined &&
+      (currentValue === undefined ||
+        currentValue === null ||
+        currentValue === "" ||
+        (typeof currentValue === "string" && currentValue.trim() === legacyDefault))
+    ) {
+      return fallback;
+    }
+
+    return currentValue;
   };
 
   const isWideSetting = (setting: Setting) =>
@@ -607,7 +681,7 @@ const SettingsPage = () => {
   };
 
   const renderInput = (setting: Setting) => {
-    const currentValue = editedValues[setting.id]?.value ?? setting.value;
+    const currentValue = resolveSettingInputValue(setting);
     const type = setting.type || "STRING";
     const arrayConfig = ARRAY_FIELD_CONFIG[setting.key];
 
@@ -701,9 +775,10 @@ const SettingsPage = () => {
         return (
           <div className="space-y-2">
             <input
-              type={setting.key.includes("email") ? "email" : "text"}
+              type={setting.key.includes("password") ? "password" : setting.key.includes("email") ? "email" : "text"}
               value={currentValue ?? ""}
               onChange={(event) => handleValueChange(setting.id, setting.key, event.target.value)}
+              autoComplete={setting.key.includes("password") ? "new-password" : undefined}
               className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
             />
             {isMediaSetting(setting) && (
@@ -717,6 +792,51 @@ const SettingsPage = () => {
         );
     }
   };
+
+  const renderEmailTestPanel = () => (
+    <div className="rounded-lg border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-900/30">
+      <div className="flex flex-col gap-1">
+        <h4 className="text-sm font-semibold text-black dark:text-white">Test Email</h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Kirim email percobaan memakai konfigurasi SMTP aktif.
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 md:flex-row">
+        <input
+          type="email"
+          value={testEmail}
+          onChange={(event) => setTestEmail(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !testEmailPending) {
+              event.preventDefault();
+              handleSendTestEmail();
+            }
+          }}
+          placeholder="email@domain.com"
+          className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+        />
+        <button
+          type="button"
+          onClick={handleSendTestEmail}
+          disabled={testEmailPending}
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-black hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 md:w-36"
+        >
+          {testEmailPending ? "Mengirim..." : "Kirim Email"}
+        </button>
+      </div>
+
+      {testEmailStatus && (
+        <div className={`mt-4 rounded-lg border p-3 text-sm font-medium ${
+          testEmailStatus.type === "success"
+            ? "border-success/20 bg-success/10 text-success"
+            : "border-danger/20 bg-danger/10 text-danger"
+        }`}>
+          {testEmailStatus.message}
+        </div>
+      )}
+    </div>
+  );
 
   const renderMaintenancePanel = () => (
     <div className="space-y-6">
@@ -960,6 +1080,8 @@ const SettingsPage = () => {
                 renderMaintenancePanel()
               ) : (
                 <div className="space-y-8">
+                  {activeGroup === "email" && renderEmailTestPanel()}
+
                   {Object.entries(groupedActiveSettings).map(([section, sectionSettings]) => (
                     <div key={section || "default"} className="space-y-4">
                       {section && (

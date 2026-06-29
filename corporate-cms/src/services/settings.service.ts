@@ -28,6 +28,10 @@ export interface UpdateSettingData extends CreateSettingData {
   id?: string;
 }
 
+export interface TestEmailResponse {
+  message: string;
+}
+
 class SettingsService extends BaseService {
   /**
    * Get public settings
@@ -112,6 +116,13 @@ class SettingsService extends BaseService {
     return this.fetchWithAuth(this.getApiUrl('/cms/settings/bulk-update'), {
       method: 'POST',
       body: JSON.stringify({ settings }),
+    });
+  }
+
+  async sendTestEmail(email: string): Promise<TestEmailResponse> {
+    return this.fetchWithAuth(this.getApiUrl('/cms/settings/test-email'), {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   }
 }

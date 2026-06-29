@@ -322,6 +322,13 @@ const ENV_VARS: EnvVarConfig[] = [
     validator: (value) => ['local', 'keycloak'].includes(value.toLowerCase()),
   },
   {
+    name: 'MFA_EMERGENCY_DISABLE',
+    required: false,
+    defaultValue: 'false',
+    description: 'Emergency kill switch for MFA enforcement when the MFA provider is unavailable',
+    validator: (value) => ['true', 'false', '1', '0', 'yes', 'no'].includes(value.toLowerCase()),
+  },
+  {
     name: 'KEYCLOAK_URL',
     required: false,
     description: 'Keycloak base URL',
@@ -369,6 +376,11 @@ const ENV_VARS: EnvVarConfig[] = [
     description: 'SMTP username',
   },
   {
+    name: 'SMTP_USERNAME',
+    required: false,
+    description: 'SMTP username alias used by Azure Key Vault mappings',
+  },
+  {
     name: 'SMTP_PASSWORD',
     required: false,
     description: 'SMTP password',
@@ -382,6 +394,12 @@ const ENV_VARS: EnvVarConfig[] = [
     name: 'SMTP_FROM_EMAIL',
     required: false,
     description: 'Default email sender address',
+    validator: isSimpleEmail,
+  },
+  {
+    name: 'MAIL_FROM',
+    required: false,
+    description: 'Default email sender address alias used by Azure Key Vault mappings',
     validator: isSimpleEmail,
   },
   {
@@ -544,7 +562,6 @@ export function validateEnvironment(): ValidationResult {
       'KEYCLOAK_URL',
       'KEYCLOAK_REALM',
       'KEYCLOAK_CLIENT_ID',
-      'KEYCLOAK_CLIENT_SECRET',
     ].filter((name) => !(variables[name] || process.env[name]));
 
     if (missingKeycloakVars.length > 0) {
@@ -556,16 +573,23 @@ export function validateEnvironment(): ValidationResult {
     'SMTP_HOST',
     'SMTP_PORT',
     'SMTP_USER',
+    'SMTP_USERNAME',
     'SMTP_PASSWORD',
     'SMTP_FROM_NAME',
     'SMTP_FROM_EMAIL',
+    'MAIL_FROM',
     'SMTP_SECURE',
   ].some((name) => Boolean(variables[name] || process.env[name]));
 
   const smtpReady = Boolean(
     (variables.SMTP_HOST || process.env.SMTP_HOST) &&
     (variables.SMTP_PORT || process.env.SMTP_PORT) &&
-    (variables.SMTP_FROM_EMAIL || process.env.SMTP_FROM_EMAIL)
+    (
+      variables.SMTP_FROM_EMAIL ||
+      process.env.SMTP_FROM_EMAIL ||
+      variables.MAIL_FROM ||
+      process.env.MAIL_FROM
+    )
   );
 
   if (smtpHasAnyValue && !smtpReady) {

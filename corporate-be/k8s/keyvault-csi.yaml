@@ -27,6 +27,18 @@ spec:
       key: jwt-secret
     - objectName: jwt-refresh-secret
       key: jwt-refresh-secret
+    - objectName: keycloak-url
+      key: keycloak-url
+    - objectName: keycloak-realm
+      key: keycloak-realm
+    - objectName: keycloak-client-id
+      key: keycloak-client-id
+    - objectName: keycloak-client-secret
+      key: keycloak-client-secret
+    - objectName: keycloak-admin-user
+      key: keycloak-admin-user
+    - objectName: keycloak-admin-password
+      key: keycloak-admin-password
     # Add more secrets as needed
     # - objectName: api-key
     #   key: api-key
@@ -54,6 +66,30 @@ spec:
           objectVersion: ""
         - |
           objectName: jwt-refresh-secret
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: keycloak-url
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: keycloak-realm
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: keycloak-client-id
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: keycloak-client-secret
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: keycloak-admin-user
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: keycloak-admin-password
           objectType: secret
           objectVersion: ""
         # Add more secrets as needed
@@ -146,6 +182,39 @@ spec:
             secretKeyRef:
               name: linknetcorp-backend-secrets
               key: jwt-refresh-secret
+        - name: KEYCLOAK_URL
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-url
+        - name: KEYCLOAK_REALM
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-realm
+        - name: KEYCLOAK_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-client-id
+        - name: KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-client-secret
+              optional: true
+        - name: KEYCLOAK_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-admin-user
+              optional: true
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: linknetcorp-backend-secrets
+              key: keycloak-admin-password
+              optional: true
         
         # Azure Key Vault URL for runtime secret fetching
         - name: AZURE_KEY_VAULT_URL

@@ -36,6 +36,14 @@ router.get(
   SettingsController.getGroups
 );
 
+// POST /api/cms/settings/test-email - Send test email with active SMTP config
+router.post(
+  '/cms/settings/test-email',
+  authenticate,
+  requirePermission(Permission.SETTINGS_UPDATE),
+  SettingsController.sendTestEmail
+);
+
 // GET /api/cms/settings/:key - Get single setting by key
 router.get(
   '/cms/settings/:key',
