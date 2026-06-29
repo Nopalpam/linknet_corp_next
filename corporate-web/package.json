@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:sdl": "eslint -c eslint.sdl.config.mjs --no-inline-config ."
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -24,6 +25,7 @@
     "yahoo-finance2": "^3.14.0"
   },
   "devDependencies": {
+    "@microsoft/eslint-plugin-sdl": "^1.1.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.8",
@@ -36,7 +38,8 @@
     "postcss-import": "^16.1.1",
     "sass": "^1.97.3",
     "tailwindcss": "^4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0",

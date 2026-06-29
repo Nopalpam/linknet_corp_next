@@ -21,8 +21,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 1,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4363_HRL_202504171130.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4363_HRP_202504171130.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4363_HRL_202504171130.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4363_HRP_202504171130.jpg',
           title: 'Victoria Must Go',
           metaItems: ['Comedy', '2024'],
           year: '2024',
@@ -43,8 +43,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 2,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4150_HRL_202407031201.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4150_HRP_202407031201.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4150_HRL_202407031201.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4150_HRP_202407031201.jpg',
           title: 'Three Times Nothing',
           metaItems: ['Comedy', '2022'],
           year: '2022',
@@ -65,8 +65,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 3,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4370_HRL_202504091435.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4370_HRP_202504091435.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4370_HRL_202504091435.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4370_HRP_202504091435.jpg',
           title: 'For A Moment, Forever',
           metaItems: ['Romance', '2022'],
           year: '2022',
@@ -87,8 +87,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 4,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4355_HRL_202412021718.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4355_HRP_202412021718.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4355_HRL_202412021718.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4355_HRP_202412021718.jpg',
           title: 'Copperman',
           metaItems: ['Drama', '2019'],
           year: '2019',
@@ -109,8 +109,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 5,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4152_HRL_202504101422.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4152_HRP_202504101422.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4152_HRL_202504101422.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4152_HRP_202504101422.jpg',
           title: 'The Broken Glass Theory',
           metaItems: ['Drama', '2021'],
           year: '2021',
@@ -131,8 +131,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 6,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4463_HRL_202504091049.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4463_HRP_202504091049.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4463_HRL_202504091049.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4463_HRP_202504091049.jpg',
           title: 'Hard Luck',
           metaItems: ['Comedy', '2023'],
           year: '2023',
@@ -153,8 +153,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 7,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4154_HRL_202407031202.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4154_HRP_202407031202.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4154_HRL_202407031202.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4154_HRP_202407031202.jpg',
           title: 'Run Woman Run',
           metaItems: ['Drama', '2021'],
           year: '2021',
@@ -175,8 +175,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 8,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4273_HRL_202410011603.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4273_HRP_202410011603.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4273_HRL_202410011603.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4273_HRP_202410011603.jpg',
           title: 'On the Come up',
           metaItems: ['Music', '2022'],
           year: '2022',
@@ -197,8 +197,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 9,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4353_HRL_202412030951.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4353_HRP_202412030951.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4353_HRL_202412030951.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/vodposter/4353_HRP_202412030951.jpg',
           title: 'The Black Minutes',
           metaItems: ['Thriller', '2021'],
           year: '2021',
@@ -221,8 +221,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 6,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36844359_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36844359_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36844359_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36844359_P.jpg',
           title: 'The Judge ReturnsThe Judge Returns Ep10',
           metaItems: ['Entertainment'],
           year: '',
@@ -242,8 +242,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 7,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36766293_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36766293_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36766293_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36766293_P.jpg',
           title: 'The Wheel Of Time',
           metaItems: ['Entertainment'],
           year: '',
@@ -263,8 +263,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 8,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35782607_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35782607_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35782607_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35782607_P.jpg',
           title: 'A Man Called Hero',
           metaItems: ['Drama'],
           year: '',
@@ -284,8 +284,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 9,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35793878_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35793878_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35793878_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/35793878_P.jpg',
           title: 'Room No. 7',
           metaItems: ['Drama'],
           year: '',
@@ -305,8 +305,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 10,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/12309328_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/12309328_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/12309328_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/12309328_P.jpg',
           title: 'MasterChef Australia S16#10',
           metaItems: ['Variety/ Reality Show'],
           year: '',
@@ -326,8 +326,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 11,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36221769_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36221769_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36221769_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36221769_P.jpg',
           title: 'Eat With David S1Episode 3',
           metaItems: ['Variety/ Reality Show'],
           year: '',
@@ -347,8 +347,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 12,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/15458030_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/15458030_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/15458030_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/15458030_P.jpg',
           title: 'Mountain Men S12Untethered',
           metaItems: ['Education/Factual'],
           year: '',
@@ -368,8 +368,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 13,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36240326_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36240326_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36240326_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/36240326_P.jpg',
           title: 'Otto Bulletproof - Facing The Unknown S2Eagle Hunt In Mongolia - In The Footsteps Of Genghis Khan',
           metaItems: ['Education/Factual'],
           year: '',
@@ -389,8 +389,8 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
         {
           id: 14,
           badge: null,
-          posterImage_landscape: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/33503970_L.jpg',
-          posterImage: 'http://edge.linknetott.swiftserve.com/posterSTBX1/programposter/33503970_P.jpg',
+          posterImage_landscape: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/33503970_L.jpg',
+          posterImage: 'https://edge.linknetott.swiftserve.com/posterSTBX1/programposter/33503970_P.jpg',
           title: 'Fast & Furious: Spy Racers',
           metaItems: ['Animes'],
           year: '',
@@ -415,18 +415,18 @@ export const TV_HIGHLIGHT_SNEEK_PEAK_DATA = {
     },
     logoRows: [
       [
-        { name: 'TVK', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/413.png' },
-        { name: 'HGTV HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/1.png' },
-        { name: 'HBO Family HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/274.png' },
-        { name: 'Galaxy HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/124.png' },
-        { name: 'SPOTV 2 HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/211.png' }
+        { name: 'TVK', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/413.png' },
+        { name: 'HGTV HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/1.png' },
+        { name: 'HBO Family HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/274.png' },
+        { name: 'Galaxy HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/124.png' },
+        { name: 'SPOTV 2 HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/211.png' }
       ],
       [
-        { name: 'AXN HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/2.png' },
-        { name: 'Indosiar HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/218.png' },
-        { name: 'SIN PO TV HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/417.png' },
-        { name: 'The Indonesia Channel HD', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/427.png' },
-        { name: 'Phoenix News', img: 'http://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/125.png' }
+        { name: 'AXN HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/2.png' },
+        { name: 'Indosiar HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/218.png' },
+        { name: 'SIN PO TV HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/417.png' },
+        { name: 'The Indonesia Channel HD', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/427.png' },
+        { name: 'Phoenix News', img: 'https://edge.linknetott.swiftserve.com/STBWEBVIEWADS/urlinfo/ui3/channel_logo_icon/125.png' }
       ]
     ],
     ctaList: [

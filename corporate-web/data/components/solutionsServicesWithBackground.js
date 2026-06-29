@@ -103,7 +103,7 @@ export const SOLUTIONS_SERVICES_WITH_BACKGROUND_DATA = {
         title: 'Elevate Guest Stays With Tailored Hotel Entertainment',
         subtitle:
           'Enhance experiences through premium channels, on-demand content, and interactive features for every guest.',
-        backgroundImage: 'http://dothmatn68jkj.cloudfront.net/assets/bg/room-interior-hotel-bedroom.jpg',
+        backgroundImage: 'https://dothmatn68jkj.cloudfront.net/assets/bg/room-interior-hotel-bedroom.jpg',
         backgroundAlt: 'Hospitality entertainment preview',
         gradientHex: '#07B18D',
         href: '/product-services/hospitality-entertainment',

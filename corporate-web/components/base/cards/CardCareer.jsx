@@ -6,6 +6,8 @@ import Link from '../Link'; // Sesuaikan path
 
 import { useParams } from 'next/navigation';
 
+const ABSOLUTE_URL_PATTERN = /^(?:https?:)?\/\//i;
+
 const CardCareer = ({
   department = "Central Function - Human Capital",
   title = "Employee & Industrial Relations Internship",
@@ -21,9 +23,7 @@ const CardCareer = ({
   const toLocalizedHref = (url) => {
     if (!url) return '#';
     if (
-      url.startsWith('http://') ||
-      url.startsWith('https://') ||
-      url.startsWith('//') ||
+      ABSOLUTE_URL_PATTERN.test(url) ||
       url.startsWith('mailto:') ||
       url.startsWith('tel:') ||
       url.startsWith('#')
@@ -36,7 +36,7 @@ const CardCareer = ({
 
   const applyHref = toLocalizedHref(applyUrl);
   const detailHref = toLocalizedHref(detailUrl);
-  const isExternalApply = applyHref.startsWith('http://') || applyHref.startsWith('https://') || applyHref.startsWith('//');
+  const isExternalApply = ABSOLUTE_URL_PATTERN.test(applyHref);
 
   return (
     <div className="lnCardCareer w-full flex flex-col justify-between max-w-[400px] rounded-[16px] border border-gray-200 hover:border-yellow-500 bg-white p-[20px] h-full min-h-[140px] md:min-h-[256px] transition-colors">

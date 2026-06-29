@@ -16,7 +16,6 @@ const tradingViewFrameSources = [
   'https://www.tradingview-widget.com',
 ];
 const mediaImageSources = [
-  'http://edge.linknetott.swiftserve.com',
   'https://edge.linknetott.swiftserve.com',
   'https://ui-stb-cpe.sysln.id',
 ];
@@ -43,7 +42,6 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: 'http', hostname: 'edge.linknetott.swiftserve.com' },
       { protocol: 'https', hostname: 'edge.linknetott.swiftserve.com' },
       { protocol: 'https', hostname: 'ui-stb-cpe.sysln.id' },
     ],
