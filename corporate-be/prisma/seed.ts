@@ -750,7 +750,7 @@ async function main() {
     },
     {
       key: 'email.smtp.username',
-      value: 'AKIA2T7KXCUF72OGVZL5',
+      value: '',
       type: 'STRING',
       group: 'email',
       label: 'SMTP Username',

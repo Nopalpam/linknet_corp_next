@@ -233,7 +233,7 @@ const FIELD_ORDER: Record<string, number> = {
 const EMAIL_SETTING_FALLBACKS: Record<string, string | number> = {
   "email.smtp.host": "email-smtp.ap-southeast-1.amazonaws.com",
   "email.smtp.port": 587,
-  "email.smtp.username": "AKIA2T7KXCUF72OGVZL5",
+  "email.smtp.username": "",
   "email.from.email": "noreply@linknet.id",
   "email.from.name": "LinkNet Corp",
 };

@@ -323,7 +323,7 @@ export const settingsSeed = async () => {
     },
     {
       key: 'email.smtp.username',
-      value: 'AKIA2T7KXCUF72OGVZL5',
+      value: '',
       type: SettingType.STRING,
       group: 'email',
       label: 'SMTP Username',

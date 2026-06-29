@@ -34,7 +34,7 @@ type MailAddress = {
 const SMTP_FALLBACKS = {
   host: 'email-smtp.ap-southeast-1.amazonaws.com',
   port: 587,
-  user: 'AKIA2T7KXCUF72OGVZL5',
+  user: '',
   fromName: 'LinkNet Corp',
   fromEmail: 'noreply@linknet.id',
 };
